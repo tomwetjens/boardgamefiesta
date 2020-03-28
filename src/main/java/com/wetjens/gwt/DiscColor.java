@@ -1,6 +1,6 @@
 package com.wetjens.gwt;
 
-public enum CityType {
+public enum DiscColor {
     WHITE,
     BLACK;
 }

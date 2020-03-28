@@ -70,7 +70,7 @@ public class Game {
 
         this.currentPlayer = this.players.get(0);
 
-        this.railroadTrack = new RailroadTrack(players);
+        this.railroadTrack = new RailroadTrack(players, random);
 
         this.trail = new Trail();
         this.kansasCitySupply = new KansasCitySupply(random);

@@ -1,5 +1,6 @@
 package com.wetjens.gwt;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -14,8 +15,8 @@ class ImmediateActions {
         this.actions = actions;
     }
 
-    static ImmediateActions of(PossibleAction possibleAction) {
-        return new ImmediateActions(Collections.singletonList(new ImmediateAction(possibleAction)));
+    static ImmediateActions of(PossibleAction... possibleAction) {
+        return new ImmediateActions(Arrays.stream(possibleAction).map(ImmediateAction::new).collect(Collectors.toList()));
     }
 
     static ImmediateActions none() {

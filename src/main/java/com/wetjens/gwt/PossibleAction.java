@@ -10,6 +10,10 @@ public abstract class PossibleAction {
         return new Single(action);
     }
 
+    public static PossibleAction optional(Class<? extends Action> action) {
+        return any(action);
+    }
+
     public static PossibleAction any(Class<? extends Action>... actions) {
         return any(Arrays.stream(actions));
     }
