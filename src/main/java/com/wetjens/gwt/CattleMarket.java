@@ -1,27 +1,14 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 
-import static java.util.stream.Collectors.counting;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -39,139 +26,145 @@ public class CattleMarket {
         fillUp();
     }
 
+    /**
+     * Calculates the options the player has for buying a single card or a pair of cards from the market.
+     *
+     * @param numberOfCowboys Number of cowboys the player has available.
+     * @param balance         The balance the player has.
+     * @return Possibilities for buying a single card or a pair.
+     */
     public Set<PossibleBuy> possibleBuys(int numberOfCowboys, int balance) {
-        return possibleBuysInternal(numberOfCowboys, balance, Collections.unmodifiableSet(market), new HashMap<>());
+        return possibleBuys(new ArrayList<>(market), numberOfCowboys, balance);
     }
 
-    @SuppressWarnings("unchecked")
-    private static Set<PossibleBuy> possibleBuysInternal(int cowboysRemaining, int dollarsRemaining, Set<Card.CattleCard> market, Map<Integer, Set<PossibleBuy>> cache) {
-        if (cowboysRemaining == 0) {
+    private static Set<PossibleBuy> possibleBuys(List<Card.CattleCard> market, int numberOfCowboys, int balance) {
+        if (numberOfCowboys == 0) {
             return Collections.emptySet();
         }
 
-        Set<PossibleBuy> result = cache.get(cowboysRemaining);
-
-        if (result == null) {
-            Stream<PossibleBuy> otherCombinations = concatStreams(
-                    possibleBuysInternal(cowboysRemaining - 1, dollarsRemaining, market, cache).stream(), // If not use all cowboys
-
-                    // Use all cowboys but split differently:
-                    IntStream.range(1, cowboysRemaining)
-                            .boxed()
-                            .flatMap(cowboysUsed -> possibleBuysInternal(cowboysUsed, dollarsRemaining, market, cache)
-                                    .stream()
-                                    .flatMap(a -> possibleBuysInternal(cowboysRemaining - cowboysUsed, dollarsRemaining - a.cost, a.apply(market), cache)
-                                            .stream()
-                                            .map(b -> PossibleBuy.combine(a, b)))));
-
-            if (cowboysRemaining == 1) {
-                result = concatStreams(
-                        otherCombinations,
-                        dollarsRemaining < 6 ? Stream.empty() : market.stream()
-                                .filter(cattleCard -> cattleCard.getType().getValue() == 3)
-                                .map(Card.CattleCard::getType)
-                                .map(CattleType::getValue)
-                                .map(cattleCard -> new PossibleBuy(Collections.singletonList(cattleCard), 6, 1)),
-                        dollarsRemaining < 12 ? Stream.empty() : market.stream()
-                                .filter(cattleCard -> cattleCard.getType().getValue() == 4)
-                                .map(Card.CattleCard::getType)
-                                .map(CattleType::getValue)
-                                .map(cattleCard -> new PossibleBuy(Collections.singletonList(cattleCard), 12, 1)))
-                        .collect(Collectors.toSet());
-            } else if (cowboysRemaining == 2) {
-                result = concatStreams(
-                        otherCombinations,
-                        dollarsRemaining < 3 ? Stream.empty() : market.stream()
-                                .map(Card.CattleCard::getType)
-                                .map(CattleType::getValue)
-                                .filter(breedingValue -> breedingValue == 3)
-                                .map(cattleCard -> new PossibleBuy(Collections.singletonList(cattleCard), 3, 2)),
-                        dollarsRemaining < 12 ? Stream.empty() : market.stream()
-                                .map(Card.CattleCard::getType)
-                                .map(CattleType::getValue)
-                                .filter(breedingValue -> breedingValue == 5)
-                                .map(cattleCard -> new PossibleBuy(Collections.singletonList(cattleCard), 12, 2)))
-                        .collect(Collectors.toSet());
-            } else if (cowboysRemaining == 3) {
-                result = concatStreams(
-                        otherCombinations,
-                        dollarsRemaining < 5 ? Stream.empty() : market.stream()
-                                .filter(cattleCard -> cattleCard.getType().getValue() == 3)
-                                .flatMap(a -> market.stream() // Find pair
-                                        .filter(cattleCard -> cattleCard.getType().getValue() == a.getType().getValue()) // Find pair of matching breeding value
-                                        .filter(b -> b != a) // Should be two different cards to form a pair
-                                        .findAny()
-                                        .map(Card.CattleCard::getType)
-                                        .map(CattleType::getValue)
-                                        .map(b -> new PossibleBuy(Arrays.asList(a.getType().getValue(), b), 5, 3))
-                                        .stream()),
-                        dollarsRemaining < 6 ? Stream.empty() : market.stream()
-                                .map(Card.CattleCard::getType)
-                                .map(CattleType::getValue)
-                                .filter(breedingValue -> breedingValue == 4)
-                                .map(cattleCard -> new PossibleBuy(Collections.singletonList(cattleCard), 6, 3)))
-                        .collect(Collectors.toSet());
-            } else if (cowboysRemaining == 4) {
-                result = concatStreams(
-                        otherCombinations,
-                        dollarsRemaining < 6 ? Stream.empty() : market.stream()
-                                .map(Card.CattleCard::getType)
-                                .map(CattleType::getValue)
-                                .filter(breedingValue -> breedingValue == 5)
-                                .map(cattleType -> new PossibleBuy(Collections.singletonList(cattleType), 6, 4)))
-                        .collect(Collectors.toSet());
-            } else if (cowboysRemaining == 5) {
-                result = concatStreams(
-                        otherCombinations,
-                        dollarsRemaining < 8 ? Stream.empty() : market.stream()
-                                .filter(cattleCard -> cattleCard.getType().getValue() == 3)
-                                .flatMap(a -> market.stream()
-                                        .filter(cattleCard -> cattleCard.getType().getValue() == a.getType().getValue()) // Find pair of matching breeding value
-                                        .filter(b -> b != a) // Should be two different cards to form a pair
-                                        .findAny()
-                                        .map(Card.CattleCard::getType)
-                                        .map(CattleType::getValue)
-                                        .map(b -> new PossibleBuy(Arrays.asList(a.getType().getValue(), b), 8, 5))
-                                        .stream()))
-                        .collect(Collectors.toSet());
-            } else {
-                result = otherCombinations.collect(Collectors.toSet());
-            }
-
-            cache.put(cowboysRemaining, result);
+        Stream<PossibleBuy> result = Stream.empty();
+        if (numberOfCowboys >= 5) {
+            result = Stream.concat(result, pairPossibleBuys(market, 4, 8, 5));
+        }
+        if (numberOfCowboys >= 4) {
+            result = Stream.concat(result, singlePossibleBuys(market, 5, 6, 4));
+        }
+        if (numberOfCowboys >= 3) {
+            result = Stream.concat(result, Stream.concat(
+                    pairPossibleBuys(market, 3, 5, 3),
+                    singlePossibleBuys(market, 4, 6, 3)));
+        }
+        if (numberOfCowboys >= 2) {
+            result = Stream.concat(result, Stream.concat(
+                    singlePossibleBuys(market, 3, 3, 2),
+                    singlePossibleBuys(market, 5, 12, 2)));
+        }
+        if (numberOfCowboys >= 1) {
+            result = Stream.concat(result, Stream.concat(
+                    singlePossibleBuys(market, 3, 6, 1),
+                    singlePossibleBuys(market, 4, 12, 1)));
         }
 
-        return result;
+        return result.filter(possibleBuy -> possibleBuy.cost <= balance).collect(Collectors.toSet());
     }
 
-    private static <T> Stream<T> concatStreams(Stream<T>... streams) {
-        return Arrays.stream(streams).flatMap(Function.identity());
+    private static Stream<PossibleBuy> singlePossibleBuys(List<Card.CattleCard> market, int breedingValue, int cost, int cowboysNeeded) {
+        return market.stream()
+                .filter(cattleCard -> cattleCard.getType().getValue() == breedingValue)
+                .map(cattleCard -> new PossibleBuy(Collections.singletonList(cattleCard.getType().getValue()), cost, cowboysNeeded));
     }
 
-    public static int cost(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
-        //TODO
-        return 0;
+    private static Stream<PossibleBuy> pairPossibleBuys(List<Card.CattleCard> market, int breedingValue, int cost, int cowboysNeeded) {
+        return findPairs(market, breedingValue)
+                .limit(1) // Since the result only indicates the breeding value, there is no need to return each pair
+                .map(pair -> new PossibleBuy(Arrays.asList(pair.a.getType().getValue(), pair.b.getType().getValue()), cost, cowboysNeeded));
     }
 
-    public static int cost(CattleType cattleType, int numberOfCowboys) {
-        if (numberOfCowboys < 1) {
-            throw new IllegalStateException("Not enough cowboys");
+
+    private static Stream<Pair<Card.CattleCard>> findPairs(List<Card.CattleCard> market, int breedingValue) {
+        return market.stream()
+                .filter(cattleCard -> cattleCard.getType().getValue() == breedingValue)
+                .flatMap(a -> market.stream() // Find pair
+                        .dropWhile(b -> b != a) // Starting from card A to find pair, to prevent a single pair appearing twice in the output
+                        .skip(1) // Skip card A itself
+                        .filter(cattleCard -> cattleCard.getType().getValue() == a.getType().getValue()) // Find pair of matching breeding value
+                        .map(b -> new Pair<>(a, b)));
+    }
+
+    public int cost(Collection<Card.CattleCard> cattleCards, int numberOfCowboys) {
+        return cost(new ArrayList<>(market), cattleCards, numberOfCowboys);
+    }
+
+    public static int cost(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys) {
+        return costIfEnoughCowboys(cattleCardsRemaining, cattleCards, numberOfCowboys)
+                .orElseThrow(() -> new IllegalArgumentException("Not enough cowboys"));
+    }
+
+    private static Optional<Integer> costIfEnoughCowboys(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys) {
+        Map<Integer, List<Card.CattleCard>> groupedByBreedingValue = cattleCards.stream()
+                .distinct()
+                .collect(Collectors.groupingBy(cattleCard -> cattleCard.getType().getValue()));
+
+        return groupedByBreedingValue.keySet().stream()
+                .findFirst()
+                .flatMap(breedingValue -> {
+                    List<Card.CattleCard> cardsOfSameBreedingValue = groupedByBreedingValue.get(breedingValue);
+                    boolean considerPair = cardsOfSameBreedingValue.size() > 1;
+
+                    Set<PossibleBuy> possibleBuys = possible(cattleCardsRemaining, breedingValue, considerPair, numberOfCowboys).collect(Collectors.toSet());
+
+                    return possibleBuys.stream()
+                            .flatMap(possibleBuy -> {
+                                boolean moreCardsToBuy = cattleCards.size() > possibleBuy.getBreedingValues().size();
+
+                                if (moreCardsToBuy) {
+                                    List<Card.CattleCard> cardsBuying = cardsOfSameBreedingValue.subList(0, possibleBuy.getBreedingValues().size());
+                                    List<Card.CattleCard> marketAfterBuy = remove(cattleCardsRemaining, cardsBuying);
+                                    List<Card.CattleCard> cardsRemainingToBuy = remove(cattleCards, cardsBuying);
+                                    int cowboysRemaining = numberOfCowboys - possibleBuy.getCowboysNeeded();
+
+                                    Optional<Integer> cost = costIfEnoughCowboys(marketAfterBuy, cardsRemainingToBuy, cowboysRemaining)
+                                            .map(furtherCost -> furtherCost + possibleBuy.getCost());
+
+                                    return cost.stream();
+                                }
+
+                                return Stream.of(possibleBuy.getCost());
+                            })
+                            .min(Integer::compareTo);
+                });
+    }
+
+    private static <T> List<T> remove(Collection<T> original, Collection<T> exclude) {
+        return original.stream().filter(e -> !exclude.contains(e)).collect(Collectors.toList());
+    }
+
+    private static Stream<PossibleBuy> possible(List<Card.CattleCard> available, Integer breedingValue, boolean considerPair, int numberOfCowboys) {
+        Set<PossibleBuy> possibleBuys = possibleBuys(available, Integer.MAX_VALUE, Integer.MAX_VALUE);
+
+        Set<PossibleBuy> possibleSingles = possibleBuys.stream()
+                .filter(pb -> pb.getBreedingValues().size() == 1)
+                .filter(pb -> pb.getBreedingValues().get(0).equals(breedingValue))
+                .collect(Collectors.toSet());
+
+        if (possibleSingles.isEmpty()) {
+            throw new IllegalArgumentException("Not enough cards with breeding value " + breedingValue + " available");
         }
 
-        switch (cattleType.getValue()) {
-            case 3:
-                return numberOfCowboys >= 2 ? 3 : 6;
-            case 4:
-                return numberOfCowboys >= 3 ? 6 : 12;
-            case 5:
-                if (numberOfCowboys < 2) {
-                    throw new IllegalStateException("Not enough cowboys");
-                }
-                return numberOfCowboys >= 4 ? 6 : 12;
-            default:
-                throw new IllegalArgumentException("Unsupported cattle type: " + cattleType);
+        Set<PossibleBuy> possiblePairs = Collections.emptySet();
+
+        if (considerPair) {
+            possiblePairs = possibleBuys.stream()
+                    .filter(pb -> pb.getBreedingValues().size() == 2)
+                    .filter(pb -> pb.getBreedingValues().get(0).equals(breedingValue) && pb.getBreedingValues().get(1).equals(breedingValue))
+                    .filter(pb -> pb.getCowboysNeeded() <= numberOfCowboys)
+                    .collect(Collectors.toSet());
         }
+
+        return Stream.concat(possiblePairs.stream(), possibleSingles.stream())
+                .filter(pb -> pb.getCowboysNeeded() <= numberOfCowboys);
     }
+
 
     public ImmediateActions buy(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
         // TODO
@@ -221,19 +214,11 @@ public class CattleMarket {
             this.cost = cost;
             this.cowboysNeeded = cowboysNeeded;
         }
+    }
 
-        public static PossibleBuy combine(PossibleBuy a, PossibleBuy b) {
-            return new PossibleBuy(Stream.concat(a.breedingValues.stream(), b.breedingValues.stream()).collect(Collectors.toList()), a.cost + b.cost, a.cowboysNeeded + b.cowboysNeeded);
-        }
-
-        private Set<Card.CattleCard> apply(Set<Card.CattleCard> cattleCards) {
-            Set<Card.CattleCard> result = new HashSet<>(cattleCards);
-            breedingValues.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-                    .forEach((breedingValue, count) -> result.removeAll(result.stream()
-                            .filter(cattleCard -> cattleCard.getType().getValue() == breedingValue)
-                            .limit(count)
-                            .collect(Collectors.toList())));
-            return result;
-        }
+    @Value
+    private static class Pair<T> {
+        T a;
+        T b;
     }
 }
