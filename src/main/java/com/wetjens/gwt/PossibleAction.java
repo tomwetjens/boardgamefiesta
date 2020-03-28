@@ -1,16 +1,8 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import lombok.Getter;
 
 public abstract class PossibleAction {
 
@@ -19,7 +11,11 @@ public abstract class PossibleAction {
     }
 
     public static PossibleAction any(Class<? extends Action>... actions) {
-        return new Any(Arrays.stream(actions)
+        return any(Arrays.stream(actions));
+    }
+
+    public static PossibleAction any(Stream<Class<? extends Action>> actions) {
+        return new Any(actions
                 .map(PossibleAction::of)
                 .collect(Collectors.toCollection(ArrayList::new)));
     }

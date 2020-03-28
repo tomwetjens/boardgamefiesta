@@ -1,9 +1,6 @@
 package com.wetjens.gwt;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -91,16 +88,51 @@ public class CattleMarket {
                         .map(b -> new Pair<>(a, b)));
     }
 
+    /**
+     * Calculates the minimum amount of dollars needed to buy specified cards with the specified number of cowboys.
+     *
+     * @param cattleCards The cards to buy.
+     * @param numberOfCowboys The number of cowboys available.
+     * @return Minimum amount of dollars.
+     */
     public int cost(Collection<Card.CattleCard> cattleCards, int numberOfCowboys) {
-        return cost(new ArrayList<>(market), cattleCards, numberOfCowboys);
+        return cost(cattleCards, numberOfCowboys, CostPreference.CHEAPER_COST).getDollars();
     }
 
-    public static int cost(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys) {
-        return costIfEnoughCowboys(cattleCardsRemaining, cattleCards, numberOfCowboys)
+    /**
+     * Calculates the minimum cost needed to buy the specified cards with the specified number of cowboys, based on the cost preference.
+     *
+     * @param cattleCards The cards to buy.
+     * @param numberOfCowboys The number of cowboys available.
+     * @param preference The cost preference: either calculate the minimum amount of dollars or the minimum amount of cowboys.
+     * @return The minimum cost based on the specified cost preference.
+     */
+    public Cost cost(Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
+        return cost(new ArrayList<>(market), cattleCards, numberOfCowboys, preference);
+    }
+
+    @Value
+    public static final class Cost {
+        int dollars;
+        int cowboys;
+    }
+
+    @AllArgsConstructor
+    public enum CostPreference {
+
+        CHEAPER_COST(Comparator.comparingInt(Cost::getDollars)),
+        LESS_COWBOYS(Comparator.comparingInt(Cost::getCowboys));
+
+        @Getter
+        private final Comparator<Cost> comparator;
+    }
+
+    private static Cost cost(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
+        return costIfEnoughCowboys(cattleCardsRemaining, cattleCards, numberOfCowboys, preference)
                 .orElseThrow(() -> new IllegalArgumentException("Not enough cowboys"));
     }
 
-    private static Optional<Integer> costIfEnoughCowboys(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys) {
+    private static Optional<Cost> costIfEnoughCowboys(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
         Map<Integer, List<Card.CattleCard>> groupedByBreedingValue = cattleCards.stream()
                 .distinct()
                 .collect(Collectors.groupingBy(cattleCard -> cattleCard.getType().getValue()));
@@ -119,24 +151,27 @@ public class CattleMarket {
 
                                 if (moreCardsToBuy) {
                                     List<Card.CattleCard> cardsBuying = cardsOfSameBreedingValue.subList(0, possibleBuy.getBreedingValues().size());
-                                    List<Card.CattleCard> marketAfterBuy = remove(cattleCardsRemaining, cardsBuying);
-                                    List<Card.CattleCard> cardsRemainingToBuy = remove(cattleCards, cardsBuying);
+                                    List<Card.CattleCard> marketAfterBuy = removeAll(cattleCardsRemaining, cardsBuying);
+                                    List<Card.CattleCard> cardsRemainingToBuy = removeAll(cattleCards, cardsBuying);
                                     int cowboysRemaining = numberOfCowboys - possibleBuy.getCowboysNeeded();
 
-                                    Optional<Integer> cost = costIfEnoughCowboys(marketAfterBuy, cardsRemainingToBuy, cowboysRemaining)
-                                            .map(furtherCost -> furtherCost + possibleBuy.getCost());
+                                    Optional<Cost> cost = costIfEnoughCowboys(marketAfterBuy, cardsRemainingToBuy, cowboysRemaining, preference)
+                                            .map(furtherCost -> new Cost(furtherCost.getDollars() + possibleBuy.getCost(), furtherCost.getCowboys() + possibleBuy.getCowboysNeeded()));
 
                                     return cost.stream();
                                 }
 
-                                return Stream.of(possibleBuy.getCost());
+                                return Stream.of(new Cost(possibleBuy.getCost(), possibleBuy.getCowboysNeeded()));
                             })
-                            .min(Integer::compareTo);
+                            .min(preference.getComparator());
                 });
     }
 
-    private static <T> List<T> remove(Collection<T> original, Collection<T> exclude) {
-        return original.stream().filter(e -> !exclude.contains(e)).collect(Collectors.toList());
+    private static List<Card.CattleCard> removeAll(Collection<Card.CattleCard> market, Collection<Card.CattleCard> buy) {
+        if (!market.containsAll(buy)) {
+            throw new IllegalArgumentException("Cattle cards must be available");
+        }
+        return market.stream().filter(e -> !buy.contains(e)).collect(Collectors.toList());
     }
 
     private static Stream<PossibleBuy> possible(List<Card.CattleCard> available, Integer breedingValue, boolean considerPair, int numberOfCowboys) {
@@ -165,18 +200,30 @@ public class CattleMarket {
                 .filter(pb -> pb.getCowboysNeeded() <= numberOfCowboys);
     }
 
-
     public ImmediateActions buy(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
-        // TODO
+        Cost cost = cost(cattleCards, numberOfCowboys, CostPreference.LESS_COWBOYS);
+
+        market.removeAll(cattleCards);
+
         //Any of the cowboys that you do not put to use buying a cattle card during this action may instead
         //be used to draw 2 cards from the market cattle stack and add them face up to the cattle market
-        return null;
+        int unusedCowboys = numberOfCowboys - cost.getCowboys();
+
+        if (unusedCowboys > 0) {
+            // TODO Now assumed unused cowboys can only be used after buying
+            return ImmediateActions.of(PossibleAction.any(IntStream.range(0, unusedCowboys).mapToObj(i -> Draw2CattleCards.class)));
+        }
+        return ImmediateActions.none();
     }
 
     public void fillUp() {
         while (market.size() < limit) {
-            market.add(drawStack.poll());
+            draw();
         }
+    }
+
+    private void draw() {
+        market.add(drawStack.poll());
     }
 
     private static Queue<Card.CattleCard> createDrawStack(Random random) {
@@ -221,4 +268,15 @@ public class CattleMarket {
         T a;
         T b;
     }
+
+    public static final class Draw2CattleCards extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.getCattleMarket().draw();
+            game.getCattleMarket().draw();
+
+            return ImmediateActions.none();
+        }
+    }
+
 }
