@@ -112,7 +112,7 @@ public class RailroadTrack {
         Set<Space> reachable = reachableSpacesForward(player, from, atLeast, atMost);
 
         if (!reachable.contains(to)) {
-            throw new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps");
+            throw new IllegalArgumentException("Space not reachable within " + atLeast + "src/test" + atMost + " steps");
         }
 
         playerSpaces.put(player, to);
@@ -193,7 +193,7 @@ public class RailroadTrack {
         Set<Space> reachable = reachableSpacesBackwards(player, from, atLeast, atMost);
 
         if (!reachable.contains(to)) {
-            throw new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps");
+            throw new IllegalArgumentException("Space not reachable within " + atLeast + "src/test" + atMost + " steps");
         }
 
         playerSpaces.put(player, to);

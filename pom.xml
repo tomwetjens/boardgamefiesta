@@ -6,7 +6,12 @@
 
     <groupId>com.wetjens.gwt</groupId>
     <artifactId>gwt</artifactId>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+
+    <modules>
+        <module>core</module>
+    </modules>
 
     <dependencies>
         <dependency>
