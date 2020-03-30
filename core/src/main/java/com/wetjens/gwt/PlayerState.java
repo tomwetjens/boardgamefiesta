@@ -17,6 +17,7 @@ import lombok.NonNull;
 
 public class PlayerState {
 
+    @Getter
     private final Player player;
     private final List<Card> drawStack;
     private final Set<Card> hand = new HashSet<>();
@@ -180,6 +181,10 @@ public class PlayerState {
         // TODO
     }
 
+    public Set<Card> getHand() {
+        return Collections.unmodifiableSet(hand);
+    }
+
     public boolean hasUnlocked(Unlockable unlockable) {
         return unlocked.getOrDefault(unlockable, 0) > 0;
     }
@@ -200,7 +205,7 @@ public class PlayerState {
         return hand.stream().anyMatch(card -> card instanceof ObjectiveCard);
     }
 
-    private class RemoveHazardForFree extends Action {
+    public class RemoveHazardForFree extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             // TODO
@@ -208,7 +213,7 @@ public class PlayerState {
         }
     }
 
-    private class PlaceCheapBuilding extends Action {
+    public class PlaceCheapBuilding extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             // TODO
@@ -216,7 +221,7 @@ public class PlayerState {
         }
     }
 
-    private class DiscardOneJerseyToGainCertificate extends Action {
+    public class DiscardOneJerseyToGainCertificate extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             // TODO
@@ -224,7 +229,7 @@ public class PlayerState {
         }
     }
 
-    private class DiscardOneJerseyToGainTwoDollars extends Action {
+    public class DiscardOneJerseyToGainTwoDollars extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             // TODO
@@ -232,7 +237,7 @@ public class PlayerState {
         }
     }
 
-    private class HireCheapWorker extends Action {
+    public class HireCheapWorker extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             // TODO
@@ -240,7 +245,7 @@ public class PlayerState {
         }
     }
 
-    private class DiscardOneJerseyToGainTwoCertificates extends Action {
+    public class DiscardOneJerseyToGainTwoCertificates extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             // TODO
@@ -248,7 +253,7 @@ public class PlayerState {
         }
     }
 
-    private class DiscardOneJerseyToGainFourDollars extends Action {
+    public class DiscardOneJerseyToGainFourDollars extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             // TODO

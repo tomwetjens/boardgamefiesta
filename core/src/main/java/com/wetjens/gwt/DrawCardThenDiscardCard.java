@@ -10,7 +10,7 @@ public abstract class DrawCardThenDiscardCard extends Action {
         }
     }
 
-    public static final class Draw2CardsThenDiscard2Cards extends Action {
+    public static final class Draw2CardsThenDiscard2Cards extends DrawCardThenDiscardCard {
         @Override
         public ImmediateActions perform(Game game) {
             game.currentPlayerState().drawCard();
@@ -19,7 +19,7 @@ public abstract class DrawCardThenDiscardCard extends Action {
         }
     }
 
-    public static class Draw3CardsThenDiscard3Cards extends Action {
+    public static class Draw3CardsThenDiscard3Cards extends DrawCardThenDiscardCard {
         @Override
         public ImmediateActions perform(Game game) {
             game.currentPlayerState().drawCard();

@@ -1,12 +1,6 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -14,14 +8,18 @@ import lombok.Value;
 
 public abstract class Location {
 
+    @Getter
+    private final String name;
+
     @NonNull
     private final Set<Location> next;
 
-    Location(Location... next) {
-        this.next = new HashSet<>(Arrays.asList(next));
+    Location(String name, Location... next) {
+        this.name = name;
+        this.next = new LinkedHashSet<>(Arrays.asList(next));
     }
 
-    Set<Location> getNext() {
+    public Set<Location> getNext() {
         return Collections.unmodifiableSet(next);
     }
 
@@ -39,10 +37,10 @@ public abstract class Location {
         return next.contains(to) || (isEmpty() && next.stream().anyMatch(between -> between.isDirect(to)));
     }
 
-    static final class Start extends Location {
+    public static final class Start extends Location {
 
         public Start(Location... next) {
-            super(next);
+            super("START", next);
         }
 
         @Override
@@ -51,20 +49,20 @@ public abstract class Location {
         }
     }
 
-    static final class BuildingLocation extends Location {
+    public static final class BuildingLocation extends Location {
 
         private final Class<? extends Action> riskAction;
 
         private Building building;
 
-        BuildingLocation(Location... next) {
-            super(next);
+        BuildingLocation(String name, Location... next) {
+            super(name, next);
 
             this.riskAction = null;
         }
 
-        BuildingLocation(Class<? extends Action> riskAction, Location... next) {
-            super(next);
+        BuildingLocation(String name, Class<? extends Action> riskAction, Location... next) {
+            super(name, next);
 
             this.riskAction = riskAction;
         }
@@ -94,7 +92,7 @@ public abstract class Location {
             return building != null;
         }
 
-        Optional<Building> getBuilding() {
+        public Optional<Building> getBuilding() {
             return Optional.ofNullable(building);
         }
 
@@ -204,7 +202,7 @@ public abstract class Location {
         }
     }
 
-    static final class HazardLocation extends Location {
+    public static final class HazardLocation extends Location {
 
         @NonNull
         @Getter
@@ -212,8 +210,8 @@ public abstract class Location {
 
         private Hazard hazard;
 
-        HazardLocation(@NonNull HazardType type, Location... next) {
-            super(next);
+        HazardLocation(@NonNull HazardType type, int number, Location... next) {
+            super(type + "-" + number, next);
             this.type = type;
         }
 
@@ -250,10 +248,10 @@ public abstract class Location {
         }
     }
 
-    static final class KansasCity extends Location {
+    public static final class KansasCity extends Location {
 
         KansasCity(Location... next) {
-            super(next);
+            super("KANSAS_CITY", next);
         }
 
         @Override
@@ -333,13 +331,14 @@ public abstract class Location {
         }
     }
 
-    static final class TeepeeLocation extends Location {
+    public static final class TeepeeLocation extends Location {
 
+        @Getter
         private final int reward;
         private Teepee teepee;
 
         TeepeeLocation(int reward, Location... next) {
-            super(next);
+            super("TEEPEE-" + reward, next);
             this.reward = reward;
         }
 

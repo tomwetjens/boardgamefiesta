@@ -23,6 +23,10 @@ public class CattleMarket {
         fillUp();
     }
 
+    public Set<Card.CattleCard> getMarket() {
+        return Collections.unmodifiableSet(market);
+    }
+
     /**
      * Calculates the options the player has for buying a single card or a pair of cards from the market.
      *

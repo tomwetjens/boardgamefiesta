@@ -16,11 +16,11 @@ class GameTest {
 
         assertThat(game.getCurrentPlayer()).isEqualTo(Player.YELLOW);
 
-        assertThat(game.getPossibleActions()).containsExactly(Move.class);
+        assertThat(game.possibleActions()).containsExactly(Move.class);
 
         game.perform(new Move(Collections.singletonList(game.getTrail().getBuildingLocation(NeutralBuilding.A.class))));
 
-        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(
+        assertThat(game.possibleActions()).containsExactlyInAnyOrder(
                 NeutralBuilding.A.DiscardOneGuernsey.class,
                 NeutralBuilding.A.HireWorker.class,
                 NeutralBuilding.A.HireSecondWorker.class,
@@ -28,7 +28,7 @@ class GameTest {
 
         game.perform(new NeutralBuilding.A.DiscardOneGuernsey());
 
-        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(
+        assertThat(game.possibleActions()).containsExactlyInAnyOrder(
                 PlayObjectiveCard.class,
                 NeutralBuilding.A.HireWorker.class,
                 NeutralBuilding.A.HireSecondWorker.class);

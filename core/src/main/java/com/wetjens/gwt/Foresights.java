@@ -1,5 +1,10 @@
 package com.wetjens.gwt;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+
 public class Foresights {
 
     private static final int NUM_COLUMNS = 3;
@@ -28,5 +33,9 @@ public class Foresights {
         spaces[columnIndex][rowIndex] = replacement;
 
         return tile;
+    }
+
+    public Collection<KansasCitySupply.Tile> choices(int columnIndex) {
+        return Collections.unmodifiableList(Arrays.asList(spaces[columnIndex]));
     }
 }

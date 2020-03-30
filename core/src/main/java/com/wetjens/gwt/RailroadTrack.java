@@ -17,7 +17,7 @@ public class RailroadTrack {
     private final Space.StartSpace start;
     @Getter
     private final Space.EndSpace end;
-    private final Map<Integer, Space.NormalSpace> normalSpaces = new HashMap<>();
+    private final Map<Integer, Space.NumberedSpace> normalSpaces = new HashMap<>();
     private final List<Space.TurnoutSpace> turnouts = new ArrayList<>(TURNOUTS.size());
     private final Map<Player, Space> playerSpaces = new EnumMap<>(Player.class);
 
@@ -26,9 +26,9 @@ public class RailroadTrack {
 
         end = new Space.EndSpace(MAX_SPACE, stations.get(stations.size() - 1));
 
-        Space.NormalSpace last = end;
+        Space.NumberedSpace last = end;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
-            Space.NormalSpace current = new Space.NormalSpace(number, Collections.singleton(last));
+            Space.NumberedSpace current = new Space.NumberedSpace(number, Collections.singleton(last));
 
             last.previous.add(current);
             last = current;
@@ -79,16 +79,20 @@ public class RailroadTrack {
         return Collections.unmodifiableList(stations);
     }
 
-    public Space.NormalSpace getSpace(int number) {
-        Space.NormalSpace normalSpace = normalSpaces.get(number);
-        if (normalSpace == null) {
+    public Space.NumberedSpace getSpace(int number) {
+        Space.NumberedSpace numberedSpace = normalSpaces.get(number);
+        if (numberedSpace == null) {
             throw new IllegalArgumentException("No such space: " + number);
         }
-        return normalSpace;
+        return numberedSpace;
     }
 
     public List<Space.TurnoutSpace> getTurnouts() {
         return Collections.unmodifiableList(turnouts);
+    }
+
+    public Set<Player> getPlayers() {
+        return Collections.unmodifiableSet(playerSpaces.keySet());
     }
 
     public Space current(Player player) {
@@ -185,6 +189,7 @@ public class RailroadTrack {
             throw new IllegalArgumentException("Must move at most 0..6, but was: " + atMost);
         }
 
+        // TODO Allow multiple players on start space
         if (playerAt(to).isPresent()) {
             throw new IllegalStateException("Another player already on space");
         }
@@ -237,23 +242,16 @@ public class RailroadTrack {
             return Collections.unmodifiableSet(previous);
         }
 
-        public static final class StartSpace extends Space {
-
-            private StartSpace(NormalSpace next) {
-                super(null, Collections.singleton(next));
-            }
-        }
-
-        public static class NormalSpace extends Space {
+        public static class NumberedSpace extends Space {
 
             @Getter
             private final int number;
 
-            private NormalSpace(int number, Collection<Space> next) {
+            private NumberedSpace(int number, Collection<Space> next) {
                 this(number, null, next);
             }
 
-            private NormalSpace(int number, Station station, Collection<Space> next) {
+            private NumberedSpace(int number, Station station, Collection<Space> next) {
                 super(station, next);
                 this.number = number;
             }
@@ -261,6 +259,13 @@ public class RailroadTrack {
             @Override
             public String toString() {
                 return "Space{" + number + '}';
+            }
+        }
+
+        public static final class StartSpace extends NumberedSpace {
+
+            private StartSpace(NumberedSpace next) {
+                super(0, Collections.singleton(next));
             }
         }
 
@@ -272,7 +277,7 @@ public class RailroadTrack {
             }
         }
 
-        public static final class EndSpace extends NormalSpace {
+        public static final class EndSpace extends NumberedSpace {
             public EndSpace(int number, Station station) {
                 super(number, station, Collections.emptySet());
             }

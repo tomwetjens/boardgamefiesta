@@ -3,7 +3,7 @@ package com.wetjens.gwt;
 import java.util.Optional;
 import java.util.Set;
 
-abstract class NeutralBuilding extends Building {
+public abstract class NeutralBuilding extends Building {
 
     protected NeutralBuilding() {
         super(Fee.NONE);
@@ -146,7 +146,7 @@ abstract class NeutralBuilding extends Building {
                     MoveEngineForward.class);
         }
 
-        private static class GainCertificate extends Action {
+        public static class GainCertificate extends Action {
             @Override
             public ImmediateActions perform(Game game) {
                 game.currentPlayerState().gainCertificates(1);

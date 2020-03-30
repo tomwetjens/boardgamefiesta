@@ -2,12 +2,12 @@ package com.wetjens.gwt;
 
 import lombok.Getter;
 
-abstract class Building {
+public abstract class Building {
 
     @Getter
     private final Fee fee;
 
-    protected Building(Fee fee) {
+    Building(Fee fee) {
         this.fee = fee;
     }
 

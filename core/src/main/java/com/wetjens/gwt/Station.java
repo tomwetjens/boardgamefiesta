@@ -2,6 +2,7 @@ package com.wetjens.gwt;
 
 import lombok.ToString;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -16,7 +17,7 @@ public class Station {
     private StationMaster stationMaster;
     private Worker worker;
 
-    private final Set<Player> upgradedBy = new HashSet<>();
+    private final Set<Player> players = new HashSet<>();
 
     public Station(int cost, int points, DiscColor discColor, StationMaster stationMaster) {
         this.cost = cost;
@@ -34,6 +35,10 @@ public class Station {
     }
 
     public boolean hasUpgraded(Player player) {
-        return upgradedBy.contains(player);
+        return players.contains(player);
+    }
+
+    public Set<Player> getPlayers() {
+        return Collections.unmodifiableSet(players);
     }
 }

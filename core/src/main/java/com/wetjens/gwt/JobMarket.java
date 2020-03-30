@@ -1,9 +1,6 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 import lombok.Getter;
@@ -76,6 +73,7 @@ public class JobMarket {
 
         @Getter
         private final int cost;
+        @Getter
         private final boolean cattleMarket;
         private final List<Worker> workers;
 
@@ -87,6 +85,10 @@ public class JobMarket {
             this.cost = cost;
             this.cattleMarket = cattleMarket;
             this.workers = new ArrayList<>(rowLimit);
+        }
+
+        public List<Worker> getWorkers() {
+            return Collections.unmodifiableList(workers);
         }
     }
 }

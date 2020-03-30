@@ -63,9 +63,9 @@ public class Game {
         PlayerBuilding.VariantSet buildings = PlayerBuilding.VariantSet.firstGame();
 
         this.playerStates = new EnumMap<>(Player.class);
-        for (int i = 0; i < this.players.size(); i++) {
-            Player player = this.players.get(0);
-            this.playerStates.put(player, new PlayerState(player, 6 + i, random, buildings.createPlayerBuildings(player)));
+        int startBalance = 6;
+        for (Player player : players) {
+            this.playerStates.put(player, new PlayerState(player, startBalance++, random, buildings.createPlayerBuildings(player)));
         }
 
         this.currentPlayer = this.players.get(0);
@@ -95,17 +95,17 @@ public class Game {
 
     private void placeInitialTile(KansasCitySupply.Tile tile) {
         if (tile.getHazard() != null) {
-            trail.getHazardLocations()
+            trail.getHazardLocations(tile.getHazard().getType()).stream()
                     .filter(Location.HazardLocation::isEmpty)
                     .findFirst().ifPresent(hazardLocation -> hazardLocation.placeHazard(tile.getHazard()));
         } else {
-            trail.getTeepeeLocations()
+            trail.getTeepeeLocations().stream()
                     .filter(Location.TeepeeLocation::isEmpty)
                     .findFirst().ifPresent(teepeeLocation -> teepeeLocation.placeTeepee(tile.getTeepee()));
         }
     }
 
-    public void perform(Action action) {
+    public void perform(@NonNull Action action) {
         if (action.isArbitrary()) {
             if (actionQueue.first().isImmediate()) {
                 throw new IllegalStateException("Not allowed to perform arbitrary action when there is an immediate action to be performed first");
@@ -136,7 +136,7 @@ public class Game {
         return playerState(currentPlayer);
     }
 
-    PlayerState playerState(Player player) {
+    public PlayerState playerState(Player player) {
         return playerStates.get(player);
     }
 
@@ -144,7 +144,7 @@ public class Game {
         return Collections.unmodifiableList(players);
     }
 
-    public Set<Class<? extends Action>> getPossibleActions() {
+    public Set<Class<? extends Action>> possibleActions() {
         Set<Class<? extends Action>> possibleActions = actionQueue.getPossibleActions();
 
         if (!actionQueue.first().isImmediate() && currentPlayerState().canPlayObjectiveCard()) {
@@ -158,6 +158,10 @@ public class Game {
 
     public ObjectiveCard takeObjectiveCard() {
         return objectiveCards.poll();
+    }
+
+    public Set<ObjectiveCard> getObjectiveCards() {
+        return Collections.emptySet();
     }
 
     public RailroadTrack getRailroadTrack() {
