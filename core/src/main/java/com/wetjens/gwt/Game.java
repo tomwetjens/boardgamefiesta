@@ -130,6 +130,8 @@ public class Game {
     public void endTurn() {
         actionStack.skip();
 
+        currentPlayerState().drawUpToHandLimit();
+
         currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
     }
 

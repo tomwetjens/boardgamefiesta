@@ -1,25 +1,16 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import lombok.Getter;
 import lombok.NonNull;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class PlayerState {
 
     @Getter
     private final Player player;
-    private final List<Card> drawStack;
+    private final Queue<Card> drawStack;
     private final Set<Card> hand = new HashSet<>();
     private final List<Card> discardPile = new LinkedList<>();
     private final Map<Worker, Integer> workers = new EnumMap<>(Worker.class);
@@ -41,8 +32,9 @@ public class PlayerState {
         this.player = player;
         this.balance = balance;
 
-        this.drawStack = createStartingDeck();
-        Collections.shuffle(this.drawStack, random);
+        LinkedList<Card> startingDeck = new LinkedList<>(createStartingDeck());
+        Collections.shuffle(startingDeck, random);
+        this.drawStack = startingDeck;
 
         this.workers.put(Worker.COWBOY, 1);
         this.workers.put(Worker.CRAFTSMAN, 1);
@@ -61,18 +53,22 @@ public class PlayerState {
         certificates += amount;
     }
 
-    private void drawUpToHandLimit() {
-        draw(handLimit - hand.size());
+    void drawUpToHandLimit() {
+        while (hand.size() < handLimit && drawStack.size() + discardPile.size() > 0) {
+            drawCard();
+        }
     }
 
-    private void draw(int count) {
-        if (hand.size() + count > handLimit) {
-            throw new IllegalArgumentException("Drawing " + count + " cards would exceed hand limit");
+    void drawCard() {
+        if (drawStack.isEmpty()) {
+            Collections.shuffle(discardPile);
+            drawStack.addAll(discardPile);
+            discardPile.clear();
         }
 
-        List<Card> take = drawStack.subList(0, 4);
-        hand.addAll(take);
-        take.clear(); // removes from draw stack
+        if (drawStack.isEmpty()) {
+            hand.add(drawStack.poll());
+        }
     }
 
     private static List<Card> createStartingDeck() {
@@ -93,11 +89,11 @@ public class PlayerState {
                 new Card.CattleCard(CattleType.GUERNSEY, 0)));
     }
 
-    public void gainCard(Card card) {
+    void gainCard(Card card) {
         discardPile.add(card);
     }
 
-    public void discardCattleCards(CattleType type, int amount) {
+    void discardCattleCards(CattleType type, int amount) {
         Set<Card.CattleCard> cattleCards = hand.stream().filter(card -> card instanceof Card.CattleCard)
                 .map(card -> (Card.CattleCard) card)
                 .filter(cattleCard -> cattleCard.getType() == type)
@@ -113,18 +109,18 @@ public class PlayerState {
         discardPile.addAll(cattleCards);
     }
 
-    public void gainDollars(int amount) {
+    void gainDollars(int amount) {
         balance += amount;
     }
 
-    public void payDollars(int amount) {
+    void payDollars(int amount) {
         if (balance < amount) {
             throw new IllegalArgumentException("Not enough balance to pay " + amount);
         }
         balance -= amount;
     }
 
-    public ImmediateActions gainWorker(Worker worker) {
+    ImmediateActions gainWorker(Worker worker) {
         int count = workers.compute(worker, (k, v) -> v + 1);
 
         if (worker == Worker.COWBOY) {
@@ -135,19 +131,19 @@ public class PlayerState {
             }
         } else if (worker == Worker.CRAFTSMAN) {
             if (count == 4 || count == 6) {
-                return ImmediateActions.of(PossibleAction.optional(PlaceCheapBuilding.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.PlaceCheapBuilding.class));
             }
         } else {
             if (count == 2) {
-                return ImmediateActions.of(PossibleAction.optional(DiscardOneJerseyToGainCertificate.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.DiscardOneJerseyToGainCertificate.class));
             } else if (count == 3) {
-                return ImmediateActions.of(PossibleAction.optional(DiscardOneJerseyToGainTwoDollars.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.DiscardOneJerseyToGainTwoDollars.class));
             } else if (count == 4) {
-                return ImmediateActions.of(PossibleAction.optional(HireCheapWorker.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.HireCheapWorker.class));
             } else if (count == 5) {
-                return ImmediateActions.of(PossibleAction.optional(DiscardOneJerseyToGainTwoCertificates.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.DiscardOneJerseyToGainTwoCertificates.class));
             } else if (count == 6) {
-                return ImmediateActions.of(PossibleAction.optional(DiscardOneJerseyToGainFourDollars.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.DiscardOneJerseyToGainFourDollars.class));
             }
         }
         return ImmediateActions.none();
@@ -165,7 +161,7 @@ public class PlayerState {
         return buildings.contains(building);
     }
 
-    public void removeBuilding(PlayerBuilding building) {
+    void removeBuilding(PlayerBuilding building) {
         if (!buildings.remove(building)) {
             throw new IllegalStateException("Building not available for player");
         }
@@ -175,12 +171,22 @@ public class PlayerState {
         return workers.get(Worker.ENGINEER);
     }
 
-    public void discardCard(Card card) {
-        // TODO
+    void discardCard(Card card) {
+        if (!hand.remove(card)) {
+            throw new IllegalArgumentException("Card must be in hand");
+        }
+
+        discardPile.add(card);
     }
 
-    public void drawCard() {
-        // TODO
+    void unlockExtraCard() {
+        if (handLimit == 6) {
+            throw new IllegalStateException("Already at max hand limit");
+        }
+
+        payDollars(5);
+
+        handLimit++;
     }
 
     public Set<Card> getHand() {
@@ -237,7 +243,7 @@ public class PlayerState {
         return actions;
     }
 
-    public ImmediateActions playObjectiveCard(ObjectiveCard objectiveCard) {
+    ImmediateActions playObjectiveCard(ObjectiveCard objectiveCard) {
         if (!hand.remove(objectiveCard)) {
             throw new IllegalStateException("Objective card not in hand");
         }
@@ -245,7 +251,7 @@ public class PlayerState {
         return ImmediateActions.of(objectiveCard.getPossibleAction());
     }
 
-    public boolean canPlayObjectiveCard() {
+    boolean canPlayObjectiveCard() {
         return hand.stream().anyMatch(card -> card instanceof ObjectiveCard);
     }
 
@@ -257,63 +263,16 @@ public class PlayerState {
         workers.computeIfPresent(worker, (k, v) -> v - 1);
     }
 
-    public void addStationMaster(StationMaster stationMaster) {
+    void addStationMaster(StationMaster stationMaster) {
         stationMasters.add(stationMaster);
     }
 
-    public void addTeepee(Teepee teepee) {
+    void addTeepee(Teepee teepee) {
         teepees.add(teepee);
     }
 
-    public void removeCards(Set<Card> cards) {
+    void removeCards(Set<Card> cards) {
         hand.removeAll(cards);
     }
 
-    public class PlaceCheapBuilding extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
-        }
-    }
-
-    public class DiscardOneJerseyToGainCertificate extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
-        }
-    }
-
-    public class DiscardOneJerseyToGainTwoDollars extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
-        }
-    }
-
-    public class HireCheapWorker extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
-        }
-    }
-
-    public class DiscardOneJerseyToGainTwoCertificates extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
-        }
-    }
-
-    public class DiscardOneJerseyToGainFourDollars extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
-        }
-    }
 }

@@ -2,6 +2,7 @@ package com.wetjens.gwt;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import lombok.AllArgsConstructor;
@@ -322,6 +323,169 @@ public abstract class Action {
         public ImmediateActions perform(Game game) {
             // TODO
             return null;
+        }
+    }
+
+    public static final class DiscardOneGuernsey extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            PlayerState playerState = game.currentPlayerState();
+            playerState.discardCattleCards(CattleType.GUERNSEY, 1);
+            playerState.gainDollars(2);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static class HireWorker extends Action {
+
+        private final Worker worker;
+        private final int modifier;
+
+        public HireWorker(Worker worker) {
+            this(worker, 0);
+        }
+
+        protected HireWorker(Worker worker, int modifier) {
+            this.worker = worker;
+            this.modifier = modifier;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            int cost = game.getJobMarket().cost(worker) + modifier;
+
+            game.currentPlayerState().payDollars(cost);
+
+            game.getJobMarket().takeWorker(worker);
+
+            return game.currentPlayerState().gainWorker(worker);
+        }
+    }
+
+    public static final class HireSecondWorker extends HireWorker {
+        public HireSecondWorker(Worker worker) {
+            super(worker, 2);
+        }
+    }
+
+    public static final class PlaceCheapBuilding extends PlaceBuilding {
+        public PlaceCheapBuilding(Location.BuildingLocation location, PlayerBuilding building) {
+            super(location, building, 1);
+        }
+    }
+
+    public static final class DiscardOneJerseyToGainCertificate extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            // TODO
+            return null;
+        }
+    }
+
+    public static final class DiscardOneJerseyToGainTwoDollars extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            // TODO
+            return null;
+        }
+    }
+
+    public static final class HireCheapWorker extends HireWorker {
+        public HireCheapWorker(Worker worker) {
+            super(worker, -1);
+        }
+    }
+
+    public static final class DiscardOneJerseyToGainTwoCertificates extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            // TODO
+            return null;
+        }
+    }
+
+    public static final class DiscardOneJerseyToGainFourDollars extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            // TODO
+            return null;
+        }
+    }
+
+    public static final class DiscardOneDutchBelt extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            PlayerState playerState = game.currentPlayerState();
+            playerState.discardCattleCards(CattleType.DUTCH_BELT, 1);
+            playerState.gainDollars(2);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static class PlaceBuilding extends Action {
+        private final int costPerCraftsman;
+        private final Location.BuildingLocation location;
+        private final PlayerBuilding building;
+
+        public PlaceBuilding(Location.BuildingLocation location, PlayerBuilding building) {
+            this(location, building, 2);
+        }
+
+        PlaceBuilding(Location.BuildingLocation location, PlayerBuilding building, int costPerCraftsman) {
+            this.location = location;
+            this.building = building;
+            this.costPerCraftsman = costPerCraftsman;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            if (!game.currentPlayerState().hasAvailable(building)) {
+                throw new IllegalStateException("Building not available for player");
+            }
+
+            int craftsmenNeeded = craftsmenNeeded();
+
+            if (craftsmenNeeded > game.currentPlayerState().getNumberOfCraftsmen()) {
+                throw new IllegalStateException("Not enough craftsmen");
+            }
+
+            int cost = craftsmenNeeded * costPerCraftsman;
+            game.currentPlayerState().payDollars(cost);
+            game.currentPlayerState().removeBuilding(building);
+
+            location.placeBuilding(building);
+
+            return ImmediateActions.none();
+        }
+
+        private int craftsmenNeeded() {
+            return existingBuildingToReplace()
+                    // If replacing an existing building, only the difference is needed
+                    .filter(existingBuilding -> {
+                        if (existingBuilding.getCraftsmen() > building.getCraftsmen()) {
+                            throw new IllegalStateException("Replacement building must be higher valued that existing building");
+                        }
+                        return true;
+                    })
+                    .map(existingBuilding -> building.getCraftsmen() - existingBuilding.getCraftsmen())
+                    .orElse(building.getCraftsmen());
+        }
+
+        private Optional<PlayerBuilding> existingBuildingToReplace() {
+            return location.getBuilding()
+                    .filter(existingBuilding -> {
+                        if (!(existingBuilding instanceof PlayerBuilding)) {
+                            throw new IllegalStateException("Can only replace a player building");
+                        }
+                        return true;
+                    })
+                    .map(existingBuilding -> (PlayerBuilding) existingBuilding)
+                    .filter(existingBuilding -> {
+                        if (existingBuilding.getPlayer() != building.getPlayer()) {
+                            throw new IllegalStateException("Can only replace building of same player");
+                        }
+                        return true;
+                    });
         }
     }
 }

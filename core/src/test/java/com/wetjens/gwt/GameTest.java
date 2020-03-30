@@ -21,17 +21,17 @@ class GameTest {
         game.perform(new Move(Collections.singletonList(game.getTrail().getBuildingLocation(NeutralBuilding.A.class))));
 
         assertThat(game.possibleActions()).containsExactlyInAnyOrder(
-                NeutralBuilding.A.DiscardOneGuernsey.class,
-                NeutralBuilding.A.HireWorker.class,
-                NeutralBuilding.A.HireSecondWorker.class,
+                Action.DiscardOneGuernsey.class,
+                Action.HireWorker.class,
+                Action.HireSecondWorker.class,
                 Action.SingleAuxiliaryAction.class);
 
-        game.perform(new NeutralBuilding.A.DiscardOneGuernsey());
+        game.perform(new Action.DiscardOneGuernsey());
 
         assertThat(game.possibleActions()).containsExactlyInAnyOrder(
                 PlayObjectiveCard.class,
-                NeutralBuilding.A.HireWorker.class,
-                NeutralBuilding.A.HireSecondWorker.class);
+                Action.HireWorker.class,
+                Action.HireSecondWorker.class);
     }
 
     @Nested
