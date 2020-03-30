@@ -1,7 +1,6 @@
 package com.wetjens.gwt;
 
 import java.util.Optional;
-import java.util.Set;
 
 public abstract class NeutralBuilding extends Building {
 
@@ -142,8 +141,8 @@ public abstract class NeutralBuilding extends Building {
         @Override
         public PossibleAction getPossibleAction() {
             return PossibleAction.any(
-                    PossibleAction.choice(C.GainCertificate.class, GainObjectiveCard.class),
-                    MoveEngineForward.class);
+                    PossibleAction.choice(C.GainCertificate.class, Action.GainObjectiveCard.class),
+                    Action.MoveEngineForward.class);
         }
 
         public static class GainCertificate extends Action {
@@ -160,23 +159,8 @@ public abstract class NeutralBuilding extends Building {
         @Override
         public PossibleAction getPossibleAction() {
             return PossibleAction.any(
-                    PossibleAction.choice(TradeWithIndians.class, Pay2DollarsToMoveEngine2SpacesForward.class),
-                    SingleOrDoubleAuxiliaryAction.class);
-        }
-
-        public static final class Pay2DollarsToMoveEngine2SpacesForward extends Action {
-            private final RailroadTrack.Space to;
-
-            public Pay2DollarsToMoveEngine2SpacesForward(RailroadTrack.Space to) {
-                this.to = to;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().payDollars(2);
-
-                return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 2);
-            }
+                    PossibleAction.choice(Action.TradeWithIndians.class, Action.Pay2DollarsToMoveEngine2SpacesForward.class),
+                    Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }
 
@@ -184,7 +168,7 @@ public abstract class NeutralBuilding extends Building {
 
         @Override
         public PossibleAction getPossibleAction() {
-            return PossibleAction.any(Discard1BlackAngusToGain2Dollars.class, BuyCattle.class);
+            return PossibleAction.any(Discard1BlackAngusToGain2Dollars.class, Action.BuyCattle.class);
         }
 
         public static final class Discard1BlackAngusToGain2Dollars extends Action {
@@ -193,24 +177,6 @@ public abstract class NeutralBuilding extends Building {
                 game.currentPlayerState().discardCattleCards(CattleType.BLACK_ANGUS, 1);
                 game.currentPlayerState().gainDollars(2);
                 return ImmediateActions.none();
-            }
-        }
-
-        public static final class BuyCattle extends Action {
-
-            private final Set<Card.CattleCard> cattleCards;
-
-            public BuyCattle(Set<Card.CattleCard> cattleCards) {
-                this.cattleCards = cattleCards;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                int cost = game.getCattleMarket().cost(cattleCards, game.currentPlayerState().getNumberOfCowboys());
-
-                game.currentPlayerState().payDollars(cost);
-
-                return game.getCattleMarket().buy(cattleCards, game.currentPlayerState().getNumberOfCowboys());
             }
         }
     }
@@ -259,7 +225,7 @@ public abstract class NeutralBuilding extends Building {
 
         @Override
         public PossibleAction getPossibleAction() {
-            return PossibleAction.any(MoveEngineForward.class, SingleOrDoubleAuxiliaryAction.class);
+            return PossibleAction.any(Action.MoveEngineForward.class, Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }
 }

@@ -71,9 +71,9 @@ public abstract class Location {
         Optional<PossibleAction> getPossibleAction() {
             if (building != null) {
                 if (riskAction != null) {
-                    return Optional.of(PossibleAction.choice(building.getPossibleAction(), riskAction, SingleAuxiliaryAction.class));
+                    return Optional.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(), riskAction, Action.SingleAuxiliaryAction.class)));
                 } else {
-                    return Optional.of(PossibleAction.choice(building.getPossibleAction(), SingleAuxiliaryAction.class));
+                    return Optional.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(), Action.SingleAuxiliaryAction.class)));
                 }
             }
             return Optional.empty();
@@ -120,86 +120,6 @@ public abstract class Location {
             }
             this.building = building;
         }
-
-        public static class SingleAuxiliaryAction extends Action {
-            @Override
-            public ImmediateActions perform(Game game) {
-                return ImmediateActions.of(PossibleAction.choice(unlockedActions(game.currentPlayerState())));
-            }
-
-            protected Set<Class<? extends Action>> unlockedActions(PlayerState playerState) {
-                Set<Class<? extends Action>> actions = new HashSet<>();
-                if (playerState.hasUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
-                    actions.add(Gain1Dollars.class);
-                }
-                if (playerState.hasUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-                    actions.add(DrawCardThenDiscardCard.Draw1CardThenDiscard1Card.class);
-                }
-                if (playerState.hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
-                    actions.add(Pay1DollarAndMoveEngine1SpaceBackwardsToGain1Certificate.class);
-                }
-                if (playerState.hasUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
-                    actions.add(Pay1DollarToMoveEngine1SpaceForward.class);
-                }
-                if (playerState.hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
-                    actions.add(MoveEngine1SpaceBackwardsToRemove1Card.class);
-                }
-                return actions;
-            }
-
-            public static final class Gain1Dollars extends Action {
-                @Override
-                public ImmediateActions perform(Game game) {
-                    game.currentPlayerState().gainDollars(1);
-                    return ImmediateActions.none();
-                }
-            }
-
-            public static final class Pay1DollarAndMoveEngine1SpaceBackwardsToGain1Certificate extends Action {
-                private final RailroadTrack.Space to;
-
-                public Pay1DollarAndMoveEngine1SpaceBackwardsToGain1Certificate(RailroadTrack.Space to) {
-                    this.to = to;
-                }
-
-                @Override
-                public ImmediateActions perform(Game game) {
-                    game.currentPlayerState().payDollars(1);
-                    ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
-                    // TODO Check if gaining certificate AFTER possible immediate actions from railroad track is OK
-                    game.currentPlayerState().gainCertificates(1);
-                    return immediateActions;
-                }
-            }
-
-            public static final class Pay1DollarToMoveEngine1SpaceForward extends Action {
-                private final RailroadTrack.Space to;
-
-                public Pay1DollarToMoveEngine1SpaceForward(RailroadTrack.Space to) {
-                    this.to = to;
-                }
-
-                @Override
-                public ImmediateActions perform(Game game) {
-                    game.currentPlayerState().payDollars(1);
-                    return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 1);
-                }
-            }
-
-            public static final class MoveEngine1SpaceBackwardsToRemove1Card extends Action {
-                private final RailroadTrack.Space to;
-
-                public MoveEngine1SpaceBackwardsToRemove1Card(RailroadTrack.Space to) {
-                    this.to = to;
-                }
-
-                @Override
-                public ImmediateActions perform(Game game) {
-                    return game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1)
-                            .andThen(PossibleAction.of(Remove1Card.class));
-                }
-            }
-        }
     }
 
     public static final class HazardLocation extends Location {
@@ -222,7 +142,7 @@ public abstract class Location {
         @Override
         Optional<PossibleAction> getPossibleAction() {
             if (hazard != null) {
-                return Optional.of(PossibleAction.any(BuildingLocation.SingleAuxiliaryAction.class));
+                return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }
             return Optional.empty();
         }
@@ -256,7 +176,7 @@ public abstract class Location {
 
         @Override
         Optional<PossibleAction> getPossibleAction() {
-            return Optional.of(PossibleAction.of(ChooseForesights.class));
+            return Optional.of(PossibleAction.mandatory(ChooseForesights.class));
         }
 
         @Override
@@ -323,7 +243,7 @@ public abstract class Location {
 
                 // TODO
                 if (city == City.SAN_FRANCISCO) {
-                    return ImmediateActions.of(PossibleAction.of(GainObjectiveCard.class));
+                    return ImmediateActions.of(PossibleAction.optional(GainObjectiveCard.class));
                 }
 
                 return ImmediateActions.none();
@@ -345,7 +265,7 @@ public abstract class Location {
         @Override
         public Optional<PossibleAction> getPossibleAction() {
             if (teepee != null) {
-                return Optional.of(PossibleAction.any(BuildingLocation.SingleAuxiliaryAction.class));
+                return Optional.of(PossibleAction.any(Action.SingleAuxiliaryAction.class));
             }
             return Optional.empty();
         }
@@ -355,11 +275,22 @@ public abstract class Location {
             return teepee != null;
         }
 
+        public Optional<Teepee> getTeepee() {
+            return Optional.ofNullable(teepee);
+        }
+
         public void placeTeepee(@NonNull Teepee teepee) {
             if (this.teepee != null) {
                 throw new IllegalStateException("Location already has a teepee");
             }
             this.teepee = teepee;
+        }
+
+        public void removeTeepee() {
+            if (this.teepee == null) {
+                throw new IllegalStateException("No teepee at location");
+            }
+            this.teepee = null;
         }
     }
 }

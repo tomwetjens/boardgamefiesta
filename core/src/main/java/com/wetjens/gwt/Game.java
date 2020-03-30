@@ -40,12 +40,10 @@ public class Game {
 
     private final Queue<ObjectiveCard> objectiveCards;
 
-    private final ActionQueue actionQueue;
+    private final ActionStack actionStack;
 
     @Getter
     private Player currentPlayer;
-
-    private Phase phase;
 
     public Game(@NonNull Collection<Player> players, Random random) {
         if (players.size() < 2) {
@@ -83,8 +81,7 @@ public class Game {
 
         this.objectiveCards = ObjectiveCard.randomDeck(random);
 
-        this.phase = Phase.MOVE;
-        this.actionQueue = new ActionQueue(Move.class);
+        this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Move.class)));
     }
 
     private void placeInitialTiles() {
@@ -106,30 +103,34 @@ public class Game {
     }
 
     public void perform(@NonNull Action action) {
-        if (action.isArbitrary()) {
-            if (actionQueue.first().isImmediate()) {
-                throw new IllegalStateException("Not allowed to perform arbitrary action when there is an immediate action to be performed first");
+        if (action.canPlayAnyTime()) {
+            if (!actionStack.isEmpty() && actionStack.peek().isImmediate()) {
+                throw new IllegalStateException("Immediate action to be performed first");
             }
 
             ImmediateActions immediateActions = action.perform(this);
-            actionQueue.addFirst(immediateActions.getActions());
+            actionStack.push(immediateActions.getActions());
         } else {
-            if (!actionQueue.canPerform(action.getClass())) {
+            if (!actionStack.canPerform(action.getClass())) {
                 throw new IllegalStateException("Not allowed to perform action");
             }
 
             ImmediateActions immediateActions = action.perform(this);
-            actionQueue.perform(action.getClass());
-            actionQueue.addFirst(immediateActions.getActions());
+            actionStack.perform(action.getClass());
+            actionStack.push(immediateActions.getActions());
         }
 
-        if (phase == Phase.MOVE) {
-            phase = Phase.ACTIONS;
+        if (actionStack.isEmpty() && !currentPlayerState().canPlayObjectiveCard()) {
+            // Can only automatically end turn when no actions remaining,
+            // and player cannot (optionally) play an objective card
+            endTurn();
         }
     }
 
-    public void skip(Class<? extends Action> action) {
-        actionQueue.skip(action);
+    public void endTurn() {
+        actionStack.skip();
+
+        currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
     }
 
     PlayerState currentPlayerState() {
@@ -145,9 +146,9 @@ public class Game {
     }
 
     public Set<Class<? extends Action>> possibleActions() {
-        Set<Class<? extends Action>> possibleActions = actionQueue.getPossibleActions();
+        Set<Class<? extends Action>> possibleActions = actionStack.getPossibleActions();
 
-        if (!actionQueue.first().isImmediate() && currentPlayerState().canPlayObjectiveCard()) {
+        if (!actionStack.peek().isImmediate() && currentPlayerState().canPlayObjectiveCard()) {
             possibleActions = new HashSet<>(possibleActions);
             possibleActions.add(PlayObjectiveCard.class);
             return Collections.unmodifiableSet(possibleActions);

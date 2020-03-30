@@ -1,63 +1,98 @@
 package com.wetjens.gwt;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class PossibleAction {
 
-    public static PossibleAction of(Class<? extends Action> action) {
+    /**
+     * Player MUST perform the action and cannot skip it.
+     */
+    public static PossibleAction mandatory(Class<? extends Action> action) {
         return new Single(action);
     }
 
+    /**
+     * Player MAY perform the action or skip it.
+     */
     public static PossibleAction optional(Class<? extends Action> action) {
         return any(action);
     }
 
-    public static PossibleAction any(Class<? extends Action>... actions) {
-        return any(Arrays.stream(actions));
+    /**
+     * Player MAY perform the action or skip it.
+     */
+    public static PossibleAction optional(PossibleAction possibleAction) {
+        return any(possibleAction);
     }
 
-    public static PossibleAction any(Stream<Class<? extends Action>> actions) {
-        return new Any(actions
-                .map(PossibleAction::of)
+    /**
+     * Player MAY perform none, a single, some or all of the options in ANY order.
+     */
+    public static PossibleAction any(Class<? extends Action>... actions) {
+        return any(Arrays.asList(actions));
+    }
+
+    /**
+     * Player MAY perform none, a single, some or all of the options in ANY order.
+     */
+    public static PossibleAction any(Collection<Class<? extends Action>> actions) {
+        return new Any(actions.stream()
+                .map(PossibleAction::optional)
                 .collect(Collectors.toCollection(ArrayList::new)));
     }
 
+    /**
+     * Player MAY perform none, a single, some or all of the options in ANY order.
+     */
     public static PossibleAction any(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Any(Stream.concat(
                 Stream.of(possibleAction),
-                Arrays.stream(actions).map(PossibleAction::of))
+                Arrays.stream(actions).map(PossibleAction::optional))
                 .collect(Collectors.toCollection(ArrayList::new)));
     }
 
+    /**
+     * Player MUST perform EXACTLY ONE of the options.
+     */
     public static PossibleAction choice(Class<? extends Action>... actions) {
         return choice(Arrays.asList(actions));
     }
 
+    /**
+     * Player MUST perform EXACTLY ONE of the options.
+     */
     public static PossibleAction choice(Collection<Class<? extends Action>> actions) {
         return new Choice(actions.stream()
-                .map(PossibleAction::of)
+                .map(PossibleAction::optional)
                 .collect(Collectors.toCollection(HashSet::new)));
     }
 
+    /**
+     * Player MUST perform EXACTLY ONE of the options.
+     */
     public static PossibleAction choice(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Choice(Stream.concat(Stream.of(possibleAction), Arrays.stream(actions)
-                .map(PossibleAction::of))
+                .map(PossibleAction::optional))
                 .collect(Collectors.toCollection(HashSet::new)));
     }
 
     public abstract void perform(Class<? extends Action> action);
 
-    public abstract void skip(Class<? extends Action> action);
+    public abstract void skip();
 
     public abstract boolean isFinal();
 
     public abstract boolean isImmediate();
 
     public abstract boolean canPerform(Class<? extends Action> action);
-
-    public abstract boolean canSkip(Class<? extends Action> action);
 
     public abstract Set<Class<? extends Action>> getPossibleActions();
 
@@ -75,8 +110,8 @@ public abstract class PossibleAction {
         }
 
         @Override
-        public void skip(Class<? extends Action> action) {
-            throw new IllegalStateException("Cannot skip");
+        public void skip() {
+            throw new IllegalArgumentException("Not allowed to skip action");
         }
 
         @Override
@@ -87,11 +122,6 @@ public abstract class PossibleAction {
         @Override
         public boolean canPerform(Class<? extends Action> action) {
             return action.equals(this.action);
-        }
-
-        @Override
-        public boolean canSkip(Class<? extends Action> action) {
-            return false;
         }
 
         @Override
@@ -125,21 +155,8 @@ public abstract class PossibleAction {
         }
 
         @Override
-        public void skip(Class<? extends Action> action) {
-            PossibleAction element = check(action);
-
-            if (element.canSkip(action)) {
-                throw new IllegalArgumentException("Not allowed to skip action");
-            }
-
-            element.skip(action);
-
-            if (element.isFinal()) {
-                actions.remove(element);
-            }
-
-            // Remove all repeating occurrences
-            actions.removeIf(fa -> fa.equals(element));
+        public void skip() {
+            actions.clear();
         }
 
         private PossibleAction check(Class<? extends Action> action) {
@@ -156,11 +173,6 @@ public abstract class PossibleAction {
 
         @Override
         public boolean canPerform(Class<? extends Action> action) {
-            return actions.stream().anyMatch(fa -> fa.canPerform(action));
-        }
-
-        @Override
-        public boolean canSkip(Class<? extends Action> action) {
             return actions.stream().anyMatch(fa -> fa.canPerform(action));
         }
 
@@ -202,17 +214,8 @@ public abstract class PossibleAction {
         }
 
         @Override
-        public void skip(Class<? extends Action> action) {
-            PossibleAction element = check(action);
-
-            if (element.canSkip(action)) {
-                throw new IllegalArgumentException("Not allowed to skip action");
-            }
-
-            element.skip(action);
-
-            // Choice was made, other choices are no longer allowed
-            actions.clear();
+        public void skip() {
+            throw new IllegalArgumentException("Must make a choice");
         }
 
         private PossibleAction check(Class<? extends Action> action) {
@@ -230,11 +233,6 @@ public abstract class PossibleAction {
         @Override
         public boolean canPerform(Class<? extends Action> action) {
             return actions.stream().anyMatch(fa -> fa.canPerform(action));
-        }
-
-        @Override
-        public boolean canSkip(Class<? extends Action> action) {
-            return actions.stream().allMatch(fa -> fa.canSkip(action));
         }
 
         @Override

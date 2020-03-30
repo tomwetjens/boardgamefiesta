@@ -46,8 +46,8 @@ class ImmediateActions {
         }
 
         @Override
-        public void skip(Class<? extends Action> action) {
-            possibleAction.skip(action);
+        public void skip() {
+            possibleAction.skip();
         }
 
         @Override
@@ -58,11 +58,6 @@ class ImmediateActions {
         @Override
         public boolean canPerform(Class<? extends Action> action) {
             return possibleAction.canPerform(action);
-        }
-
-        @Override
-        public boolean canSkip(Class<? extends Action> action) {
-            return possibleAction.canSkip(action);
         }
 
         @Override

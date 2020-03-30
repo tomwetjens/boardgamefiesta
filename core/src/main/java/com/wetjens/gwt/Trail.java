@@ -1,10 +1,16 @@
 package com.wetjens.gwt;
 
-import lombok.Getter;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import lombok.Getter;
 
 public class Trail {
 
@@ -178,5 +184,11 @@ public class Trail {
                 .filter(location -> location.getName().equals(name))
                 .findAny()
                 .orElseThrow(() -> new IllegalArgumentException("Unknown location: " + name));
+    }
+
+    public Location.TeepeeLocation getTeepeeLocation(int reward) {
+        return teepeeLocations.stream()
+                .filter(teepeeLocation -> teepeeLocation.getReward() == reward).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("No teepee location for " + reward));
     }
 }

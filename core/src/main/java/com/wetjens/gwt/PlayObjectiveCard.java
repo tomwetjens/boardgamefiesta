@@ -9,7 +9,7 @@ public class PlayObjectiveCard extends Action {
     }
 
     @Override
-    public boolean isArbitrary() {
+    public boolean canPlayAnyTime() {
         return true;
     }
 

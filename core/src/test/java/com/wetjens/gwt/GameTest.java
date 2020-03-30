@@ -24,7 +24,7 @@ class GameTest {
                 NeutralBuilding.A.DiscardOneGuernsey.class,
                 NeutralBuilding.A.HireWorker.class,
                 NeutralBuilding.A.HireSecondWorker.class,
-                Location.BuildingLocation.SingleAuxiliaryAction.class);
+                Action.SingleAuxiliaryAction.class);
 
         game.perform(new NeutralBuilding.A.DiscardOneGuernsey());
 

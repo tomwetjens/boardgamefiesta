@@ -1,6 +1,9 @@
 package com.wetjens.gwt;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.Value;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,7 +24,7 @@ public class RailroadTrack {
     private final List<Space.TurnoutSpace> turnouts = new ArrayList<>(TURNOUTS.size());
     private final Map<Player, Space> playerSpaces = new EnumMap<>(Player.class);
 
-    public RailroadTrack(Collection<Player> players, Random random) {
+    public RailroadTrack(@NonNull Collection<Player> players, @NonNull Random random) {
         this.stations = createStations(random);
 
         end = new Space.EndSpace(MAX_SPACE, stations.get(stations.size() - 1));
@@ -57,7 +60,7 @@ public class RailroadTrack {
         players.forEach(player -> playerSpaces.put(player, start));
     }
 
-    private static List<Station> createStations(Random random) {
+    private static List<Station> createStations(@NonNull Random random) {
         List<StationMaster> stationMasters = Arrays.asList(StationMaster.values());
         Collections.shuffle(stationMasters, random);
 
@@ -99,7 +102,7 @@ public class RailroadTrack {
         return playerSpaces.get(player);
     }
 
-    public ImmediateActions moveEngineForward(Player player, Space to, int atLeast, int atMost) {
+    public ImmediateActions moveEngineForward(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
         if (atLeast < 0 || atLeast > 6) {
             throw new IllegalArgumentException("Must move at least 0..6, but was: " + atLeast);
         }
@@ -127,7 +130,7 @@ public class RailroadTrack {
                 .orElse(ImmediateActions.none());
     }
 
-    public Set<Space> reachableSpacesForward(Player player, Space from, int atLeast, int atMost) {
+    public Set<Space> reachableSpacesForward(@NonNull Player player, @NonNull Space from, int atLeast, int atMost) {
         Set<Space> reachable = new HashSet<>();
 
         Optional<Player> playerOnSpace = playerAt(from);
@@ -150,7 +153,7 @@ public class RailroadTrack {
         return reachable;
     }
 
-    public Set<Space> reachableSpacesBackwards(Player player, Space from, int atLeast, int atMost) {
+    public Set<Space> reachableSpacesBackwards(@NonNull Player player, @NonNull Space from, int atLeast, int atMost) {
         Set<Space> reachable = new HashSet<>();
 
         Optional<Player> playerOnSpace = playerAt(from);
@@ -173,14 +176,14 @@ public class RailroadTrack {
         return reachable;
     }
 
-    private Optional<Player> playerAt(Space space) {
+    private Optional<Player> playerAt(@NonNull Space space) {
         return playerSpaces.entrySet().stream()
                 .filter(entry -> entry.getValue() == space)
                 .map(Map.Entry::getKey)
                 .findAny();
     }
 
-    public ImmediateActions moveEngineBackwards(Player player, Space to, int atLeast, int atMost) {
+    public ImmediateActions moveEngineBackwards(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
         if (atLeast < 0 || atLeast > 6) {
             throw new IllegalArgumentException("Must move at least 0..6, but was: " + atLeast);
         }
@@ -220,16 +223,6 @@ public class RailroadTrack {
             this.next = new HashSet<>(next);
         }
 
-        public int spaces(Space to) {
-            //TODO
-            return 0;
-        }
-
-        public boolean isAfter(Space space) {
-            //TODO
-            return false;
-        }
-
         public Optional<Station> getStation() {
             return Optional.ofNullable(station);
         }
@@ -247,11 +240,11 @@ public class RailroadTrack {
             @Getter
             private final int number;
 
-            private NumberedSpace(int number, Collection<Space> next) {
+            private NumberedSpace(int number, @NonNull Collection<Space> next) {
                 this(number, null, next);
             }
 
-            private NumberedSpace(int number, Station station, Collection<Space> next) {
+            private NumberedSpace(int number, @NonNull Station station, @NonNull Collection<Space> next) {
                 super(station, next);
                 this.number = number;
             }
@@ -264,39 +257,47 @@ public class RailroadTrack {
 
         public static final class StartSpace extends NumberedSpace {
 
-            private StartSpace(NumberedSpace next) {
+            private StartSpace(@NonNull NumberedSpace next) {
                 super(0, Collections.singleton(next));
             }
         }
 
         public static final class TurnoutSpace extends Space {
 
-            public TurnoutSpace(Space previous, Space next, Station station) {
+            public TurnoutSpace(@NonNull Space previous, @NonNull Space next, @NonNull Station station) {
                 super(station, Collections.singleton(previous));
                 this.previous.add(next);
             }
         }
 
         public static final class EndSpace extends NumberedSpace {
-            public EndSpace(int number, Station station) {
+            public EndSpace(int number, @NonNull Station station) {
                 super(number, station, Collections.emptySet());
             }
         }
     }
 
     public static final class UpgradeStation extends Action {
+
         @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
+        public ImmediateActions perform(@NonNull Game game) {
+            Space current = game.getRailroadTrack().current(game.getCurrentPlayer());
+            Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
+
+            return station.upgrade(game);
         }
     }
 
+    @AllArgsConstructor
     public static final class AppointStationMaster extends Action {
+        Worker worker;
+
         @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
+        public ImmediateActions perform(@NonNull Game game) {
+            Space current = game.getRailroadTrack().current(game.getCurrentPlayer());
+            Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
+
+            return station.appointStationMaster(game, worker);
         }
     }
 }

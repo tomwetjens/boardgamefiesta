@@ -215,7 +215,10 @@ public class CattleMarket {
 
         if (unusedCowboys > 0) {
             // TODO Now assumed unused cowboys can only be used after buying
-            return ImmediateActions.of(PossibleAction.any(IntStream.range(0, unusedCowboys).mapToObj(i -> Draw2CattleCards.class)));
+            List<Class<? extends Action>> drawCardsForEachUnusedCowboy = IntStream.range(0, unusedCowboys)
+                    .mapToObj(i -> Draw2CattleCards.class)
+                    .collect(Collectors.toList());
+            return ImmediateActions.of(PossibleAction.any(drawCardsForEachUnusedCowboy));
         }
         return ImmediateActions.none();
     }

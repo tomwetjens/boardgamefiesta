@@ -34,10 +34,10 @@ public class ObjectiveCard extends Card {
 
     private static Collection<ObjectiveCard> all() {
         return Arrays.asList(
-                new ObjectiveCard(PossibleAction.any(SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.any(SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.any(MoveEngine2Or3SpacesForward.class), Arrays.asList(Task.BUILDING, Task.BLUE_TEEPEE, Task.HAZARD, Task.HAZARD), 5, 3),
-                new ObjectiveCard(PossibleAction.choice(DrawCardThenDiscardCard.Draw1CardThenDiscard1Card.class, DrawCardThenDiscardCard.Draw2CardsThenDiscard2Cards.class, DrawCardThenDiscardCard.Draw3CardsThenDiscard3Cards.class), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.HAZARD), 5, 2)
+                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
+                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
+                new ObjectiveCard(PossibleAction.optional(MoveEngine2Or3SpacesForward.class), Arrays.asList(Task.BUILDING, Task.BLUE_TEEPEE, Task.HAZARD, Task.HAZARD), 5, 3),
+                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.DrawCardThenDiscardCard.Draw1CardThenDiscard1Card.class, Action.DrawCardThenDiscardCard.Draw2CardsThenDiscard2Cards.class, Action.DrawCardThenDiscardCard.Draw3CardsThenDiscard3Cards.class)), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.HAZARD), 5, 2)
                 // TODO Add all objective cards
         );
     }

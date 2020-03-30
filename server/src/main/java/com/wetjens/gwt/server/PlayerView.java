@@ -17,6 +17,9 @@ public class PlayerView {
 
     Set<CardView> hand;
 
+    Set<ActionView> unlockedSingleAuxiliaryActions;
+    Set<ActionView> unlockedDoubleAuxiliaryActions;
+
     PlayerView(PlayerState playerState, Player viewingPlayer) {
         balance = playerState.getBalance();
         cowboys = playerState.getNumberOfCowboys();
@@ -30,6 +33,14 @@ public class PlayerView {
         } else {
             hand = null;
         }
+
+        unlockedSingleAuxiliaryActions = playerState.unlockedSingleAuxiliaryActions().stream()
+                .map(ActionView::of)
+                .collect(Collectors.toSet());
+
+        unlockedDoubleAuxiliaryActions = playerState.unlockedDoubleAuxiliaryActions().stream()
+                .map(ActionView::of)
+                .collect(Collectors.toSet());
     }
 
 }

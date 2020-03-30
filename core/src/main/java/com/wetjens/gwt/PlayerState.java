@@ -26,6 +26,8 @@ public class PlayerState {
     private final Set<PlayerBuilding> buildings;
     private final Map<Unlockable, Integer> unlocked = new EnumMap<>(Unlockable.class);
     private final Set<ObjectiveCard> objectives = new HashSet<>();
+    private final Set<StationMaster> stationMasters = new HashSet<>();
+    private final List<Teepee> teepees = new LinkedList<>();
 
     @Getter
     private int stepLimit = 3;
@@ -123,29 +125,29 @@ public class PlayerState {
     }
 
     public ImmediateActions gainWorker(Worker worker) {
-        int count = workers.computeIfPresent(worker, (k, v) -> v + 1);
+        int count = workers.compute(worker, (k, v) -> v + 1);
 
         if (worker == Worker.COWBOY) {
             if (count == 4) {
-                return ImmediateActions.of(PossibleAction.of(RemoveHazardForFree.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.RemoveHazardForFree.class));
             } else if (count == 6) {
-                return ImmediateActions.of(PossibleAction.of(TradeWithIndians.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.TradeWithIndians.class));
             }
         } else if (worker == Worker.CRAFTSMAN) {
             if (count == 4 || count == 6) {
-                return ImmediateActions.of(PossibleAction.of(PlaceCheapBuilding.class));
+                return ImmediateActions.of(PossibleAction.optional(PlaceCheapBuilding.class));
             }
         } else {
             if (count == 2) {
-                return ImmediateActions.of(PossibleAction.of(DiscardOneJerseyToGainCertificate.class));
+                return ImmediateActions.of(PossibleAction.optional(DiscardOneJerseyToGainCertificate.class));
             } else if (count == 3) {
-                return ImmediateActions.of(PossibleAction.of(DiscardOneJerseyToGainTwoDollars.class));
+                return ImmediateActions.of(PossibleAction.optional(DiscardOneJerseyToGainTwoDollars.class));
             } else if (count == 4) {
-                return ImmediateActions.of(PossibleAction.of(HireCheapWorker.class));
+                return ImmediateActions.of(PossibleAction.optional(HireCheapWorker.class));
             } else if (count == 5) {
-                return ImmediateActions.of(PossibleAction.of(DiscardOneJerseyToGainTwoCertificates.class));
+                return ImmediateActions.of(PossibleAction.optional(DiscardOneJerseyToGainTwoCertificates.class));
             } else if (count == 6) {
-                return ImmediateActions.of(PossibleAction.of(DiscardOneJerseyToGainFourDollars.class));
+                return ImmediateActions.of(PossibleAction.optional(DiscardOneJerseyToGainFourDollars.class));
             }
         }
         return ImmediateActions.none();
@@ -193,6 +195,48 @@ public class PlayerState {
         return unlocked.getOrDefault(unlockable, 0) == unlockable.getCount();
     }
 
+    public Set<Class<? extends Action>> unlockedSingleAuxiliaryActions() {
+        Set<Class<? extends Action>> actions = new HashSet<>();
+        if (hasUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
+            actions.add(Action.SingleAuxiliaryAction.Gain1Dollars.class);
+        }
+        if (hasUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
+            actions.add(Action.DrawCardThenDiscardCard.Draw1CardThenDiscard1Card.class);
+        }
+        if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
+            actions.add(Action.SingleAuxiliaryAction.Pay1DollarAndMoveEngine1SpaceBackwardsToGain1Certificate.class);
+        }
+        if (hasUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
+            actions.add(Action.SingleAuxiliaryAction.Pay1DollarToMoveEngine1SpaceForward.class);
+        }
+        if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
+            actions.add(Action.SingleAuxiliaryAction.MoveEngine1SpaceBackwardsToRemove1Card.class);
+        }
+        return actions;
+    }
+
+    public Set<Class<? extends Action>> unlockedDoubleAuxiliaryActions() {
+        Set<Class<? extends Action>> actions = new HashSet<>(unlockedSingleAuxiliaryActions());
+
+        if (hasAllUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
+            actions.add(Action.SingleOrDoubleAuxiliaryAction.Gain2Dollars.class);
+        }
+        if (hasAllUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
+            actions.add(Action.DrawCardThenDiscardCard.Draw2CardsThenDiscard2Cards.class);
+        }
+        if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
+            actions.add(Action.SingleOrDoubleAuxiliaryAction.Pay2DollarsAndMoveEngine2SpacesBackwardsToGain2Certificates.class);
+        }
+        if (hasAllUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
+            actions.add(Action.Pay2DollarsToMoveEngine2SpacesForward.class);
+        }
+        if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
+            actions.add(Action.SingleOrDoubleAuxiliaryAction.MoveEngine2SpacesBackwardsToRemove2Cards.class);
+        }
+
+        return actions;
+    }
+
     public ImmediateActions playObjectiveCard(ObjectiveCard objectiveCard) {
         if (!hand.remove(objectiveCard)) {
             throw new IllegalStateException("Objective card not in hand");
@@ -205,12 +249,24 @@ public class PlayerState {
         return hand.stream().anyMatch(card -> card instanceof ObjectiveCard);
     }
 
-    public class RemoveHazardForFree extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
+    void removeWorker(Worker worker) {
+        if (workers.get(worker) <= 1) {
+            throw new IllegalStateException("Not enough workers");
         }
+
+        workers.computeIfPresent(worker, (k, v) -> v - 1);
+    }
+
+    public void addStationMaster(StationMaster stationMaster) {
+        stationMasters.add(stationMaster);
+    }
+
+    public void addTeepee(Teepee teepee) {
+        teepees.add(teepee);
+    }
+
+    public void removeCards(Set<Card> cards) {
+        hand.removeAll(cards);
     }
 
     public class PlaceCheapBuilding extends Action {
