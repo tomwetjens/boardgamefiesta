@@ -219,7 +219,7 @@ class PossibleActionTest {
 
         @Test
         void skip() {
-            assertThatThrownBy(() -> possibleAction.skip()).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.skip()).hasMessage("Not allowed to skip action");
         }
     }
 

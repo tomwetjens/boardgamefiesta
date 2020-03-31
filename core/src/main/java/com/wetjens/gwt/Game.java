@@ -1,14 +1,18 @@
 package com.wetjens.gwt;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import lombok.Getter;
@@ -18,7 +22,7 @@ public class Game {
 
     private final List<Player> players;
 
-    private final EnumMap<Player, PlayerState> playerStates;
+    private final Map<Player, PlayerState> playerStates;
 
     @Getter
     private final Trail trail;
@@ -45,7 +49,7 @@ public class Game {
     @Getter
     private Player currentPlayer;
 
-    public Game(@NonNull Collection<Player> players, Random random) {
+    public Game(@NonNull Collection<String> players, Random random) {
         if (players.size() < 2) {
             throw new IllegalArgumentException("At least 2 players are required");
         }
@@ -54,21 +58,21 @@ public class Game {
             throw new IllegalArgumentException("A maximum of 4 players is supported");
         }
 
-        this.players = new ArrayList<>(players);
+        this.players = createPlayers(players, random);
         Collections.shuffle(this.players, random);
 
         // TODO Random building variants
         PlayerBuilding.VariantSet buildings = PlayerBuilding.VariantSet.firstGame();
 
-        this.playerStates = new EnumMap<>(Player.class);
+        this.playerStates = new HashMap<>();
         int startBalance = 6;
-        for (Player player : players) {
+        for (Player player : this.players) {
             this.playerStates.put(player, new PlayerState(player, startBalance++, random, buildings.createPlayerBuildings(player)));
         }
 
         this.currentPlayer = this.players.get(0);
 
-        this.railroadTrack = new RailroadTrack(players, random);
+        this.railroadTrack = new RailroadTrack(this.players, random);
 
         this.trail = new Trail();
         this.kansasCitySupply = new KansasCitySupply(random);
@@ -82,6 +86,15 @@ public class Game {
         this.objectiveCards = ObjectiveCard.randomDeck(random);
 
         this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Move.class)));
+    }
+
+    private List<Player> createPlayers(@NonNull Collection<String> names, @NonNull Random random) {
+        List<Player.Color> randomColors = new LinkedList<>(Arrays.asList(Player.Color.values()));
+        Collections.shuffle(randomColors, random);
+
+        return names.stream()
+                .map(name -> new Player(name, randomColors.remove(0)))
+                .collect(Collectors.toList());
     }
 
     private void placeInitialTiles() {

@@ -1,12 +1,21 @@
 package com.wetjens.gwt;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Value;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class RailroadTrack {
 
@@ -22,7 +31,7 @@ public class RailroadTrack {
     private final Space.EndSpace end;
     private final Map<Integer, Space.NumberedSpace> normalSpaces = new HashMap<>();
     private final List<Space.TurnoutSpace> turnouts = new ArrayList<>(TURNOUTS.size());
-    private final Map<Player, Space> playerSpaces = new EnumMap<>(Player.class);
+    private final Map<Player, Space> playerSpaces = new HashMap<>();
 
     public RailroadTrack(@NonNull Collection<Player> players, @NonNull Random random) {
         this.stations = createStations(random);
@@ -116,10 +125,15 @@ public class RailroadTrack {
         }
 
         Space from = current(player);
-        Set<Space> reachable = reachableSpacesForward(player, from, atLeast, atMost);
+
+        if (to == from) {
+            throw new IllegalArgumentException("Must specify different space that current");
+        }
+
+        Set<Space> reachable = reachableSpacesForward(player, from, from, atLeast, atMost);
 
         if (!reachable.contains(to)) {
-            throw new IllegalArgumentException("Space not reachable within " + atLeast + "src/test" + atMost + " steps");
+            throw new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps");
         }
 
         playerSpaces.put(player, to);
@@ -130,46 +144,52 @@ public class RailroadTrack {
                 .orElse(ImmediateActions.none());
     }
 
-    public Set<Space> reachableSpacesForward(@NonNull Player player, @NonNull Space from, int atLeast, int atMost) {
+    public Set<Space> reachableSpacesForward(@NonNull Player player, @NonNull Space from, @NonNull Space current, int atLeast, int atMost) {
         Set<Space> reachable = new HashSet<>();
 
-        Optional<Player> playerOnSpace = playerAt(from);
-        Optional<Player> otherPlayerOnSpace = playerOnSpace.filter(p -> p != player);
-
-        if (atLeast == 0 && otherPlayerOnSpace.isEmpty()) {
-            reachable.add(from);
+        Optional<Player> playerOnSpace = playerAt(current);
+        boolean otherPlayerOnSpace = playerOnSpace.filter(p -> p != player).isPresent();
+        boolean empty = !otherPlayerOnSpace && current != from;
+        boolean possible = empty && atLeast <= 1;
+        if (possible) {
+            reachable.add(current);
         }
 
-        if (otherPlayerOnSpace.isPresent()) {
-            reachable.addAll(from.next.stream()
-                    .flatMap(next -> reachableSpacesForward(player, next, atLeast, atMost).stream())
+        if (!empty) {
+            // Space is not empty, jump over
+            reachable.addAll(current.next.stream()
+                    .flatMap(next -> reachableSpacesForward(player, from, next, atLeast, atMost).stream())
                     .collect(Collectors.toSet()));
-        } else if (atMost > 0) {
-            reachable.addAll(from.next.stream()
-                    .flatMap(next -> reachableSpacesForward(player, next, Math.max(atLeast - 1, 0), atMost - 1).stream())
+        } else if (possible && atMost > 1) {
+            // Space is possible so count as step
+            reachable.addAll(current.next.stream()
+                    .flatMap(next -> reachableSpacesForward(player, from, next, Math.max(atLeast - 1, 0), atMost - 1).stream())
                     .collect(Collectors.toSet()));
         }
 
         return reachable;
     }
 
-    public Set<Space> reachableSpacesBackwards(@NonNull Player player, @NonNull Space from, int atLeast, int atMost) {
+    public Set<Space> reachableSpacesBackwards(@NonNull Player player, @NonNull Space from, @NonNull Space current, int atLeast, int atMost) {
         Set<Space> reachable = new HashSet<>();
 
-        Optional<Player> playerOnSpace = playerAt(from);
-        Optional<Player> otherPlayerOnSpace = playerOnSpace.filter(p -> p != player);
-
-        if (atLeast == 0 && otherPlayerOnSpace.isEmpty()) {
-            reachable.add(from);
+        Optional<Player> playerOnSpace = playerAt(current);
+        boolean otherPlayerOnSpace = playerOnSpace.filter(p -> p != player).isPresent();
+        boolean empty = !otherPlayerOnSpace && current != from;
+        boolean possible = empty && atLeast <= 1;
+        if (possible) {
+            reachable.add(current);
         }
 
-        if (otherPlayerOnSpace.isPresent()) {
-            reachable.addAll(from.previous.stream()
-                    .flatMap(previous -> reachableSpacesBackwards(player, previous, atLeast, atMost).stream())
+        if (!empty) {
+            // Space is not empty, jump over
+            reachable.addAll(current.previous.stream()
+                    .flatMap(previous -> reachableSpacesBackwards(player, from, previous, atLeast, atMost).stream())
                     .collect(Collectors.toSet()));
-        } else if (atMost > 0) {
-            reachable.addAll(from.previous.stream()
-                    .flatMap(previous -> reachableSpacesBackwards(player, previous, Math.max(atLeast - 1, 0), atMost - 1).stream())
+        } else if (possible && atMost > 1) {
+            // Space is possible so count as step
+            reachable.addAll(current.previous.stream()
+                    .flatMap(previous -> reachableSpacesBackwards(player, from, previous, Math.max(atLeast - 1, 0), atMost - 1).stream())
                     .collect(Collectors.toSet()));
         }
 
@@ -198,10 +218,15 @@ public class RailroadTrack {
         }
 
         Space from = current(player);
-        Set<Space> reachable = reachableSpacesBackwards(player, from, atLeast, atMost);
+
+        if (to == from) {
+            throw new IllegalArgumentException("Must specify different space that current");
+        }
+
+        Set<Space> reachable = reachableSpacesBackwards(player, from, from, atLeast, atMost);
 
         if (!reachable.contains(to)) {
-            throw new IllegalArgumentException("Space not reachable within " + atLeast + "src/test" + atMost + " steps");
+            throw new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps");
         }
 
         playerSpaces.put(player, to);
@@ -244,7 +269,7 @@ public class RailroadTrack {
                 this(number, null, next);
             }
 
-            private NumberedSpace(int number, @NonNull Station station, @NonNull Collection<Space> next) {
+            private NumberedSpace(int number, Station station, @NonNull Collection<Space> next) {
                 super(station, next);
                 this.number = number;
             }

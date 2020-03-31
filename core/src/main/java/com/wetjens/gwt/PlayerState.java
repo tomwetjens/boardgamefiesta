@@ -66,7 +66,7 @@ public class PlayerState {
             discardPile.clear();
         }
 
-        if (drawStack.isEmpty()) {
+        if (!drawStack.isEmpty()) {
             hand.add(drawStack.poll());
         }
     }

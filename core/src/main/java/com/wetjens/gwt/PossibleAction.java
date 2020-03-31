@@ -16,7 +16,7 @@ public abstract class PossibleAction {
      * Player MUST perform the action and cannot skip it.
      */
     public static PossibleAction mandatory(Class<? extends Action> action) {
-        return new Single(action);
+        return new Mandatory(action);
     }
 
     /**
@@ -45,7 +45,7 @@ public abstract class PossibleAction {
      */
     public static PossibleAction any(Collection<Class<? extends Action>> actions) {
         return new Any(actions.stream()
-                .map(PossibleAction::optional)
+                .map(PossibleAction::mandatory)
                 .collect(Collectors.toCollection(ArrayList::new)));
     }
 
@@ -96,17 +96,17 @@ public abstract class PossibleAction {
 
     public abstract Set<Class<? extends Action>> getPossibleActions();
 
-    private static final class Single extends PossibleAction {
+    private static final class Mandatory extends PossibleAction {
 
-        private final Class<? extends Action> action;
+        private Class<? extends Action> action;
 
-        public Single(Class<? extends Action> action) {
+        private Mandatory(Class<? extends Action> action) {
             this.action = action;
         }
 
         @Override
         public void perform(Class<? extends Action> action) {
-            // No op
+            this.action = null;
         }
 
         @Override
@@ -116,12 +116,12 @@ public abstract class PossibleAction {
 
         @Override
         public boolean isFinal() {
-            return true;
+            return action == null;
         }
 
         @Override
         public boolean canPerform(Class<? extends Action> action) {
-            return action.equals(this.action);
+            return action != null && action.equals(this.action);
         }
 
         @Override
@@ -131,7 +131,7 @@ public abstract class PossibleAction {
 
         @Override
         public Set<Class<? extends Action>> getPossibleActions() {
-            return Collections.singleton(action);
+            return action != null ? Collections.singleton(action) : Collections.emptySet();
         }
     }
 

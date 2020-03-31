@@ -1,8 +1,17 @@
 package com.wetjens.gwt;
 
-public enum Player {
-    YELLOW,
-    RED,
-    BLUE,
-    WHITE;
+import lombok.Value;
+
+@Value
+public class Player {
+
+    String name;
+    Color color;
+
+    public enum Color {
+        YELLOW,
+        RED,
+        BLUE,
+        WHITE;
+    }
 }

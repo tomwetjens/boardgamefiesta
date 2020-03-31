@@ -12,9 +12,17 @@ class GameTest {
 
     @Test
     void test() {
-        Game game = new Game(Arrays.asList(Player.BLUE, Player.RED, Player.YELLOW), new Random(0));
+        Game game = new Game(Arrays.asList("A", "B"), new Random(0));
 
-        assertThat(game.getCurrentPlayer()).isEqualTo(Player.YELLOW);
+        Player playerA = game.getPlayers().get(0);
+        assertThat(playerA.getName()).isEqualTo("A");
+        assertThat(playerA.getColor()).isEqualTo(Player.Color.WHITE);
+
+        Player playerB = game.getPlayers().get(1);
+        assertThat(playerB.getName()).isEqualTo("B");
+        assertThat(playerB.getColor()).isEqualTo(Player.Color.YELLOW);
+
+        assertThat(game.getCurrentPlayer()).isSameAs(playerA);
 
         assertThat(game.possibleActions()).containsExactly(Move.class);
 

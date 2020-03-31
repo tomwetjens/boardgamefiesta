@@ -2,9 +2,10 @@ package com.wetjens.gwt;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,7 +23,7 @@ public class Trail {
     @Getter
     private final Location.KansasCity kansasCity;
 
-    private final EnumMap<Player, Location> playerLocations = new EnumMap<>(Player.class);
+    private final Map<Player, Location> playerLocations = new HashMap<>();
 
     public Trail() {
         // TODO Randomize building placement if not beginner
