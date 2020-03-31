@@ -10,40 +10,40 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class PossibleAction {
+abstract class PossibleAction {
 
     /**
      * Player MUST perform the action and cannot skip it.
      */
-    public static PossibleAction mandatory(Class<? extends Action> action) {
+    static PossibleAction mandatory(Class<? extends Action> action) {
         return new Mandatory(action);
     }
 
     /**
      * Player MAY perform the action or skip it.
      */
-    public static PossibleAction optional(Class<? extends Action> action) {
+    static PossibleAction optional(Class<? extends Action> action) {
         return any(action);
     }
 
     /**
      * Player MAY perform the action or skip it.
      */
-    public static PossibleAction optional(PossibleAction possibleAction) {
+    static PossibleAction optional(PossibleAction possibleAction) {
         return any(possibleAction);
     }
 
     /**
      * Player MAY perform none, a single, some or all of the options in ANY order.
      */
-    public static PossibleAction any(Class<? extends Action>... actions) {
+    static PossibleAction any(Class<? extends Action>... actions) {
         return any(Arrays.asList(actions));
     }
 
     /**
      * Player MAY perform none, a single, some or all of the options in ANY order.
      */
-    public static PossibleAction any(Collection<Class<? extends Action>> actions) {
+    static PossibleAction any(Collection<Class<? extends Action>> actions) {
         return new Any(actions.stream()
                 .map(PossibleAction::mandatory)
                 .collect(Collectors.toCollection(ArrayList::new)));
@@ -52,24 +52,24 @@ public abstract class PossibleAction {
     /**
      * Player MAY perform none, a single, some or all of the options in ANY order.
      */
-    public static PossibleAction any(PossibleAction possibleAction, Class<? extends Action>... actions) {
+    static PossibleAction any(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Any(Stream.concat(
                 Stream.of(possibleAction),
-                Arrays.stream(actions).map(PossibleAction::optional))
+                Arrays.stream(actions).map(PossibleAction::mandatory))
                 .collect(Collectors.toCollection(ArrayList::new)));
     }
 
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
-    public static PossibleAction choice(Class<? extends Action>... actions) {
+    static PossibleAction choice(Class<? extends Action>... actions) {
         return choice(Arrays.asList(actions));
     }
 
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
-    public static PossibleAction choice(Collection<Class<? extends Action>> actions) {
+    static PossibleAction choice(Collection<Class<? extends Action>> actions) {
         return new Choice(actions.stream()
                 .map(PossibleAction::optional)
                 .collect(Collectors.toCollection(HashSet::new)));
@@ -78,23 +78,23 @@ public abstract class PossibleAction {
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
-    public static PossibleAction choice(PossibleAction possibleAction, Class<? extends Action>... actions) {
+    static PossibleAction choice(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Choice(Stream.concat(Stream.of(possibleAction), Arrays.stream(actions)
                 .map(PossibleAction::optional))
                 .collect(Collectors.toCollection(HashSet::new)));
     }
 
-    public abstract void perform(Class<? extends Action> action);
+    abstract void perform(Class<? extends Action> action);
 
-    public abstract void skip();
+    abstract void skip();
 
-    public abstract boolean isFinal();
+    abstract boolean isFinal();
 
-    public abstract boolean isImmediate();
+    abstract boolean isImmediate();
 
-    public abstract boolean canPerform(Class<? extends Action> action);
+    abstract boolean canPerform(Class<? extends Action> action);
 
-    public abstract Set<Class<? extends Action>> getPossibleActions();
+    abstract Set<Class<? extends Action>> getPossibleActions();
 
     private static final class Mandatory extends PossibleAction {
 
@@ -105,46 +105,46 @@ public abstract class PossibleAction {
         }
 
         @Override
-        public void perform(Class<? extends Action> action) {
+        void perform(Class<? extends Action> action) {
             this.action = null;
         }
 
         @Override
-        public void skip() {
+        void skip() {
             throw new IllegalArgumentException("Not allowed to skip action");
         }
 
         @Override
-        public boolean isFinal() {
+        boolean isFinal() {
             return action == null;
         }
 
         @Override
-        public boolean canPerform(Class<? extends Action> action) {
+        boolean canPerform(Class<? extends Action> action) {
             return action != null && action.equals(this.action);
         }
 
         @Override
-        public boolean isImmediate() {
+        boolean isImmediate() {
             return false;
         }
 
         @Override
-        public Set<Class<? extends Action>> getPossibleActions() {
+        Set<Class<? extends Action>> getPossibleActions() {
             return action != null ? Collections.singleton(action) : Collections.emptySet();
         }
     }
 
     private static final class Any extends PossibleAction {
 
-        private List<PossibleAction> actions;
+        private final List<PossibleAction> actions;
 
         private Any(List<PossibleAction> actions) {
             this.actions = actions;
         }
 
         @Override
-        public void perform(Class<? extends Action> action) {
+        void perform(Class<? extends Action> action) {
             PossibleAction element = check(action);
 
             element.perform(action);
@@ -155,7 +155,7 @@ public abstract class PossibleAction {
         }
 
         @Override
-        public void skip() {
+        void skip() {
             actions.clear();
         }
 
@@ -167,22 +167,22 @@ public abstract class PossibleAction {
         }
 
         @Override
-        public boolean isFinal() {
+        boolean isFinal() {
             return actions.isEmpty();
         }
 
         @Override
-        public boolean canPerform(Class<? extends Action> action) {
+        boolean canPerform(Class<? extends Action> action) {
             return actions.stream().anyMatch(fa -> fa.canPerform(action));
         }
 
         @Override
-        public boolean isImmediate() {
+        boolean isImmediate() {
             return false;
         }
 
         @Override
-        public Set<Class<? extends Action>> getPossibleActions() {
+        Set<Class<? extends Action>> getPossibleActions() {
             return actions.stream()
                     .flatMap(action -> action.getPossibleActions().stream())
                     .collect(Collectors.toUnmodifiableSet());
@@ -191,14 +191,14 @@ public abstract class PossibleAction {
 
     private static final class Choice extends PossibleAction {
 
-        private Set<PossibleAction> actions;
+        private final Set<PossibleAction> actions;
 
         private Choice(Set<PossibleAction> actions) {
             this.actions = actions;
         }
 
         @Override
-        public void perform(Class<? extends Action> action) {
+        void perform(Class<? extends Action> action) {
             PossibleAction element = check(action);
 
             element.perform(action);
@@ -214,7 +214,7 @@ public abstract class PossibleAction {
         }
 
         @Override
-        public void skip() {
+        void skip() {
             throw new IllegalArgumentException("Must make a choice");
         }
 
@@ -226,22 +226,22 @@ public abstract class PossibleAction {
         }
 
         @Override
-        public boolean isFinal() {
+        boolean isFinal() {
             return actions.isEmpty();
         }
 
         @Override
-        public boolean canPerform(Class<? extends Action> action) {
+        boolean canPerform(Class<? extends Action> action) {
             return actions.stream().anyMatch(fa -> fa.canPerform(action));
         }
 
         @Override
-        public boolean isImmediate() {
+        boolean isImmediate() {
             return false;
         }
 
         @Override
-        public Set<Class<? extends Action>> getPossibleActions() {
+        Set<Class<? extends Action>> getPossibleActions() {
             // List all choices as possible. When one is performed, the others are removed
             return actions.stream()
                     .flatMap(action -> action.getPossibleActions().stream())

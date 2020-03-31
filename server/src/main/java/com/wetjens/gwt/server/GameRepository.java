@@ -15,7 +15,7 @@ public class GameRepository {
     private final Map<String, Game> games = new ConcurrentHashMap<>();
 
     public Game findById(String id) {
-        return games.computeIfAbsent(id, k -> new Game(Arrays.asList(Player.RED, Player.YELLOW), new Random()));
+        return games.computeIfAbsent(id, k -> new Game(Arrays.asList("Player A", "Player B"), new Random()));
     }
 
     public void save(String id, Game game) {

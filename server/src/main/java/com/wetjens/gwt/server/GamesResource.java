@@ -20,10 +20,10 @@ public class GamesResource {
     @GET
     @Path("/{id}")
     public GameView getGame(@PathParam("id") String id) {
-        // TODO Determine viewing player from authenticated user
-        Player viewingPlayer = Player.YELLOW;
-
         Game game = gameRepository.findById(id);
+
+        // TODO Determine viewing player from authenticated user
+        Player viewingPlayer = game.getCurrentPlayer();
 
         return new GameView(game, viewingPlayer);
     }
@@ -31,10 +31,10 @@ public class GamesResource {
     @POST
     @Path("/{id}/perform")
     public GameView perform(@PathParam("id") String id, PerformRequest request) {
-        // TODO Determine viewing player from authenticated user
-        Player performingPlayer = Player.YELLOW;
-
         Game game = gameRepository.findById(id);
+
+        // TODO Determine viewing player from authenticated user
+        Player performingPlayer = game.getCurrentPlayer();
 
         if (game.getCurrentPlayer() != performingPlayer) {
             throw new IllegalStateException("Not current player");
@@ -50,10 +50,10 @@ public class GamesResource {
     @POST
     @Path("/{id}/end-turn")
     public GameView endTurn(@PathParam("id") String id) {
-        // TODO Determine viewing player from authenticated user
-        Player performingPlayer = Player.YELLOW;
-
         Game game = gameRepository.findById(id);
+
+        // TODO Determine viewing player from authenticated user
+        Player performingPlayer = game.getCurrentPlayer();
 
         if (game.getCurrentPlayer() != performingPlayer) {
             throw new IllegalStateException("Not current player");
