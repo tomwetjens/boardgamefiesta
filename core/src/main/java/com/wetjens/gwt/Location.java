@@ -1,10 +1,14 @@
 package com.wetjens.gwt;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Set;
 
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Value;
+import lombok.ToString;
 
 public abstract class Location {
 
@@ -27,11 +31,16 @@ public abstract class Location {
         return Optional.empty();
     }
 
-    Fee getFee() {
+    public Fee getFee() {
         return Fee.NONE;
     }
 
     abstract boolean isEmpty();
+
+    @Override
+    public String toString() {
+        return name;
+    }
 
     public boolean isDirect(Location to) {
         return next.contains(to) || (isEmpty() && next.stream().anyMatch(between -> between.isDirect(to)));
@@ -80,7 +89,7 @@ public abstract class Location {
         }
 
         @Override
-        Fee getFee() {
+        public Fee getFee() {
             if (building != null) {
                 return building.getFee();
             }
@@ -89,7 +98,7 @@ public abstract class Location {
 
         @Override
         boolean isEmpty() {
-            return building != null;
+            return building == null;
         }
 
         public Optional<Building> getBuilding() {
@@ -148,7 +157,7 @@ public abstract class Location {
         }
 
         @Override
-        Fee getFee() {
+        public Fee getFee() {
             if (hazard != null) {
                 return hazard.getFee();
             }
@@ -157,14 +166,26 @@ public abstract class Location {
 
         @Override
         boolean isEmpty() {
-            return hazard != null;
+            return hazard == null;
         }
 
-        public void placeHazard(@NonNull Hazard hazard) {
+        void placeHazard(@NonNull Hazard hazard) {
             if (this.hazard != null) {
                 throw new IllegalStateException("Location already has a hazard");
             }
+
+            if (hazard.getType() != this.type) {
+                throw new IllegalArgumentException("Hazard must be of type " + this.type);
+            }
+
             this.hazard = hazard;
+        }
+
+        void removeHazard() {
+            if (this.hazard == null) {
+                throw new IllegalStateException("No hazard at location");
+            }
+            this.hazard = null;
         }
     }
 
@@ -176,78 +197,12 @@ public abstract class Location {
 
         @Override
         Optional<PossibleAction> getPossibleAction() {
-            return Optional.of(PossibleAction.mandatory(ChooseForesights.class));
+            return Optional.of(PossibleAction.mandatory(Action.ChooseForesights.class));
         }
 
         @Override
         boolean isEmpty() {
             return false;
-        }
-
-        public static final class ChooseForesights extends Action {
-
-            private final List<Choice> choices;
-
-            public ChooseForesights(@NonNull List<Choice> choices) {
-                if (choices.size() != 3) {
-                    throw new IllegalArgumentException("Must have 3 choices");
-                }
-                this.choices = new ArrayList<>(choices);
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                for (int columnIndex = 0; columnIndex < choices.size(); columnIndex++) {
-                    Choice choice = choices.get(columnIndex);
-
-                    KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, choice.getRowIndex());
-
-                    if (tile.getWorker() != null) {
-                        boolean fillUpCattleMarket = game.getJobMarket().addWorker(tile.getWorker());
-                        if (fillUpCattleMarket) {
-                            game.getCattleMarket().fillUp();
-                        }
-                    } else if (tile.getHazard() != null) {
-                        if (!(choice.getLocation() instanceof HazardLocation)) {
-                            throw new IllegalArgumentException("Must pick a hazard location");
-                        }
-                        ((HazardLocation) choice.getLocation()).placeHazard(tile.getHazard());
-                    } else {
-                        if (!(choice.getLocation() instanceof TeepeeLocation)) {
-                            throw new IllegalArgumentException("Must pick a teepee location");
-                        }
-                        ((TeepeeLocation) choice.getLocation()).placeTeepee(tile.getTeepee());
-                    }
-                }
-
-                return ImmediateActions.none();
-            }
-
-            @Value
-            public static final class Choice {
-                private final int rowIndex;
-                private final Location location;
-            }
-        }
-
-        public static final class DeliverToCity extends Action {
-
-            private final City city;
-
-            DeliverToCity(City city) {
-                this.city = city;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-
-                // TODO
-                if (city == City.SAN_FRANCISCO) {
-                    return ImmediateActions.of(PossibleAction.optional(GainObjectiveCard.class));
-                }
-
-                return ImmediateActions.none();
-            }
         }
     }
 
@@ -272,7 +227,7 @@ public abstract class Location {
 
         @Override
         boolean isEmpty() {
-            return teepee != null;
+            return teepee == null;
         }
 
         public Optional<Teepee> getTeepee() {

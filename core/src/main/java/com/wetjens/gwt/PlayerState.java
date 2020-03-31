@@ -19,6 +19,7 @@ public class PlayerState {
     private final Set<ObjectiveCard> objectives = new HashSet<>();
     private final Set<StationMaster> stationMasters = new HashSet<>();
     private final List<Teepee> teepees = new LinkedList<>();
+    private final Set<Hazard> hazards = new HashSet<>();
 
     @Getter
     private int stepLimit = 3;
@@ -135,15 +136,15 @@ public class PlayerState {
             }
         } else {
             if (count == 2) {
-                return ImmediateActions.of(PossibleAction.optional(Action.DiscardOneJerseyToGainCertificate.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain1Certificate.class));
             } else if (count == 3) {
-                return ImmediateActions.of(PossibleAction.optional(Action.DiscardOneJerseyToGainTwoDollars.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain2Dollars.class));
             } else if (count == 4) {
                 return ImmediateActions.of(PossibleAction.optional(Action.HireCheapWorker.class));
             } else if (count == 5) {
-                return ImmediateActions.of(PossibleAction.optional(Action.DiscardOneJerseyToGainTwoCertificates.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain2Certificates.class));
             } else if (count == 6) {
-                return ImmediateActions.of(PossibleAction.optional(Action.DiscardOneJerseyToGainFourDollars.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain4Dollars.class));
             }
         }
         return ImmediateActions.none();
@@ -275,4 +276,19 @@ public class PlayerState {
         hand.removeAll(cards);
     }
 
+    void addHazard(Hazard hazard) {
+        hazards.add(hazard);
+    }
+
+    public Set<RailroadTrack.PossibleDelivery> possibleDeliveries(RailroadTrack railroadTrack) {
+        int breedingValue = hand.stream()
+                .filter(card -> card instanceof Card.CattleCard)
+                .map(card -> (Card.CattleCard) card)
+                .map(Card.CattleCard::getType)
+                .distinct()
+                .mapToInt(CattleType::getValue)
+                .sum();
+
+        return railroadTrack.possibleDeliveries(player, breedingValue, certificates);
+    }
 }

@@ -20,7 +20,7 @@ public class Station {
 
     private final Set<Player> players = new HashSet<>();
 
-    public Station(int cost, int points, @NonNull DiscColor discColor, StationMaster stationMaster) {
+    Station(int cost, int points, @NonNull DiscColor discColor, StationMaster stationMaster) {
         this.cost = cost;
         this.points = points;
         this.discColor = discColor;
@@ -35,7 +35,7 @@ public class Station {
         return Optional.ofNullable(worker);
     }
 
-    public boolean hasUpgraded(@NonNull Player player) {
+    boolean hasUpgraded(@NonNull Player player) {
         return players.contains(player);
     }
 
@@ -43,7 +43,7 @@ public class Station {
         return Collections.unmodifiableSet(players);
     }
 
-    public ImmediateActions upgrade(@NonNull Game game) {
+    ImmediateActions upgrade(@NonNull Game game) {
         if (players.contains(game.getCurrentPlayer())) {
             throw new IllegalStateException("Already upgraded station");
         }
@@ -57,7 +57,7 @@ public class Station {
                 : ImmediateActions.none();
     }
 
-    public ImmediateActions appointStationMaster(@NonNull Game game, @NonNull Worker worker) {
+    ImmediateActions appointStationMaster(@NonNull Game game, @NonNull Worker worker) {
         game.currentPlayerState().removeWorker(worker);
         this.worker = worker;
 

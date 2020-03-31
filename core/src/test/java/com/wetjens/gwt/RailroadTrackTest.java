@@ -40,7 +40,7 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(1), 0, 6);
 
         // Then
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA)).getNumber()).isEqualTo(1);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA)).getNumber()).isEqualTo(1);
     }
 
     @Test
@@ -49,7 +49,7 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(2), 0, 6);
 
         // Then
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA)).getNumber()).isEqualTo(2);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA)).getNumber()).isEqualTo(2);
     }
 
     @Test
@@ -69,8 +69,8 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(1), 1, 1);
 
         railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(2), 1, 1);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA)).getNumber()).isEqualTo(1);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerB)).getNumber()).isEqualTo(2);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA)).getNumber()).isEqualTo(1);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerB)).getNumber()).isEqualTo(2);
     }
 
     @Test
@@ -83,9 +83,9 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(playerC, railroadTrack.getSpace(3), 1, 1);
 
         // Then
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA)).getNumber()).isEqualTo(1);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerB)).getNumber()).isEqualTo(2);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerC)).getNumber()).isEqualTo(3);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA)).getNumber()).isEqualTo(1);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerB)).getNumber()).isEqualTo(2);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerC)).getNumber()).isEqualTo(3);
     }
 
     @Test
@@ -98,9 +98,9 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(playerC, railroadTrack.getSpace(4), 1, 2);
 
         // Then
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA)).getNumber()).isEqualTo(1);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerB)).getNumber()).isEqualTo(2);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerC)).getNumber()).isEqualTo(4);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA)).getNumber()).isEqualTo(1);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerB)).getNumber()).isEqualTo(2);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerC)).getNumber()).isEqualTo(4);
     }
 
     @Test
@@ -134,10 +134,10 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(playerD, railroadTrack.getSpace(4), 1, 1);
 
         // Then
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA)).getNumber()).isEqualTo(1);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerB)).getNumber()).isEqualTo(2);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerC)).getNumber()).isEqualTo(3);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerD)).getNumber()).isEqualTo(4);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA)).getNumber()).isEqualTo(1);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerB)).getNumber()).isEqualTo(2);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerC)).getNumber()).isEqualTo(3);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerD)).getNumber()).isEqualTo(4);
     }
 
     @Test
@@ -162,10 +162,10 @@ class RailroadTrackTest {
         railroadTrack.moveEngineBackwards(playerD, railroadTrack.getStart(), 1, 1);
 
         // Then
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA)).getNumber()).isEqualTo(1);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerB)).getNumber()).isEqualTo(2);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerC)).getNumber()).isEqualTo(3);
-        assertThat(railroadTrack.current(playerD)).isSameAs(railroadTrack.getStart());
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA)).getNumber()).isEqualTo(1);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerB)).getNumber()).isEqualTo(2);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerC)).getNumber()).isEqualTo(3);
+        assertThat(railroadTrack.currentSpace(playerD)).isSameAs(railroadTrack.getStart());
     }
 
     @Test
@@ -176,10 +176,10 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(playerD, railroadTrack.getSpace(5), 1, 4);
 
         railroadTrack.moveEngineBackwards(playerD, railroadTrack.getSpace(3), 1, 1);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA)).getNumber()).isEqualTo(1);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerB)).getNumber()).isEqualTo(2);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerC)).getNumber()).isEqualTo(4);
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerD)).getNumber()).isEqualTo(3);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA)).getNumber()).isEqualTo(1);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerB)).getNumber()).isEqualTo(2);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerC)).getNumber()).isEqualTo(4);
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerD)).getNumber()).isEqualTo(3);
     }
 
     @Test
@@ -191,7 +191,7 @@ class RailroadTrackTest {
         railroadTrack.moveEngineBackwards(playerA, railroadTrack.getStart(), 1, 1);
 
         // Then
-        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA))).isSameAs(railroadTrack.getStart());
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.currentSpace(playerA))).isSameAs(railroadTrack.getStart());
     }
 
     @Test

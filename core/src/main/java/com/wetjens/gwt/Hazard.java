@@ -3,9 +3,11 @@ package com.wetjens.gwt;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
 @AllArgsConstructor
 @Getter
+@ToString
 public class Hazard {
     @NonNull
     private final HazardType type;
@@ -14,5 +16,4 @@ public class Hazard {
     private final Fee fee;
 
     private final int points;
-
 }

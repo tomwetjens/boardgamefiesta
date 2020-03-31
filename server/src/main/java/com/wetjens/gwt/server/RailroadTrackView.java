@@ -17,7 +17,7 @@ public class RailroadTrackView {
 
     RailroadTrackView(RailroadTrack railroadTrack) {
         players = railroadTrack.getPlayers().stream()
-                .collect(Collectors.toMap(Function.identity(), player -> new SpaceView(railroadTrack, railroadTrack.current(player))));
+                .collect(Collectors.toMap(Function.identity(), player -> new SpaceView(railroadTrack, railroadTrack.currentSpace(player))));
 
         stations = railroadTrack.getStations().stream().map(StationView::new).collect(Collectors.toList());
     }

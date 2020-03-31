@@ -16,7 +16,7 @@ public enum StationMaster {
 
     private final Supplier<ImmediateActions> immediateActionsSupplier;
 
-    public ImmediateActions getImmediateActions() {
+    ImmediateActions getImmediateActions() {
         return immediateActionsSupplier.get();
     }
 }

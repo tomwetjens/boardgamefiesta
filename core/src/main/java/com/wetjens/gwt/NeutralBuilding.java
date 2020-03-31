@@ -1,5 +1,7 @@
 package com.wetjens.gwt;
 
+import lombok.Value;
+
 public abstract class NeutralBuilding extends Building {
 
     protected NeutralBuilding() {
@@ -19,7 +21,7 @@ public abstract class NeutralBuilding extends Building {
 
         @Override
         public PossibleAction getPossibleAction() {
-            return PossibleAction.any(Action.DiscardOneDutchBelt.class, Action.PlaceBuilding.class);
+            return PossibleAction.any(Action.Discard1DutchBeltToGain2Dollars.class, Action.PlaceBuilding.class);
         }
 
     }
@@ -92,18 +94,13 @@ public abstract class NeutralBuilding extends Building {
             }
         }
 
+        @Value
         public static final class RemoveHazard extends Action {
-
-            private final HazardType type;
-
-            public RemoveHazard(HazardType type) {
-                this.type = type;
-            }
-
+            Hazard hazard;
             @Override
             public ImmediateActions perform(Game game) {
                 game.currentPlayerState().payDollars(7);
-                game.getTrail().removeHazard(type);
+                game.getTrail().removeHazard(hazard);
                 return ImmediateActions.none();
             }
         }

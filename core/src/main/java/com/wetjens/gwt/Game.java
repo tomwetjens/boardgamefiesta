@@ -1,6 +1,5 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,7 +73,7 @@ public class Game {
 
         this.railroadTrack = new RailroadTrack(this.players, random);
 
-        this.trail = new Trail();
+        this.trail = new Trail(random);
         this.kansasCitySupply = new KansasCitySupply(random);
 
         placeInitialTiles();
@@ -148,7 +147,7 @@ public class Game {
         currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
     }
 
-    PlayerState currentPlayerState() {
+    public PlayerState currentPlayerState() {
         return playerState(currentPlayer);
     }
 
@@ -182,5 +181,10 @@ public class Game {
 
     public RailroadTrack getRailroadTrack() {
         return railroadTrack;
+    }
+
+    public Set<List<Location>> possibleMoves(Player player, Location to) {
+        Location from = trail.getCurrentLocation(player);
+        return trail.possibleMoves(from, to, playerState(player).getStepLimit());
     }
 }

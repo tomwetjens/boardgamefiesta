@@ -7,11 +7,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 public class Trail {
 
@@ -25,7 +27,7 @@ public class Trail {
 
     private final Map<Player, Location> playerLocations = new HashMap<>();
 
-    public Trail() {
+    public Trail(@NonNull Random random) {
         // TODO Randomize building placement if not beginner
         Queue<Building> buildingsToPlace = new LinkedList<>(Arrays.asList(
                 new NeutralBuilding.G(),
@@ -176,8 +178,13 @@ public class Trail {
         playerLocations.put(player, to);
     }
 
-    public void removeHazard(HazardType type) {
+    public void removeHazard(Hazard hazard) {
+        Location.HazardLocation hazardLocation = getHazardLocations(hazard.getType()).stream()
+                .filter(location -> hazard == location.getHazard().orElse(null))
+                .findAny()
+                .orElseThrow(() -> new IllegalArgumentException("Hazard not on trail"));
 
+        hazardLocation.removeHazard();
     }
 
     public Location getLocation(String name) {
@@ -191,5 +198,35 @@ public class Trail {
         return teepeeLocations.stream()
                 .filter(teepeeLocation -> teepeeLocation.getReward() == reward).findAny()
                 .orElseThrow(() -> new IllegalArgumentException("No teepee location for " + reward));
+    }
+
+    Set<List<Location>> possibleMoves(Location from, Location to, int stepLimit) {
+        if (from.isEmpty()) {
+            throw new IllegalArgumentException("From location cannot be empty");
+        }
+
+        if (to.isEmpty()) {
+            throw new IllegalArgumentException("To location cannot be empty");
+        }
+
+        return reachableLocations(from, to, stepLimit)
+                .filter(steps -> steps.get(steps.size() - 1) == to)
+                .collect(Collectors.toSet());
+    }
+
+    private Stream<List<Location>> reachableLocations(Location from, Location to, int stepLimit) {
+        if (from == to || stepLimit == 0) {
+            return Stream.empty();
+        }
+
+        return from.getNext().stream()
+                .flatMap(next -> {
+                    return Stream.concat(
+                            Stream.of(Collections.singletonList(next)),
+                            next.isEmpty()
+                                    ? reachableLocations(next, to, stepLimit)
+                                    : reachableLocations(next, to, stepLimit - 1)
+                                    .map(nextSteps -> Stream.concat(Stream.of(next), nextSteps.stream()).collect(Collectors.toList())));
+                });
     }
 }

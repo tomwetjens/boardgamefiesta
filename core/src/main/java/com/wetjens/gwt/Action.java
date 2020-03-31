@@ -1,12 +1,15 @@
 package com.wetjens.gwt;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import lombok.Value;
 
 public abstract class Action {
 
@@ -318,11 +321,14 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static class RemoveHazardForFree extends Action {
+        Hazard hazard;
         @Override
         public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
+            game.getTrail().removeHazard(hazard);
+            game.currentPlayerState().addHazard(hazard);
+            return ImmediateActions.none();
         }
     }
 
@@ -374,19 +380,21 @@ public abstract class Action {
         }
     }
 
-    public static final class DiscardOneJerseyToGainCertificate extends Action {
+    public static final class Discard1JerseyToGain1Certificate extends Action {
         @Override
         public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
+            game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
+            game.currentPlayerState().gainCertificates(1);
+            return ImmediateActions.none();
         }
     }
 
-    public static final class DiscardOneJerseyToGainTwoDollars extends Action {
+    public static final class Discard1JerseyToGain2Dollars extends Action {
         @Override
         public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
+            game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
+            game.currentPlayerState().gainDollars(2);
+            return ImmediateActions.none();
         }
     }
 
@@ -396,23 +404,25 @@ public abstract class Action {
         }
     }
 
-    public static final class DiscardOneJerseyToGainTwoCertificates extends Action {
+    public static final class Discard1JerseyToGain2Certificates extends Action {
         @Override
         public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
+            game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
+            game.currentPlayerState().gainCertificates(2);
+            return ImmediateActions.none();
         }
     }
 
-    public static final class DiscardOneJerseyToGainFourDollars extends Action {
+    public static final class Discard1JerseyToGain4Dollars extends Action {
         @Override
         public ImmediateActions perform(Game game) {
-            // TODO
-            return null;
+            game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
+            game.currentPlayerState().gainCertificates(4);
+            return ImmediateActions.none();
         }
     }
 
-    public static final class DiscardOneDutchBelt extends Action {
+    public static final class Discard1DutchBeltToGain2Dollars extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             PlayerState playerState = game.currentPlayerState();
@@ -493,7 +503,7 @@ public abstract class Action {
 
         @Override
         public ImmediateActions perform(@NonNull Game game) {
-            RailroadTrack.Space current = game.getRailroadTrack().current(game.getCurrentPlayer());
+            RailroadTrack.Space current = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
             Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
 
             return station.upgrade(game);
@@ -506,10 +516,74 @@ public abstract class Action {
 
         @Override
         public ImmediateActions perform(@NonNull Game game) {
-            RailroadTrack.Space current = game.getRailroadTrack().current(game.getCurrentPlayer());
+            RailroadTrack.Space current = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
             Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
 
             return station.appointStationMaster(game, worker);
+        }
+    }
+
+    public static final class ChooseForesights extends Action {
+
+        private final List<Choice> choices;
+
+        public ChooseForesights(@NonNull List<Choice> choices) {
+            if (choices.size() != 3) {
+                throw new IllegalArgumentException("Must have 3 choices");
+            }
+            this.choices = new ArrayList<>(choices);
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            for (int columnIndex = 0; columnIndex < choices.size(); columnIndex++) {
+                Choice choice = choices.get(columnIndex);
+
+                KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, choice.getRowIndex());
+
+                if (tile.getWorker() != null) {
+                    boolean fillUpCattleMarket = game.getJobMarket().addWorker(tile.getWorker());
+                    if (fillUpCattleMarket) {
+                        game.getCattleMarket().fillUp();
+                    }
+                } else if (tile.getHazard() != null) {
+                    if (!(choice.getLocation() instanceof Location.HazardLocation)) {
+                        throw new IllegalArgumentException("Must pick a hazard location");
+                    }
+                    ((Location.HazardLocation) choice.getLocation()).placeHazard(tile.getHazard());
+                } else {
+                    if (!(choice.getLocation() instanceof Location.TeepeeLocation)) {
+                        throw new IllegalArgumentException("Must pick a teepee location");
+                    }
+                    ((Location.TeepeeLocation) choice.getLocation()).placeTeepee(tile.getTeepee());
+                }
+            }
+
+            return ImmediateActions.none();
+        }
+
+        @Value
+        public static final class Choice {
+            private final int rowIndex;
+            private final Location location;
+        }
+    }
+
+    @Value
+    public static final class DeliverToCity extends Action {
+
+        City city;
+        int certificates;
+
+        @Override
+        public ImmediateActions perform(Game game) {
+
+            // TODO
+            if (city == City.SAN_FRANCISCO) {
+                return ImmediateActions.of(PossibleAction.optional(GainObjectiveCard.class));
+            }
+
+            return ImmediateActions.none();
         }
     }
 }

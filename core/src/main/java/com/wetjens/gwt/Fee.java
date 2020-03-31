@@ -14,6 +14,6 @@ public enum Fee {
     }
 
     public int getAmount(int playerCount) {
-        return amounts[playerCount - 1];
+        return amounts[playerCount - 2];
     }
 }
