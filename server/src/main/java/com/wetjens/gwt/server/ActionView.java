@@ -7,7 +7,6 @@ import com.wetjens.gwt.Move;
 import com.wetjens.gwt.NeutralBuilding;
 import com.wetjens.gwt.ObjectiveCard;
 import com.wetjens.gwt.PlayObjectiveCard;
-import com.wetjens.gwt.RailroadTrack;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
@@ -37,8 +36,8 @@ public enum ActionView {
     REMOVE_HAZARD_FOR_FREE(Action.RemoveHazardForFree.class),
     PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTS(Action.SingleOrDoubleAuxiliaryAction.Pay2DollarsAndMoveEngine2SpacesBackwardsToGain2Certificates.class),
     GAIN_OBJECTIVE_CARD(Action.GainObjectiveCard.class),
-    UPGRADE_STATION(RailroadTrack.UpgradeStation.class),
-    APPOINT_STATION_MASTER(RailroadTrack.AppointStationMaster.class),
+    UPGRADE_STATION(Action.UpgradeStation.class),
+    APPOINT_STATION_MASTER(Action.AppointStationMaster.class),
     PLAY_OBJECTIVE_CARD(PlayObjectiveCard.class),
     DISCARD_1_JERSEY_TO_GAIN_2_CERTS(Action.DiscardOneJerseyToGainTwoCertificates.class),
     REMOVE_HAZARD(NeutralBuilding.F.RemoveHazard.class),

@@ -53,7 +53,7 @@ public class Station {
         players.add(game.getCurrentPlayer());
 
         return stationMaster != null
-                ? ImmediateActions.of(PossibleAction.optional(RailroadTrack.AppointStationMaster.class))
+                ? ImmediateActions.of(PossibleAction.optional(Action.AppointStationMaster.class))
                 : ImmediateActions.none();
     }
 

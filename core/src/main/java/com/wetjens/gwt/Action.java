@@ -488,4 +488,28 @@ public abstract class Action {
                     });
         }
     }
+
+    public static final class UpgradeStation extends Action {
+
+        @Override
+        public ImmediateActions perform(@NonNull Game game) {
+            RailroadTrack.Space current = game.getRailroadTrack().current(game.getCurrentPlayer());
+            Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
+
+            return station.upgrade(game);
+        }
+    }
+
+    @AllArgsConstructor
+    public static final class AppointStationMaster extends Action {
+        Worker worker;
+
+        @Override
+        public ImmediateActions perform(@NonNull Game game) {
+            RailroadTrack.Space current = game.getRailroadTrack().current(game.getCurrentPlayer());
+            Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
+
+            return station.appointStationMaster(game, worker);
+        }
+    }
 }

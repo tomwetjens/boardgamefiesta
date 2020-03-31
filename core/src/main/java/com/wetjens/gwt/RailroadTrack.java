@@ -13,7 +13,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -140,7 +139,7 @@ public class RailroadTrack {
 
         return to.getStation()
                 .filter(station -> !station.hasUpgraded(player))
-                .map(station -> ImmediateActions.of(PossibleAction.optional(UpgradeStation.class)))
+                .map(station -> ImmediateActions.of(PossibleAction.optional(Action.UpgradeStation.class)))
                 .orElse(ImmediateActions.none());
     }
 
@@ -230,7 +229,7 @@ public class RailroadTrack {
 
         return to.getStation()
                 .filter(station -> !station.hasUpgraded(player))
-                .map(station -> ImmediateActions.of(PossibleAction.optional(UpgradeStation.class)))
+                .map(station -> ImmediateActions.of(PossibleAction.optional(Action.UpgradeStation.class)))
                 .orElse(ImmediateActions.none());
     }
 
@@ -296,30 +295,6 @@ public class RailroadTrack {
             public EndSpace(int number, @NonNull Station station) {
                 super(number, station, Collections.emptySet());
             }
-        }
-    }
-
-    public static final class UpgradeStation extends Action {
-
-        @Override
-        public ImmediateActions perform(@NonNull Game game) {
-            Space current = game.getRailroadTrack().current(game.getCurrentPlayer());
-            Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
-
-            return station.upgrade(game);
-        }
-    }
-
-    @AllArgsConstructor
-    public static final class AppointStationMaster extends Action {
-        Worker worker;
-
-        @Override
-        public ImmediateActions perform(@NonNull Game game) {
-            Space current = game.getRailroadTrack().current(game.getCurrentPlayer());
-            Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
-
-            return station.appointStationMaster(game, worker);
         }
     }
 }
