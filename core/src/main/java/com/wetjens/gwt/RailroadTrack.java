@@ -147,15 +147,14 @@ public class RailroadTrack {
     public Set<Space> reachableSpacesForward(@NonNull Player player, @NonNull Space from, @NonNull Space current, int atLeast, int atMost) {
         Set<Space> reachable = new HashSet<>();
 
-        Optional<Player> playerOnSpace = playerAt(current);
-        boolean otherPlayerOnSpace = playerOnSpace.filter(p -> p != player).isPresent();
-        boolean empty = !otherPlayerOnSpace && current != from;
-        boolean possible = empty && atLeast <= 1;
+        boolean available = current != from && playerAt(current).isEmpty();
+        boolean possible = available && atLeast <= 1;
+
         if (possible) {
             reachable.add(current);
         }
 
-        if (!empty) {
+        if (!available) {
             // Space is not empty, jump over
             reachable.addAll(current.next.stream()
                     .flatMap(next -> reachableSpacesForward(player, from, next, atLeast, atMost).stream())
@@ -173,15 +172,14 @@ public class RailroadTrack {
     public Set<Space> reachableSpacesBackwards(@NonNull Player player, @NonNull Space from, @NonNull Space current, int atLeast, int atMost) {
         Set<Space> reachable = new HashSet<>();
 
-        Optional<Player> playerOnSpace = playerAt(current);
-        boolean otherPlayerOnSpace = playerOnSpace.filter(p -> p != player).isPresent();
-        boolean empty = !otherPlayerOnSpace && current != from;
-        boolean possible = empty && atLeast <= 1;
+        boolean available = current != from && (current == start || playerAt(current).isEmpty());
+        boolean possible = available && atLeast <= 1;
+
         if (possible) {
             reachable.add(current);
         }
 
-        if (!empty) {
+        if (!available) {
             // Space is not empty, jump over
             reachable.addAll(current.previous.stream()
                     .flatMap(previous -> reachableSpacesBackwards(player, from, previous, atLeast, atMost).stream())
@@ -212,15 +210,14 @@ public class RailroadTrack {
             throw new IllegalArgumentException("Must move at most 0..6, but was: " + atMost);
         }
 
-        // TODO Allow multiple players on start space
-        if (playerAt(to).isPresent()) {
+        if (to != start && playerAt(to).isPresent()) {
             throw new IllegalStateException("Another player already on space");
         }
 
         Space from = current(player);
 
         if (to == from) {
-            throw new IllegalArgumentException("Must specify different space that current");
+            throw new IllegalArgumentException("Must specify different space than current");
         }
 
         Set<Space> reachable = reachableSpacesBackwards(player, from, from, atLeast, atMost);

@@ -141,6 +141,16 @@ class RailroadTrackTest {
     }
 
     @Test
+    void moveEngineForwardAlreadyPlayerOnSpace() {
+        // Given
+        railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(1), 1, 1);
+
+        // When
+        assertThatThrownBy(() -> railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(1), 1, 1))
+                .hasMessage("Another player already on space");
+    }
+
+    @Test
     void moveEngineBackwardsJumpOver() {
         // Given
         railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(1), 1, 1);
@@ -170,6 +180,29 @@ class RailroadTrackTest {
         assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerB)).getNumber()).isEqualTo(2);
         assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerC)).getNumber()).isEqualTo(4);
         assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerD)).getNumber()).isEqualTo(3);
+    }
+
+    @Test
+    void moveEngineBackwardsToStart() {
+        // Given
+        railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(1), 1, 1);
+
+        // When
+        railroadTrack.moveEngineBackwards(playerA, railroadTrack.getStart(), 1, 1);
+
+        // Then
+        assertThat(((RailroadTrack.Space.NumberedSpace) railroadTrack.current(playerA))).isSameAs(railroadTrack.getStart());
+    }
+
+    @Test
+    void moveEngineBackwardsAlreadyPlayerOnSpace() {
+        // Given
+        railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(1), 1, 1);
+        railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(2), 1, 1);
+
+        // When
+        assertThatThrownBy(() -> railroadTrack.moveEngineBackwards(playerB, railroadTrack.getSpace(1), 1, 1))
+                .hasMessage("Another player already on space");
     }
 
     @Test
