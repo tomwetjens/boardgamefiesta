@@ -47,59 +47,6 @@ public abstract class Action {
         public ImmediateActions perform(Game game) {
             return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions())));
         }
-
-        public static final class Gain1Dollars extends Action {
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().gainDollars(1);
-                return ImmediateActions.none();
-            }
-        }
-
-        public static final class Pay1DollarAndMoveEngine1SpaceBackwardsToGain1Certificate extends Action {
-            private final RailroadTrack.Space to;
-
-            public Pay1DollarAndMoveEngine1SpaceBackwardsToGain1Certificate(RailroadTrack.Space to) {
-                this.to = to;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().payDollars(1);
-                ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
-                // TODO Check if gaining certificate AFTER possible immediate actions from railroad track is OK
-                game.currentPlayerState().gainCertificates(1);
-                return immediateActions;
-            }
-        }
-
-        public static final class Pay1DollarToMoveEngine1SpaceForward extends Action {
-            private final RailroadTrack.Space to;
-
-            public Pay1DollarToMoveEngine1SpaceForward(RailroadTrack.Space to) {
-                this.to = to;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().payDollars(1);
-                return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 1);
-            }
-        }
-
-        public static final class MoveEngine1SpaceBackwardsToRemove1Card extends Action {
-            private final RailroadTrack.Space to;
-
-            public MoveEngine1SpaceBackwardsToRemove1Card(RailroadTrack.Space to) {
-                this.to = to;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                return game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1)
-                        .andThen(PossibleAction.mandatory(Remove1Card.class));
-            }
-        }
     }
 
     public static final class Gain2Dollars extends Action {
@@ -121,45 +68,12 @@ public abstract class Action {
 
             return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(actions)));
         }
-
-        public static final class Pay2DollarsAndMoveEngine2SpacesBackwardsToGain2Certificates extends Action {
-
-            private final RailroadTrack.Space to;
-
-            public Pay2DollarsAndMoveEngine2SpacesBackwardsToGain2Certificates(RailroadTrack.Space to) {
-                this.to = to;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().payDollars(2);
-                ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2);
-                // TODO Check if gaining certificates AFTER possible immediate actions from railroad track is OK
-                game.currentPlayerState().gainCertificates(2);
-                return immediateActions;
-            }
-        }
-
-        public static final class MoveEngine2SpacesBackwardsToRemove2Cards extends Action {
-
-            private final RailroadTrack.Space to;
-
-            public MoveEngine2SpacesBackwardsToRemove2Cards(RailroadTrack.Space to) {
-                this.to = to;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                return game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2)
-                        .andThen(PossibleAction.mandatory(Remove2Cards.class));
-            }
-        }
     }
 
-    public static final class Pay2DollarsToMoveEngine2SpacesForward extends Action {
+    public static final class Pay2DollarsToMoveEngine2Forward extends Action {
         private final RailroadTrack.Space to;
 
-        public Pay2DollarsToMoveEngine2SpacesForward(RailroadTrack.Space to) {
+        public Pay2DollarsToMoveEngine2Forward(RailroadTrack.Space to) {
             this.to = to;
         }
 
@@ -171,35 +85,31 @@ public abstract class Action {
         }
     }
 
-    public abstract static class DrawCardThenDiscardCard extends Action {
-
-        public static final class Draw1CardThenDiscard1Card extends DrawCardThenDiscardCard {
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().drawCard();
-                return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.Discard1Card.class));
-            }
+    public static final class Draw1CardThenDiscard1Card extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().drawCard();
+            return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.Discard1Card.class));
         }
+    }
 
-        public static final class Draw2CardsThenDiscard2Cards extends DrawCardThenDiscardCard {
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().drawCard();
-                game.currentPlayerState().drawCard();
-                return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.Discard2Cards.class));
-            }
+    public static final class Draw2CardsThenDiscard2Cards extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().drawCard();
+            game.currentPlayerState().drawCard();
+            return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.Discard2Cards.class));
         }
+    }
 
-        public static class Draw3CardsThenDiscard3Cards extends DrawCardThenDiscardCard {
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().drawCard();
-                game.currentPlayerState().drawCard();
-                game.currentPlayerState().drawCard();
-                return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.Discard3Cards.class));
-            }
+    public static class Draw3CardsThenDiscard3Cards extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().drawCard();
+            game.currentPlayerState().drawCard();
+            game.currentPlayerState().drawCard();
+            return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.Discard3Cards.class));
         }
-
     }
 
     public static final class GainObjectiveCard extends Action {
@@ -212,7 +122,6 @@ public abstract class Action {
 
             return ImmediateActions.none();
         }
-
     }
 
     public static class MoveEngineForward extends Action {
@@ -261,6 +170,7 @@ public abstract class Action {
     @AllArgsConstructor
     public static class TradeWithIndians extends Action {
         int cost;
+
         @Override
         public ImmediateActions perform(Game game) {
             Location.TeepeeLocation teepeeLocation = game.getTrail().getTeepeeLocation(cost);
@@ -271,7 +181,7 @@ public abstract class Action {
                 teepeeLocation.removeTeepee();
                 game.currentPlayerState().addTeepee(teepee);
                 game.currentPlayerState().gainDollars(teepeeLocation.getReward());
-            }else {
+            } else {
                 game.currentPlayerState().payDollars(teepeeLocation.getReward());
                 teepeeLocation.removeTeepee();
                 game.currentPlayerState().addTeepee(teepee);
@@ -324,6 +234,7 @@ public abstract class Action {
     @Value
     public static class RemoveHazardForFree extends Action {
         Hazard hazard;
+
         @Override
         public ImmediateActions perform(Game game) {
             game.getTrail().removeHazard(hazard);
@@ -332,7 +243,7 @@ public abstract class Action {
         }
     }
 
-    public static final class DiscardOneGuernsey extends Action {
+    public static final class Discard1Guernsey extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             PlayerState playerState = game.currentPlayerState();
@@ -577,11 +488,288 @@ public abstract class Action {
 
         @Override
         public ImmediateActions perform(Game game) {
+            int breedingValue = game.currentPlayerState().handValue() + certificates;
 
-            // TODO
+            if (breedingValue < city.getValue()) {
+                throw new IllegalArgumentException("Not enough hand value for city");
+            }
+
+            game.currentPlayerState().spendCertificates(certificates);
+
+            game.getRailroadTrack().deliverToCity(game.getCurrentPlayer(), city);
+
+            int reward = breedingValue - city.getSignals() + game.getRailroadTrack().signalsPassed(game.getCurrentPlayer());
+
+            game.currentPlayerState().gainDollars(reward);
+            game.currentPlayerState().discardAllCards();
+            game.currentPlayerState().drawUpToHandLimit();
+
+            // TODO Immediate actions from delivering to a city
             if (city == City.SAN_FRANCISCO) {
                 return ImmediateActions.of(PossibleAction.optional(GainObjectiveCard.class));
             }
+            return ImmediateActions.none();
+        }
+    }
+
+    @Value
+    public static final class MoveEngineAtLeast1BackwardsAndGain3Dollars extends Action {
+        RailroadTrack.Space to;
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, Integer.MAX_VALUE);
+
+            game.currentPlayerState().gainDollars(3);
+
+            return immediateActions;
+        }
+    }
+
+    public static final class Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates extends Action {
+
+        private final RailroadTrack.Space to;
+
+        public Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates(RailroadTrack.Space to) {
+            this.to = to;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().payDollars(2);
+            ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2);
+            // TODO Check if gaining certificates AFTER possible immediate actions from railroad track is OK
+            game.currentPlayerState().gainCertificates(2);
+            return immediateActions;
+        }
+    }
+
+    public static final class MoveEngine2BackwardsToRemove2Cards extends Action {
+
+        private final RailroadTrack.Space to;
+
+        public MoveEngine2BackwardsToRemove2Cards(RailroadTrack.Space to) {
+            this.to = to;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            return game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2)
+                    .andThen(PossibleAction.mandatory(Remove2Cards.class));
+        }
+    }
+
+    public static final class MoveEngine2Or3Forward extends Action {
+        private final RailroadTrack.Space to;
+
+        public MoveEngine2Or3Forward(RailroadTrack.Space to) {
+            this.to = to;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 2, 3);
+        }
+    }
+
+    public static final class Gain1Dollars extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().gainDollars(1);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static final class Pay1DollarAndMoveEngine1BackwardsToGain1Certificate extends Action {
+        private final RailroadTrack.Space to;
+
+        public Pay1DollarAndMoveEngine1BackwardsToGain1Certificate(RailroadTrack.Space to) {
+            this.to = to;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().payDollars(1);
+            ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
+            // TODO Check if gaining certificate AFTER possible immediate actions from railroad track is OK
+            game.currentPlayerState().gainCertificates(1);
+            return immediateActions;
+        }
+    }
+
+    public static final class Pay1DollarToMoveEngine1Forward extends Action {
+        private final RailroadTrack.Space to;
+
+        public Pay1DollarToMoveEngine1Forward(RailroadTrack.Space to) {
+            this.to = to;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().payDollars(1);
+            return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 1);
+        }
+    }
+
+    public static final class MoveEngine1BackwardsToRemove1Card extends Action {
+        private final RailroadTrack.Space to;
+
+        public MoveEngine1BackwardsToRemove1Card(RailroadTrack.Space to) {
+            this.to = to;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            return game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1)
+                    .andThen(PossibleAction.mandatory(Remove1Card.class));
+        }
+    }
+
+    public static final class DiscardPairToGain4Dollars extends Action {
+
+        private final CattleType type;
+
+        public DiscardPairToGain4Dollars(CattleType type) {
+            this.type = type;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().discardCattleCards(type, 2);
+            game.currentPlayerState().gainDollars(4);
+            return ImmediateActions.none();
+        }
+    }
+
+    @Value
+    public static final class RemoveHazard extends Action {
+        Hazard hazard;
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().payDollars(7);
+            game.getTrail().removeHazard(hazard);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static class PlayObjectiveCard extends Action {
+
+        private final ObjectiveCard objectiveCard;
+
+        public PlayObjectiveCard(ObjectiveCard objectiveCard) {
+            this.objectiveCard = objectiveCard;
+        }
+
+        @Override
+        public boolean canPlayAnyTime() {
+            return true;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            return game.currentPlayerState().playObjectiveCard(objectiveCard);
+        }
+    }
+
+    public static final class Move extends Action {
+
+        private final List<Location> steps;
+
+        public Move(List<Location> steps) {
+            this.steps = new ArrayList<>(steps);
+        }
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            if (steps.isEmpty()) {
+                throw new IllegalArgumentException("Must take at least one step");
+            }
+
+            PlayerState currentPlayerState = game.currentPlayerState();
+            if (steps.size() > currentPlayerState.getStepLimit()) {
+                throw new IllegalArgumentException("Number of steps exceeds player step limit");
+            }
+
+            if (game.getTrail().isAtLocation(game.getCurrentPlayer())) {
+                Location from = game.getTrail().getCurrentLocation(game.getCurrentPlayer());
+
+                checkDirectAndConsecutiveSteps(from, steps);
+
+                payFees(game);
+            }
+
+            Location to = steps.get(steps.size() - 1);
+
+            game.getTrail().movePlayer(game.getCurrentPlayer(), to);
+
+            return to.getPossibleAction()
+                    .map(ImmediateActions::of)
+                    .orElse(ImmediateActions.none());
+        }
+
+        private void checkDirectAndConsecutiveSteps(Location from, List<Location> steps) {
+            Location to = steps.get(0);
+            if (!from.isDirect(to)) {
+                throw new IllegalArgumentException("Cannot step from " + from + " to " + to);
+            }
+            if (steps.size() > 1) {
+                checkDirectAndConsecutiveSteps(to, steps.subList(1, steps.size()));
+            }
+        }
+
+        private void payFees(Game game) {
+            for (Location location : steps) {
+                payFee(game, location);
+            }
+        }
+
+        private void payFee(Game game, Location location) {
+            PlayerState currentPlayerState = game.currentPlayerState();
+
+            // Can never pay more than player has
+            int amount = Math.min(currentPlayerState.getBalance(),
+                    location.getFee().getAmount(game.getPlayers().size()));
+
+            currentPlayerState.payDollars(amount);
+
+            feeRecipient(location)
+                    .map(game::playerState)
+                    .ifPresent(recipient -> recipient.gainDollars(amount));
+        }
+
+        private Optional<Player> feeRecipient(Location location) {
+            Optional<Player> recipient = Optional.empty();
+            if (location instanceof Location.BuildingLocation) {
+                recipient = ((Location.BuildingLocation) location).getBuilding()
+                        .filter(building -> building instanceof PlayerBuilding)
+                        .map(building -> ((PlayerBuilding) building).getPlayer());
+            }
+            return recipient;
+        }
+    }
+
+    public static final class Discard1BlackAngusToGain2Dollars extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().discardCattleCards(CattleType.BLACK_ANGUS, 1);
+            game.currentPlayerState().gainDollars(2);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static class GainCertificate extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().gainCertificates(1);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static final class Draw2CattleCards extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.getCattleMarket().draw();
+            game.getCattleMarket().draw();
 
             return ImmediateActions.none();
         }

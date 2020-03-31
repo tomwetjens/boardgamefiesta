@@ -24,20 +24,20 @@ class GameTest {
 
         assertThat(game.getCurrentPlayer()).isSameAs(playerA);
 
-        assertThat(game.possibleActions()).containsExactly(Move.class);
+        assertThat(game.possibleActions()).containsExactly(Action.Move.class);
 
-        game.perform(new Move(Collections.singletonList(game.getTrail().getBuildingLocation(NeutralBuilding.A.class))));
+        game.perform(new Action.Move(Collections.singletonList(game.getTrail().getBuildingLocation(NeutralBuilding.A.class))));
 
         assertThat(game.possibleActions()).containsExactlyInAnyOrder(
-                Action.DiscardOneGuernsey.class,
+                Action.Discard1Guernsey.class,
                 Action.HireWorker.class,
                 Action.HireSecondWorker.class,
                 Action.SingleAuxiliaryAction.class);
 
-        game.perform(new Action.DiscardOneGuernsey());
+        game.perform(new Action.Discard1Guernsey());
 
         assertThat(game.possibleActions()).containsExactlyInAnyOrder(
-                PlayObjectiveCard.class,
+                Action.PlayObjectiveCard.class,
                 Action.HireWorker.class,
                 Action.HireSecondWorker.class);
     }

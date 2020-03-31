@@ -2,7 +2,6 @@ package com.wetjens.gwt.server;
 
 import com.wetjens.gwt.Action;
 import com.wetjens.gwt.Game;
-import com.wetjens.gwt.Move;
 
 import javax.json.JsonArray;
 import javax.json.JsonException;
@@ -46,7 +45,7 @@ public abstract class PerformRequest {
 
         @Override
         Action toAction(Game game) {
-            return new Move(steps.stream().map(game.getTrail()::getLocation).collect(Collectors.toList()));
+            return new Action.Move(steps.stream().map(game.getTrail()::getLocation).collect(Collectors.toList()));
         }
     }
 

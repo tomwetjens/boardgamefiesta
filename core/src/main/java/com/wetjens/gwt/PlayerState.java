@@ -205,19 +205,19 @@ public class PlayerState {
     public Set<Class<? extends Action>> unlockedSingleAuxiliaryActions() {
         Set<Class<? extends Action>> actions = new HashSet<>();
         if (hasUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
-            actions.add(Action.SingleAuxiliaryAction.Gain1Dollars.class);
+            actions.add(Action.Gain1Dollars.class);
         }
         if (hasUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-            actions.add(Action.DrawCardThenDiscardCard.Draw1CardThenDiscard1Card.class);
+            actions.add(Action.Draw1CardThenDiscard1Card.class);
         }
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
-            actions.add(Action.SingleAuxiliaryAction.Pay1DollarAndMoveEngine1SpaceBackwardsToGain1Certificate.class);
+            actions.add(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class);
         }
         if (hasUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
-            actions.add(Action.SingleAuxiliaryAction.Pay1DollarToMoveEngine1SpaceForward.class);
+            actions.add(Action.Pay1DollarToMoveEngine1Forward.class);
         }
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
-            actions.add(Action.SingleAuxiliaryAction.MoveEngine1SpaceBackwardsToRemove1Card.class);
+            actions.add(Action.MoveEngine1BackwardsToRemove1Card.class);
         }
         return actions;
     }
@@ -226,19 +226,19 @@ public class PlayerState {
         Set<Class<? extends Action>> actions = new HashSet<>(unlockedSingleAuxiliaryActions());
 
         if (hasAllUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
-            actions.add(Action.SingleOrDoubleAuxiliaryAction.Gain2Dollars.class);
+            actions.add(Action.Gain2Dollars.class);
         }
         if (hasAllUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-            actions.add(Action.DrawCardThenDiscardCard.Draw2CardsThenDiscard2Cards.class);
+            actions.add(Action.Draw2CardsThenDiscard2Cards.class);
         }
         if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
-            actions.add(Action.SingleOrDoubleAuxiliaryAction.Pay2DollarsAndMoveEngine2SpacesBackwardsToGain2Certificates.class);
+            actions.add(Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates.class);
         }
         if (hasAllUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
-            actions.add(Action.Pay2DollarsToMoveEngine2SpacesForward.class);
+            actions.add(Action.Pay2DollarsToMoveEngine2Forward.class);
         }
         if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
-            actions.add(Action.SingleOrDoubleAuxiliaryAction.MoveEngine2SpacesBackwardsToRemove2Cards.class);
+            actions.add(Action.MoveEngine2BackwardsToRemove2Cards.class);
         }
 
         return actions;
@@ -281,14 +281,25 @@ public class PlayerState {
     }
 
     public Set<RailroadTrack.PossibleDelivery> possibleDeliveries(RailroadTrack railroadTrack) {
-        int breedingValue = hand.stream()
-                .filter(card -> card instanceof Card.CattleCard)
-                .map(card -> (Card.CattleCard) card)
-                .map(Card.CattleCard::getType)
-                .distinct()
-                .mapToInt(CattleType::getValue)
-                .sum();
+        return railroadTrack.possibleDeliveries(player, handValue(), certificates);
+    }
 
-        return railroadTrack.possibleDeliveries(player, breedingValue, certificates);
+    public int handValue() {
+        return hand.stream()
+                    .filter(card -> card instanceof Card.CattleCard)
+                    .map(card -> (Card.CattleCard) card)
+                    .map(Card.CattleCard::getType)
+                    .distinct()
+                    .mapToInt(CattleType::getValue)
+                    .sum();
+    }
+
+    public void spendCertificates(int certificates) {
+
+    }
+
+    public void discardAllCards() {
+        discardPile.addAll(hand);
+        hand.clear();
     }
 }

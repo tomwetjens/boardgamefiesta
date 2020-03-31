@@ -10,13 +10,16 @@ import static org.assertj.core.api.Assertions.*;
 
 class TrailTest {
 
-    private Trail trail;
+    Player playerA = new Player("Player A", Player.Color.BLUE);
+    Player playerB = new Player("Player B", Player.Color.YELLOW);
+    Player playerC = new Player("Player C", Player.Color.RED);
+    Player playerD = new Player("Player D", Player.Color.WHITE);
+
+    Trail trail;
 
     @BeforeEach
     void setUp() {
         trail = new Trail(new Random(0));
-
-        Player playerA = new Player("Player A", Player.Color.BLUE);
 
         ((Location.BuildingLocation) trail.getLocation("A-1")).placeBuilding(new PlayerBuilding.Building1A(playerA));
         ((Location.BuildingLocation) trail.getLocation("A-2")).placeBuilding(new PlayerBuilding.Building2A(playerA));
@@ -54,5 +57,22 @@ class TrailTest {
         assertThat(trail.possibleMoves(a, b, 6)).containsExactlyInAnyOrder(
                 asList(trail.getLocation("A-1"), trail.getLocation("A-2"), b),
                 asList(trail.getLocation("FLOOD-1"), trail.getLocation("FLOOD-2"), b));
+    }
+
+    @Test
+    void twoForks() {
+        ((Location.BuildingLocation) trail.getLocation("F-1")).placeBuilding(new PlayerBuilding.Building10A(playerA));
+        ((Location.BuildingLocation) trail.getLocation("F-2")).placeBuilding(new PlayerBuilding.Building10A(playerB));
+        ((Location.BuildingLocation) trail.getLocation("G-1")).placeBuilding(new PlayerBuilding.Building10A(playerC));
+        ((Location.BuildingLocation) trail.getLocation("G-2")).placeBuilding(new PlayerBuilding.Building10A(playerD));
+
+        Location from = trail.getLocation("F");
+        Location to = trail.getKansasCity();
+
+        assertThat(trail.possibleMoves(from, to, 4)).containsExactlyInAnyOrder(
+                asList(trail.getLocation("F-1"), trail.getLocation("G"), trail.getLocation("G-1"), to),
+                asList(trail.getLocation("F-1"), trail.getLocation("G"), trail.getLocation("G-2"), to),
+                asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-1"), to),
+                asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-2"), to));
     }
 }

@@ -84,7 +84,7 @@ public class Game {
 
         this.objectiveCards = ObjectiveCard.randomDeck(random);
 
-        this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Move.class)));
+        this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
     }
 
     private List<Player> createPlayers(@NonNull Collection<String> names, @NonNull Random random) {
@@ -164,7 +164,7 @@ public class Game {
 
         if (!actionStack.peek().isImmediate() && currentPlayerState().canPlayObjectiveCard()) {
             possibleActions = new HashSet<>(possibleActions);
-            possibleActions.add(PlayObjectiveCard.class);
+            possibleActions.add(Action.PlayObjectiveCard.class);
             return Collections.unmodifiableSet(possibleActions);
         }
 

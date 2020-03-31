@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Value
@@ -16,7 +17,8 @@ public class GameView {
     RailroadTrackView railroadTrack;
     PlayerStateView player;
     Map<String, PlayerStateView> otherPlayers;
-    List<PlayerView> players;
+    Map<String, PlayerView> players;
+    List<String> playerOrder;
     ForesightsView foresights;
     TrailView trail;
     JobMarketView jobMarket;
@@ -40,7 +42,8 @@ public class GameView {
                 .filter(p -> p != viewingPlayer)
                 .collect(Collectors.toMap(Player::getName, p -> new PlayerStateView(game.playerState(p), viewingPlayer)));
 
-        players = game.getPlayers().stream().map(PlayerView::new).collect(Collectors.toList());
+        players = game.getPlayers().stream().map(PlayerView::new).collect(Collectors.toMap(PlayerView::getName, Function.identity()));
+        playerOrder = game.getPlayers().stream().map(Player::getName).collect(Collectors.toList());
 
         foresights = new ForesightsView(game.getForesights());
 

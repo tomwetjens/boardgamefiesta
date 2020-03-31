@@ -12,7 +12,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -44,7 +46,8 @@ public class RailroadTrack {
 
         Space.NumberedSpace last = end;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
-            Space.NumberedSpace current = new Space.NumberedSpace(number, Collections.singleton(last));
+            // TODO Set signals
+            Space.NumberedSpace current = new Space.NumberedSpace(false, number, Collections.singleton(last));
 
             last.previous.add(current);
             last = current;
@@ -120,96 +123,14 @@ public class RailroadTrack {
     }
 
     ImmediateActions moveEngineForward(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
-        if (atLeast < 0 || atLeast > 6) {
-            throw new IllegalArgumentException("Must move at least 0..6, but was: " + atLeast);
-        }
-
-        if (atMost < 0 || atMost > 6) {
-            throw new IllegalArgumentException("Must move at most 0..6, but was: " + atMost);
-        }
-
-        if (playerAt(to).isPresent()) {
-            throw new IllegalStateException("Another player already on space");
-        }
-
-        Space from = currentSpace(player);
-
-        if (to == from) {
-            throw new IllegalArgumentException("Must specify different space that current");
-        }
-
-        Set<Space> reachable = reachableSpacesForward(player, from, from, atLeast, atMost);
-
-        if (!reachable.contains(to)) {
-            throw new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps");
-        }
-
-        currentSpaces.put(player, to);
-
-        return to.getStation()
-                .filter(station -> !station.hasUpgraded(player))
-                .map(station -> ImmediateActions.of(PossibleAction.optional(Action.UpgradeStation.class)))
-                .orElse(ImmediateActions.none());
-    }
-
-    private Set<Space> reachableSpacesForward(@NonNull Player player, @NonNull Space from, @NonNull Space current, int atLeast, int atMost) {
-        Set<Space> reachable = new HashSet<>();
-
-        boolean available = current != from && playerAt(current).isEmpty();
-        boolean possible = available && atLeast <= 1;
-
-        if (possible) {
-            reachable.add(current);
-        }
-
-        if (!available) {
-            // Space is not empty, jump over
-            reachable.addAll(current.next.stream()
-                    .flatMap(next -> reachableSpacesForward(player, from, next, atLeast, atMost).stream())
-                    .collect(Collectors.toSet()));
-        } else if (possible && atMost > 1) {
-            // Space is possible so count as step
-            reachable.addAll(current.next.stream()
-                    .flatMap(next -> reachableSpacesForward(player, from, next, Math.max(atLeast - 1, 0), atMost - 1).stream())
-                    .collect(Collectors.toSet()));
-        }
-
-        return reachable;
-    }
-
-    private Set<Space> reachableSpacesBackwards(@NonNull Player player, @NonNull Space from, @NonNull Space current, int atLeast, int atMost) {
-        Set<Space> reachable = new HashSet<>();
-
-        boolean available = current != from && (current == start || playerAt(current).isEmpty());
-        boolean possible = available && atLeast <= 1;
-
-        if (possible) {
-            reachable.add(current);
-        }
-
-        if (!available) {
-            // Space is not empty, jump over
-            reachable.addAll(current.previous.stream()
-                    .flatMap(previous -> reachableSpacesBackwards(player, from, previous, atLeast, atMost).stream())
-                    .collect(Collectors.toSet()));
-        } else if (possible && atMost > 1) {
-            // Space is possible so count as step
-            reachable.addAll(current.previous.stream()
-                    .flatMap(previous -> reachableSpacesBackwards(player, from, previous, Math.max(atLeast - 1, 0), atMost - 1).stream())
-                    .collect(Collectors.toSet()));
-        }
-
-        return reachable;
-    }
-
-    private Optional<Player> playerAt(@NonNull Space space) {
-        return currentSpaces.entrySet().stream()
-                .filter(entry -> entry.getValue() == space)
-                .map(Map.Entry::getKey)
-                .findAny();
+        return moveEngine(player, to, atLeast, atMost, Space::getNext);
     }
 
     ImmediateActions moveEngineBackwards(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
+        return moveEngine(player, to, atLeast, atMost, Space::getPrevious);
+    }
+
+    private ImmediateActions moveEngine(@NonNull Player player, @NonNull RailroadTrack.@NonNull Space to, int atLeast, int atMost, Function<Space, Set<Space>> direction) {
         if (atLeast < 0 || atLeast > 6) {
             throw new IllegalArgumentException("Must move at least 0..6, but was: " + atLeast);
         }
@@ -228,7 +149,7 @@ public class RailroadTrack {
             throw new IllegalArgumentException("Must specify different space than current");
         }
 
-        Set<Space> reachable = reachableSpacesBackwards(player, from, from, atLeast, atMost);
+        Set<Space> reachable = reachableSpaces(from, from, atLeast, atMost, direction);
 
         if (!reachable.contains(to)) {
             throw new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps");
@@ -236,10 +157,48 @@ public class RailroadTrack {
 
         currentSpaces.put(player, to);
 
-        return to.getStation()
+        ImmediateActions immediateActions = to.getStation()
                 .filter(station -> !station.hasUpgraded(player))
                 .map(station -> ImmediateActions.of(PossibleAction.optional(Action.UpgradeStation.class)))
                 .orElse(ImmediateActions.none());
+
+        if (to == end) {
+            immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class));
+        }
+
+        return immediateActions;
+    }
+
+    private Set<Space> reachableSpaces(@NonNull Space from, @NonNull Space current, int atLeast, int atMost, Function<Space, Set<Space>> direction) {
+        Set<Space> reachable = new HashSet<>();
+
+        boolean available = current != from && (current == start || playerAt(current).isEmpty());
+        boolean possible = available && atLeast <= 1;
+
+        if (possible) {
+            reachable.add(current);
+        }
+
+        if (!available) {
+            // Space is not empty, jump over
+            reachable.addAll(direction.apply(current).stream()
+                    .flatMap(next -> reachableSpaces(from, next, atLeast, atMost, direction).stream())
+                    .collect(Collectors.toSet()));
+        } else if (possible && atMost > 1) {
+            // Space is possible so count as step
+            reachable.addAll(direction.apply(current).stream()
+                    .flatMap(next -> reachableSpaces(from, next, Math.max(atLeast - 1, 0), atMost - 1, direction).stream())
+                    .collect(Collectors.toSet()));
+        }
+
+        return reachable;
+    }
+
+    private Optional<Player> playerAt(@NonNull Space space) {
+        return currentSpaces.entrySet().stream()
+                .filter(entry -> entry.getValue() == space)
+                .map(Map.Entry::getKey)
+                .findAny();
     }
 
     public Set<PossibleDelivery> possibleDeliveries(Player player, int breedingValue, int certificates) {
@@ -250,23 +209,47 @@ public class RailroadTrack {
                 .collect(Collectors.toSet());
     }
 
+    public Map<City, List<Player>> getCities() {
+        return Collections.unmodifiableMap(cities);
+    }
+
     private boolean hasMadeDelivery(Player player, City city) {
         return cities.get(city).contains(player);
     }
 
+    void deliverToCity(Player player, City city) {
+        if (!city.isMultipleDeliveries() && hasMadeDelivery(player, city)) {
+            throw new IllegalStateException("Already delivered to city");
+        }
+
+        cities.get(city).add(player);
+    }
+
+    int signalsPassed(Player player) {
+        Space current = currentSpace(player);
+        return (int) spacesWithSignalsPassed(current).distinct().count();
+    }
+
+    private Stream<Space> spacesWithSignalsPassed(Space current) {
+        return Stream.concat(Stream.of(current), current.getPrevious().stream().flatMap(this::spacesWithSignalsPassed))
+                .filter(Space::hasSignal);
+    }
+
     @Value
-    public static class PossibleDelivery {
+    public static final class PossibleDelivery {
         City city;
         int certificates;
     }
 
     public static abstract class Space {
 
-        final Station station;
-        final Set<Space> next;
-        final Set<Space> previous = new HashSet<>();
+        private final boolean signal;
+        private final Station station;
+        private final Set<Space> next;
+        protected final Set<Space> previous = new HashSet<>();
 
-        private Space(Station station, Collection<Space> next) {
+        private Space(boolean signal, Station station, Collection<Space> next) {
+            this.signal = signal;
             this.station = station;
             this.next = new HashSet<>(next);
         }
@@ -283,6 +266,10 @@ public class RailroadTrack {
             return Collections.unmodifiableSet(previous);
         }
 
+        public boolean hasSignal() {
+            return signal;
+        }
+
         @Getter
         @ToString
         public static class NumberedSpace extends Space {
@@ -290,12 +277,12 @@ public class RailroadTrack {
             @Getter
             private final int number;
 
-            private NumberedSpace(int number, @NonNull Collection<Space> next) {
-                this(number, null, next);
+            private NumberedSpace(boolean signal, int number, @NonNull Collection<Space> next) {
+                this(signal, number, null, next);
             }
 
-            private NumberedSpace(int number, Station station, @NonNull Collection<Space> next) {
-                super(station, next);
+            private NumberedSpace(boolean signal, int number, Station station, @NonNull Collection<Space> next) {
+                super(signal, station, next);
                 this.number = number;
             }
         }
@@ -304,7 +291,7 @@ public class RailroadTrack {
         public static final class StartSpace extends NumberedSpace {
 
             private StartSpace(@NonNull NumberedSpace next) {
-                super(0, Collections.singleton(next));
+                super(false, 0, Collections.singleton(next));
             }
         }
 
@@ -312,7 +299,7 @@ public class RailroadTrack {
         public static final class TurnoutSpace extends Space {
 
             public TurnoutSpace(@NonNull Space previous, @NonNull Space next, @NonNull Station station) {
-                super(station, Collections.singleton(previous));
+                super(false, station, Collections.singleton(previous));
                 this.previous.add(next);
             }
         }
@@ -320,7 +307,7 @@ public class RailroadTrack {
         @ToString
         public static final class EndSpace extends NumberedSpace {
             public EndSpace(int number, @NonNull Station station) {
-                super(number, station, Collections.emptySet());
+                super(false, number, station, Collections.emptySet());
             }
         }
     }

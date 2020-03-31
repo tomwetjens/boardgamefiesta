@@ -220,13 +220,11 @@ public class Trail {
         }
 
         return from.getNext().stream()
-                .flatMap(next -> {
-                    return Stream.concat(
-                            Stream.of(Collections.singletonList(next)),
-                            next.isEmpty()
-                                    ? reachableLocations(next, to, stepLimit)
-                                    : reachableLocations(next, to, stepLimit - 1)
-                                    .map(nextSteps -> Stream.concat(Stream.of(next), nextSteps.stream()).collect(Collectors.toList())));
-                });
+                .flatMap(next -> Stream.concat(
+                        Stream.of(Collections.singletonList(next)),
+                        next.isEmpty()
+                                ? reachableLocations(next, to, stepLimit)
+                                : reachableLocations(next, to, stepLimit - 1)
+                                .map(nextSteps -> Stream.concat(Stream.of(next), nextSteps.stream()).collect(Collectors.toList()))));
     }
 }

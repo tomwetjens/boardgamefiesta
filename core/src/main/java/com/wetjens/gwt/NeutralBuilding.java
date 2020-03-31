@@ -1,7 +1,5 @@
 package com.wetjens.gwt;
 
-import lombok.Value;
-
 public abstract class NeutralBuilding extends Building {
 
     protected NeutralBuilding() {
@@ -12,7 +10,7 @@ public abstract class NeutralBuilding extends Building {
 
         @Override
         public PossibleAction getPossibleAction() {
-            return PossibleAction.any(Action.DiscardOneGuernsey.class, Action.HireWorker.class, Action.HireSecondWorker.class);
+            return PossibleAction.any(Action.Discard1Guernsey.class, Action.HireWorker.class, Action.HireSecondWorker.class);
         }
 
     }
@@ -31,16 +29,8 @@ public abstract class NeutralBuilding extends Building {
         @Override
         public PossibleAction getPossibleAction() {
             return PossibleAction.any(
-                    PossibleAction.choice(C.GainCertificate.class, Action.GainObjectiveCard.class),
+                    PossibleAction.choice(Action.GainCertificate.class, Action.GainObjectiveCard.class),
                     Action.MoveEngineForward.class);
-        }
-
-        public static class GainCertificate extends Action {
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().gainCertificates(1);
-                return ImmediateActions.none();
-            }
         }
     }
 
@@ -49,7 +39,7 @@ public abstract class NeutralBuilding extends Building {
         @Override
         public PossibleAction getPossibleAction() {
             return PossibleAction.any(
-                    PossibleAction.choice(Action.TradeWithIndians.class, Action.Pay2DollarsToMoveEngine2SpacesForward.class),
+                    PossibleAction.choice(Action.TradeWithIndians.class, Action.Pay2DollarsToMoveEngine2Forward.class),
                     Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }
@@ -58,16 +48,7 @@ public abstract class NeutralBuilding extends Building {
 
         @Override
         public PossibleAction getPossibleAction() {
-            return PossibleAction.any(Discard1BlackAngusToGain2Dollars.class, Action.BuyCattle.class);
-        }
-
-        public static final class Discard1BlackAngusToGain2Dollars extends Action {
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().discardCattleCards(CattleType.BLACK_ANGUS, 1);
-                game.currentPlayerState().gainDollars(2);
-                return ImmediateActions.none();
-            }
+            return PossibleAction.any(Action.Discard1BlackAngusToGain2Dollars.class, Action.BuyCattle.class);
         }
     }
 
@@ -75,34 +56,7 @@ public abstract class NeutralBuilding extends Building {
 
         @Override
         public PossibleAction getPossibleAction() {
-            return PossibleAction.any(DiscardPairToGain4Dollars.class, RemoveHazard.class);
-        }
-
-        public static final class DiscardPairToGain4Dollars extends Action {
-
-            private final CattleType type;
-
-            public DiscardPairToGain4Dollars(CattleType type) {
-                this.type = type;
-            }
-
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().discardCattleCards(type, 2);
-                game.currentPlayerState().gainDollars(4);
-                return ImmediateActions.none();
-            }
-        }
-
-        @Value
-        public static final class RemoveHazard extends Action {
-            Hazard hazard;
-            @Override
-            public ImmediateActions perform(Game game) {
-                game.currentPlayerState().payDollars(7);
-                game.getTrail().removeHazard(hazard);
-                return ImmediateActions.none();
-            }
+            return PossibleAction.any(Action.DiscardPairToGain4Dollars.class, Action.RemoveHazard.class);
         }
     }
 

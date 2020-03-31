@@ -36,8 +36,8 @@ public class ObjectiveCard extends Card {
         return Arrays.asList(
                 new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
                 new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(MoveEngine2Or3SpacesForward.class), Arrays.asList(Task.BUILDING, Task.BLUE_TEEPEE, Task.HAZARD, Task.HAZARD), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.DrawCardThenDiscardCard.Draw1CardThenDiscard1Card.class, Action.DrawCardThenDiscardCard.Draw2CardsThenDiscard2Cards.class, Action.DrawCardThenDiscardCard.Draw3CardsThenDiscard3Cards.class)), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.HAZARD), 5, 2)
+                new ObjectiveCard(PossibleAction.optional(Action.MoveEngine2Or3Forward.class), Arrays.asList(Task.BUILDING, Task.BLUE_TEEPEE, Task.HAZARD, Task.HAZARD), 5, 3),
+                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.Draw1CardThenDiscard1Card.class, Action.Draw2CardsThenDiscard2Cards.class, Action.Draw3CardsThenDiscard3Cards.class)), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.HAZARD), 5, 2)
                 // TODO Add all objective cards
         );
     }
@@ -52,18 +52,5 @@ public class ObjectiveCard extends Card {
         WEST_HIGHLAND,
         TEXAS_LONGHORN,
         SAN_FRANCISCO
-    }
-
-    public static final class MoveEngine2Or3SpacesForward extends Action {
-        private final RailroadTrack.Space to;
-
-        public MoveEngine2Or3SpacesForward(RailroadTrack.Space to) {
-            this.to = to;
-        }
-
-        @Override
-        public ImmediateActions perform(Game game) {
-            return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 2, 3);
-        }
     }
 }

@@ -216,7 +216,7 @@ public class CattleMarket {
         if (unusedCowboys > 0) {
             // TODO Now assumed unused cowboys can only be used after buying
             List<Class<? extends Action>> drawCardsForEachUnusedCowboy = IntStream.range(0, unusedCowboys)
-                    .mapToObj(i -> Draw2CattleCards.class)
+                    .mapToObj(i -> Action.Draw2CattleCards.class)
                     .collect(Collectors.toList());
             return ImmediateActions.of(PossibleAction.any(drawCardsForEachUnusedCowboy));
         }
@@ -229,7 +229,7 @@ public class CattleMarket {
         }
     }
 
-    private void draw() {
+    void draw() {
         market.add(drawStack.poll());
     }
 
@@ -275,15 +275,4 @@ public class CattleMarket {
         T a;
         T b;
     }
-
-    public static final class Draw2CattleCards extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            game.getCattleMarket().draw();
-            game.getCattleMarket().draw();
-
-            return ImmediateActions.none();
-        }
-    }
-
 }
