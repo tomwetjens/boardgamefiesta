@@ -25,12 +25,12 @@ public class PossibleMoveView {
                 .collect(Collectors.groupingBy(PlayerBuilding::getPlayer))
                 .entrySet().stream()
                 .collect(Collectors.toMap(entry -> entry.getKey().getName(), entry -> entry.getValue().stream()
-                        .mapToInt(playerBuilding -> playerBuilding.getFee().getAmount(playerCount))
+                        .mapToInt(playerBuilding -> playerBuilding.getHand().getFee(playerCount))
                         .sum()));
 
         this.cost = steps.stream()
-                .map(Location::getFee)
-                .mapToInt(fee -> fee.getAmount(playerCount))
+                .map(Location::getHand)
+                .mapToInt(hand -> hand.getFee(playerCount))
                 .sum();
 
         this.steps = steps.stream()

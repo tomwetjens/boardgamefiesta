@@ -728,7 +728,7 @@ public abstract class Action {
 
             // Can never pay more than player has
             int amount = Math.min(currentPlayerState.getBalance(),
-                    location.getFee().getAmount(game.getPlayers().size()));
+                    location.getHand().getFee(game.getPlayers().size()));
 
             currentPlayerState.payDollars(amount);
 

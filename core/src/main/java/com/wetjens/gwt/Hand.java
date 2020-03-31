@@ -1,6 +1,6 @@
 package com.wetjens.gwt;
 
-public enum Fee {
+public enum Hand {
 
     NONE(0, 0, 0),
     GREEN(2, 2, 1),
@@ -9,11 +9,11 @@ public enum Fee {
 
     private final int[] amounts;
 
-    Fee(int... amounts) {
-        this.amounts = amounts;
+    Hand(int... fees) {
+        this.amounts = fees;
     }
 
-    public int getAmount(int playerCount) {
+    public int getFee(int playerCount) {
         return amounts[playerCount - 2];
     }
 }

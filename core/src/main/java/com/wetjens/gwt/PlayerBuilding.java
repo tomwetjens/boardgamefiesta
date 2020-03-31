@@ -17,8 +17,8 @@ public abstract class PlayerBuilding extends Building {
     private final Player player;
     private int craftsmen;
 
-    protected PlayerBuilding(Player player, Fee fee) {
-        super(fee);
+    protected PlayerBuilding(Player player, Hand hand) {
+        super(hand);
 
         this.player = player;
     }
@@ -70,7 +70,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building1A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building1A(Player player) {
-            super(player, Fee.GREEN);
+            super(player, Hand.GREEN);
         }
 
         @Override
@@ -82,7 +82,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building2A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building2A(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -94,7 +94,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building3A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building3A(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -106,7 +106,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building4A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building4A(Player player) {
-            super(player, Fee.BLACK);
+            super(player, Hand.BLACK);
         }
 
         @Override
@@ -118,7 +118,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building5A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building5A(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -130,7 +130,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building6A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building6A(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -142,7 +142,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building7A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building7A(Player player) {
-            super(player, Fee.BOTH);
+            super(player, Hand.BOTH);
         }
 
         @Override
@@ -154,7 +154,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building8A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building8A(Player player) {
-            super(player, Fee.GREEN);
+            super(player, Hand.GREEN);
         }
 
         @Override
@@ -166,7 +166,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building9A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building9A(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -178,7 +178,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building10A extends com.wetjens.gwt.PlayerBuilding {
 
         public Building10A(Player player) {
-            super(player, Fee.BLACK);
+            super(player, Hand.BLACK);
         }
 
         @Override
@@ -190,7 +190,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building1B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building1B(Player player) {
-            super(player, Fee.GREEN);
+            super(player, Hand.GREEN);
         }
 
         @Override
@@ -202,7 +202,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building2B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building2B(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -214,7 +214,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building3B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building3B(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -226,7 +226,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building4B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building4B(Player player) {
-            super(player, Fee.BLACK);
+            super(player, Hand.BLACK);
         }
 
         @Override
@@ -238,7 +238,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building5B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building5B(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -250,7 +250,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building6B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building6B(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -262,7 +262,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building7B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building7B(Player player) {
-            super(player, Fee.BOTH);
+            super(player, Hand.BOTH);
         }
 
         @Override
@@ -274,7 +274,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building8B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building8B(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -286,7 +286,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building9B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building9B(Player player) {
-            super(player, Fee.NONE);
+            super(player, Hand.NONE);
         }
 
         @Override
@@ -298,7 +298,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building10B extends com.wetjens.gwt.PlayerBuilding {
 
         public Building10B(Player player) {
-            super(player, Fee.BLACK);
+            super(player, Hand.BLACK);
         }
 
         @Override

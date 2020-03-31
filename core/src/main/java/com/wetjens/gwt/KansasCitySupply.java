@@ -37,12 +37,12 @@ public class KansasCitySupply {
                         IntStream.range(0, 8).mapToObj(i -> new Tile(Teepee.BLUE))),
                 Arrays.stream(HazardType.values())
                         .flatMap(type -> Stream.of(
-                                new Hazard(type, Fee.BLACK, 3),
-                                new Hazard(type, Fee.BLACK, 2),
-                                new Hazard(type, Fee.GREEN, 4),
-                                new Hazard(type, Fee.GREEN, 4),
-                                new Hazard(type, Fee.GREEN, 3),
-                                new Hazard(type, Fee.GREEN, 2)))
+                                new Hazard(type, Hand.BLACK, 3),
+                                new Hazard(type, Hand.BLACK, 2),
+                                new Hazard(type, Hand.GREEN, 4),
+                                new Hazard(type, Hand.GREEN, 4),
+                                new Hazard(type, Hand.GREEN, 3),
+                                new Hazard(type, Hand.GREEN, 2)))
                         .map(Tile::new))
                 .collect(Collectors.toCollection(ArrayList::new));
     }

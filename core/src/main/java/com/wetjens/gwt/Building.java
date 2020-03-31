@@ -5,10 +5,10 @@ import lombok.Getter;
 public abstract class Building {
 
     @Getter
-    private final Fee fee;
+    private final Hand hand;
 
-    Building(Fee fee) {
-        this.fee = fee;
+    Building(Hand hand) {
+        this.hand = hand;
     }
 
     abstract PossibleAction getPossibleAction();

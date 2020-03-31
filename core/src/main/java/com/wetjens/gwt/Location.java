@@ -8,7 +8,6 @@ import java.util.Set;
 
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.ToString;
 
 public abstract class Location {
 
@@ -31,8 +30,8 @@ public abstract class Location {
         return Optional.empty();
     }
 
-    public Fee getFee() {
-        return Fee.NONE;
+    public Hand getHand() {
+        return Hand.NONE;
     }
 
     abstract boolean isEmpty();
@@ -89,11 +88,11 @@ public abstract class Location {
         }
 
         @Override
-        public Fee getFee() {
+        public Hand getHand() {
             if (building != null) {
-                return building.getFee();
+                return building.getHand();
             }
-            return Fee.NONE;
+            return Hand.NONE;
         }
 
         @Override
@@ -157,11 +156,11 @@ public abstract class Location {
         }
 
         @Override
-        public Fee getFee() {
+        public Hand getHand() {
             if (hazard != null) {
-                return hazard.getFee();
+                return hazard.getHand();
             }
-            return Fee.NONE;
+            return Hand.NONE;
         }
 
         @Override

@@ -3,7 +3,7 @@ package com.wetjens.gwt;
 public abstract class NeutralBuilding extends Building {
 
     protected NeutralBuilding() {
-        super(Fee.NONE);
+        super(Hand.NONE);
     }
 
     public static final class A extends NeutralBuilding {

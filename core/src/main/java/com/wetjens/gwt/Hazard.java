@@ -13,7 +13,7 @@ public class Hazard {
     private final HazardType type;
 
     @NonNull
-    private final Fee fee;
+    private final Hand hand;
 
     private final int points;
 }
