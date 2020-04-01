@@ -37,7 +37,7 @@ public class ObjectiveCard extends Card {
                 new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
                 new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
                 new ObjectiveCard(PossibleAction.optional(Action.MoveEngine2Or3Forward.class), Arrays.asList(Task.BUILDING, Task.BLUE_TEEPEE, Task.HAZARD, Task.HAZARD), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.Draw1CardThenDiscard1Card.class, Action.Draw2CardsThenDiscard2Cards.class, Action.Draw3CardsThenDiscard3Cards.class)), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.HAZARD), 5, 2)
+                new ObjectiveCard(PossibleAction.optional(Action.DrawCardsThenDiscardCards.upTo(3)), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.HAZARD), 5, 2)
                 // TODO Add all objective cards
         );
     }

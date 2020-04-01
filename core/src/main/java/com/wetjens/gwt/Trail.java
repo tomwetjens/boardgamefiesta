@@ -41,35 +41,35 @@ public class Trail {
 
         kansasCity = new Location.KansasCity();
 
-        Location.BuildingLocation g = new Location.BuildingLocation("G",
-                new Location.BuildingLocation("G-1", kansasCity),
-                new Location.BuildingLocation("G-2", kansasCity));
+        Location.BuildingLocation g = new Location.BuildingLocation("G", false,
+                new Location.BuildingLocation("G-1", false, kansasCity),
+                new Location.BuildingLocation("G-2", false, kansasCity));
         g.placeBuilding(buildingsToPlace.poll());
 
-        Location.BuildingLocation f = new Location.BuildingLocation("F",
-                new Location.BuildingLocation("F-1", g),
-                new Location.BuildingLocation("F-2", g));
+        Location.BuildingLocation f = new Location.BuildingLocation("F", false,
+                new Location.BuildingLocation("F-1", false, g),
+                new Location.BuildingLocation("F-2", true, g));
         f.placeBuilding(buildingsToPlace.poll());
 
         Location.HazardLocation rockfallSection = new Location.HazardLocation(HazardType.ROCKFALL, 1,
                 new Location.HazardLocation(HazardType.ROCKFALL, 2,
                         new Location.HazardLocation(HazardType.ROCKFALL, 3,
                                 new Location.HazardLocation(HazardType.ROCKFALL, 4,
-                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1",
-                                                new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", f))))));
+                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", true,
+                                                new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", true, f))))));
 
-        Location.BuildingLocation e = new Location.BuildingLocation("E",
-                new Location.BuildingLocation("E-1",
-                        new Location.BuildingLocation("E-2", f)),
+        Location.BuildingLocation e = new Location.BuildingLocation("E", false,
+                new Location.BuildingLocation("E-1", true,
+                        new Location.BuildingLocation("E-2", true, f)),
                 rockfallSection);
         e.placeBuilding(buildingsToPlace.poll());
 
-        Location.BuildingLocation d = new Location.BuildingLocation("D", e);
+        Location.BuildingLocation d = new Location.BuildingLocation("D", false, e);
         d.placeBuilding(buildingsToPlace.poll());
 
         Location.TeepeeLocation teepeeLocation10 = new Location.TeepeeLocation(10,
-                new Location.BuildingLocation("INDIAN-TRADE-RISK-1",
-                        new Location.BuildingLocation("INDIAN-TRADE-RISK-2", e)));
+                new Location.BuildingLocation("INDIAN-TRADE-RISK-1", false,
+                        new Location.BuildingLocation("INDIAN-TRADE-RISK-2", false, e)));
         Location.TeepeeLocation teepeeLocation8 = new Location.TeepeeLocation(8, teepeeLocation10);
         Location.TeepeeLocation teepeeLocation6 = new Location.TeepeeLocation(6, teepeeLocation8);
         Location.TeepeeLocation teepeeLocation4 = new Location.TeepeeLocation(4, teepeeLocation6);
@@ -88,11 +88,11 @@ public class Trail {
                 teepeeLocation10
         );
 
-        Location.BuildingLocation crossRoadsIndianTrade = new Location.BuildingLocation("C-2", d, teepeeLocation1);
+        Location.BuildingLocation crossRoadsIndianTrade = new Location.BuildingLocation("C-2", false, d, teepeeLocation1);
 
-        Location.BuildingLocation c = new Location.BuildingLocation("C",
-                new Location.BuildingLocation("C-1-1",
-                        new Location.BuildingLocation("C-1-2", e)),
+        Location.BuildingLocation c = new Location.BuildingLocation("C", false,
+                new Location.BuildingLocation("C-1-1", true,
+                        new Location.BuildingLocation("C-1-2", true, e)),
                 crossRoadsIndianTrade);
         c.placeBuilding(buildingsToPlace.poll());
 
@@ -100,25 +100,24 @@ public class Trail {
                 new Location.HazardLocation(HazardType.DROUGHT, 2,
                         new Location.HazardLocation(HazardType.DROUGHT, 3,
                                 new Location.HazardLocation(HazardType.DROUGHT, 4,
-                                        new Location.BuildingLocation(HazardType.DROUGHT + "-RISK-1", c)))));  // TODO Add risk action
+                                        new Location.BuildingLocation(HazardType.DROUGHT + "-RISK-1", false, c)))));  // TODO Add risk action
 
-        Location.BuildingLocation b = new Location.BuildingLocation("B",
-                droughtSection,
-                new Location.BuildingLocation("B-1",
-                        new Location.BuildingLocation("B-2",
-                                new Location.BuildingLocation("B-3", c))));
+        Location.BuildingLocation b = new Location.BuildingLocation("B", false, droughtSection,
+                new Location.BuildingLocation("B-1", true,
+                        new Location.BuildingLocation("B-2", false,
+                                new Location.BuildingLocation("B-3", false, c))));
         b.placeBuilding(buildingsToPlace.poll());
 
         Location.HazardLocation floodSection = new Location.HazardLocation(HazardType.FLOOD, 1,
                 new Location.HazardLocation(HazardType.FLOOD, 2,
                         new Location.HazardLocation(HazardType.FLOOD, 3,
                                 new Location.HazardLocation(HazardType.FLOOD, 4,
-                                        new Location.BuildingLocation(HazardType.FLOOD + "-RISK-1", // TODO Add risk action
-                                                new Location.BuildingLocation(HazardType.FLOOD + "-RISK-2", b))))));  // TODO Add risk action
-        Location.BuildingLocation a = new Location.BuildingLocation("A",
-                new Location.BuildingLocation("A-1",
-                        new Location.BuildingLocation("A-2",
-                                new Location.BuildingLocation("A-3", b))),
+                                        new Location.BuildingLocation(HazardType.FLOOD + "-RISK-1", false, // TODO Add risk action
+                                                new Location.BuildingLocation(HazardType.FLOOD + "-RISK-2", true, b))))));  // TODO Add risk action
+        Location.BuildingLocation a = new Location.BuildingLocation("A", false,
+                new Location.BuildingLocation("A-1", false,
+                        new Location.BuildingLocation("A-2", false,
+                                new Location.BuildingLocation("A-3", false, b))),
                 floodSection);
         a.placeBuilding(buildingsToPlace.poll());
 
@@ -227,4 +226,20 @@ public class Trail {
                                 : reachableLocations(next, to, stepLimit - 1)
                                 .map(nextSteps -> Stream.concat(Stream.of(next), nextSteps.stream()).collect(Collectors.toList()))));
     }
+
+    public int buildingsInWoods(Player player) {
+        return (int) getBuildingLocations().stream()
+                .filter(Location.BuildingLocation::isInWoods)
+                .flatMap(buildingLocation -> buildingLocation.getBuilding().stream())
+                .filter(building -> building instanceof PlayerBuilding)
+                .map(building -> (PlayerBuilding) building)
+                .filter(playerBuilding -> playerBuilding.getPlayer() == player)
+                .count();
+    }
+
+    public Set<Location> getAdjacentLocations(Location location) {
+        return Stream.concat(location.getNext().stream(), getLocations().stream()
+                .filter(l -> l.isDirect(location))).collect(Collectors.toSet());
+    }
+
 }

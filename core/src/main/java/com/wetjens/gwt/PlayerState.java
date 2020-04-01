@@ -208,7 +208,7 @@ public class PlayerState {
             actions.add(Action.Gain1Dollars.class);
         }
         if (hasUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-            actions.add(Action.Draw1CardThenDiscard1Card.class);
+            actions.add(Action.DrawCardsThenDiscardCards.exactly(1));
         }
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
             actions.add(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class);
@@ -229,7 +229,7 @@ public class PlayerState {
             actions.add(Action.Gain2Dollars.class);
         }
         if (hasAllUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-            actions.add(Action.Draw2CardsThenDiscard2Cards.class);
+            actions.add(Action.DrawCardsThenDiscardCards.exactly(2));
         }
         if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
             actions.add(Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates.class);
@@ -301,5 +301,21 @@ public class PlayerState {
     public void discardAllCards() {
         discardPile.addAll(hand);
         hand.clear();
+    }
+
+    public List<Teepee> getTeepees() {
+        return Collections.unmodifiableList(teepees);
+    }
+
+    public void unlock(Unlockable unlockable) {
+
+    }
+
+    public void gainMaxCertificates() {
+        //TODO
+    }
+
+    public void addCardToHand(Card card) {
+        hand.add(card);
     }
 }

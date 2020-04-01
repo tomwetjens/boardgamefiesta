@@ -26,8 +26,8 @@ public abstract class Location {
         return Collections.unmodifiableSet(next);
     }
 
-    Optional<PossibleAction> getPossibleAction() {
-        return Optional.empty();
+    ImmediateActions activate(Game game, Player player) {
+        return ImmediateActions.none();
     }
 
     public Hand getHand() {
@@ -57,34 +57,38 @@ public abstract class Location {
         }
     }
 
+    @Getter
     public static final class BuildingLocation extends Location {
 
         private final Class<? extends Action> riskAction;
+        private final boolean inWoods;
 
         private Building building;
 
-        BuildingLocation(String name, Location... next) {
+        BuildingLocation(String name, boolean inWoods, Location... next) {
             super(name, next);
 
             this.riskAction = null;
+            this.inWoods = inWoods;
         }
 
-        BuildingLocation(String name, Class<? extends Action> riskAction, Location... next) {
+        BuildingLocation(String name, Class<? extends Action> riskAction, boolean inWoods, Location... next) {
             super(name, next);
 
             this.riskAction = riskAction;
+            this.inWoods = inWoods;
         }
 
         @Override
-        Optional<PossibleAction> getPossibleAction() {
+        ImmediateActions activate(Game game, Player player) {
             if (building != null) {
                 if (riskAction != null) {
-                    return Optional.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(), riskAction, Action.SingleAuxiliaryAction.class)));
+                    return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(), riskAction, Action.SingleAuxiliaryAction.class)));
                 } else {
-                    return Optional.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(), Action.SingleAuxiliaryAction.class)));
+                    return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(), Action.SingleAuxiliaryAction.class)));
                 }
             }
-            return Optional.empty();
+            return ImmediateActions.none();
         }
 
         @Override
@@ -148,11 +152,11 @@ public abstract class Location {
         }
 
         @Override
-        Optional<PossibleAction> getPossibleAction() {
+        ImmediateActions activate(Game game, Player player) {
             if (hazard != null) {
-                return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }
-            return Optional.empty();
+            return ImmediateActions.none();
         }
 
         @Override
@@ -195,8 +199,8 @@ public abstract class Location {
         }
 
         @Override
-        Optional<PossibleAction> getPossibleAction() {
-            return Optional.of(PossibleAction.mandatory(Action.ChooseForesights.class));
+        ImmediateActions activate(Game game, Player player) {
+            return ImmediateActions.of(PossibleAction.mandatory(Action.ChooseForesights.class));
         }
 
         @Override
@@ -217,11 +221,11 @@ public abstract class Location {
         }
 
         @Override
-        public Optional<PossibleAction> getPossibleAction() {
+        public ImmediateActions activate(Game game, Player player) {
             if (teepee != null) {
-                return Optional.of(PossibleAction.any(Action.SingleAuxiliaryAction.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }
-            return Optional.empty();
+            return ImmediateActions.none();
         }
 
         @Override

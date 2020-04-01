@@ -78,6 +78,13 @@ abstract class PossibleAction {
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
+    static PossibleAction choice(Stream<PossibleAction> possibleActions) {
+        return new Choice(possibleActions.collect(Collectors.toCollection(HashSet::new)));
+    }
+
+    /**
+     * Player MUST perform EXACTLY ONE of the options.
+     */
     static PossibleAction choice(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Choice(Stream.concat(Stream.of(possibleAction), Arrays.stream(actions)
                 .map(PossibleAction::optional))

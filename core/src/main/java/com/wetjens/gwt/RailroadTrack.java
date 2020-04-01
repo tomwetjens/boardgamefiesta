@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -122,15 +123,15 @@ public class RailroadTrack {
         return currentSpaces.get(player);
     }
 
-    ImmediateActions moveEngineForward(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
+    EngineMove moveEngineForward(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
         return moveEngine(player, to, atLeast, atMost, Space::getNext);
     }
 
-    ImmediateActions moveEngineBackwards(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
+    EngineMove moveEngineBackwards(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
         return moveEngine(player, to, atLeast, atMost, Space::getPrevious);
     }
 
-    private ImmediateActions moveEngine(@NonNull Player player, @NonNull RailroadTrack.@NonNull Space to, int atLeast, int atMost, Function<Space, Set<Space>> direction) {
+    private EngineMove moveEngine(@NonNull Player player, @NonNull RailroadTrack.@NonNull Space to, int atLeast, int atMost, Function<Space, Set<Space>> direction) {
         if (atLeast < 0 || atLeast > 6) {
             throw new IllegalArgumentException("Must move at least 0..6, but was: " + atLeast);
         }
@@ -149,11 +150,12 @@ public class RailroadTrack {
             throw new IllegalArgumentException("Must specify different space than current");
         }
 
-        Set<Space> reachable = reachableSpaces(from, from, atLeast, atMost, direction);
+        Set<ReachableSpace> reachableSpaces = reachableSpaces(from, from, atLeast, atMost, 0, direction);
 
-        if (!reachable.contains(to)) {
-            throw new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps");
-        }
+        ReachableSpace reachableSpace = reachableSpaces.stream()
+                .filter(rs -> rs.space == to)
+                .min(Comparator.comparingInt(ReachableSpace::getSteps))
+                .orElseThrow(() -> new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps"));
 
         currentSpaces.put(player, to);
 
@@ -166,32 +168,59 @@ public class RailroadTrack {
             immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class));
         }
 
-        return immediateActions;
+        return new EngineMove(immediateActions, reachableSpace.getSteps());
     }
 
-    private Set<Space> reachableSpaces(@NonNull Space from, @NonNull Space current, int atLeast, int atMost, Function<Space, Set<Space>> direction) {
-        Set<Space> reachable = new HashSet<>();
+    public Space getSpace(Station station) {
+        return getSpaces()
+                .filter(space -> space.getStation().map(s -> s == station).orElse(false))
+                .findAny()
+                .orElseThrow(() -> new IllegalArgumentException("Station not on track"));
+    }
+
+    private Stream<Space> getSpaces() {
+        return getSpacesAfter(start);
+    }
+
+    private Stream<Space> getSpacesAfter(Space from) {
+        return Stream.concat(Stream.of(from), from.getNext().stream());
+    }
+
+    @Value
+    public static final class EngineMove {
+        ImmediateActions immediateActions;
+        int steps;
+    }
+
+    private Set<ReachableSpace> reachableSpaces(@NonNull Space from, @NonNull Space current, int atLeast, int atMost, int steps, Function<Space, Set<Space>> direction) {
+        Set<ReachableSpace> reachable = new HashSet<>();
 
         boolean available = current != from && (current == start || playerAt(current).isEmpty());
         boolean possible = available && atLeast <= 1;
 
         if (possible) {
-            reachable.add(current);
+            reachable.add(new ReachableSpace(current, steps));
         }
 
         if (!available) {
             // Space is not empty, jump over
             reachable.addAll(direction.apply(current).stream()
-                    .flatMap(next -> reachableSpaces(from, next, atLeast, atMost, direction).stream())
+                    .flatMap(next -> reachableSpaces(from, next, atLeast, atMost, steps, direction).stream())
                     .collect(Collectors.toSet()));
         } else if (possible && atMost > 1) {
             // Space is possible so count as step
             reachable.addAll(direction.apply(current).stream()
-                    .flatMap(next -> reachableSpaces(from, next, Math.max(atLeast - 1, 0), atMost - 1, direction).stream())
+                    .flatMap(next -> reachableSpaces(from, next, Math.max(atLeast - 1, 0), atMost - 1, steps + 1, direction).stream())
                     .collect(Collectors.toSet()));
         }
 
         return reachable;
+    }
+
+    @Value
+    private static class ReachableSpace {
+        Space space;
+        int steps;
     }
 
     private Optional<Player> playerAt(@NonNull Space space) {
@@ -217,12 +246,15 @@ public class RailroadTrack {
         return cities.get(city).contains(player);
     }
 
-    void deliverToCity(Player player, City city) {
+    ImmediateActions deliverToCity(Player player, City city) {
         if (!city.isMultipleDeliveries() && hasMadeDelivery(player, city)) {
             throw new IllegalStateException("Already delivered to city");
         }
 
         cities.get(city).add(player);
+
+        // TODO Immediate actions when delivering to city
+        return ImmediateActions.none();
     }
 
     int signalsPassed(Player player) {
@@ -268,6 +300,10 @@ public class RailroadTrack {
 
         public boolean hasSignal() {
             return signal;
+        }
+
+        public boolean isBefore(Space space) {
+            return previous.stream().anyMatch(prev -> prev == space || prev.isBefore(space));
         }
 
         @Getter

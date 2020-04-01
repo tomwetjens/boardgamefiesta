@@ -12,7 +12,6 @@ public abstract class NeutralBuilding extends Building {
         public PossibleAction getPossibleAction() {
             return PossibleAction.any(Action.Discard1Guernsey.class, Action.HireWorker.class, Action.HireSecondWorker.class);
         }
-
     }
 
     public static final class B extends NeutralBuilding {
@@ -21,7 +20,6 @@ public abstract class NeutralBuilding extends Building {
         public PossibleAction getPossibleAction() {
             return PossibleAction.any(Action.Discard1DutchBeltToGain2Dollars.class, Action.PlaceBuilding.class);
         }
-
     }
 
     public static final class C extends NeutralBuilding {

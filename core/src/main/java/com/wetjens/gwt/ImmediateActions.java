@@ -32,6 +32,11 @@ class ImmediateActions {
                 .collect(Collectors.toUnmodifiableList()));
     }
 
+    public ImmediateActions andThen(ImmediateActions other) {
+        return new ImmediateActions(Stream.concat(actions.stream(), other.actions.stream())
+                .collect(Collectors.toUnmodifiableList()));
+    }
+
     private static final class ImmediateAction extends PossibleAction {
 
         private final PossibleAction possibleAction;
