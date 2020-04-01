@@ -7,11 +7,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
+@NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action {
 
     public abstract ImmediateActions perform(Game game);
@@ -25,16 +29,17 @@ public abstract class Action {
         return false;
     }
 
+    @Value
     public static final class BuyCattle extends Action {
 
-        private final Set<Card.CattleCard> cattleCards;
-
-        public BuyCattle(Set<Card.CattleCard> cattleCards) {
-            this.cattleCards = cattleCards;
-        }
+        @NonNull Set<Card.CattleCard> cattleCards;
 
         @Override
         public ImmediateActions perform(Game game) {
+            if (cattleCards.isEmpty()) {
+                throw new IllegalArgumentException("Must specify cattle cards");
+            }
+
             int cost = game.getCattleMarket().cost(cattleCards, game.currentPlayerState().getNumberOfCowboys());
 
             game.currentPlayerState().payDollars(cost);
@@ -43,7 +48,7 @@ public abstract class Action {
         }
     }
 
-    public static class SingleAuxiliaryAction extends Action {
+    public static final class SingleAuxiliaryAction extends Action {
 
         public ImmediateActions perform(Game game) {
             return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions())));
@@ -86,19 +91,13 @@ public abstract class Action {
         }
     }
 
-    @Value
-    @NonFinal
-    public static class DrawCardsThenDiscardCards extends Action {
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
+    @Getter
+    public abstract static class DrawCardsThenDiscardCards extends Action {
 
         int atLeast;
         int atMost;
         int amount;
-
-        DrawCardsThenDiscardCards(int atLeast, int atMost, int amount) {
-            this.atLeast = atLeast;
-            this.atMost = atMost;
-            this.amount = amount;
-        }
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -118,6 +117,7 @@ public abstract class Action {
                     Draw2CardsThenDiscard2Cards.class;
         }
 
+        @Value
         public static final class Draw1CardThenDiscard1Card extends Action {
             @Override
             public ImmediateActions perform(Game game) {
@@ -126,6 +126,7 @@ public abstract class Action {
             }
         }
 
+        @Value
         public static final class Draw2CardsThenDiscard2Cards extends Action {
             @Override
             public ImmediateActions perform(Game game) {
@@ -188,7 +189,6 @@ public abstract class Action {
     }
 
     public static final class GainObjectiveCard extends Action {
-
         @Override
         public ImmediateActions perform(Game game) {
             ObjectiveCard objectiveCard = game.takeObjectiveCard();
@@ -199,9 +199,10 @@ public abstract class Action {
         }
     }
 
-    public static class MoveEngineForward extends Action {
+    @Value
+    public static final class MoveEngineForward extends Action {
 
-        private final RailroadTrack.Space to;
+        @NonNull RailroadTrack.Space to;
 
         public MoveEngineForward(RailroadTrack.Space to) {
             this.to = to;
@@ -213,10 +214,9 @@ public abstract class Action {
         }
     }
 
-    @AllArgsConstructor
+    @Value
     public static class Remove1Card extends Action {
-        @NonNull
-        Card card;
+        @NonNull Card card;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -225,8 +225,9 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static class Remove2Cards extends Action {
-        Set<Card> cards;
+        @NonNull Set<Card> cards;
 
         public Remove2Cards(@NonNull Set<Card> cards) {
             if (cards.size() != 2) {
@@ -242,8 +243,8 @@ public abstract class Action {
         }
     }
 
-    @AllArgsConstructor
-    public static class TradeWithIndians extends Action {
+    @Value
+    public static final class TradeWithIndians extends Action {
         int cost;
 
         @Override
@@ -266,15 +267,13 @@ public abstract class Action {
         }
     }
 
+    @Value
+    @NonFinal
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public abstract static class DiscardCards extends Action {
 
-        private final int expected;
-        private final Set<Card> cards;
-
-        public DiscardCards(int expected, Set<Card> cards) {
-            this.expected = expected;
-            this.cards = cards;
-        }
+        int expected;
+        @NonNull Set<Card> cards;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -296,44 +295,44 @@ public abstract class Action {
                                                     DiscardCards.Discard1Card.class;
         }
 
-        public static class Discard1Card extends DiscardCards {
+        public static final class Discard1Card extends DiscardCards {
             public Discard1Card(Card card) {
                 super(1, Collections.singleton(card));
             }
         }
 
-        public static class Discard2Cards extends DiscardCards {
+        public static final class Discard2Cards extends DiscardCards {
             public Discard2Cards(Set<Card> cards) {
                 super(2, cards);
             }
         }
 
-        public static class Discard3Cards extends DiscardCards {
+        public static final class Discard3Cards extends DiscardCards {
             public Discard3Cards(Set<Card> cards) {
                 super(3, cards);
             }
         }
 
-        public static class Discard4Cards extends DiscardCards {
+        public static final class Discard4Cards extends DiscardCards {
             public Discard4Cards(Set<Card> cards) {
                 super(4, cards);
             }
         }
 
-        public static class Discard5Cards extends DiscardCards {
+        public static final class Discard5Cards extends DiscardCards {
             public Discard5Cards(Set<Card> cards) {
                 super(5, cards);
             }
         }
 
-        public static class Discard6Cards extends DiscardCards {
+        public static final class Discard6Cards extends DiscardCards {
             public Discard6Cards(Set<Card> cards) {
                 super(6, cards);
             }
         }
     }
 
-    public static class RemoveHazardForFree extends RemoveHazard {
+    public static final class RemoveHazardForFree extends RemoveHazard {
         public RemoveHazardForFree(Hazard hazard) {
             super(hazard, 0);
         }
@@ -349,18 +348,16 @@ public abstract class Action {
         }
     }
 
+    @Value
+    @NonFinal
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class HireWorker extends Action {
 
-        private final Worker worker;
-        private final int modifier;
+        @NonNull  Worker worker;
+        int modifier;
 
         public HireWorker(Worker worker) {
             this(worker, 0);
-        }
-
-        protected HireWorker(Worker worker, int modifier) {
-            this.worker = worker;
-            this.modifier = modifier;
         }
 
         @Override
@@ -439,19 +436,16 @@ public abstract class Action {
         }
     }
 
+    @Value
+    @NonFinal
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class PlaceBuilding extends Action {
-        private final int costPerCraftsman;
-        private final Location.BuildingLocation location;
-        private final PlayerBuilding building;
+        @NonNull Location.BuildingLocation location;
+        @NonNull PlayerBuilding building;
+        int costPerCraftsman;
 
         public PlaceBuilding(Location.BuildingLocation location, PlayerBuilding building) {
             this(location, building, 2);
-        }
-
-        PlaceBuilding(Location.BuildingLocation location, PlayerBuilding building, int costPerCraftsman) {
-            this.location = location;
-            this.building = building;
-            this.costPerCraftsman = costPerCraftsman;
         }
 
         @Override
@@ -506,9 +500,7 @@ public abstract class Action {
         }
     }
 
-    @Value
     public static final class UpgradeStation extends Action {
-
         @Override
         public ImmediateActions perform(@NonNull Game game) {
             RailroadTrack.Space current = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
@@ -518,9 +510,9 @@ public abstract class Action {
         }
     }
 
-    @AllArgsConstructor
+    @Value
     public static final class AppointStationMaster extends Action {
-        Worker worker;
+        @NonNull Worker worker;
 
         @Override
         public ImmediateActions perform(@NonNull Game game) {
@@ -531,9 +523,10 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static final class ChooseForesights extends Action {
 
-        private final List<Choice> choices;
+        @NonNull List<Choice> choices;
 
         public ChooseForesights(@NonNull List<Choice> choices) {
             if (choices.size() != 3) {
@@ -580,9 +573,9 @@ public abstract class Action {
     @Value
     public static final class DeliverToCity extends Action {
 
-        City city;
+        @NonNull City city;
         int certificates;
-        Unlockable unlockable;
+        @NonNull Unlockable unlockable;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -610,7 +603,7 @@ public abstract class Action {
 
     @Value
     public static final class MoveEngineAtLeast1BackwardsAndGain3Dollars extends Action {
-        RailroadTrack.Space to;
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -622,13 +615,9 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static final class Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates extends Action {
-
-        private final RailroadTrack.Space to;
-
-        public Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates(RailroadTrack.Space to) {
-            this.to = to;
-        }
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -640,13 +629,9 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static final class MoveEngine2BackwardsToRemove2Cards extends Action {
-
-        private final RailroadTrack.Space to;
-
-        public MoveEngine2BackwardsToRemove2Cards(RailroadTrack.Space to) {
-            this.to = to;
-        }
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -656,12 +641,9 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static final class MoveEngine2Or3Forward extends Action {
-        private final RailroadTrack.Space to;
-
-        public MoveEngine2Or3Forward(RailroadTrack.Space to) {
-            this.to = to;
-        }
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -677,12 +659,9 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static final class Pay1DollarAndMoveEngine1BackwardsToGain1Certificate extends Action {
-        private final RailroadTrack.Space to;
-
-        public Pay1DollarAndMoveEngine1BackwardsToGain1Certificate(RailroadTrack.Space to) {
-            this.to = to;
-        }
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -694,12 +673,9 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static final class Pay1DollarToMoveEngine1Forward extends Action {
-        private final RailroadTrack.Space to;
-
-        public Pay1DollarToMoveEngine1Forward(RailroadTrack.Space to) {
-            this.to = to;
-        }
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -708,12 +684,9 @@ public abstract class Action {
         }
     }
 
+    @Value
     public static final class MoveEngine1BackwardsToRemove1Card extends Action {
-        private final RailroadTrack.Space to;
-
-        public MoveEngine1BackwardsToRemove1Card(RailroadTrack.Space to) {
-            this.to = to;
-        }
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -723,10 +696,9 @@ public abstract class Action {
         }
     }
 
-    @AllArgsConstructor
+    @Value
     public static final class DiscardPairToGain4Dollars extends Action {
-
-        private final CattleType type;
+        @NonNull CattleType type;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -738,17 +710,13 @@ public abstract class Action {
 
     @Value
     @NonFinal
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class RemoveHazard extends Action {
-        Hazard hazard;
+        @NonNull Hazard hazard;
         int cost;
 
         public RemoveHazard(Hazard hazard) {
             this(hazard, 7);
-        }
-
-        RemoveHazard(Hazard hazard, int cost) {
-            this.hazard = hazard;
-            this.cost = cost;
         }
 
         @Override
@@ -759,13 +727,9 @@ public abstract class Action {
         }
     }
 
-    public static class PlayObjectiveCard extends Action {
-
-        private final ObjectiveCard objectiveCard;
-
-        public PlayObjectiveCard(ObjectiveCard objectiveCard) {
-            this.objectiveCard = objectiveCard;
-        }
+    @Value
+    public static final class PlayObjectiveCard extends Action {
+        @NonNull ObjectiveCard objectiveCard;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -778,20 +742,17 @@ public abstract class Action {
         }
     }
 
+    @Value
+    @NonFinal
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class Move extends Action {
 
-        private final List<Location> steps;
-        private final int atLeast;
-        private final int atMost;
+        @NonNull List<Location> steps;
+        int atLeast;
+        int atMost;
 
         public Move(List<Location> steps) {
             this(steps, 1, Integer.MAX_VALUE);
-        }
-
-        Move(List<Location> steps, int atLeast, int atMost) {
-            this.steps = new ArrayList<>(steps);
-            this.atLeast = atLeast;
-            this.atMost = atMost;
         }
 
         @Override
@@ -877,7 +838,7 @@ public abstract class Action {
         }
     }
 
-    public static class GainCertificate extends Action {
+    public static final class GainCertificate extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             game.currentPlayerState().gainCertificates(1);
@@ -904,10 +865,9 @@ public abstract class Action {
         }
     }
 
-    @AllArgsConstructor
+    @Value
     public static final class DiscardPairToGain3Dollars extends Action {
-
-        private final CattleType type;
+        @NonNull private final CattleType type;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -958,7 +918,7 @@ public abstract class Action {
 
     @Value
     public static final class MoveEngineAtMost2Forward extends Action {
-        RailroadTrack.Space to;
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -968,7 +928,7 @@ public abstract class Action {
 
     @Value
     public static final class MoveEngineAtMost3Forward extends Action {
-        RailroadTrack.Space to;
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -977,9 +937,9 @@ public abstract class Action {
     }
 
     public static final class ExtraordinaryDelivery extends Action {
-        RailroadTrack.Space to;
-        City city;
-        Unlockable unlock;
+        @NonNull RailroadTrack.Space to;
+        @NonNull City city;
+        @NonNull Unlockable unlock;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -1007,7 +967,6 @@ public abstract class Action {
     }
 
     public static final class Gain1DollarPerBuildingInWoods extends Action {
-
         @Override
         public ImmediateActions perform(Game game) {
             int buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
@@ -1037,7 +996,7 @@ public abstract class Action {
 
     @Value
     public class MoveEngineAtMost5Forward extends Action {
-        RailroadTrack.Space to;
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -1047,7 +1006,7 @@ public abstract class Action {
 
     @Value
     public static final class Discard1ObjectiveCardToGain2Certificates extends Action {
-        ObjectiveCard card;
+        @NonNull ObjectiveCard card;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -1059,7 +1018,7 @@ public abstract class Action {
 
     @Value
     public static final class MoveEngine1BackwardsToGain3Dollars extends Action {
-        RailroadTrack.Space to;
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -1071,7 +1030,7 @@ public abstract class Action {
 
     @Value
     public static final class Discard1JerseyToMoveEngine1Forward extends Action {
-        RailroadTrack.Space to;
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -1090,7 +1049,6 @@ public abstract class Action {
     }
 
     public static final class DrawCardsUpToNumberOfCowboysThenDiscardCards extends Action {
-
         @Override
         public ImmediateActions perform(Game game) {
             int numberOfCowboys = game.currentPlayerState().getNumberOfCowboys();
@@ -1117,7 +1075,7 @@ public abstract class Action {
 
     @Value
     public static final class Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand extends Action {
-        Card.CattleCard card;
+        @NonNull  Card.CattleCard card;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -1130,7 +1088,7 @@ public abstract class Action {
 
     @Value
     public static final class MoveEngineForwardUpToNumberOfBuildingsInWoods extends Action {
-        RailroadTrack.Space to;
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -1157,7 +1115,8 @@ public abstract class Action {
 
     @Value
     public static final class UpgradeAnyStationBehindEngine extends Action {
-        Station station;
+        @NonNull Station station;
+
         @Override
         public ImmediateActions perform(Game game) {
             RailroadTrack.Space stationSpace = game.getRailroadTrack().getSpace(station);
@@ -1172,7 +1131,7 @@ public abstract class Action {
     }
 
     @Value
-    public static final class Gain4Dollars extends Action{
+    public static final class Gain4Dollars extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             game.currentPlayerState().gainDollars(4);
@@ -1181,12 +1140,12 @@ public abstract class Action {
     }
 
     @Value
-    public static final class MoveEngineAtMost4Forward extends Action{
-        RailroadTrack.Space to;
+    public static final class MoveEngineAtMost4Forward extends Action {
+        @NonNull RailroadTrack.Space to;
+
         @Override
         public ImmediateActions perform(Game game) {
             return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 4).getImmediateActions();
         }
     }
-
 }
