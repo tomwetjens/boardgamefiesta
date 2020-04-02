@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -17,16 +18,26 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
 
+@Builder(access = AccessLevel.PACKAGE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class RailroadTrack {
 
     private static final int MAX_SPACE = 39;
 
     private static final List<Integer> TURNOUTS = Arrays.asList(4, 7, 10, 13, 16, 21, 25, 29, 33);
+    private static final List<Integer> SIGNALS = Arrays.asList(4, 5, 6, 8, 10, 11, 12, 14, 16, 17, 18);
+
+    static final int MAX_HAND_VALUE = 28;
+    static final int MIN_HAND_VALUE = 5;
+    static final int MAX_CERTIFICATES = 6;
 
     private final List<Station> stations;
 
@@ -38,7 +49,7 @@ public class RailroadTrack {
     private final List<Space.TurnoutSpace> turnouts = new ArrayList<>(TURNOUTS.size());
     private final Map<Player, Space> currentSpaces = new HashMap<>();
 
-    private final Map<City, List<Player>> cities = new HashMap<>();
+    private final Map<City, List<Player>> cities;
 
     RailroadTrack(@NonNull Collection<Player> players, @NonNull Random random) {
         this.stations = createStations(random);
@@ -47,8 +58,7 @@ public class RailroadTrack {
 
         Space.NumberedSpace last = end;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
-            // TODO Set signals
-            Space.NumberedSpace current = new Space.NumberedSpace(false, number, Collections.singleton(last));
+            Space.NumberedSpace current = new Space.NumberedSpace(SIGNALS.contains(number), number, Collections.singleton(last));
 
             last.previous.add(current);
             last = current;
@@ -76,6 +86,7 @@ public class RailroadTrack {
 
         players.forEach(player -> currentSpaces.put(player, start));
 
+        this.cities = new EnumMap<>(City.class);
         for (City city : City.values()) {
             cities.put(city, new LinkedList<>());
         }
@@ -86,17 +97,16 @@ public class RailroadTrack {
         Collections.shuffle(stationMasters, random);
 
         return Arrays.asList(
-                // TODO Correct cost and points of stations
-                new Station(2, 2, DiscColor.WHITE, stationMasters.get(0)),
-                new Station(2, 2, DiscColor.WHITE, stationMasters.get(1)),
-                new Station(2, 2, DiscColor.WHITE, stationMasters.get(2)),
-                new Station(2, 2, DiscColor.WHITE, stationMasters.get(3)),
-                new Station(2, 2, DiscColor.BLACK, stationMasters.get(4)),
-                new Station(2, 2, DiscColor.BLACK, null),
-                new Station(2, 2, DiscColor.BLACK, null),
-                new Station(2, 2, DiscColor.BLACK, null),
-                new Station(2, 2, DiscColor.BLACK, null),
-                new Station(2, 2, DiscColor.BLACK, null));
+                new Station(2, 1, DiscColor.WHITE, stationMasters.get(0)),
+                new Station(2, 1, DiscColor.WHITE, stationMasters.get(1)),
+                new Station(4, 2, DiscColor.WHITE, stationMasters.get(2)),
+                new Station(4, 2, DiscColor.WHITE, stationMasters.get(3)),
+                new Station(6, 3, DiscColor.BLACK, stationMasters.get(4)),
+                new Station(8, 5, DiscColor.BLACK, null),
+                new Station(7, 6, DiscColor.BLACK, null),
+                new Station(6, 7, DiscColor.BLACK, null),
+                new Station(5, 8, DiscColor.BLACK, null),
+                new Station(3, 9, DiscColor.BLACK, null));
     }
 
     public List<Station> getStations() {
@@ -186,6 +196,10 @@ public class RailroadTrack {
         return Stream.concat(Stream.of(from), from.getNext().stream());
     }
 
+    int numberOfUpgradedStations(Player player) {
+        return (int) stations.stream().filter(station -> station.hasUpgraded(player)).count();
+    }
+
     @Value
     public static final class EngineMove {
         ImmediateActions immediateActions;
@@ -243,7 +257,7 @@ public class RailroadTrack {
     }
 
     private boolean hasMadeDelivery(Player player, City city) {
-        return cities.get(city).contains(player);
+        return cities.computeIfAbsent(city, k -> new LinkedList<>()).contains(player);
     }
 
     ImmediateActions deliverToCity(Player player, City city) {
@@ -251,9 +265,31 @@ public class RailroadTrack {
             throw new IllegalStateException("Already delivered to city");
         }
 
-        cities.get(city).add(player);
+        cities.computeIfAbsent(city, k -> new LinkedList<>()).add(player);
 
-        // TODO Immediate actions when delivering to city
+        switch (city) {
+            case COLORADO_SPRINGS:
+            case ALBUQUERQUE:
+                if (hasMadeDelivery(player, City.SANTA_FE)) {
+                    return ImmediateActions.of(PossibleAction.optional(Action.GainObjectiveCard.class));
+                }
+                break;
+            case SANTA_FE:
+                return ImmediateActions.of(PossibleAction.any(Stream.concat(
+                        hasMadeDelivery(player, City.COLORADO_SPRINGS) ? Stream.of(PossibleAction.mandatory(Action.GainObjectiveCard.class)) : Stream.empty(),
+                        hasMadeDelivery(player, City.ALBUQUERQUE) ? Stream.of(PossibleAction.mandatory(Action.GainObjectiveCard.class)) : Stream.empty())));
+            case TOPEKA:
+                if (hasMadeDelivery(player, City.WICHITA)) {
+                    return ImmediateActions.of(PossibleAction.optional(Action.GainObjectiveCard.class));
+                }
+                break;
+            case WICHITA:
+                if (hasMadeDelivery(player, City.TOPEKA)) {
+                    return ImmediateActions.of(PossibleAction.optional(Action.GainObjectiveCard.class));
+                }
+                break;
+        }
+
         return ImmediateActions.none();
     }
 
@@ -265,6 +301,51 @@ public class RailroadTrack {
     private Stream<Space> spacesWithSignalsPassed(Space current) {
         return Stream.concat(Stream.of(current), current.getPrevious().stream().flatMap(this::spacesWithSignalsPassed))
                 .filter(Space::hasSignal);
+    }
+
+    int score(Player player) {
+        return scoreDeliveries(player) + scoreStations(player);
+    }
+
+    private int scoreStations(Player player) {
+        return stations.stream()
+                .filter(station -> station.hasUpgraded(player))
+                .mapToInt(Station::getPoints)
+                .sum();
+    }
+
+    private int scoreDeliveries(Player player) {
+        int result = 0;
+
+        result -= numberOfDeliveries(player, City.KANSAS_CITY) * 6;
+
+        if (hasMadeDelivery(player, City.TOPEKA) && hasMadeDelivery(player, City.WICHITA)) {
+            result -= 3;
+        }
+
+        if (hasMadeDelivery(player, City.ALBUQUERQUE) && hasMadeDelivery(player, City.EL_PASO)) {
+            result += 6;
+        }
+
+        if (hasMadeDelivery(player, City.EL_PASO) && hasMadeDelivery(player, City.SAN_DIEGO)) {
+            result += 8;
+        }
+
+        if (hasMadeDelivery(player, City.SAN_DIEGO) && hasMadeDelivery(player, City.SACRAMENTO)) {
+            result += 4;
+        }
+
+        if (hasMadeDelivery(player, City.SACRAMENTO)) {
+            result += 6;
+        }
+
+        result += numberOfDeliveries(player, City.SAN_FRANCISCO) * 9;
+
+        return result;
+    }
+
+    int numberOfDeliveries(Player player, City city) {
+        return (int) cities.get(city).stream().filter(p -> p == player).count();
     }
 
     @Value

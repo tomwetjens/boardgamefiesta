@@ -242,4 +242,22 @@ public class Trail {
                 .filter(l -> l.isDirect(location))).collect(Collectors.toSet());
     }
 
+    int numberOfBuildings(Player player) {
+        return (int) getBuildings(player).size();
+    }
+
+    Set<PlayerBuilding> getBuildings(Player player) {
+        return getBuildingLocations().stream()
+                .flatMap(buildingLocation -> buildingLocation.getBuilding().stream())
+                .filter(building -> building instanceof PlayerBuilding)
+                .map(building -> (PlayerBuilding) building)
+                .filter(playerBuilding -> playerBuilding.getPlayer() == player)
+                .collect(Collectors.toSet());
+    }
+
+    int score(Player player) {
+        return getBuildings(player).stream()
+                .mapToInt(PlayerBuilding::getPoints)
+                .sum();
+    }
 }

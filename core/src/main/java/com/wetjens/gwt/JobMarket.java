@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 
 import lombok.Getter;
 
-public class JobMarket {
+public final class JobMarket {
 
     @Getter
     private final int rowLimit;
@@ -16,7 +16,7 @@ public class JobMarket {
     @Getter
     private int currentRowIndex;
 
-    public JobMarket(int playerCount) {
+    JobMarket(int playerCount) {
         this.rowLimit = playerCount;
 
         this.rows = Arrays.asList(
@@ -36,21 +36,29 @@ public class JobMarket {
         this.currentRowIndex = 1;
     }
 
-    public boolean addWorker(Worker worker) {
+    void addWorker(Worker worker) {
+        if (isClosed()) {
+            throw new IllegalStateException("Job market closed");
+        }
+
         Row row = rows.get(currentRowIndex);
 
         row.workers.add(worker);
 
         if (row.workers.size() == rowLimit) {
             currentRowIndex++;
-
-            return row.cattleMarket;
         }
-
-        return false;
     }
 
-    public void takeWorker(Worker worker) {
+    public boolean isClosed() {
+        return currentRowIndex >= rows.size();
+    }
+
+    boolean fillUpCattleMarket() {
+        return rows.get(currentRowIndex).cattleMarket;
+    }
+
+    void takeWorker(Worker worker) {
         cheapestRow(worker).workers.remove(worker);
     }
 

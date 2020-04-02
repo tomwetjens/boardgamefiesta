@@ -191,10 +191,7 @@ public abstract class Action {
     public static final class GainObjectiveCard extends Action {
         @Override
         public ImmediateActions perform(Game game) {
-            ObjectiveCard objectiveCard = game.takeObjectiveCard();
-
-            game.currentPlayerState().gainCard(objectiveCard);
-
+            game.takeObjectiveCard().ifPresent(game.currentPlayerState()::gainCard);
             return ImmediateActions.none();
         }
     }
@@ -543,9 +540,18 @@ public abstract class Action {
                 KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, choice.getRowIndex());
 
                 if (tile.getWorker() != null) {
-                    boolean fillUpCattleMarket = game.getJobMarket().addWorker(tile.getWorker());
-                    if (fillUpCattleMarket) {
-                        game.getCattleMarket().fillUp();
+                    JobMarket jobMarket = game.getJobMarket();
+
+                    if (!jobMarket.isClosed()) {
+                        jobMarket.addWorker(tile.getWorker());
+
+                        if (game.getJobMarket().fillUpCattleMarket()) {
+                            game.getCattleMarket().fillUp();
+                        }
+
+                        if (jobMarket.isClosed()) {
+                            game.currentPlayerState().gainJobMarketToken();
+                        }
                     }
                 } else if (tile.getHazard() != null) {
                     if (!(choice.getLocation() instanceof Location.HazardLocation)) {
@@ -589,7 +595,7 @@ public abstract class Action {
             game.currentPlayerState().gainDollars(breedingValue);
             game.currentPlayerState().discardAllCards();
 
-            game.currentPlayerState().unlock(unlockable);
+            game.currentPlayerState().deliverToCity(unlockable, city);
 
             int transportCosts = city.getSignals() + game.getRailroadTrack().signalsPassed(game.getCurrentPlayer());
 
@@ -742,6 +748,54 @@ public abstract class Action {
         }
     }
 
+    public static final class Discard1BlackAngusToGain2Dollars extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().discardCattleCards(CattleType.BLACK_ANGUS, 1);
+            game.currentPlayerState().gainDollars(2);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static final class GainCertificate extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().gainCertificates(1);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static final class Draw2CattleCards extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.getCattleMarket().draw();
+            game.getCattleMarket().draw();
+
+            return ImmediateActions.none();
+        }
+    }
+
+    public static final class Discard2GuernseyToGain4Dollars extends Action {
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().discardCattleCards(CattleType.GUERNSEY, 2);
+            game.currentPlayerState().gainDollars(4);
+            return ImmediateActions.none();
+        }
+    }
+
+    @Value
+    public static final class DiscardPairToGain3Dollars extends Action {
+        @NonNull private final CattleType type;
+
+        @Override
+        public ImmediateActions perform(Game game) {
+            game.currentPlayerState().discardCattleCards(type, 2);
+            game.currentPlayerState().gainDollars(3);
+            return ImmediateActions.none();
+        }
+    }
+
     @Value
     @NonFinal
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
@@ -750,9 +804,10 @@ public abstract class Action {
         @NonNull List<Location> steps;
         int atLeast;
         int atMost;
+        boolean fees;
 
         public Move(List<Location> steps) {
-            this(steps, 1, Integer.MAX_VALUE);
+            this(steps, 1, Integer.MAX_VALUE, true);
         }
 
         @Override
@@ -778,7 +833,9 @@ public abstract class Action {
 
                 checkDirectAndConsecutiveSteps(from, steps);
 
-                payFees(game);
+                if (fees) {
+                    payFees(game);
+                }
             }
 
             Location to = steps.get(steps.size() - 1);
@@ -829,75 +886,33 @@ public abstract class Action {
         }
     }
 
-    public static final class Discard1BlackAngusToGain2Dollars extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            game.currentPlayerState().discardCattleCards(CattleType.BLACK_ANGUS, 1);
-            game.currentPlayerState().gainDollars(2);
-            return ImmediateActions.none();
-        }
-    }
-
-    public static final class GainCertificate extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            game.currentPlayerState().gainCertificates(1);
-            return ImmediateActions.none();
-        }
-    }
-
-    public static final class Draw2CattleCards extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            game.getCattleMarket().draw();
-            game.getCattleMarket().draw();
-
-            return ImmediateActions.none();
-        }
-    }
-
-    public static final class Discard2GuernseyToGain4Dollars extends Action {
-        @Override
-        public ImmediateActions perform(Game game) {
-            game.currentPlayerState().discardCattleCards(CattleType.GUERNSEY, 2);
-            game.currentPlayerState().gainDollars(4);
-            return ImmediateActions.none();
-        }
-    }
-
-    @Value
-    public static final class DiscardPairToGain3Dollars extends Action {
-        @NonNull private final CattleType type;
-
-        @Override
-        public ImmediateActions perform(Game game) {
-            game.currentPlayerState().discardCattleCards(type, 2);
-            game.currentPlayerState().gainDollars(3);
-            return ImmediateActions.none();
-        }
-    }
-
     public static final class Move1Forward extends Move {
         public Move1Forward(Location to) {
-            super(Collections.singletonList(to), 1, 1);
+            super(Collections.singletonList(to), 1, 1, true);
         }
     }
 
     public static final class Move2Forward extends Move {
         public Move2Forward(Location to) {
-            super(Collections.singletonList(to), 1, 2);
+            super(Collections.singletonList(to), 1, 2, true);
         }
     }
 
     public static final class Move3Forward extends Move {
         public Move3Forward(Location to) {
-            super(Collections.singletonList(to), 1, 3);
+            super(Collections.singletonList(to), 1, 3, true);
+        }
+    }
+
+    public static final class Move3ForwardWithoutFees extends Move {
+        public Move3ForwardWithoutFees(Location to) {
+            super(Collections.singletonList(to), 1, 3, false);
         }
     }
 
     public static final class Move4Forward extends Move {
         public Move4Forward(Location to) {
-            super(Collections.singletonList(to), 1, 4);
+            super(Collections.singletonList(to), 1, 4, true);
         }
     }
 
@@ -943,15 +958,13 @@ public abstract class Action {
 
         @Override
         public ImmediateActions perform(Game game) {
-            RailroadTrack.Space from = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
-
             RailroadTrack.EngineMove engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, Integer.MAX_VALUE);
 
             if (city.getValue() > engineMove.getSteps()) {
                 throw new IllegalArgumentException("City value must be <= spaces that engine moved backwards");
             }
 
-            game.currentPlayerState().unlock(unlock);
+            game.currentPlayerState().deliverToCity(unlock, city);
 
             return game.getRailroadTrack().deliverToCity(game.getCurrentPlayer(), city)
                     .andThen(engineMove.getImmediateActions());
@@ -978,14 +991,7 @@ public abstract class Action {
     public static final class Gain2CertificatesAnd2DollarsPerTeepeePair extends Action {
         @Override
         public ImmediateActions perform(Game game) {
-            List<Teepee> teepees = game.currentPlayerState().getTeepees();
-
-            int blueTeepees = (int) teepees.stream()
-                    .filter(teepee -> teepee == Teepee.BLUE)
-                    .count();
-            int greenTeepees = teepees.size() - blueTeepees;
-
-            int pairs = Math.max(blueTeepees, greenTeepees) / Math.min(blueTeepees, greenTeepees);
+            int pairs = game.currentPlayerState().numberOfTeepeePairs();
 
             game.currentPlayerState().gainCertificates(pairs * 2);
             game.currentPlayerState().gainDollars(pairs * 2);
@@ -1081,7 +1087,7 @@ public abstract class Action {
         public ImmediateActions perform(Game game) {
             game.currentPlayerState().discardCard(card);
             game.currentPlayerState().gainDollars(3);
-            game.currentPlayerState().addCardToHand(game.takeObjectiveCard());
+            game.takeObjectiveCard().ifPresent(game.currentPlayerState()::addCardToHand);
             return ImmediateActions.none();
         }
     }
@@ -1148,4 +1154,5 @@ public abstract class Action {
             return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 4).getImmediateActions();
         }
     }
+
 }

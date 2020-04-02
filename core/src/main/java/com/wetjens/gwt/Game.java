@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -41,6 +42,7 @@ public class Game {
     @Getter
     private final CattleMarket cattleMarket;
 
+    // TODO Objective cards can run out
     private final Queue<ObjectiveCard> objectiveCards;
 
     private final ActionStack actionStack;
@@ -66,7 +68,7 @@ public class Game {
         this.playerStates = new HashMap<>();
         int startBalance = 6;
         for (Player player : this.players) {
-            this.playerStates.put(player, new PlayerState(player, startBalance++, random, buildings.createPlayerBuildings(player)));
+            this.playerStates.put(player, new PlayerState(player, startBalance++, random, buildings));
         }
 
         this.currentPlayer = this.players.get(0);
@@ -115,6 +117,10 @@ public class Game {
     }
 
     public void perform(@NonNull Action action) {
+        if (isEnded()){
+            throw new IllegalStateException("Game has ended");
+        }
+
         if (action.canPlayAnyTime()) {
             if (!actionStack.isEmpty() && actionStack.peek().isImmediate()) {
                 throw new IllegalStateException("Immediate action to be performed first");
@@ -139,7 +145,15 @@ public class Game {
         }
     }
 
+    public boolean isEnded() {
+        return !jobMarket.isClosed() || currentPlayerState().hasJobMarketToken();
+    }
+
     public void endTurn() {
+        if (isEnded()){
+            throw new IllegalStateException("Game has ended");
+        }
+
         actionStack.skip();
 
         currentPlayerState().drawUpToHandLimit();
@@ -160,6 +174,10 @@ public class Game {
     }
 
     public Set<Class<? extends Action>> possibleActions() {
+        if (isEnded()){
+            return Collections.emptySet();
+        }
+
         Set<Class<? extends Action>> possibleActions = actionStack.getPossibleActions();
 
         if (!actionStack.peek().isImmediate() && currentPlayerState().canPlayObjectiveCard()) {
@@ -171,7 +189,10 @@ public class Game {
         return possibleActions;
     }
 
-    public ObjectiveCard takeObjectiveCard() {
+    Optional<ObjectiveCard> takeObjectiveCard() {
+        if (isEnded()){
+            throw new IllegalStateException("Game has ended");
+        }
         return objectiveCards.poll();
     }
 
@@ -184,7 +205,14 @@ public class Game {
     }
 
     public Set<List<Location>> possibleMoves(Player player, Location to) {
+        if (isEnded()){
+            return Collections.emptySet();
+        }
         Location from = trail.getCurrentLocation(player);
         return trail.possibleMoves(from, to, playerState(player).getStepLimit());
+    }
+
+    public int score(Player player) {
+        return playerState(player).score(this) + trail.score(player) + railroadTrack.score(player);
     }
 }

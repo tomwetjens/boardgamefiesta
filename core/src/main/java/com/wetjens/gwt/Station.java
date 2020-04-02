@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 
@@ -12,6 +13,7 @@ import lombok.ToString;
 public class Station {
 
     private final int cost;
+    @Getter
     private final int points;
     private final DiscColor discColor;
 

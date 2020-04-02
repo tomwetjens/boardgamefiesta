@@ -1,11 +1,18 @@
 package com.wetjens.gwt;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import org.junit.jupiter.api.*;
 
+import static com.wetjens.gwt.RailroadTrack.MAX_CERTIFICATES;
+import static com.wetjens.gwt.RailroadTrack.MAX_HAND_VALUE;
+import static com.wetjens.gwt.RailroadTrack.MIN_HAND_VALUE;
 import static org.assertj.core.api.Assertions.*;
 
 class RailroadTrackTest {
@@ -208,5 +215,66 @@ class RailroadTrackTest {
     @Test
     void moveEngineBackwardsJumpOverToTurnout() {
 
+    }
+
+    @Nested
+    class PossibleDeliveries {
+
+        @Test
+        void minHandValue() {
+            RailroadTrack railroadTrack = RailroadTrack.builder().cities(new HashMap<>()).build();
+
+            Set<RailroadTrack.PossibleDelivery> possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MIN_HAND_VALUE, 0);
+
+            assertThat(possibleDeliveries).containsExactlyInAnyOrder(
+                    new RailroadTrack.PossibleDelivery(City.KANSAS_CITY, 0),
+                    new RailroadTrack.PossibleDelivery(City.TOPEKA, 0),
+                    new RailroadTrack.PossibleDelivery(City.WICHITA, 0)
+            );
+        }
+
+        @Test
+        void alreadyDelivered() {
+            HashMap<City, List<Player>> cities = new HashMap<>();
+            cities.put(City.TOPEKA, new LinkedList<>(Collections.singleton(playerA)));
+            RailroadTrack railroadTrack = RailroadTrack.builder().cities(cities).build();
+
+            Set<RailroadTrack.PossibleDelivery> possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MAX_HAND_VALUE, 0);
+
+            assertThat(possibleDeliveries).doesNotContain(new RailroadTrack.PossibleDelivery(City.TOPEKA, 0));
+        }
+
+        @Test
+        void alreadyDeliveredKansasCity() {
+            HashMap<City, List<Player>> cities = new HashMap<>();
+            cities.put(City.KANSAS_CITY, new LinkedList<>(Collections.singleton(playerA)));
+            RailroadTrack railroadTrack = RailroadTrack.builder().cities(cities).build();
+
+            Set<RailroadTrack.PossibleDelivery> possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MAX_HAND_VALUE, 0);
+
+            assertThat(possibleDeliveries).contains(new RailroadTrack.PossibleDelivery(City.KANSAS_CITY, 0));
+        }
+
+        @Test
+        void alreadyDeliveredSanFrancisco() {
+            HashMap<City, List<Player>> cities = new HashMap<>();
+            cities.put(City.SAN_FRANCISCO, new LinkedList<>(Collections.singleton(playerA)));
+            RailroadTrack railroadTrack = RailroadTrack.builder().cities(cities).build();
+
+            Set<RailroadTrack.PossibleDelivery> possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MAX_HAND_VALUE, 0);
+
+            assertThat(possibleDeliveries).contains(new RailroadTrack.PossibleDelivery(City.SAN_FRANCISCO, 0));
+        }
+
+        @Test
+        void minHandValueMaxCertificates() {
+            RailroadTrack railroadTrack = RailroadTrack.builder()
+                    .cities(new HashMap<>())
+                    .build();
+
+            Set<RailroadTrack.PossibleDelivery> possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MIN_HAND_VALUE, MAX_CERTIFICATES);
+
+            assertThat(possibleDeliveries).contains(new RailroadTrack.PossibleDelivery(City.COLORADO_SPRINGS, 1));
+        }
     }
 }

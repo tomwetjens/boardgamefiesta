@@ -52,6 +52,13 @@ abstract class PossibleAction {
     /**
      * Player MAY perform none, a single, some or all of the options in ANY order.
      */
+    static PossibleAction any(Stream<PossibleAction> actions) {
+        return new Any(actions.collect(Collectors.toCollection(ArrayList::new)));
+    }
+
+    /**
+     * Player MAY perform none, a single, some or all of the options in ANY order.
+     */
     static PossibleAction any(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Any(Stream.concat(
                 Stream.of(possibleAction),
