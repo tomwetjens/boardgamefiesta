@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -8,6 +8,7 @@ import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
 import com.wetjens.gwt.Action;
+import com.wetjens.gwt.server.game.view.ActionView;
 
 import static org.assertj.core.api.Assertions.*;
 

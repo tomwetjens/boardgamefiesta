@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import com.wetjens.gwt.Game;
 import com.wetjens.gwt.Player;
@@ -12,7 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Value
-public class GameView {
+public class StateView {
 
     RailroadTrackView railroadTrack;
     PlayerStateView player;
@@ -28,7 +28,7 @@ public class GameView {
     String currentPlayer;
     Set<ActionView> actions;
 
-    GameView(Game game, Player viewingPlayer) {
+    public StateView(Game game, Player viewingPlayer) {
         railroadTrack = new RailroadTrackView(game.getRailroadTrack());
 
         player = game.getPlayers().stream()

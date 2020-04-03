@@ -1,0 +1,99 @@
+package com.wetjens.gwt.server.game.domain;
+
+import java.util.Collections;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.wetjens.gwt.Action;
+import com.wetjens.gwt.server.user.domain.User;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.Value;
+
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@ToString(doNotUseGetters = true)
+public class Game {
+
+    @Getter
+    private final Id id;
+
+    @Getter
+    private User.Id owner;
+    private final Set<Player> players;
+
+    @Getter
+    private Status status;
+
+    private com.wetjens.gwt.Game state;
+
+    public static Game create(User owner, Set<User> inviteUsers) {
+        return Game.builder()
+                .id(Id.generate())
+                .status(Status.NEW)
+                .owner(owner.getId())
+                .players(Stream.concat(
+                        Stream.of(Player.builder().userId(owner.getId()).status(Player.Status.ACCEPTED).build()),
+                        inviteUsers.stream()
+                                .map(user -> Player.builder().userId(user.getId()).status(Player.Status.INVITED).build()))
+                        .collect(Collectors.toSet()))
+                .build();
+    }
+
+    public void start() {
+        players.removeIf(p -> p.getStatus() != Player.Status.ACCEPTED);
+
+        state = new com.wetjens.gwt.Game(players.stream()
+                .map(Player::getUserId)
+                .map(User.Id::getId)
+                .collect(Collectors.toSet()),
+                // TODO Get options from command
+                com.wetjens.gwt.Game.Options.builder()
+                        .beginner(false)
+                        .build(), new Random());
+
+        status = Status.STARTED;
+    }
+
+    public com.wetjens.gwt.Game getState() {
+        if (state == null) {
+            throw new IllegalStateException("Game state not started yet");
+        }
+        return state;
+    }
+
+    public void perform(Action action) {
+        state.perform(action);
+
+        if (state.isEnded()) {
+            status = Status.ENDED;
+        }
+
+        // TODO Maybe store scores on this aggregate
+    }
+
+    public Set<User.Id> getPlayers() {
+        return Collections.unmodifiableSet(players);
+    }
+
+    public enum Status {
+        NEW,
+        STARTED,
+        ENDED;
+    }
+
+    @Value(staticConstructor = "of")
+    public static class Id {
+        String id;
+
+        private static Id generate() {
+            return of(UUID.randomUUID().toString());
+        }
+    }
+}

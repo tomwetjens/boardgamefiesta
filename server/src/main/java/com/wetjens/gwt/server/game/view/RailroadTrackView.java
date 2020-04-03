@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import java.util.List;
 import java.util.Map;

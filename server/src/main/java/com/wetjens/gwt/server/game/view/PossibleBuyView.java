@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ public class PossibleBuyView {
     int cowboysNeeded;
     List<Integer> breedingValues;
 
-    PossibleBuyView(CattleMarket.PossibleBuy possibleBuy) {
+    public PossibleBuyView(CattleMarket.PossibleBuy possibleBuy) {
         this.cost = possibleBuy.getCost();
         this.cowboysNeeded = possibleBuy.getCowboysNeeded();
         this.breedingValues = possibleBuy.getBreedingValues();

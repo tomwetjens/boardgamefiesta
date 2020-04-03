@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import com.wetjens.gwt.City;
 import com.wetjens.gwt.RailroadTrack;
@@ -10,7 +10,7 @@ public class PossibleDeliveryView {
     City city;
     int certificates;
 
-    PossibleDeliveryView(RailroadTrack.PossibleDelivery possibleDelivery) {
+    public PossibleDeliveryView(RailroadTrack.PossibleDelivery possibleDelivery) {
         this.city = possibleDelivery.getCity();
         this.certificates = possibleDelivery.getCertificates();
     }

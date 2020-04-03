@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import com.wetjens.gwt.Hand;
 import com.wetjens.gwt.Hazard;

@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import com.wetjens.gwt.Action;
 import com.wetjens.gwt.Game;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @JsonbTypeDeserializer(PerformRequest.Deserializer.class)
 public abstract class PerformRequest {
 
-    abstract Action toAction(Game game);
+    public abstract Action toAction(Game game);
 
     public static class Deserializer implements JsonbDeserializer<PerformRequest> {
         @Override
@@ -44,7 +44,7 @@ public abstract class PerformRequest {
         }
 
         @Override
-        Action toAction(Game game) {
+        public Action toAction(Game game) {
             return new Action.Move(steps.stream().map(game.getTrail()::getLocation).collect(Collectors.toList()));
         }
     }

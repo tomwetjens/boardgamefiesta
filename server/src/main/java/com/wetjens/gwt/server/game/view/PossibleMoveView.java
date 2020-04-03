@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +15,7 @@ public class PossibleMoveView {
     List<TrailView.LocationView> steps;
     Map<String, Integer> playerFees;
 
-    PossibleMoveView(int playerCount, List<Location> steps) {
+    public PossibleMoveView(int playerCount, List<Location> steps) {
         this.playerFees = steps.stream()
                 .filter(location -> location instanceof Location.BuildingLocation)
                 .map(location -> (Location.BuildingLocation) location)

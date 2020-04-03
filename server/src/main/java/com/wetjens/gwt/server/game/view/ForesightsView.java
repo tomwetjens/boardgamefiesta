@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server;
+package com.wetjens.gwt.server.game.view;
 
 import com.wetjens.gwt.Foresights;
 import com.wetjens.gwt.KansasCitySupply;
