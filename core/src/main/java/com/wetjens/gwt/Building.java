@@ -12,4 +12,5 @@ public abstract class Building {
     }
 
     abstract PossibleAction getPossibleAction();
+
 }

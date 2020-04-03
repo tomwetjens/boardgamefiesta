@@ -12,17 +12,23 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import lombok.Getter;
+import lombok.ToString;
 
-public class KansasCitySupply {
+@ToString
+public final class KansasCitySupply {
 
     private final Queue<Tile>[] drawPiles;
 
     @SuppressWarnings("unchecked")
-    public KansasCitySupply(Random random) {
+    KansasCitySupply(Random random) {
         this.drawPiles = new Queue[3];
         this.drawPiles[0] = createDrawPile(createSet1(), random);
         this.drawPiles[1] = createDrawPile(createSet2(), random);
         this.drawPiles[2] = createDrawPile(createSet3(), random);
+    }
+
+    Tile draw(int drawPileIndex) {
+        return drawPiles[drawPileIndex].poll();
     }
 
     private Queue<Tile> createDrawPile(List<Tile> list, Random random) {
@@ -62,11 +68,8 @@ public class KansasCitySupply {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public Tile draw(int drawPileIndex) {
-        return drawPiles[drawPileIndex].poll();
-    }
-
     @Getter
+    @ToString
     public static final class Tile {
 
         private final Worker worker;

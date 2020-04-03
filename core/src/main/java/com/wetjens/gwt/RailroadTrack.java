@@ -271,21 +271,21 @@ public class RailroadTrack {
             case COLORADO_SPRINGS:
             case ALBUQUERQUE:
                 if (hasMadeDelivery(player, City.SANTA_FE)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.GainObjectiveCard.class));
+                    return ImmediateActions.of(PossibleAction.optional(Action.TakeObjectiveCard.class));
                 }
                 break;
             case SANTA_FE:
                 return ImmediateActions.of(PossibleAction.any(Stream.concat(
-                        hasMadeDelivery(player, City.COLORADO_SPRINGS) ? Stream.of(PossibleAction.mandatory(Action.GainObjectiveCard.class)) : Stream.empty(),
-                        hasMadeDelivery(player, City.ALBUQUERQUE) ? Stream.of(PossibleAction.mandatory(Action.GainObjectiveCard.class)) : Stream.empty())));
+                        hasMadeDelivery(player, City.COLORADO_SPRINGS) ? Stream.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class)) : Stream.empty(),
+                        hasMadeDelivery(player, City.ALBUQUERQUE) ? Stream.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class)) : Stream.empty())));
             case TOPEKA:
                 if (hasMadeDelivery(player, City.WICHITA)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.GainObjectiveCard.class));
+                    return ImmediateActions.of(PossibleAction.optional(Action.TakeObjectiveCard.class));
                 }
                 break;
             case WICHITA:
                 if (hasMadeDelivery(player, City.TOPEKA)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.GainObjectiveCard.class));
+                    return ImmediateActions.of(PossibleAction.optional(Action.TakeObjectiveCard.class));
                 }
                 break;
         }

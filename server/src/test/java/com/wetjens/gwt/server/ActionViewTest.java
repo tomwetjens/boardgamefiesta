@@ -19,6 +19,14 @@ class ActionViewTest {
         assertThat(ActionView.of(action)).isNotNull();
     }
 
+    @ParameterizedTest
+    @EnumSource(ActionView.class)
+    void naming(ActionView actionView) {
+        assertThat(actionView.getAction().getSimpleName().toUpperCase())
+                .describedAs("Enum constant " + actionView + " should match naming of action " + actionView.getAction().getSimpleName())
+                .isEqualTo(actionView.name().replaceAll("[_]", ""));
+    }
+
     static Stream<Arguments> allActions() {
         return Arrays.stream(Action.class.getDeclaredClasses())
                 .filter(Action.class::isAssignableFrom)

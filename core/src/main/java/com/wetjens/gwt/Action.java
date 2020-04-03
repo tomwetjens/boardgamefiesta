@@ -9,6 +9,7 @@ import java.util.Set;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -30,6 +31,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class BuyCattle extends Action {
 
         @NonNull Set<Card.CattleCard> cattleCards;
@@ -44,7 +46,11 @@ public abstract class Action {
 
             game.currentPlayerState().payDollars(cost);
 
-            return game.getCattleMarket().buy(cattleCards, game.currentPlayerState().getNumberOfCowboys());
+            ImmediateActions immediateActions = game.getCattleMarket().buy(cattleCards, game.currentPlayerState().getNumberOfCowboys());
+
+            game.currentPlayerState().gainCards(cattleCards);
+
+            return immediateActions;
         }
     }
 
@@ -91,8 +97,8 @@ public abstract class Action {
         }
     }
 
-    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     @Getter
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public abstract static class DrawCardsThenDiscardCards extends Action {
 
         int atLeast;
@@ -117,7 +123,6 @@ public abstract class Action {
                     Draw2CardsThenDiscard2Cards.class;
         }
 
-        @Value
         public static final class Draw1CardThenDiscard1Card extends Action {
             @Override
             public ImmediateActions perform(Game game) {
@@ -126,7 +131,6 @@ public abstract class Action {
             }
         }
 
-        @Value
         public static final class Draw2CardsThenDiscard2Cards extends Action {
             @Override
             public ImmediateActions perform(Game game) {
@@ -145,42 +149,36 @@ public abstract class Action {
                                                     DrawUpTo1CardsThenDiscardCards.class;
         }
 
-        @Value
         public static final class DrawUpTo1CardsThenDiscardCards extends DrawCardsThenDiscardCards {
             public DrawUpTo1CardsThenDiscardCards(int amount) {
                 super(1, 1, amount);
             }
         }
 
-        @Value
         public static final class DrawUpTo2CardsThenDiscardCards extends DrawCardsThenDiscardCards {
             public DrawUpTo2CardsThenDiscardCards(int amount) {
                 super(1, 2, amount);
             }
         }
 
-        @Value
         public static final class DrawUpTo3CardsThenDiscardCards extends DrawCardsThenDiscardCards {
             public DrawUpTo3CardsThenDiscardCards(int amount) {
                 super(1, 3, amount);
             }
         }
 
-        @Value
         public static final class DrawUpTo4CardsThenDiscardCards extends DrawCardsThenDiscardCards {
             public DrawUpTo4CardsThenDiscardCards(int amount) {
                 super(1, 4, amount);
             }
         }
 
-        @Value
         public static final class DrawUpTo5CardsThenDiscardCards extends DrawCardsThenDiscardCards {
             public DrawUpTo5CardsThenDiscardCards(int amount) {
                 super(1, 5, amount);
             }
         }
 
-        @Value
         public static final class DrawUpTo6CardsThenDiscardCards extends DrawCardsThenDiscardCards {
             public DrawUpTo6CardsThenDiscardCards(int amount) {
                 super(1, 6, amount);
@@ -188,22 +186,23 @@ public abstract class Action {
         }
     }
 
-    public static final class GainObjectiveCard extends Action {
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static final class TakeObjectiveCard extends Action {
+        @NonNull ObjectiveCard objectiveCard;
+
         @Override
         public ImmediateActions perform(Game game) {
-            game.takeObjectiveCard().ifPresent(game.currentPlayerState()::gainCard);
+            game.getObjectiveCards().remove(objectiveCard);
+            game.currentPlayerState().gainCard(objectiveCard);
             return ImmediateActions.none();
         }
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngineForward extends Action {
-
         @NonNull RailroadTrack.Space to;
-
-        public MoveEngineForward(RailroadTrack.Space to) {
-            this.to = to;
-        }
 
         @Override
         public ImmediateActions perform(Game game) {
@@ -212,6 +211,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static class Remove1Card extends Action {
         @NonNull Card card;
 
@@ -223,6 +223,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static class Remove2Cards extends Action {
         @NonNull Set<Card> cards;
 
@@ -241,6 +242,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class TradeWithIndians extends Action {
         int cost;
 
@@ -266,6 +268,7 @@ public abstract class Action {
 
     @Value
     @NonFinal
+    @EqualsAndHashCode(callSuper = false)
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public abstract static class DiscardCards extends Action {
 
@@ -347,6 +350,7 @@ public abstract class Action {
 
     @Value
     @NonFinal
+    @EqualsAndHashCode(callSuper = false)
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class HireWorker extends Action {
 
@@ -435,6 +439,7 @@ public abstract class Action {
 
     @Value
     @NonFinal
+    @EqualsAndHashCode(callSuper = false)
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class PlaceBuilding extends Action {
         @NonNull Location.BuildingLocation location;
@@ -508,6 +513,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class AppointStationMaster extends Action {
         @NonNull Worker worker;
 
@@ -521,8 +527,8 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class ChooseForesights extends Action {
-
         @NonNull List<Choice> choices;
 
         public ChooseForesights(@NonNull List<Choice> choices) {
@@ -577,8 +583,8 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class DeliverToCity extends Action {
-
         @NonNull City city;
         int certificates;
         @NonNull Unlockable unlockable;
@@ -608,6 +614,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngineAtLeast1BackwardsAndGain3Dollars extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -622,6 +629,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -636,6 +644,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngine2BackwardsToRemove2Cards extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -648,6 +657,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngine2Or3Forward extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -657,7 +667,7 @@ public abstract class Action {
         }
     }
 
-    public static final class Gain1Dollars extends Action {
+    public static final class Gain1Dollar extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             game.currentPlayerState().gainDollars(1);
@@ -666,6 +676,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class Pay1DollarAndMoveEngine1BackwardsToGain1Certificate extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -680,6 +691,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class Pay1DollarToMoveEngine1Forward extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -691,6 +703,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngine1BackwardsToRemove1Card extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -703,6 +716,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class DiscardPairToGain4Dollars extends Action {
         @NonNull CattleType type;
 
@@ -716,6 +730,7 @@ public abstract class Action {
 
     @Value
     @NonFinal
+    @EqualsAndHashCode(callSuper = false)
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class RemoveHazard extends Action {
         @NonNull Hazard hazard;
@@ -734,6 +749,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class PlayObjectiveCard extends Action {
         @NonNull ObjectiveCard objectiveCard;
 
@@ -757,7 +773,7 @@ public abstract class Action {
         }
     }
 
-    public static final class GainCertificate extends Action {
+    public static final class Gain1Certificate extends Action {
         @Override
         public ImmediateActions perform(Game game) {
             game.currentPlayerState().gainCertificates(1);
@@ -785,6 +801,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class DiscardPairToGain3Dollars extends Action {
         @NonNull private final CattleType type;
 
@@ -798,6 +815,7 @@ public abstract class Action {
 
     @Value
     @NonFinal
+    @EqualsAndHashCode(callSuper = false)
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class Move extends Action {
 
@@ -932,6 +950,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngineAtMost2Forward extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -942,6 +961,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngineAtMost3Forward extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -951,6 +971,8 @@ public abstract class Action {
         }
     }
 
+    @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class ExtraordinaryDelivery extends Action {
         @NonNull RailroadTrack.Space to;
         @NonNull City city;
@@ -1001,6 +1023,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public class MoveEngineAtMost5Forward extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -1011,6 +1034,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class Discard1ObjectiveCardToGain2Certificates extends Action {
         @NonNull ObjectiveCard card;
 
@@ -1023,6 +1047,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngine1BackwardsToGain3Dollars extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -1035,6 +1060,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class Discard1JerseyToMoveEngine1Forward extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -1080,19 +1106,26 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand extends Action {
-        @NonNull  Card.CattleCard card;
+        @NonNull  Card.CattleCard cattleCard;
+        @NonNull ObjectiveCard objectiveCard;
 
         @Override
         public ImmediateActions perform(Game game) {
-            game.currentPlayerState().discardCard(card);
+            game.currentPlayerState().discardCard(cattleCard);
+
             game.currentPlayerState().gainDollars(3);
-            game.takeObjectiveCard().ifPresent(game.currentPlayerState()::addCardToHand);
+
+            game.getObjectiveCards().remove(objectiveCard);
+            game.currentPlayerState().addCardToHand(objectiveCard);
+
             return ImmediateActions.none();
         }
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngineForwardUpToNumberOfBuildingsInWoods extends Action {
         @NonNull RailroadTrack.Space to;
 
@@ -1103,7 +1136,6 @@ public abstract class Action {
         }
     }
 
-    @Value
     public static final class UseAdjacentBuilding extends Action {
         @Override
         public ImmediateActions perform(Game game) {
@@ -1120,6 +1152,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class UpgradeAnyStationBehindEngine extends Action {
         @NonNull Station station;
 
@@ -1136,7 +1169,6 @@ public abstract class Action {
         }
     }
 
-    @Value
     public static final class Gain4Dollars extends Action {
         @Override
         public ImmediateActions perform(Game game) {
@@ -1146,6 +1178,7 @@ public abstract class Action {
     }
 
     @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class MoveEngineAtMost4Forward extends Action {
         @NonNull RailroadTrack.Space to;
 

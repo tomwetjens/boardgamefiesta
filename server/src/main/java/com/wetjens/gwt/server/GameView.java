@@ -53,7 +53,7 @@ public class GameView {
 
         cattleMarket = new CattleMarketView(game.getCattleMarket());
 
-        objectiveCards = game.getObjectiveCards().stream().map(ObjectiveCardView::new).collect(Collectors.toSet());
+        objectiveCards = game.getObjectiveCards().getAvailable().stream().map(ObjectiveCardView::new).collect(Collectors.toSet());
 
         currentPlayer = game.getCurrentPlayer().getName();
 

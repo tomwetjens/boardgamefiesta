@@ -2,7 +2,7 @@ package com.wetjens.gwt;
 
 public abstract class NeutralBuilding extends Building {
 
-    protected NeutralBuilding() {
+    NeutralBuilding() {
         super(Hand.NONE);
     }
 
@@ -27,7 +27,7 @@ public abstract class NeutralBuilding extends Building {
         @Override
         public PossibleAction getPossibleAction() {
             return PossibleAction.any(
-                    PossibleAction.choice(Action.GainCertificate.class, Action.GainObjectiveCard.class),
+                    PossibleAction.choice(Action.Gain1Certificate.class, Action.TakeObjectiveCard.class),
                     Action.MoveEngineForward.class);
         }
     }

@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-public class Foresights {
+public final class Foresights {
 
     private static final int NUM_COLUMNS = 3;
     private static final int NUM_ROWS = 2;
@@ -14,7 +14,7 @@ public class Foresights {
     private final KansasCitySupply.Tile[][] spaces;
 
     @SuppressWarnings("unchecked")
-    public Foresights(KansasCitySupply kansasCitySupply) {
+    Foresights(KansasCitySupply kansasCitySupply) {
         this.kansasCitySupply = kansasCitySupply;
 
         spaces = new KansasCitySupply.Tile[NUM_COLUMNS][NUM_ROWS];

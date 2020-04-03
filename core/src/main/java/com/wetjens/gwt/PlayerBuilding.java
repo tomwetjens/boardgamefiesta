@@ -8,8 +8,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Value;
 
 @Getter
 public abstract class PlayerBuilding extends Building {
@@ -18,7 +21,7 @@ public abstract class PlayerBuilding extends Building {
     private final int craftsmen;
     private final int points;
 
-    protected PlayerBuilding(Player player, Hand hand, int craftsmen, int points) {
+    private PlayerBuilding(Player player, Hand hand, int craftsmen, int points) {
         super(hand);
 
         this.player = player;
@@ -26,53 +29,45 @@ public abstract class PlayerBuilding extends Building {
         this.points = points;
     }
 
-    public int getCraftsmen() {
-        return craftsmen;
-    }
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class BuildingSet {
 
-    public enum Variant {
-        A,
-        B;
-    }
+        @NonNull List<Side> sides;
 
-    public static final class VariantSet {
-
-        private final List<Variant> variants;
-
-        private VariantSet(List<Variant> variants) {
-            this.variants = variants;
-        }
-
-        public static VariantSet firstGame() {
-            return new VariantSet(Stream.generate(() -> Variant.A)
+        public static BuildingSet beginner() {
+            return new BuildingSet(Stream.generate(() -> Side.A)
                     .limit(10)
                     .collect(Collectors.toList()));
         }
 
-        public static VariantSet random(@NonNull Random random) {
-            return new VariantSet(Stream.generate(() -> random.nextBoolean() ? Variant.A : Variant.B)
+        public static BuildingSet random(@NonNull Random random) {
+            return new BuildingSet(Stream.generate(() -> random.nextBoolean() ? Side.A : Side.B)
                     .limit(10)
                     .collect(Collectors.toList()));
         }
 
         public Set<PlayerBuilding> createPlayerBuildings(@NonNull Player player) {
             return new HashSet<>(Arrays.asList(
-                    variants.get(0) == Variant.A ? new Building1A(player) : new Building1B(player),
-                    variants.get(1) == Variant.A ? new Building2A(player) : new Building2B(player),
-                    variants.get(2) == Variant.A ? new Building3A(player) : new Building3B(player),
-                    variants.get(3) == Variant.A ? new Building4A(player) : new Building4B(player),
-                    variants.get(4) == Variant.A ? new Building5A(player) : new Building5B(player),
-                    variants.get(5) == Variant.A ? new Building6A(player) : new Building6B(player),
-                    variants.get(6) == Variant.A ? new Building7A(player) : new Building7B(player),
-                    variants.get(7) == Variant.A ? new Building8A(player) : new Building8B(player),
-                    variants.get(8) == Variant.A ? new Building9A(player) : new Building9B(player),
-                    variants.get(9) == Variant.A ? new Building10A(player) : new Building10B(player)));
+                    sides.get(0) == Side.A ? new Building1A(player) : new Building1B(player),
+                    sides.get(1) == Side.A ? new Building2A(player) : new Building2B(player),
+                    sides.get(2) == Side.A ? new Building3A(player) : new Building3B(player),
+                    sides.get(3) == Side.A ? new Building4A(player) : new Building4B(player),
+                    sides.get(4) == Side.A ? new Building5A(player) : new Building5B(player),
+                    sides.get(5) == Side.A ? new Building6A(player) : new Building6B(player),
+                    sides.get(6) == Side.A ? new Building7A(player) : new Building7B(player),
+                    sides.get(7) == Side.A ? new Building8A(player) : new Building8B(player),
+                    sides.get(8) == Side.A ? new Building9A(player) : new Building9B(player),
+                    sides.get(9) == Side.A ? new Building10A(player) : new Building10B(player)));
+        }
+
+        private enum Side {
+            A, B
         }
     }
 
     public static final class Building1A extends PlayerBuilding {
 
-        public Building1A(Player player) {
+        Building1A(Player player) {
             super(player, Hand.GREEN, 1, 1);
         }
 
@@ -84,7 +79,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building2A extends PlayerBuilding {
 
-        public Building2A(Player player) {
+        Building2A(Player player) {
             super(player, Hand.NONE, 1, 1);
         }
 
@@ -96,7 +91,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building3A extends PlayerBuilding {
 
-        public Building3A(Player player) {
+        Building3A(Player player) {
             super(player, Hand.NONE, 1, 1);
         }
 
@@ -108,7 +103,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building4A extends PlayerBuilding {
 
-        public Building4A(Player player) {
+        Building4A(Player player) {
             super(player, Hand.BLACK, 2, 3);
         }
 
@@ -120,7 +115,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building5A extends PlayerBuilding {
 
-        public Building5A(Player player) {
+        Building5A(Player player) {
             super(player, Hand.NONE, 3, 4);
         }
 
@@ -132,7 +127,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building6A extends PlayerBuilding {
 
-        public Building6A(Player player) {
+        Building6A(Player player) {
             super(player, Hand.NONE, 4, 5);
         }
 
@@ -144,7 +139,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building7A extends PlayerBuilding {
 
-        public Building7A(Player player) {
+        Building7A(Player player) {
             super(player, Hand.BOTH, 5, 6);
         }
 
@@ -156,7 +151,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building8A extends PlayerBuilding {
 
-        public Building8A(Player player) {
+        Building8A(Player player) {
             super(player, Hand.GREEN, 5, 6);
         }
 
@@ -170,7 +165,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building9A extends PlayerBuilding {
 
-        public Building9A(Player player) {
+        Building9A(Player player) {
             super(player, Hand.NONE, 7, 9);
         }
 
@@ -182,7 +177,7 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building10A extends PlayerBuilding {
 
-        public Building10A(Player player) {
+        Building10A(Player player) {
             super(player, Hand.BLACK, 9, 13);
         }
 
@@ -194,7 +189,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building1B extends PlayerBuilding {
 
-        public Building1B(Player player) {
+        Building1B(Player player) {
             super(player, Hand.GREEN, 1, 1);
         }
 
@@ -206,7 +201,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building2B extends PlayerBuilding {
 
-        public Building2B(Player player) {
+        Building2B(Player player) {
             super(player, Hand.NONE, 1, 1);
         }
 
@@ -218,7 +213,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building3B extends PlayerBuilding {
 
-        public Building3B(Player player) {
+        Building3B(Player player) {
             super(player, Hand.NONE, 2, 3);
         }
 
@@ -230,7 +225,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building4B extends PlayerBuilding {
 
-        public Building4B(Player player) {
+        Building4B(Player player) {
             super(player, Hand.BLACK, 2, 3);
         }
 
@@ -242,7 +237,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building5B extends PlayerBuilding {
 
-        public Building5B(Player player) {
+        Building5B(Player player) {
             super(player, Hand.NONE, 3, 4);
         }
 
@@ -254,7 +249,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building6B extends PlayerBuilding {
 
-        public Building6B(Player player) {
+        Building6B(Player player) {
             super(player, Hand.NONE, 4, 5);
         }
 
@@ -266,7 +261,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building7B extends PlayerBuilding {
 
-        public Building7B(Player player) {
+        Building7B(Player player) {
             super(player, Hand.BOTH, 5, 6);
         }
 
@@ -277,7 +272,8 @@ public abstract class PlayerBuilding extends Building {
     }
 
     private static class Building8B extends PlayerBuilding {
-        public Building8B(Player player) {
+
+        Building8B(Player player) {
             super(player, Hand.NONE, 6, 8);
         }
 
@@ -289,7 +285,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building9B extends PlayerBuilding {
 
-        public Building9B(Player player) {
+        Building9B(Player player) {
             super(player, Hand.NONE, 6, 8);
         }
 
@@ -301,7 +297,7 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building10B extends PlayerBuilding {
 
-        public Building10B(Player player) {
+        Building10B(Player player) {
             super(player, Hand.BLACK, 8, 11);
         }
 

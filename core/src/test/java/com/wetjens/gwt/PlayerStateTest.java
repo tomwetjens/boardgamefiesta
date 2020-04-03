@@ -18,7 +18,7 @@ class PlayerStateTest {
 
         @Test
         void create() {
-            PlayerState playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.VariantSet.firstGame());
+            PlayerState playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
 
             assertThat(playerState.getBalance()).isEqualTo(6);
             assertThat(playerState.getCertificates()).isEqualTo(0);
@@ -45,7 +45,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.VariantSet.firstGame());
+            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
         }
 
         @Test
@@ -193,7 +193,8 @@ class PlayerStateTest {
         void gain1() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(0)
-                    .certificateLimit(6)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
+                    .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
             playerState.gainCertificates(1);
@@ -216,7 +217,8 @@ class PlayerStateTest {
         void gain2() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(0)
-                    .certificateLimit(6)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
+                    .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
             playerState.gainCertificates(2);
@@ -233,7 +235,7 @@ class PlayerStateTest {
         void limit4() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(0)
-                    .certificateLimit(4)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .build();
 
             playerState.gainCertificates(4);
@@ -245,7 +247,8 @@ class PlayerStateTest {
         void limit6() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(0)
-                    .certificateLimit(6)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
+                    .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
             playerState.gainCertificates(6);
@@ -257,7 +260,7 @@ class PlayerStateTest {
         void max4() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(0)
-                    .certificateLimit(4)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .build();
 
             playerState.gainMaxCertificates();
@@ -269,7 +272,8 @@ class PlayerStateTest {
         void max6() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(0)
-                    .certificateLimit(6)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
+                    .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
             playerState.gainMaxCertificates();
@@ -281,7 +285,8 @@ class PlayerStateTest {
         void spend1() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(6)
-                    .certificateLimit(6)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
+                    .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
             playerState.spendCertificates(1);
@@ -306,7 +311,8 @@ class PlayerStateTest {
         void spend2() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(6)
-                    .certificateLimit(6)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
+                    .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
             playerState.spendCertificates(2);
@@ -325,7 +331,8 @@ class PlayerStateTest {
         void spend4() {
             PlayerState playerState = PlayerState.builder()
                     .certificates(6)
-                    .certificateLimit(6)
+                    .unlocked(Unlockable.CERT_LIMIT_4, 1)
+                    .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
             playerState.spendCertificates(4);
@@ -342,7 +349,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.VariantSet.firstGame());
+            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
         }
 
         @Test

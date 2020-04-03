@@ -3,6 +3,7 @@ package com.wetjens.gwt;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -19,6 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Singular;
 
 @Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -36,32 +38,26 @@ public class PlayerState {
     private final List<Card> discardPile = new LinkedList<>();
     private final Map<Worker, Integer> workers = new EnumMap<>(Worker.class);
     private final Set<PlayerBuilding> buildings;
-    private final Map<Unlockable, Integer> unlocked = new EnumMap<>(Unlockable.class);
+    @Singular("unlocked")
+    private final Map<Unlockable, Integer> unlocked;
     private final Set<ObjectiveCard> objectives = new HashSet<>();
     private final Set<StationMaster> stationMasters = new HashSet<>();
     private final List<Teepee> teepees = new LinkedList<>();
     private final Set<Hazard> hazards = new HashSet<>();
 
     @Getter
-    private int stepLimit = 3;
-    @Getter
-    private int handLimit = 4;
-    @Getter
-    private int certificateLimit = 4;
-    @Getter
-    private int certificates = 0;
+    private int certificates;
     @Getter
     private int balance;
     @Getter
     private boolean jobMarketToken;
 
-    public PlayerState(@NonNull Player player, int balance, @NonNull Random random, PlayerBuilding.VariantSet buildings) {
+    PlayerState(@NonNull Player player, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
         this.player = player;
         this.balance = balance;
+        this.certificates = 0;
 
-        LinkedList<Card> startingDeck = new LinkedList<>(createStartingDeck());
-        Collections.shuffle(startingDeck, random);
-        this.drawStack = startingDeck;
+        this.drawStack = createDrawStack(random);
 
         this.hand = new HashSet<>();
 
@@ -70,21 +66,11 @@ public class PlayerState {
         this.workers.put(Worker.ENGINEER, 1);
 
         this.buildings = new HashSet<>(buildings.createPlayerBuildings(player));
+        this.unlocked = new EnumMap<>(Unlockable.class);
 
         // TODO Starting objective card
 
         drawUpToHandLimit();
-    }
-
-    void gainCertificates(int amount) {
-        int step = Math.min(CERTIFICATE_STEPS.size() - 1, CERTIFICATE_STEPS.indexOf(certificates) + amount);
-        certificates = CERTIFICATE_STEPS.get(Math.min(certificateLimit, step));
-    }
-
-    void drawUpToHandLimit() {
-        while (hand.size() < handLimit && drawStack.size() + discardPile.size() > 0) {
-            drawCard();
-        }
     }
 
     void drawCard() {
@@ -99,32 +85,27 @@ public class PlayerState {
         }
     }
 
-    private static List<Card> createStartingDeck() {
-        return new ArrayList<>(Arrays.asList(
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
-                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
-                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
-                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
-                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
-                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
-                new Card.CattleCard(CattleType.GUERNSEY, 0),
-                new Card.CattleCard(CattleType.GUERNSEY, 0),
-                new Card.CattleCard(CattleType.GUERNSEY, 0)));
+    void drawUpToHandLimit() {
+        int handLimit = getHandLimit();
+        while (hand.size() < handLimit && drawStack.size() + discardPile.size() > 0) {
+            drawCard();
+        }
     }
 
     void gainCard(Card card) {
         discardPile.add(card);
     }
 
+    void gainCards(Set<? extends Card> cards) {
+        discardPile.addAll(cards);
+    }
+
     Set<Card.CattleCard> discardCattleCards(CattleType type, int amount) {
         Set<Card.CattleCard> cattleCards = hand.stream().filter(card -> card instanceof Card.CattleCard)
                 .map(card -> (Card.CattleCard) card)
                 .filter(cattleCard -> cattleCard.getType() == type)
+                // Assumed for now player wants to discard the lowest points to keep a good hand value
+                .sorted(Comparator.comparingInt(Card.CattleCard::getPoints))
                 .limit(amount)
                 .collect(Collectors.toSet());
 
@@ -137,6 +118,11 @@ public class PlayerState {
         discardPile.addAll(cattleCards);
 
         return Collections.unmodifiableSet(cattleCards);
+    }
+
+    void discardAllCards() {
+        discardPile.addAll(hand);
+        hand.clear();
     }
 
     void gainDollars(int amount) {
@@ -179,26 +165,10 @@ public class PlayerState {
         return ImmediateActions.none();
     }
 
-    public int getNumberOfCowboys() {
-        return workers.get(Worker.COWBOY);
-    }
-
-    public int getNumberOfCraftsmen() {
-        return workers.get(Worker.CRAFTSMAN);
-    }
-
-    public boolean hasAvailable(PlayerBuilding building) {
-        return buildings.contains(building);
-    }
-
     void removeBuilding(PlayerBuilding building) {
         if (!buildings.remove(building)) {
             throw new IllegalStateException("Building not available for player");
         }
-    }
-
-    public int getNumberOfEngineers() {
-        return workers.get(Worker.ENGINEER);
     }
 
     void discardCard(Card card) {
@@ -209,32 +179,157 @@ public class PlayerState {
         discardPile.add(card);
     }
 
-    void unlockExtraCard() {
-        if (handLimit == 6) {
-            throw new IllegalStateException("Already at max hand limit");
+    ImmediateActions playObjectiveCard(ObjectiveCard objectiveCard) {
+        if (!hand.remove(objectiveCard)) {
+            throw new IllegalStateException("Objective card not in hand");
+        }
+        objectives.add(objectiveCard);
+        return ImmediateActions.of(objectiveCard.getPossibleAction());
+    }
+
+    void removeWorker(Worker worker) {
+        if (workers.get(worker) <= 1) {
+            throw new IllegalStateException("Not enough workers");
         }
 
-        payDollars(5);
+        workers.computeIfPresent(worker, (k, v) -> v - 1);
+    }
 
-        handLimit++;
+    void addStationMaster(StationMaster stationMaster) {
+        if (!stationMasters.add(stationMaster)) {
+            throw new IllegalArgumentException("Already has station master");
+        }
+    }
+
+    void addTeepee(Teepee teepee) {
+        teepees.add(teepee);
+    }
+
+    void removeCards(Set<Card> cards) {
+        if (!hand.containsAll(cards)) {
+            throw new IllegalArgumentException("Cards not in hand");
+        }
+        hand.removeAll(cards);
+    }
+
+    void addHazard(Hazard hazard) {
+        if (!hazards.add(hazard)) {
+            throw new IllegalArgumentException("Already has hazard");
+        }
+    }
+
+    void gainCertificates(int amount) {
+        int step = Math.min(CERTIFICATE_STEPS.size() - 1, CERTIFICATE_STEPS.indexOf(certificates) + amount);
+        certificates = CERTIFICATE_STEPS.get(Math.min(getCertificateLimit(), step));
+    }
+
+    void spendCertificates(int amount) {
+        if (amount - permanentCertificates() > certificates) {
+            throw new IllegalArgumentException("Not enough certificates");
+        }
+        int remaining = amount - permanentCertificates();
+        while (remaining > 0) {
+            int step = Math.max(0, CERTIFICATE_STEPS.indexOf(certificates) - 1);
+            int spent = certificates - CERTIFICATE_STEPS.get(step);
+            certificates -= spent;
+            remaining -= spent;
+        }
+    }
+
+    void deliverToCity(Unlockable unlockable, City city) {
+        if (!city.accepts(unlockable.getDiscColor())) {
+            throw new IllegalArgumentException("City does not accept: " + unlockable.getDiscColor());
+        }
+
+        if (unlocked.getOrDefault(unlockable, 0) == unlockable.getCount()) {
+            throw new IllegalArgumentException("Already unlocked all " + unlockable);
+        }
+
+        unlocked.compute(unlockable, (k, v) -> v != null ? v + 1 : 1);
+
+        if (city == City.KANSAS_CITY) {
+            balance += 6;
+        }
+    }
+
+    void gainJobMarketToken() {
+        jobMarketToken = true;
+    }
+
+    void gainMaxCertificates() {
+        certificates = Math.min(getCertificateLimit(), CERTIFICATE_STEPS.get(CERTIFICATE_STEPS.size() - 1));
+    }
+
+    void addCardToHand(Card card) {
+        hand.add(card);
     }
 
     public Set<Card> getHand() {
         return Collections.unmodifiableSet(hand);
     }
 
-    public boolean hasUnlocked(Unlockable unlockable) {
-        return unlocked.getOrDefault(unlockable, 0) > 0;
+    public List<Teepee> getTeepees() {
+        return Collections.unmodifiableList(teepees);
     }
 
-    public boolean hasAllUnlocked(Unlockable unlockable) {
-        return unlocked.getOrDefault(unlockable, 0) == unlockable.getCount();
+    public Set<Hazard> getHazards() {
+        return Collections.unmodifiableSet(hazards);
+    }
+
+    public Set<ObjectiveCard> getObjectives() {
+        return Collections.unmodifiableSet(objectives);
+    }
+
+    public Set<StationMaster> getStationMasters() {
+        return Collections.unmodifiableSet(stationMasters);
+    }
+
+    public Set<PlayerBuilding> getBuildings() {
+        return Collections.unmodifiableSet(buildings);
+    }
+
+    public List<Card> getDiscardPile() {
+        return Collections.unmodifiableList(discardPile);
+    }
+
+    public boolean hasJobMarketToken() {
+        return jobMarketToken;
+    }
+
+    public Set<RailroadTrack.PossibleDelivery> possibleDeliveries(RailroadTrack railroadTrack) {
+        return railroadTrack.possibleDeliveries(player, handValue(), certificates + permanentCertificates());
+    }
+
+    public int handValue() {
+        return hand.stream()
+                .filter(card -> card instanceof Card.CattleCard)
+                .map(card -> (Card.CattleCard) card)
+                .map(Card.CattleCard::getType)
+                .distinct()
+                .mapToInt(CattleType::getValue)
+                .sum();
+    }
+
+    public int getNumberOfCowboys() {
+        return workers.get(Worker.COWBOY);
+    }
+
+    public int getNumberOfCraftsmen() {
+        return workers.get(Worker.CRAFTSMAN);
+    }
+
+    public int getNumberOfEngineers() {
+        return workers.get(Worker.ENGINEER);
+    }
+
+    public boolean hasAvailable(PlayerBuilding building) {
+        return buildings.contains(building);
     }
 
     public Set<Class<? extends Action>> unlockedSingleAuxiliaryActions() {
         Set<Class<? extends Action>> actions = new HashSet<>();
         if (hasUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
-            actions.add(Action.Gain1Dollars.class);
+            actions.add(Action.Gain1Dollar.class);
         }
         if (hasUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
             actions.add(Action.DrawCardsThenDiscardCards.exactly(1));
@@ -273,145 +368,54 @@ public class PlayerState {
         return actions;
     }
 
-    ImmediateActions playObjectiveCard(ObjectiveCard objectiveCard) {
-        if (!hand.remove(objectiveCard)) {
-            throw new IllegalStateException("Objective card not in hand");
+    public int getHandLimit() {
+        return 3 + unlocked.getOrDefault(Unlockable.EXTRA_CARD, 0);
+    }
+
+    public int getCertificateLimit() {
+        if (hasUnlocked(Unlockable.CERT_LIMIT_6) && hasUnlocked(Unlockable.CERT_LIMIT_4)) {
+            return 6;
+        } else if (hasUnlocked(Unlockable.CERT_LIMIT_4)) {
+            return 4;
         }
-        objectives.add(objectiveCard);
-        return ImmediateActions.of(objectiveCard.getPossibleAction());
+        return 3;
+    }
+
+    public int getStepLimit() {
+        return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS,0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS,0);
     }
 
     boolean canPlayObjectiveCard() {
         return hand.stream().anyMatch(card -> card instanceof ObjectiveCard);
     }
 
-    void removeWorker(Worker worker) {
-        if (workers.get(worker) <= 1) {
-            throw new IllegalStateException("Not enough workers");
-        }
-
-        workers.computeIfPresent(worker, (k, v) -> v - 1);
+    int numberOfCattleCards(int breedingValue) {
+        return (int) getCattleCards()
+                .stream()
+                .map(card -> card.getType().getValue() == breedingValue)
+                .count();
     }
 
-    void addStationMaster(StationMaster stationMaster) {
-        if (!stationMasters.add(stationMaster)) {
-            throw new IllegalArgumentException("Already has station master");
-        }
+    int numberOfTeepeePairs() {
+        int blueTeepees = (int) teepees.stream()
+                .filter(teepee -> teepee == Teepee.BLUE)
+                .count();
+        int greenTeepees = teepees.size() - blueTeepees;
+
+        return Math.max(blueTeepees, greenTeepees) / Math.min(blueTeepees, greenTeepees);
     }
 
-    void addTeepee(Teepee teepee) {
-        if (!teepees.add(teepee)) {
-            throw new IllegalArgumentException("Already has teepee");
-        }
-    }
-
-    void removeCards(Set<Card> cards) {
-        if (!hand.containsAll(cards)) {
-            throw new IllegalArgumentException("Cards not in hand");
-        }
-        hand.removeAll(cards);
-    }
-
-    void addHazard(Hazard hazard) {
-        if (!hazards.add(hazard)) {
-            throw new IllegalArgumentException("Already has hazard");
-        }
-    }
-
-    public Set<RailroadTrack.PossibleDelivery> possibleDeliveries(RailroadTrack railroadTrack) {
-        return railroadTrack.possibleDeliveries(player, handValue(), certificates + permanentCertificates());
-    }
-
-    public int handValue() {
-        return hand.stream()
-                .filter(card -> card instanceof Card.CattleCard)
-                .map(card -> (Card.CattleCard) card)
-                .map(Card.CattleCard::getType)
-                .distinct()
-                .mapToInt(CattleType::getValue)
-                .sum();
-    }
-
-    public void spendCertificates(int amount) {
-        if (amount - permanentCertificates() > certificates) {
-            throw new IllegalArgumentException("Not enough certificates");
-        }
-        int remaining = amount - permanentCertificates();
-        while (remaining > 0) {
-            int step = Math.max(0, CERTIFICATE_STEPS.indexOf(certificates) - 1);
-            int spent = certificates - CERTIFICATE_STEPS.get(step);
-            certificates -= spent;
-            remaining -= spent;
-        }
+    int numberOfObjectiveCards() {
+        return objectives.size() + (int) Stream.concat(Stream.concat(hand.stream(), discardPile.stream()), drawStack.stream())
+                .filter(card -> card instanceof ObjectiveCard)
+                .map(card -> (ObjectiveCard) card)
+                .count();
     }
 
     int permanentCertificates() {
         return (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS) ? 1 : 0)
                 + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_HAZARDS) ? 1 : 0)
                 + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_TEEPEE_PAIRS) ? 1 : 0);
-    }
-
-    public void discardAllCards() {
-        discardPile.addAll(hand);
-        hand.clear();
-    }
-
-    public List<Teepee> getTeepees() {
-        return Collections.unmodifiableList(teepees);
-    }
-
-    public Set<Hazard> getHazards() {
-        return Collections.unmodifiableSet(hazards);
-    }
-
-    public void deliverToCity(Unlockable unlockable, City city) {
-        if (!city.accepts(unlockable.getDiscColor())) {
-            throw new IllegalArgumentException("City does not accept: " + unlockable.getDiscColor());
-        }
-
-        if (city == City.KANSAS_CITY) {
-            balance += 6;
-        }
-
-        // TODO
-    }
-
-    public void gainMaxCertificates() {
-        certificates = Math.min(certificateLimit, CERTIFICATE_STEPS.get(CERTIFICATE_STEPS.size() - 1));
-    }
-
-    public void addCardToHand(Card card) {
-        hand.add(card);
-    }
-
-    public Set<ObjectiveCard> getObjectives() {
-        return Collections.unmodifiableSet(objectives);
-    }
-
-    public Set<StationMaster> getStationMasters() {
-        return Collections.unmodifiableSet(stationMasters);
-    }
-
-    public Set<PlayerBuilding> getBuildings() {
-        return Collections.unmodifiableSet(buildings);
-    }
-
-    public List<Card> getDiscardPile() {
-        return Collections.unmodifiableList(discardPile);
-    }
-
-    public int numberOfCattleCards(int breedingValue) {
-        return (int) getCattleCards()
-                .stream()
-                .map(card -> ((Card.CattleCard) card).getType().getValue() == breedingValue)
-                .count();
-    }
-
-    private Set<Card.CattleCard> getCattleCards() {
-        return Stream.concat(Stream.concat(hand.stream(), discardPile.stream()), drawStack.stream())
-                .filter(card -> card instanceof Card.CattleCard)
-                .map(card -> ((Card.CattleCard) card))
-                .collect(Collectors.toSet());
     }
 
     int score(Game game) {
@@ -421,6 +425,21 @@ public class PlayerState {
                 + scoreStationMasters()
                 + (hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0)
                 + (jobMarketToken ? 2 : 0);
+    }
+
+    private boolean hasUnlocked(Unlockable unlockable) {
+        return unlocked.getOrDefault(unlockable, 0) > 0;
+    }
+
+    private boolean hasAllUnlocked(Unlockable unlockable) {
+        return unlocked.getOrDefault(unlockable, 0) == unlockable.getCount();
+    }
+
+    private Set<Card.CattleCard> getCattleCards() {
+        return Stream.concat(Stream.concat(hand.stream(), discardPile.stream()), drawStack.stream())
+                .filter(card -> card instanceof Card.CattleCard)
+                .map(card -> ((Card.CattleCard) card))
+                .collect(Collectors.toSet());
     }
 
     private int scoreStationMasters() {
@@ -442,27 +461,27 @@ public class PlayerState {
         return ObjectiveCard.score(objectives, otherObjectiveCards, game, player);
     }
 
-    int numberOfTeepeePairs() {
-        int blueTeepees = (int) teepees.stream()
-                .filter(teepee -> teepee == Teepee.BLUE)
-                .count();
-        int greenTeepees = teepees.size() - blueTeepees;
-
-        return Math.max(blueTeepees, greenTeepees) / Math.min(blueTeepees, greenTeepees);
+    private static LinkedList<Card> createDrawStack(@NonNull Random random) {
+        LinkedList<Card> startingDeck = new LinkedList<>(createStartingDeck());
+        Collections.shuffle(startingDeck, random);
+        return startingDeck;
     }
 
-    int numberOfObjectiveCards() {
-        return objectives.size() + (int) Stream.concat(Stream.concat(hand.stream(), discardPile.stream()), drawStack.stream())
-                .filter(card -> card instanceof ObjectiveCard)
-                .map(card -> (ObjectiveCard) card)
-                .count();
-    }
-
-    void gainJobMarketToken() {
-        jobMarketToken = true;
-    }
-
-    public boolean hasJobMarketToken() {
-        return jobMarketToken;
+    private static List<Card> createStartingDeck() {
+        return new ArrayList<>(Arrays.asList(
+                new Card.CattleCard(CattleType.JERSEY, 0),
+                new Card.CattleCard(CattleType.JERSEY, 0),
+                new Card.CattleCard(CattleType.JERSEY, 0),
+                new Card.CattleCard(CattleType.JERSEY, 0),
+                new Card.CattleCard(CattleType.JERSEY, 0),
+                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
+                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
+                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
+                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
+                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
+                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
+                new Card.CattleCard(CattleType.GUERNSEY, 0),
+                new Card.CattleCard(CattleType.GUERNSEY, 0),
+                new Card.CattleCard(CattleType.GUERNSEY, 0)));
     }
 }

@@ -47,7 +47,7 @@ public abstract class Location {
 
     public static final class Start extends Location {
 
-        public Start(Location... next) {
+        Start(Location... next) {
             super("START", next);
         }
 
@@ -237,14 +237,14 @@ public abstract class Location {
             return Optional.ofNullable(teepee);
         }
 
-        public void placeTeepee(@NonNull Teepee teepee) {
+        void placeTeepee(@NonNull Teepee teepee) {
             if (this.teepee != null) {
                 throw new IllegalStateException("Location already has a teepee");
             }
             this.teepee = teepee;
         }
 
-        public void removeTeepee() {
+        void removeTeepee() {
             if (this.teepee == null) {
                 throw new IllegalStateException("No teepee at location");
             }

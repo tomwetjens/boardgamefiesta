@@ -1,25 +1,24 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
+import lombok.ToString;
 import lombok.Value;
 
+// Not a @Value because each instance is unique
 @Getter
+@ToString
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class ObjectiveCard extends Card {
 
     PossibleAction possibleAction;
@@ -27,35 +26,23 @@ public class ObjectiveCard extends Card {
     int points;
     int penalty;
 
-    ObjectiveCard(PossibleAction possibleAction, List<Task> tasks, int points, int penalty) {
-        this.possibleAction = possibleAction;
-        this.tasks = tasks;
-        this.points = points;
-        this.penalty = penalty;
-    }
-
-    static Queue<ObjectiveCard> randomDeck(Random random) {
-        List<ObjectiveCard> deck = new ArrayList<>(createSet());
-        Collections.shuffle(deck, random);
-        return new LinkedList<>(deck);
-    }
-
     static int score(Set<ObjectiveCard> required, Set<ObjectiveCard> optional, Game game, Player player) {
         Counts counts = counts(game, player);
 
         Set<ObjectiveCard> objectiveCards = Stream.concat(required.stream(), optional.stream()).collect(Collectors.toSet());
 
-        return score(objectiveCards, required, counts);
+        return scoreCards(objectiveCards, required, counts);
     }
 
-    private static int score(Set<ObjectiveCard> objectiveCards, Set<ObjectiveCard> required, Counts counts) {
+    private static int scoreCards(Set<ObjectiveCard> objectiveCards, Set<ObjectiveCard> required, Counts counts) {
         return objectiveCards.stream()
-                .mapToInt(objectiveCard -> score(objectiveCard, required.contains(objectiveCard), counts) + score(remove(objectiveCards, objectiveCard), required, counts))
+                .mapToInt(objectiveCard -> scoreCard(objectiveCard, required.contains(objectiveCard), counts)
+                        + scoreCards(remove(objectiveCards, objectiveCard), required, counts))
                 .max()
                 .orElse(0);
     }
 
-    private static int score(ObjectiveCard objectiveCard, boolean required, Counts counts) {
+    private static int scoreCard(ObjectiveCard objectiveCard, boolean required, Counts counts) {
         Counts c = counts;
 
         for (Task task : objectiveCard.getTasks()) {
@@ -98,7 +85,7 @@ public class ObjectiveCard extends Card {
         Map<Task, Integer> counts;
 
         Counts subtract(Task task) {
-            Map<Task, Integer> result = new EnumMap<Task, Integer>(counts);
+            Map<Task, Integer> result = new EnumMap<>(counts);
             result.compute(task, (k, v) -> v - 1);
             return new Counts(result);
         }
@@ -106,39 +93,6 @@ public class ObjectiveCard extends Card {
         boolean isNegative() {
             return counts.values().stream().anyMatch(v -> v < 0);
         }
-    }
-
-    private static Collection<ObjectiveCard> createSet() {
-        return Arrays.asList(
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(Task.BUILDING, Task.BLUE_TEEPEE, Task.BLUE_TEEPEE), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(Task.BUILDING, Task.GREEN_TEEPEE, Task.BLUE_TEEPEE), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(Task.BREEDING_VALUE_4, Task.HAZARD, Task.HAZARD), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(Task.STATION, Task.STATION, Task.HAZARD), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(Task.BREEDING_VALUE_3, Task.BREEDING_VALUE_3, Task.BREEDING_VALUE_3, Task.BUILDING), 4, 2),
-
-                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(Task.SAN_FRANCISCO), 5, 3),
-
-                new ObjectiveCard(PossibleAction.optional(Action.DrawCardsThenDiscardCards.upTo(3)), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.HAZARD), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.DrawCardsThenDiscardCards.upTo(3)), Arrays.asList(Task.STATION, Task.GREEN_TEEPEE, Task.BLUE_TEEPEE), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.DrawCardsThenDiscardCards.upTo(3)), Arrays.asList(Task.BREEDING_VALUE_5, Task.HAZARD), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.DrawCardsThenDiscardCards.upTo(3)), Arrays.asList(Task.STATION, Task.GREEN_TEEPEE, Task.GREEN_TEEPEE), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.DrawCardsThenDiscardCards.upTo(3)), Arrays.asList(Task.BREEDING_VALUE_3, Task.BREEDING_VALUE_3, Task.BREEDING_VALUE_3, Task.STATION), 4, 2),
-
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(Task.BREEDING_VALUE_4, Task.BREEDING_VALUE_4, Task.STATION, Task.GREEN_TEEPEE), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(Task.BREEDING_VALUE_3, Task.BREEDING_VALUE_4, Task.BREEDING_VALUE_5), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.GREEN_TEEPEE, Task.GREEN_TEEPEE), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost3Forward.class), Arrays.asList(Task.BUILDING, Task.BLUE_TEEPEE, Task.HAZARD, Task.HAZARD), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost3Forward.class), Arrays.asList(Task.STATION, Task.STATION, Task.HAZARD, Task.HAZARD), 5, 3),
-
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(Task.BUILDING, Task.BUILDING, Task.HAZARD, Task.HAZARD), 5, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(Task.STATION, Task.STATION, Task.BLUE_TEEPEE, Task.BLUE_TEEPEE), 5, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(Task.BREEDING_VALUE_3, Task.BREEDING_VALUE_4, Task.BREEDING_VALUE_5), 5, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(Task.BREEDING_VALUE_3, Task.BREEDING_VALUE_4, Task.HAZARD, Task.HAZARD), 5, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(Task.STATION, Task.STATION, Task.BUILDING, Task.BUILDING), 5, 2)
-        );
     }
 
     public enum Task {

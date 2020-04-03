@@ -9,13 +9,13 @@ import java.util.stream.Stream;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class CattleMarket {
+public final class CattleMarket {
 
     private final int limit;
     private final Queue<Card.CattleCard> drawStack;
     private final Set<Card.CattleCard> market;
 
-    public CattleMarket(int playerCount, Random random) {
+    CattleMarket(int playerCount, Random random) {
         this.limit = playerCount == 2 ? 7 : playerCount == 3 ? 10 : 13;
         this.drawStack = createDrawStack(random);
         this.market = new HashSet<>();
@@ -204,7 +204,7 @@ public class CattleMarket {
                 .filter(pb -> pb.getCowboysNeeded() <= numberOfCowboys);
     }
 
-    public ImmediateActions buy(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
+    ImmediateActions buy(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
         Cost cost = cost(cattleCards, numberOfCowboys, CostPreference.LESS_COWBOYS);
 
         market.removeAll(cattleCards);
@@ -223,7 +223,7 @@ public class CattleMarket {
         return ImmediateActions.none();
     }
 
-    public void fillUp() {
+    void fillUp() {
         while (market.size() < limit) {
             draw();
         }

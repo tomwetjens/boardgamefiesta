@@ -27,14 +27,12 @@ class ImmediateActions {
         return Collections.unmodifiableList(actions);
     }
 
-    public ImmediateActions andThen(PossibleAction possibleAction) {
-        // TODO Check how to deal with follow up action being only possibled if first action is performed
+    ImmediateActions andThen(PossibleAction possibleAction) {
         return new ImmediateActions(Stream.concat(actions.stream(), Stream.of(new ImmediateAction(possibleAction)))
                 .collect(Collectors.toUnmodifiableList()));
     }
 
-    public ImmediateActions andThen(ImmediateActions other) {
-        // TODO Is this concatenate?
+    ImmediateActions andThen(ImmediateActions other) {
         return new ImmediateActions(Stream.concat(actions.stream(), other.actions.stream())
                 .collect(Collectors.toUnmodifiableList()));
     }

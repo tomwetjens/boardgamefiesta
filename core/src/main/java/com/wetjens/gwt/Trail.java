@@ -55,8 +55,8 @@ public class Trail {
                 new Location.HazardLocation(HazardType.ROCKFALL, 2,
                         new Location.HazardLocation(HazardType.ROCKFALL, 3,
                                 new Location.HazardLocation(HazardType.ROCKFALL, 4,
-                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", true,
-                                                new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", true, f))))));
+                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", true, // TODO Add risk action
+                                                new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", true, f)))))); // TODO Add risk action
 
         Location.BuildingLocation e = new Location.BuildingLocation("E", false,
                 new Location.BuildingLocation("E-1", true,

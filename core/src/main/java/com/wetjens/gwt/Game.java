@@ -8,15 +8,15 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Value;
 
 public class Game {
 
@@ -42,15 +42,20 @@ public class Game {
     @Getter
     private final CattleMarket cattleMarket;
 
-    // TODO Objective cards can run out
-    private final Queue<ObjectiveCard> objectiveCards;
+    private final ObjectiveCards objectiveCards;
 
     private final ActionStack actionStack;
 
     @Getter
     private Player currentPlayer;
 
-    public Game(@NonNull Collection<String> players, Random random) {
+    @Value
+    @Builder
+    public static final class Options {
+        boolean beginner;
+    }
+
+    public Game(@NonNull Collection<String> players, Options options, Random random) {
         if (players.size() < 2) {
             throw new IllegalArgumentException("At least 2 players are required");
         }
@@ -62,8 +67,9 @@ public class Game {
         this.players = createPlayers(players, random);
         Collections.shuffle(this.players, random);
 
-        // TODO Random building variants
-        PlayerBuilding.VariantSet buildings = PlayerBuilding.VariantSet.firstGame();
+        PlayerBuilding.BuildingSet buildings = options.isBeginner()
+                ? PlayerBuilding.BuildingSet.beginner()
+                : PlayerBuilding.BuildingSet.random(random);
 
         this.playerStates = new HashMap<>();
         int startBalance = 6;
@@ -84,7 +90,7 @@ public class Game {
         this.jobMarket = new JobMarket(players.size());
         this.cattleMarket = new CattleMarket(players.size(), random);
 
-        this.objectiveCards = ObjectiveCard.randomDeck(random);
+        this.objectiveCards = new ObjectiveCards(random);
 
         this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
     }
@@ -117,7 +123,7 @@ public class Game {
     }
 
     public void perform(@NonNull Action action) {
-        if (isEnded()){
+        if (isEnded()) {
             throw new IllegalStateException("Game has ended");
         }
 
@@ -150,7 +156,7 @@ public class Game {
     }
 
     public void endTurn() {
-        if (isEnded()){
+        if (isEnded()) {
             throw new IllegalStateException("Game has ended");
         }
 
@@ -174,7 +180,7 @@ public class Game {
     }
 
     public Set<Class<? extends Action>> possibleActions() {
-        if (isEnded()){
+        if (isEnded()) {
             return Collections.emptySet();
         }
 
@@ -189,15 +195,8 @@ public class Game {
         return possibleActions;
     }
 
-    Optional<ObjectiveCard> takeObjectiveCard() {
-        if (isEnded()){
-            throw new IllegalStateException("Game has ended");
-        }
-        return objectiveCards.poll();
-    }
-
-    public Set<ObjectiveCard> getObjectiveCards() {
-        return Collections.emptySet();
+    public ObjectiveCards getObjectiveCards() {
+        return objectiveCards;
     }
 
     public RailroadTrack getRailroadTrack() {
@@ -205,7 +204,7 @@ public class Game {
     }
 
     public Set<List<Location>> possibleMoves(Player player, Location to) {
-        if (isEnded()){
+        if (isEnded()) {
             return Collections.emptySet();
         }
         Location from = trail.getCurrentLocation(player);

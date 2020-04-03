@@ -3,23 +3,21 @@ package com.wetjens.gwt;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 
 import lombok.Getter;
 
 public enum City {
 
-    KANSAS_CITY(true, 0, 0, Constants.ONLY_WHITE),
-    TOPEKA(1, 0, Constants.ONLY_WHITE),
-    WICHITA(4, 1, Constants.ONLY_WHITE),
-    COLORADO_SPRINGS(6, 3, Constants.ONLY_WHITE),
-    SANTA_FE(8, 4, Constants.ONLY_WHITE),
-    ALBUQUERQUE(10, 5, Constants.BLACK_OR_WHITE),
-    EL_PASO(12, 7, Constants.BLACK_OR_WHITE),
-    SAN_DIEGO(14, 8, Constants.ONLY_WHITE),
-    SACRAMENTO(16, 9, Constants.BLACK_OR_WHITE),
-    SAN_FRANCISCO(true, 18, 11, Constants.BLACK_OR_WHITE);
+    KANSAS_CITY(true, 0, 0, Collections.singleton(DiscColor.WHITE)),
+    TOPEKA(1, 0, Collections.singleton(DiscColor.WHITE)),
+    WICHITA(4, 1, Collections.singleton(DiscColor.WHITE)),
+    COLORADO_SPRINGS(6, 3, Collections.singleton(DiscColor.WHITE)),
+    SANTA_FE(8, 4, Collections.singleton(DiscColor.WHITE)),
+    ALBUQUERQUE(10, 5, Arrays.asList(DiscColor.BLACK, DiscColor.WHITE)),
+    EL_PASO(12, 7, Arrays.asList(DiscColor.BLACK, DiscColor.WHITE)),
+    SAN_DIEGO(14, 8, Collections.singleton(DiscColor.WHITE)),
+    SACRAMENTO(16, 9, Arrays.asList(DiscColor.BLACK, DiscColor.WHITE)),
+    SAN_FRANCISCO(true, 18, 11, Arrays.asList(DiscColor.BLACK, DiscColor.WHITE));
 
     @Getter private boolean multipleDeliveries;
     @Getter private int value;
@@ -42,8 +40,4 @@ public enum City {
         return discColors.contains(discColor);
     }
 
-    private static class Constants {
-        private static final Set<DiscColor> ONLY_WHITE = Collections.singleton(DiscColor.WHITE);
-        private static final List<DiscColor> BLACK_OR_WHITE = Arrays.asList(DiscColor.BLACK, DiscColor.WHITE);
-    }
 }
