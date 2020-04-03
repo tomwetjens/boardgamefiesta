@@ -4,7 +4,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -14,17 +13,10 @@ class ActionTest {
 
     @ParameterizedTest
     @MethodSource("allActions")
-    void declarations(Class<? extends Action> action) {
+    void accessible(Class<? extends Action> action) {
         assertThat(action).isPublic();
-
-        assertThat(action).satisfiesAnyOf(
-                c -> {
-                    assertThat(c).isFinal();
-                    assertThat(action.getConstructors()).isNotEmpty();
-                    assertThat(Modifier.isAbstract(action.getModifiers())).isFalse();
-                }, c -> {
-                    assertThat(action.getConstructors()).isEmpty();
-                });
+        assertThat(action.getConstructors()).isNotEmpty();
+        assertThat(Modifier.isAbstract(action.getModifiers())).isFalse();
     }
 
     static Stream<Arguments> allActions() {

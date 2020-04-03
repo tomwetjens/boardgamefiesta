@@ -19,7 +19,7 @@ import lombok.experimental.NonFinal;
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action {
 
-    public abstract ImmediateActions perform(Game game);
+    abstract ImmediateActions perform(Game game);
 
     /**
      * Indicates whether this action can be played at any time before, between or after other actions in a players turn.
