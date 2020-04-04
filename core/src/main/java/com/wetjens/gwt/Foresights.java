@@ -1,11 +1,12 @@
 package com.wetjens.gwt;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-public final class Foresights {
+public final class Foresights implements Serializable {
 
     private static final int NUM_COLUMNS = 3;
     private static final int NUM_ROWS = 2;

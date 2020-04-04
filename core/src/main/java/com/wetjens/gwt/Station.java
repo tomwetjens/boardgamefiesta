@@ -1,5 +1,6 @@
 package com.wetjens.gwt;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -10,7 +11,7 @@ import lombok.NonNull;
 import lombok.ToString;
 
 @ToString
-public class Station {
+public class Station implements Serializable {
 
     private final int cost;
     @Getter

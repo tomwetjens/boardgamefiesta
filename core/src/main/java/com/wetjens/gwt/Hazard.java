@@ -6,10 +6,12 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @Getter
 @ToString
-public class Hazard {
+public class Hazard implements Serializable {
     @NonNull
     private final HazardType type;
 

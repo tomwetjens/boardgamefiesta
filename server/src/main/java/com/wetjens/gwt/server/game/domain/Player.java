@@ -13,6 +13,13 @@ public class Player {
     @Getter
     private Status status;
 
+    void accept() {
+        if (status != Status.INVITED) {
+            throw new IllegalStateException("Not invited");
+        }
+        status = Status.ACCEPTED;
+    }
+
     public enum Status {
         INVITED,
         ACCEPTED,

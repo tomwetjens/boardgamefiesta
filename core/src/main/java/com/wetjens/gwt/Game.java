@@ -1,24 +1,16 @@
 package com.wetjens.gwt;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
-public class Game {
+import java.io.*;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public class Game implements Serializable {
 
     private final List<Player> players;
 
@@ -213,5 +205,19 @@ public class Game {
 
     public int score(Player player) {
         return playerState(player).score(this) + trail.score(player) + railroadTrack.score(player);
+    }
+
+    public void serialize(OutputStream outputStream) throws IOException {
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
+            objectOutputStream.writeObject(this);
+        }
+    }
+
+    public static Game deserialize(InputStream inputStream) throws IOException {
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+            return (Game) objectInputStream.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
+        }
     }
 }

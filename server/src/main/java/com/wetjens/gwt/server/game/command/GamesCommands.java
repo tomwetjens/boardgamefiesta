@@ -35,13 +35,17 @@ public class GamesCommands {
     @POST
     @Path("/create")
     public void create(@NotNull @Valid CreateGameCommand command) {
-        User user = users.findById(securityContext.getUserPrincipal().getName());
+        User user = users.findById(currentUserId());
 
         Set<User> inviteUsers = command.getInviteUserIds().stream()
-                .map(userId -> users.findById(userId))
+                .map(userId -> users.findById(User.Id.of(userId)))
                 .collect(Collectors.toSet());
 
         games.add(Game.create(user, inviteUsers));
+    }
+
+    public User.Id currentUserId() {
+        return User.Id.of(securityContext.getUserPrincipal().getName());
     }
 
 }

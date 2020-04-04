@@ -1,5 +1,6 @@
 package com.wetjens.gwt;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,7 +25,7 @@ import lombok.Singular;
 
 @Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class PlayerState {
+public class PlayerState implements Serializable {
 
     private static final List<Integer> CERTIFICATE_STEPS = Arrays.asList(0, 1, 2, 3, 4, 6);
 

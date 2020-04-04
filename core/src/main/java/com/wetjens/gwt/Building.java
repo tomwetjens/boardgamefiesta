@@ -2,7 +2,9 @@ package com.wetjens.gwt;
 
 import lombok.Getter;
 
-public abstract class Building {
+import java.io.Serializable;
+
+public abstract class Building implements Serializable {
 
     @Getter
     private final Hand hand;

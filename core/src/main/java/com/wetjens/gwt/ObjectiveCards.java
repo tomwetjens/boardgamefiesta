@@ -1,17 +1,9 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
+import java.io.Serializable;
+import java.util.*;
 
-public final class ObjectiveCards {
+public final class ObjectiveCards implements Serializable {
 
     private final Queue<ObjectiveCard> drawStack;
     private final Set<ObjectiveCard> available;
@@ -23,7 +15,7 @@ public final class ObjectiveCards {
     }
 
     void remove(ObjectiveCard objectiveCard) {
-        if (!available.remove(objectiveCard)){
+        if (!available.remove(objectiveCard)) {
             throw new IllegalArgumentException("Objective card not available");
         }
     }

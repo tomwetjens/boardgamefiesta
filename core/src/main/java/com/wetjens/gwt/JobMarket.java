@@ -1,5 +1,6 @@
 package com.wetjens.gwt;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,7 +10,7 @@ import java.util.stream.Stream;
 
 import lombok.Getter;
 
-public final class JobMarket {
+public final class JobMarket implements Serializable {
 
     @Getter
     private final int rowLimit;
@@ -81,7 +82,7 @@ public final class JobMarket {
                 .orElseThrow(() -> new IllegalStateException("No " + worker + " available in job market"));
     }
 
-    public final class Row {
+    public final class Row implements Serializable {
 
         @Getter
         private final int cost;

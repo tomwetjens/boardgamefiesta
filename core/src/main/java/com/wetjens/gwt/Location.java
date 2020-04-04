@@ -1,5 +1,6 @@
 package com.wetjens.gwt;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -9,7 +10,7 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.NonNull;
 
-public abstract class Location {
+public abstract class Location implements Serializable {
 
     @Getter
     private final String name;

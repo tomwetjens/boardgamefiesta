@@ -1,12 +1,13 @@
 package com.wetjens.gwt;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Set;
 
-class ActionStack {
+class ActionStack implements Serializable {
 
     private final Deque<PossibleAction> actions;
 

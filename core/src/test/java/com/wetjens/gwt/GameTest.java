@@ -1,5 +1,9 @@
 package com.wetjens.gwt;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -28,6 +32,21 @@ class GameTest {
 
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
         }
+    }
+
+    @Nested
+    class Serialize {
+
+        @Test
+        void serialize() throws Exception {
+            Game game = new Game(Arrays.asList("A", "B"), Game.Options.builder().beginner(true).build(), new Random(0));
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            game.serialize(byteArrayOutputStream);
+
+            Game deserialized = Game.deserialize(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+        }
+
     }
 
     @Nested

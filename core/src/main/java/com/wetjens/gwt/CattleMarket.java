@@ -2,6 +2,7 @@ package com.wetjens.gwt;
 
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -9,7 +10,7 @@ import java.util.stream.Stream;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class CattleMarket {
+public final class CattleMarket implements Serializable {
 
     private final int limit;
     private final Queue<Card.CattleCard> drawStack;

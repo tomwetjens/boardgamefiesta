@@ -1,5 +1,6 @@
 package com.wetjens.gwt;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,7 +16,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 @ToString
-public final class KansasCitySupply {
+public final class KansasCitySupply implements Serializable {
 
     private final Queue<Tile>[] drawPiles;
 
@@ -70,7 +71,7 @@ public final class KansasCitySupply {
 
     @Getter
     @ToString
-    public static final class Tile {
+    public static final class Tile implements Serializable {
 
         private final Worker worker;
         private final Hazard hazard;

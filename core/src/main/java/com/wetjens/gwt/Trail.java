@@ -1,5 +1,6 @@
 package com.wetjens.gwt;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,7 +16,7 @@ import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.NonNull;
 
-public class Trail {
+public class Trail implements Serializable {
 
     @Getter
     private final Location.Start start;

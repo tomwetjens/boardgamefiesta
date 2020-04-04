@@ -1,34 +1,16 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import lombok.*;
+
+import java.io.Serializable;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
-
 @Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class RailroadTrack {
+public class RailroadTrack implements Serializable {
 
     private static final int MAX_SPACE = 39;
 
@@ -53,8 +35,9 @@ public class RailroadTrack {
 
     RailroadTrack(@NonNull Collection<Player> players, @NonNull Random random) {
         this.stations = createStations(random);
+        this.cities = createEmptyCities();
 
-        end = new Space.EndSpace(MAX_SPACE, stations.get(stations.size() - 1));
+        this.end = new Space.EndSpace(MAX_SPACE, stations.get(stations.size() - 1));
 
         Space.NumberedSpace last = end;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
@@ -66,7 +49,7 @@ public class RailroadTrack {
             normalSpaces.put(number, current);
         }
 
-        start = new Space.StartSpace(last);
+        this.start = new Space.StartSpace(last);
         last.previous.add(start);
 
         // Turn outs
@@ -85,11 +68,6 @@ public class RailroadTrack {
         }
 
         players.forEach(player -> currentSpaces.put(player, start));
-
-        this.cities = new EnumMap<>(City.class);
-        for (City city : City.values()) {
-            cities.put(city, new LinkedList<>());
-        }
     }
 
     private static List<Station> createStations(@NonNull Random random) {
@@ -107,6 +85,14 @@ public class RailroadTrack {
                 new Station(6, 7, DiscColor.BLACK, null),
                 new Station(5, 8, DiscColor.BLACK, null),
                 new Station(3, 9, DiscColor.BLACK, null));
+    }
+
+    private static Map<City, List<Player>> createEmptyCities() {
+        var cities = new EnumMap<City, List<Player>>(City.class);
+        for (City city : City.values()) {
+            cities.put(city, new LinkedList<>());
+        }
+        return cities;
     }
 
     public List<Station> getStations() {
@@ -354,7 +340,7 @@ public class RailroadTrack {
         int certificates;
     }
 
-    public static abstract class Space {
+    public static abstract class Space implements Serializable {
 
         private final boolean signal;
         private final Station station;

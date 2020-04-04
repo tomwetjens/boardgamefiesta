@@ -31,6 +31,7 @@ public class Game {
     @Getter
     private Status status;
 
+    @Getter
     private com.wetjens.gwt.Game state;
 
     public static Game create(User owner, Set<User> inviteUsers) {
@@ -61,13 +62,6 @@ public class Game {
         status = Status.STARTED;
     }
 
-    public com.wetjens.gwt.Game getState() {
-        if (state == null) {
-            throw new IllegalStateException("Game state not started yet");
-        }
-        return state;
-    }
-
     public void perform(Action action) {
         state.perform(action);
 
@@ -78,8 +72,17 @@ public class Game {
         // TODO Maybe store scores on this aggregate
     }
 
-    public Set<User.Id> getPlayers() {
+    public Set<Player> getPlayers() {
         return Collections.unmodifiableSet(players);
+    }
+
+    public void acceptInvite(User.Id userId) {
+        Player player = players.stream()
+                .filter(p -> p.getUserId().equals(userId))
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("Not invited"));
+
+        player.accept();
     }
 
     public enum Status {

@@ -6,8 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
-public abstract class Card {
+public abstract class Card implements Serializable {
 
     // Not a @Value because each instance is unique
     @AllArgsConstructor
