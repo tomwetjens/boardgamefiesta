@@ -156,10 +156,13 @@ public class Game implements Serializable {
 
         actionStack.skip();
 
-        currentPlayerState().drawUpToHandLimit();
+        if (!isEnded()) {
+            currentPlayerState().drawUpToHandLimit();
 
-        currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
-        actionStack.push(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
+            currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
+
+            actionStack.push(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
+        }
     }
 
     public PlayerState currentPlayerState() {
