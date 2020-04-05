@@ -1,16 +1,18 @@
 package com.wetjens.gwt.server.rest.view;
 
-import com.wetjens.gwt.Player;
+import com.wetjens.gwt.server.domain.Player;
+import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
 
 @Value
 public class PlayerView {
 
-    String name;
-    Player.Color color;
+    String userId;
+    Player.Status status;
 
-    PlayerView(Player player) {
-        name = player.getName();
-        color = player.getColor();
+    PlayerView(Player player, User user) {
+        userId = player.getUserId().getId();
+        status = player.getStatus();
     }
+
 }

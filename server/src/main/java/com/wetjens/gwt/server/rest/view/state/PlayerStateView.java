@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.PlayerState;
@@ -19,8 +19,8 @@ public class PlayerStateView {
 
     Set<CardView> hand;
 
-    Set<ActionView> unlockedSingleAuxiliaryActions;
-    Set<ActionView> unlockedDoubleAuxiliaryActions;
+    Set<ActionType> unlockedSingleAuxiliaryActions;
+    Set<ActionType> unlockedDoubleAuxiliaryActions;
 
     PlayerStateView(PlayerState playerState, Player viewingPlayer) {
         player = new PlayerView(playerState.getPlayer());
@@ -39,11 +39,11 @@ public class PlayerStateView {
         }
 
         unlockedSingleAuxiliaryActions = playerState.unlockedSingleAuxiliaryActions().stream()
-                .map(ActionView::of)
+                .map(ActionType::of)
                 .collect(Collectors.toSet());
 
         unlockedDoubleAuxiliaryActions = playerState.unlockedDoubleAuxiliaryActions().stream()
-                .map(ActionView::of)
+                .map(ActionType::of)
                 .collect(Collectors.toSet());
     }
 

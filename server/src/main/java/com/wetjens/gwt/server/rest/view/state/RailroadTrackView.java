@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.view.state;
 
 import java.util.List;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.Hand;
 import com.wetjens.gwt.Hazard;

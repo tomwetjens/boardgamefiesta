@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.Game;
 import com.wetjens.gwt.Player;
@@ -26,7 +26,7 @@ public class StateView {
     Set<ObjectiveCardView> objectiveCards;
 
     String currentPlayer;
-    Set<ActionView> actions;
+    Set<ActionType> actions;
 
     public StateView(Game game, Player viewingPlayer) {
         railroadTrack = new RailroadTrackView(game.getRailroadTrack());
@@ -58,7 +58,7 @@ public class StateView {
         currentPlayer = game.getCurrentPlayer().getName();
 
         if (viewingPlayer == game.getCurrentPlayer()) {
-            actions = game.possibleActions().stream().map(ActionView::of).collect(Collectors.toSet());
+            actions = game.possibleActions().stream().map(ActionType::of).collect(Collectors.toSet());
         } else {
             actions = Collections.emptySet();
         }

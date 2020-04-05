@@ -77,10 +77,21 @@ public class Game {
     public void acceptInvite(User.Id userId) {
         Player player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
+                .filter(p -> p.getStatus() == Player.Status.INVITED)
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("Not invited"));
 
         player.accept();
+    }
+
+    public void rejectInvite(User.Id userId) {
+        Player player = players.stream()
+                .filter(p -> p.getUserId().equals(userId))
+                .filter(p -> p.getStatus() == Player.Status.INVITED)
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("Not invited"));
+
+        player.reject();
     }
 
     public enum Status {

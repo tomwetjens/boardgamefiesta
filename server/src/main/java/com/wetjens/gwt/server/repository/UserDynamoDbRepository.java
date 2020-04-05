@@ -4,9 +4,7 @@ import com.wetjens.gwt.server.domain.User;
 import com.wetjens.gwt.server.domain.Users;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -34,22 +32,48 @@ public class UserDynamoDbRepository implements Users {
     }
 
     @Override
-    public User get(User.Id id) {
-        return getItem(key(id)).orElseGet(() -> {
-            User user = User.createAutomatically(id);
-            add(user);
-            return user;
-        });
-    }
-
-    private void add(User user) {
-
+    public User findById(User.Id id) {
+        return findOptionallyById(id).orElseThrow(() -> new NotFoundException("User not found: " + id.getId()));
     }
 
     @Override
-    public User findById(User.Id id) {
-        return getItem(key(id))
-                .orElseThrow(() -> new NotFoundException("User not found: " + id));
+    public void add(User user) {
+        var item = new HashMap<>(key(user.getId()));
+        item.put("Username", AttributeValue.builder().s(user.getUsername()).build());
+        item.put("Email", AttributeValue.builder().s(user.getEmail()).build());
+
+        dynamoDbClient.putItem(PutItemRequest.builder()
+                .tableName(tableName)
+                .item(item)
+                .build());
+    }
+
+    @Override
+    public void update(User user) {
+        var updates = new HashMap<String, AttributeValueUpdate>();
+
+        updates.put("Username", AttributeValueUpdate.builder()
+                .action(AttributeAction.PUT)
+                .value(AttributeValue.builder().s(user.getUsername())
+                        .build())
+                .build());
+
+        updates.put("Email", AttributeValueUpdate.builder()
+                .action(AttributeAction.PUT)
+                .value(AttributeValue.builder().s(user.getEmail())
+                        .build())
+                .build());
+
+        dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(key(user.getId()))
+                .attributeUpdates(updates)
+                .build());
+    }
+
+    @Override
+    public Optional<User> findOptionallyById(User.Id id) {
+        return getItem(key(id));
     }
 
     private Optional<User> getItem(Map<String, AttributeValue> key) {
@@ -63,21 +87,19 @@ public class UserDynamoDbRepository implements Users {
             return Optional.empty();
         }
 
-        return Optional.of(deserialize(response.item().get("Data").s()));
+        Map<String, AttributeValue> item = response.item();
+
+        return Optional.of(User.builder()
+                .id(User.Id.of(item.get("Id").s()))
+                .username(item.get("Username").s())
+                .email(item.get("Email").s())
+                .build());
     }
 
     private Map<String, AttributeValue> key(User.Id id) {
         var key = new HashMap<String, AttributeValue>();
         key.put("Id", AttributeValue.builder().s(id.getId()).build());
         return key;
-    }
-
-    private AttributeValue serialize(User user) {
-        return AttributeValue.builder().s(JSONB.toJson(user)).build();
-    }
-
-    private User deserialize(String data) {
-        return JSONB.fromJson(data, User.class);
     }
 
 }

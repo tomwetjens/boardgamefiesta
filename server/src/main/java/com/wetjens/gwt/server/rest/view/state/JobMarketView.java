@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.JobMarket;
 import com.wetjens.gwt.Worker;

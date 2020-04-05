@@ -529,9 +529,9 @@ public abstract class Action {
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static final class ChooseForesights extends Action {
-        @NonNull List<Choice> choices;
+        @NonNull List<Integer> choices;
 
-        public ChooseForesights(@NonNull List<Choice> choices) {
+        public ChooseForesights(@NonNull List<Integer> choices) {
             if (choices.size() != 3) {
                 throw new IllegalArgumentException("Must have 3 choices");
             }
@@ -541,9 +541,9 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game) {
             for (int columnIndex = 0; columnIndex < choices.size(); columnIndex++) {
-                Choice choice = choices.get(columnIndex);
+                int rowIndex = choices.get(columnIndex);
 
-                KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, choice.getRowIndex());
+                KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, rowIndex);
 
                 if (tile.getWorker() != null) {
                     JobMarket jobMarket = game.getJobMarket();
@@ -560,24 +560,13 @@ public abstract class Action {
                         }
                     }
                 } else if (tile.getHazard() != null) {
-                    if (!(choice.getLocation() instanceof Location.HazardLocation)) {
-                        throw new IllegalArgumentException("Must pick a hazard location");
-                    }
-                    ((Location.HazardLocation) choice.getLocation()).placeHazard(tile.getHazard());
+                    game.getTrail().placeHazard(tile.getHazard());
                 } else {
-                    if (!(choice.getLocation() instanceof Location.TeepeeLocation)) {
-                        throw new IllegalArgumentException("Must pick a teepee location");
-                    }
-                    ((Location.TeepeeLocation) choice.getLocation()).placeTeepee(tile.getTeepee());
+                    game.getTrail().placeTeepee(tile.getTeepee());
                 }
             }
 
             return ImmediateActions.none();
-        }
-
-        @Value
-        public static final class Choice {
-            private final int rowIndex;
         }
     }
 
@@ -1023,7 +1012,7 @@ public abstract class Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static class MoveEngineAtMost5Forward extends Action {
+    public static final class MoveEngineAtMost5Forward extends Action {
         @NonNull RailroadTrack.Space to;
 
         @Override

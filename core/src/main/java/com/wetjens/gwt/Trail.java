@@ -1,15 +1,7 @@
 package com.wetjens.gwt;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -264,5 +256,19 @@ public class Trail implements Serializable {
 
     public Map<Player, Location> getPlayerLocations() {
         return Collections.unmodifiableMap(playerLocations);
+    }
+
+    void placeHazard(Hazard hazard) {
+        getHazardLocations(hazard.getType()).stream()
+                .filter(Location.HazardLocation::isEmpty)
+                .min(Comparator.comparingInt(Location.HazardLocation::getNumber))
+                .ifPresent(hazardLocation -> hazardLocation.placeHazard(hazard));
+    }
+
+    void placeTeepee(Teepee teepee) {
+        getTeepeeLocations().stream()
+                .filter(Location.TeepeeLocation::isEmpty)
+                .min(Comparator.comparingInt(Location.TeepeeLocation::getReward))
+                .ifPresent(teepeeLocation -> teepeeLocation.placeTeepee(teepee));
     }
 }

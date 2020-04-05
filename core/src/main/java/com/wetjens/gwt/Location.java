@@ -149,11 +149,16 @@ public abstract class Location implements Serializable {
         @Getter
         private final HazardType type;
 
+        @Getter
+        private final int number;
+
         private Hazard hazard;
 
         HazardLocation(@NonNull HazardType type, int number, Location... next) {
             super(type + "-" + number, next);
+
             this.type = type;
+            this.number = number;
         }
 
         public Optional<Hazard> getHazard() {

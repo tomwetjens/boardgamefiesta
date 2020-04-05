@@ -159,6 +159,7 @@ public class Game implements Serializable {
         currentPlayerState().drawUpToHandLimit();
 
         currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
+        actionStack.push(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
     }
 
     public PlayerState currentPlayerState() {
@@ -180,7 +181,7 @@ public class Game implements Serializable {
 
         Set<Class<? extends Action>> possibleActions = actionStack.getPossibleActions();
 
-        if (!actionStack.peek().isImmediate() && currentPlayerState().canPlayObjectiveCard()) {
+        if (!actionStack.isEmpty() && !actionStack.peek().isImmediate() && currentPlayerState().canPlayObjectiveCard()) {
             possibleActions = new HashSet<>(possibleActions);
             possibleActions.add(Action.PlayObjectiveCard.class);
             return Collections.unmodifiableSet(possibleActions);

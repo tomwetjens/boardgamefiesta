@@ -1,19 +1,30 @@
 package com.wetjens.gwt.server.domain;
 
-import lombok.Getter;
-import lombok.Value;
+import lombok.*;
 
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
 
     @Getter
     private final Id id;
 
-    public User(Id id) {
-        this.id = id;
+    @Getter
+    private String username;
+
+    @Getter
+    private String email;
+
+    public static <T> User createAutomatically(Id id, String username, String email) {
+        return new User(id, username, email);
     }
 
-    public static User createAutomatically(Id id) {
-        return new User(id);
+    public void changeUsername(String username) {
+        this.username = username;
+    }
+
+    public void confirmEmail(String email) {
+        this.email = email;
     }
 
     @Value(staticConstructor = "of")

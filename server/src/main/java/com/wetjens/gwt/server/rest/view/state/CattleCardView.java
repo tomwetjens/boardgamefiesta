@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.Card;
 import com.wetjens.gwt.CattleType;

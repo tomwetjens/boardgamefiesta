@@ -104,7 +104,7 @@ public class GameDynamoDbRepository implements Games {
                     .players(item.get("Players").l().stream()
                             .map(this::mapToPlayer)
                             .collect(Collectors.toSet()))
-                    .state(com.wetjens.gwt.Game.deserialize(item.get("State").b().asInputStream()))
+                    .state(item.containsKey("State") ? com.wetjens.gwt.Game.deserialize(item.get("State").b().asInputStream()) : null)
                     .build());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -139,12 +139,14 @@ public class GameDynamoDbRepository implements Games {
         map.put("OwnerUserId", AttributeValue.builder().s(game.getOwner().getId()).build());
         map.put("Players", AttributeValue.builder().l(game.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
 
-        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-            game.getState().serialize(byteArrayOutputStream);
+        if (game.getState() != null) {
+            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                game.getState().serialize(byteArrayOutputStream);
 
-            map.put("State", AttributeValue.builder().b(SdkBytes.fromByteArray(byteArrayOutputStream.toByteArray())).build());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+                map.put("State", AttributeValue.builder().b(SdkBytes.fromByteArray(byteArrayOutputStream.toByteArray())).build());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         return map;

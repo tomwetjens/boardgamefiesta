@@ -4,6 +4,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import com.wetjens.gwt.server.rest.view.state.ActionType;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -11,20 +12,20 @@ import com.wetjens.gwt.Action;
 
 import static org.assertj.core.api.Assertions.*;
 
-class ActionViewTest {
+class ActionTypeTest {
 
     @ParameterizedTest
     @MethodSource("allActions")
     void of(Class<? extends Action> action) {
-        assertThat(ActionView.of(action)).isNotNull();
+        assertThat(ActionType.of(action)).isNotNull();
     }
 
     @ParameterizedTest
-    @EnumSource(ActionView.class)
-    void naming(ActionView actionView) {
-        assertThat(actionView.getAction().getSimpleName().toUpperCase())
-                .describedAs("Enum constant " + actionView + " should match naming of action " + actionView.getAction().getSimpleName())
-                .isEqualTo(actionView.name().replaceAll("[_]", ""));
+    @EnumSource(ActionType.class)
+    void naming(ActionType actionType) {
+        assertThat(actionType.getAction().getSimpleName().toUpperCase())
+                .describedAs("Enum constant " + actionType + " should match naming of action " + actionType.getAction().getSimpleName())
+                .isEqualTo(actionType.name().replaceAll("[_]", ""));
     }
 
     static Stream<Arguments> allActions() {
