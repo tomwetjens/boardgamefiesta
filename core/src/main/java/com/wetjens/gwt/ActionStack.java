@@ -9,6 +9,8 @@ import java.util.Set;
 
 class ActionStack implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final Deque<PossibleAction> actions;
 
     ActionStack(Collection<PossibleAction> startActions) {

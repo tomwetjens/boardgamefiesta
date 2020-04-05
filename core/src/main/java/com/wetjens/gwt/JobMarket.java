@@ -12,6 +12,8 @@ import lombok.Getter;
 
 public final class JobMarket implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Getter
     private final int rowLimit;
 

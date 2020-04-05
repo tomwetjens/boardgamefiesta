@@ -21,6 +21,8 @@ import lombok.Value;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class ObjectiveCard extends Card {
 
+    private static final long serialVersionUID = 1L;
+
     PossibleAction possibleAction;
     List<Task> tasks;
     int points;

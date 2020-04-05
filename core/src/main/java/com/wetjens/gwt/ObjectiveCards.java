@@ -5,6 +5,8 @@ import java.util.*;
 
 public final class ObjectiveCards implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final Queue<ObjectiveCard> drawStack;
     private final Set<ObjectiveCard> available;
 

@@ -13,6 +13,8 @@ import java.util.stream.Stream;
 
 abstract class PossibleAction implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Player MUST perform the action and cannot skip it.
      */
@@ -113,6 +115,8 @@ abstract class PossibleAction implements Serializable {
 
     private static final class Mandatory extends PossibleAction {
 
+        private static final long serialVersionUID = 1L;
+
         private Class<? extends Action> action;
 
         private Mandatory(Class<? extends Action> action) {
@@ -151,6 +155,8 @@ abstract class PossibleAction implements Serializable {
     }
 
     private static final class Any extends PossibleAction {
+
+        private static final long serialVersionUID = 1L;
 
         private final List<PossibleAction> actions;
 
@@ -205,6 +211,8 @@ abstract class PossibleAction implements Serializable {
     }
 
     private static final class Choice extends PossibleAction {
+
+        private static final long serialVersionUID = 1L;
 
         private final Set<PossibleAction> actions;
 

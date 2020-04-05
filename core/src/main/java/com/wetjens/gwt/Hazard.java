@@ -12,6 +12,9 @@ import java.io.Serializable;
 @Getter
 @ToString
 public class Hazard implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     @NonNull
     private final HazardType type;
 

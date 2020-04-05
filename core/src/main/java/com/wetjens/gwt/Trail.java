@@ -261,4 +261,8 @@ public class Trail implements Serializable {
                 .mapToInt(PlayerBuilding::getPoints)
                 .sum();
     }
+
+    public Map<Player, Location> getPlayerLocations() {
+        return Collections.unmodifiableMap(playerLocations);
+    }
 }

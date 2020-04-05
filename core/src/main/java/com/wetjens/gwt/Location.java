@@ -12,6 +12,8 @@ import lombok.NonNull;
 
 public abstract class Location implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Getter
     private final String name;
 
@@ -48,6 +50,8 @@ public abstract class Location implements Serializable {
 
     public static final class Start extends Location {
 
+        private static final long serialVersionUID = 1L;
+
         Start(Location... next) {
             super("START", next);
         }
@@ -60,6 +64,8 @@ public abstract class Location implements Serializable {
 
     @Getter
     public static final class BuildingLocation extends Location {
+
+        private static final long serialVersionUID = 1L;
 
         private final Class<? extends Action> riskAction;
         private final boolean inWoods;
@@ -137,6 +143,8 @@ public abstract class Location implements Serializable {
 
     public static final class HazardLocation extends Location {
 
+        private static final long serialVersionUID = 1L;
+
         @NonNull
         @Getter
         private final HazardType type;
@@ -148,7 +156,7 @@ public abstract class Location implements Serializable {
             this.type = type;
         }
 
-        Optional<Hazard> getHazard() {
+        public Optional<Hazard> getHazard() {
             return Optional.ofNullable(hazard);
         }
 
@@ -195,6 +203,8 @@ public abstract class Location implements Serializable {
 
     public static final class KansasCity extends Location {
 
+        private static final long serialVersionUID = 1L;
+
         KansasCity(Location... next) {
             super("KANSAS_CITY", next);
         }
@@ -211,6 +221,8 @@ public abstract class Location implements Serializable {
     }
 
     public static final class TeepeeLocation extends Location {
+
+        private static final long serialVersionUID = 1L;
 
         @Getter
         private final int reward;

@@ -7,6 +7,8 @@ import java.io.Serializable;
 @Value
 public class Player implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     String name;
     Color color;
 

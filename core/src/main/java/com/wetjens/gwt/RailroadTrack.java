@@ -12,6 +12,8 @@ import java.util.stream.Stream;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class RailroadTrack implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private static final int MAX_SPACE = 39;
 
     private static final List<Integer> TURNOUTS = Arrays.asList(4, 7, 10, 13, 16, 21, 25, 29, 33);
@@ -342,6 +344,8 @@ public class RailroadTrack implements Serializable {
 
     public static abstract class Space implements Serializable {
 
+        private static final long serialVersionUID = 1L;
+
         private final boolean signal;
         private final Station station;
         private final Set<Space> next;
@@ -376,6 +380,8 @@ public class RailroadTrack implements Serializable {
         @Getter
         @ToString
         public static class NumberedSpace extends Space {
+
+            private static final long serialVersionUID = 1L;
 
             @Getter
             private final int number;

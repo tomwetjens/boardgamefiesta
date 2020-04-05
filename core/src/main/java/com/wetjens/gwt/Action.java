@@ -578,7 +578,6 @@ public abstract class Action {
         @Value
         public static final class Choice {
             private final int rowIndex;
-            private final Location location;
         }
     }
 
@@ -1024,7 +1023,7 @@ public abstract class Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public class MoveEngineAtMost5Forward extends Action {
+    public static class MoveEngineAtMost5Forward extends Action {
         @NonNull RailroadTrack.Space to;
 
         @Override

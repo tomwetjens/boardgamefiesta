@@ -12,6 +12,8 @@ import java.util.stream.IntStream;
 
 public class Game implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final List<Player> players;
 
     private final Map<Player, PlayerState> playerStates;
@@ -144,7 +146,7 @@ public class Game implements Serializable {
     }
 
     public boolean isEnded() {
-        return !jobMarket.isClosed() || currentPlayerState().hasJobMarketToken();
+        return jobMarket.isClosed() && currentPlayerState().hasJobMarketToken();
     }
 
     public void endTurn() {

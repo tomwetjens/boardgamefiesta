@@ -8,6 +8,8 @@ import java.util.Set;
 
 public final class Foresights implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private static final int NUM_COLUMNS = 3;
     private static final int NUM_ROWS = 2;
 

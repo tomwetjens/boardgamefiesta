@@ -12,6 +12,8 @@ import java.util.stream.Stream;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CattleMarket implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final int limit;
     private final Queue<Card.CattleCard> drawStack;
     private final Set<Card.CattleCard> market;

@@ -1,31 +1,17 @@
 package com.wetjens.gwt;
 
+import lombok.*;
+
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Singular;
 
 @Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PlayerState implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private static final List<Integer> CERTIFICATE_STEPS = Arrays.asList(0, 1, 2, 3, 4, 6);
 
@@ -68,6 +54,8 @@ public class PlayerState implements Serializable {
 
         this.buildings = new HashSet<>(buildings.createPlayerBuildings(player));
         this.unlocked = new EnumMap<>(Unlockable.class);
+        this.unlocked.put(Unlockable.AUX_GAIN_DOLLAR, 1);
+        this.unlocked.put(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, 1);
 
         // TODO Starting objective card
 
@@ -329,12 +317,10 @@ public class PlayerState implements Serializable {
 
     public Set<Class<? extends Action>> unlockedSingleAuxiliaryActions() {
         Set<Class<? extends Action>> actions = new HashSet<>();
-        if (hasUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
-            actions.add(Action.Gain1Dollar.class);
-        }
-        if (hasUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-            actions.add(Action.DrawCardsThenDiscardCards.exactly(1));
-        }
+
+        actions.add(Action.Gain1Dollar.class);
+        actions.add(Action.DrawCardsThenDiscardCards.exactly(1));
+
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
             actions.add(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class);
         }
@@ -383,7 +369,7 @@ public class PlayerState implements Serializable {
     }
 
     public int getStepLimit() {
-        return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS,0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS,0);
+        return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
     }
 
     boolean canPlayObjectiveCard() {

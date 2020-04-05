@@ -18,6 +18,8 @@ import lombok.ToString;
 @ToString
 public final class KansasCitySupply implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final Queue<Tile>[] drawPiles;
 
     @SuppressWarnings("unchecked")
@@ -72,6 +74,8 @@ public final class KansasCitySupply implements Serializable {
     @Getter
     @ToString
     public static final class Tile implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         private final Worker worker;
         private final Hazard hazard;
