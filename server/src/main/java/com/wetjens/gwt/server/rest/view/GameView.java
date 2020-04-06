@@ -14,14 +14,14 @@ public class GameView {
 
     String id;
     Game.Status status;
-    String ownerUserId;
+    UserView owner;
     Set<PlayerView> players;
     boolean accepted;
 
     public GameView(Game game, Map<User.Id, User> userMap, User.Id currentUserId) {
         id = game.getId().getId();
         status = game.getStatus();
-        ownerUserId = game.getOwner().getId();
+        owner = new UserView(userMap.get(game.getOwner()));
         players = game.getPlayers().stream()
                 .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
                 .collect(Collectors.toSet());

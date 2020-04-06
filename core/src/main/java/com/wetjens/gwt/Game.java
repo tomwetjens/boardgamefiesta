@@ -36,6 +36,7 @@ public class Game implements Serializable {
     @Getter
     private final CattleMarket cattleMarket;
 
+    @Getter
     private final ObjectiveCards objectiveCards;
 
     private final ActionStack actionStack;
@@ -116,7 +117,7 @@ public class Game implements Serializable {
         }
     }
 
-    public void perform(@NonNull Action action) {
+    public void perform(@NonNull Action action, @NonNull Random random) {
         if (isEnded()) {
             throw new IllegalStateException("Game has ended");
         }
@@ -126,14 +127,14 @@ public class Game implements Serializable {
                 throw new IllegalStateException("Immediate action to be performed first");
             }
 
-            ImmediateActions immediateActions = action.perform(this);
+            ImmediateActions immediateActions = action.perform(this, random);
             actionStack.push(immediateActions.getActions());
         } else {
             if (!actionStack.canPerform(action.getClass())) {
                 throw new IllegalStateException("Not allowed to perform action");
             }
 
-            ImmediateActions immediateActions = action.perform(this);
+            ImmediateActions immediateActions = action.perform(this, random);
             actionStack.perform(action.getClass());
             actionStack.push(immediateActions.getActions());
         }
@@ -141,7 +142,7 @@ public class Game implements Serializable {
         if (actionStack.isEmpty() && !currentPlayerState().canPlayObjectiveCard()) {
             // Can only automatically end turn when no actions remaining,
             // and player cannot (optionally) play an objective card
-            endTurn();
+            endTurn(random);
         }
     }
 
@@ -149,7 +150,7 @@ public class Game implements Serializable {
         return jobMarket.isClosed() && currentPlayerState().hasJobMarketToken();
     }
 
-    public void endTurn() {
+    public void endTurn(@NonNull Random random) {
         if (isEnded()) {
             throw new IllegalStateException("Game has ended");
         }
@@ -157,7 +158,7 @@ public class Game implements Serializable {
         actionStack.skip();
 
         if (!isEnded()) {
-            currentPlayerState().drawUpToHandLimit();
+            currentPlayerState().drawUpToHandLimit(random);
 
             currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
 
@@ -191,14 +192,6 @@ public class Game implements Serializable {
         }
 
         return possibleActions;
-    }
-
-    public ObjectiveCards getObjectiveCards() {
-        return objectiveCards;
-    }
-
-    public RailroadTrack getRailroadTrack() {
-        return railroadTrack;
     }
 
     public Set<List<Location>> possibleMoves(Player player, Location to) {

@@ -59,12 +59,12 @@ public class PlayerState implements Serializable {
 
         // TODO Starting objective card
 
-        drawUpToHandLimit();
+        drawUpToHandLimit(random);
     }
 
-    void drawCard() {
+    void drawCard(Random random) {
         if (drawStack.isEmpty()) {
-            Collections.shuffle(discardPile);
+            Collections.shuffle(discardPile, random);
             drawStack.addAll(discardPile);
             discardPile.clear();
         }
@@ -74,10 +74,10 @@ public class PlayerState implements Serializable {
         }
     }
 
-    void drawUpToHandLimit() {
+    void drawUpToHandLimit(Random random) {
         int handLimit = getHandLimit();
         while (hand.size() < handLimit && drawStack.size() + discardPile.size() > 0) {
-            drawCard();
+            drawCard(random);
         }
     }
 

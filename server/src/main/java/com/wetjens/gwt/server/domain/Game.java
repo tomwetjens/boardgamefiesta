@@ -1,5 +1,8 @@
 package com.wetjens.gwt.server.domain;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
@@ -20,6 +23,10 @@ import lombok.Value;
 @ToString(doNotUseGetters = true)
 public class Game {
 
+    private static final Duration START_TIMEOUT = Duration.of(2, ChronoUnit.DAYS);
+    private static final Duration ACTION_TIMEOUT = Duration.of(1, ChronoUnit.DAYS);
+    private static final Duration RETENTION_AFTER_ENDED = Duration.of(2, ChronoUnit.DAYS);
+
     @Getter
     private final Id id;
 
@@ -33,10 +40,14 @@ public class Game {
     @Getter
     private com.wetjens.gwt.Game state;
 
+    @Getter
+    private Instant expires;
+
     public static Game create(User owner, Set<User> inviteUsers) {
         return Game.builder()
                 .id(Id.generate())
                 .status(Status.NEW)
+                .expires(Instant.now().plus(START_TIMEOUT))
                 .owner(owner.getId())
                 .players(Stream.concat(
                         Stream.of(Player.builder().userId(owner.getId()).status(Player.Status.ACCEPTED).build()),
@@ -54,20 +65,33 @@ public class Game {
                 .collect(Collectors.toSet()),
                 // TODO Get options from command
                 com.wetjens.gwt.Game.Options.builder()
-                        .beginner(false)
+                        .beginner(true)
                         .build(), new Random());
 
         status = Status.STARTED;
+
+        expires = Instant.now().plus(ACTION_TIMEOUT);
     }
 
     public void perform(Action action) {
-        state.perform(action);
+        state.perform(action, new Random());
+        afterAction();
+    }
 
+    public void endTurn() {
+        state.endTurn(new Random());
+        afterAction();
+    }
+
+    private void afterAction() {
         if (state.isEnded()) {
             status = Status.ENDED;
-        }
+            expires = Instant.now().plus(RETENTION_AFTER_ENDED);
 
-        // TODO Maybe store scores on this aggregate
+            // TODO Maybe store scores on this aggregate
+        } else {
+            expires = Instant.now().plus(ACTION_TIMEOUT);
+        }
     }
 
     public Set<Player> getPlayers() {

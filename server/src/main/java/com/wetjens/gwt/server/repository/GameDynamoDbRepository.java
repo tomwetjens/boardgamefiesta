@@ -1,5 +1,20 @@
 package com.wetjens.gwt.server.repository;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.Player;
@@ -7,20 +22,16 @@ import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.*;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.DeleteRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 @ApplicationScoped
 public class GameDynamoDbRepository implements Games {
@@ -39,13 +50,13 @@ public class GameDynamoDbRepository implements Games {
 
     @Override
     public Game findById(Game.Id id) {
-        return getItem(key(id))
+        return findOptionallyById(id)
                 .orElseThrow(() -> new NotFoundException("Game not found: " + id));
     }
 
     @Override
     public Stream<Game> findByUserId(User.Id userId) {
-        QueryResponse response = dynamoDbClient.query(QueryRequest.builder()
+        var response = dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
                 .indexName(USER_ID_ID_INDEX)
                 .keyConditionExpression("UserId = :UserId")
@@ -55,60 +66,142 @@ public class GameDynamoDbRepository implements Games {
                 .build());
 
         return response.items().stream()
-                .flatMap(item -> getItem(key(Game.Id.of(item.get("Id").s()))).stream());
+                .flatMap(item -> findOptionallyById(Game.Id.of(item.get("Id").s())).stream());
     }
 
     @Override
     public void add(Game game) {
+        var item = createItem(game);
+
+        var lookupItems = game.getPlayers().stream()
+                .map(player -> createItemLookup(game, player));
+
         dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
                 .requestItems(Collections.singletonMap(tableName, Stream.concat(
                         Stream.of(WriteRequest.builder().putRequest(
                                 PutRequest.builder()
-                                        .item(createItem(game))
+                                        .item(item)
                                         .build())
                                 .build()),
-                        createLookupItems(game)
-                                .map(item -> WriteRequest.builder()
-                                        .putRequest(PutRequest.builder()
-                                                .item(item)
-                                                .build())
-                                        .build()))
+                        lookupItems.map(lookupItem -> WriteRequest.builder()
+                                .putRequest(PutRequest.builder()
+                                        .item(lookupItem)
+                                        .build())
+                                .build()))
                         .collect(Collectors.toSet())))
                 .build());
     }
 
-    public Map<String, AttributeValue> createItem(Game game) {
-        Map<String, AttributeValue> map = createAttributeValues(game);
-        map.putAll(key(game.getId()));
-        return map;
+    @Override
+    public void update(Game game) {
+        dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(key(game.getId()))
+                .attributeUpdates(overwriteAllValues(createAttributeValues(game)))
+                .build());
+
+        var response = dynamoDbClient.query(QueryRequest.builder()
+                .tableName(tableName)
+                .indexName(USER_ID_ID_INDEX)
+                .keyConditionExpression("Id = :Id")
+                .expressionAttributeValues(Collections.singletonMap(":Id", AttributeValue.builder()
+                        .s(game.getId().getId())
+                        .build()))
+                .consistentRead(true)
+                .build());
+
+        var lookupItemsBySortKey = response.items().stream()
+                .filter(item -> !item.get("UserId").equals(item.get("Id")))
+                .collect(Collectors.toMap(item -> item.get("UserId").s(), Function.identity()));
+
+        var playersBySortKey = game.getPlayers().stream()
+                .collect(Collectors.toMap(player -> "User-" + player.getUserId().getId(), Function.identity()));
+
+        var lookupItemsToDelete = lookupItemsBySortKey.entrySet().stream()
+                .filter(item -> !playersBySortKey.containsKey(item.getKey()))
+                .map(Map.Entry::getValue);
+        var lookupItemsToAdd = playersBySortKey.entrySet().stream()
+                .filter(entry -> !lookupItemsBySortKey.containsKey(entry.getKey()))
+                .map(entry -> createItemLookup(game, entry.getValue()));
+
+        var addAndDeleteLookupItems = BatchWriteItemRequest.builder()
+                .requestItems(Collections.singletonMap(tableName, Stream.concat(
+                        lookupItemsToDelete.map(key -> WriteRequest.builder()
+                                .deleteRequest(DeleteRequest.builder()
+                                        .key(key)
+                                        .build())
+                                .build()),
+                        lookupItemsToAdd.map(item -> WriteRequest.builder()
+                                .putRequest(PutRequest.builder()
+                                        .item(item)
+                                        .build())
+                                .build()))
+                        .collect(Collectors.toList())))
+                .build();
+
+        dynamoDbClient.batchWriteItem(addAndDeleteLookupItems);
+
+        playersBySortKey.entrySet().stream()
+                .filter(entry -> lookupItemsBySortKey.containsKey(entry.getKey()))
+                .forEach(entry -> dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                        .tableName(tableName)
+                        .key(keyLookup(game.getId(), entry.getValue().getUserId()))
+                        .attributeUpdates(overwriteAllValues(createAttributeValuesLookup(entry.getValue())))
+                        .build()));
     }
 
-    private Optional<Game> getItem(Map<String, AttributeValue> key) {
-        GetItemResponse response = dynamoDbClient.getItem(GetItemRequest.builder()
+    private Optional<Game> findOptionallyById(Game.Id id) {
+        var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(tableName)
-                .key(key)
+                .key(key(id))
                 .consistentRead(true)
                 .build());
 
         if (!response.hasItem()) {
             return Optional.empty();
         }
+        return Optional.of(mapToGame(response.item()));
+    }
 
-        Map<String, AttributeValue> item = response.item();
+    private Map<String, AttributeValue> createItem(Game game) {
+        var map = createAttributeValues(game);
+        map.putAll(key(game.getId()));
+        return map;
+    }
 
-        try {
-            return Optional.of(Game.builder()
-                    .id(Game.Id.of(item.get("Id").s()))
-                    .status(Game.Status.valueOf(item.get("Status").s()))
-                    .owner(User.Id.of(item.get("OwnerUserId").s()))
-                    .players(item.get("Players").l().stream()
-                            .map(this::mapToPlayer)
-                            .collect(Collectors.toSet()))
-                    .state(item.containsKey("State") ? com.wetjens.gwt.Game.deserialize(item.get("State").b().asInputStream()) : null)
-                    .build());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    private Map<String, AttributeValue> createItemLookup(Game game, Player player) {
+        var map = createAttributeValuesLookup(player);
+        map.putAll(keyLookup(game.getId(), player.getUserId()));
+        return map;
+    }
+
+    private Map<String, AttributeValue> createAttributeValuesLookup(Player player) {
+        var map = new HashMap<String, AttributeValue>();
+        map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
+        return map;
+    }
+
+    private Map<String, AttributeValue> createAttributeValues(Game game) {
+        var map = new HashMap<String, AttributeValue>();
+        map.put("Status", AttributeValue.builder().s(game.getStatus().name()).build());
+        map.put("Expires", AttributeValue.builder().n(Long.toString(game.getExpires().getEpochSecond())).build());
+        map.put("OwnerUserId", AttributeValue.builder().s(game.getOwner().getId()).build());
+        map.put("Players", AttributeValue.builder().l(game.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
+        map.put("State", mapFromState(game.getState()));
+        return map;
+    }
+
+    private Game mapToGame(Map<String, AttributeValue> item) {
+        return Game.builder()
+                .id(Game.Id.of(item.get("Id").s()))
+                .status(Game.Status.valueOf(item.get("Status").s()))
+                .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
+                .owner(User.Id.of(item.get("OwnerUserId").s()))
+                .players(item.get("Players").l().stream()
+                        .map(this::mapToPlayer)
+                        .collect(Collectors.toSet()))
+                .state(mapToState(item.get("State")))
+                .build();
     }
 
     private Player mapToPlayer(AttributeValue attributeValue) {
@@ -118,72 +211,57 @@ public class GameDynamoDbRepository implements Games {
                 .build();
     }
 
-    private Stream<Map<String, AttributeValue>> createLookupItems(Game game) {
-        return game.getPlayers().stream()
-                .map(player -> createLookupItem(game, player));
-    }
-
-    private Map<String, AttributeValue> createLookupItem(Game game, Player player) {
-        var map = new HashMap<String, AttributeValue>();
-
-        map.put("Id", AttributeValue.builder().s(game.getId().getId()).build());
-        map.put("UserId", AttributeValue.builder().s("User-" + player.getUserId().getId()).build());
-
-        return map;
-    }
-
-    private Map<String, AttributeValue> createAttributeValues(Game game) {
-        var map = new HashMap<String, AttributeValue>();
-
-        map.put("Status", AttributeValue.builder().s(game.getStatus().name()).build());
-        map.put("OwnerUserId", AttributeValue.builder().s(game.getOwner().getId()).build());
-        map.put("Players", AttributeValue.builder().l(game.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
-
-        if (game.getState() != null) {
-            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-                game.getState().serialize(byteArrayOutputStream);
-
-                map.put("State", AttributeValue.builder().b(SdkBytes.fromByteArray(byteArrayOutputStream.toByteArray())).build());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+    private AttributeValue mapFromState(com.wetjens.gwt.Game state) {
+        if (state == null) {
+            return null;
         }
 
-        return map;
+        try (var byteArrayOutputStream = new ByteArrayOutputStream()) {
+            state.serialize(byteArrayOutputStream);
+
+            return AttributeValue.builder().b(SdkBytes.fromByteArray(byteArrayOutputStream.toByteArray())).build();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private com.wetjens.gwt.Game mapToState(AttributeValue attributeValue) {
+        if (attributeValue == null) {
+            return null;
+        }
+
+        try {
+            return com.wetjens.gwt.Game.deserialize(attributeValue.b().asInputStream());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private AttributeValue mapFromPlayer(Player player) {
         var map = new HashMap<String, AttributeValue>();
-
         map.put("UserId", AttributeValue.builder().s(player.getUserId().getId()).build());
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
-
         return AttributeValue.builder().m(map).build();
     }
 
     private Map<String, AttributeValue> key(Game.Id id) {
         var key = new HashMap<String, AttributeValue>();
-        key.put("Id", AttributeValue.builder().s( id.getId()).build());
+        key.put("Id", AttributeValue.builder().s(id.getId()).build());
         key.put("UserId", AttributeValue.builder().s("Game-" + id.getId()).build());
         return key;
     }
 
-    @Override
-    public void update(Game game) {
-        dynamoDbClient.updateItem(UpdateItemRequest.builder()
-                .tableName(tableName)
-                .key(key(game.getId()))
-                .attributeUpdates(createAttributeUpdateValues(game))
-                .build());
+    private Map<String, AttributeValue> keyLookup(Game.Id gameId, User.Id userId) {
+        var key = new HashMap<String, AttributeValue>();
+        key.put("Id", AttributeValue.builder().s(gameId.getId()).build());
+        key.put("UserId", AttributeValue.builder().s("User-" + userId.getId()).build());
+        return key;
     }
 
-    private Map<String, AttributeValueUpdate> createAttributeUpdateValues(Game game) {
-        Map<String, AttributeValue> attributeValues = createAttributeValues(game);
-
+    private static Map<String, AttributeValueUpdate> overwriteAllValues(Map<String, AttributeValue> attributeValues) {
         return attributeValues.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> AttributeValueUpdate.builder()
                         .action(AttributeAction.PUT)
                         .value(entry.getValue()).build()));
     }
-
 }

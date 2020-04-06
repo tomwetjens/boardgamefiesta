@@ -133,7 +133,7 @@ public class GameResource {
 
         Player performingPlayer = checkTurn(game);
 
-        game.getState().endTurn();
+        game.endTurn();
 
         games.update(game);
 

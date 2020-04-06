@@ -112,7 +112,7 @@ class PlayerStateTest {
             Card card = playerState.getHand().iterator().next();
             playerState.discardCard(card);
 
-            playerState.drawUpToHandLimit();
+            playerState.drawUpToHandLimit(new Random(0));
 
             assertThat(playerState.getHand()).hasSize(4);
         }

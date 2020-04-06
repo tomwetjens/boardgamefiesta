@@ -7,12 +7,12 @@ import lombok.Value;
 @Value
 public class PlayerView {
 
-    String userId;
+    UserView user;
     Player.Status status;
 
     PlayerView(Player player, User user) {
-        userId = player.getUserId().getId();
-        status = player.getStatus();
+        this.status = player.getStatus();
+        this.user = new UserView(user);
     }
 
 }
