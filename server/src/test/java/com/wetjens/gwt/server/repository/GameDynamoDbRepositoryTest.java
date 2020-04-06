@@ -27,19 +27,7 @@ class GameDynamoDbRepositoryTest {
     void setUp() {
         when(config.getTableSuffix()).thenReturn("-test");
 
-        gameDynamodbRepository = new GameDynamoDbRepository(DynamoDbClient.builder()
-                .region(Region.EU_WEST_1)
-                .build(), config);
-    }
-
-    @Test
-    void findById() {
-        gameDynamodbRepository.findById(Game.Id.of("1"));
-    }
-
-    @Test
-    void findByUserId() {
-        gameDynamodbRepository.findByUserId(User.Id.of("1"));
+        gameDynamodbRepository = new GameDynamoDbRepository(DynamoDbClient.create(), config);
     }
 
     @Test
@@ -58,7 +46,4 @@ class GameDynamoDbRepositoryTest {
         gameDynamodbRepository.findById(game.getId());
     }
 
-    @Test
-    void update() {
-    }
 }

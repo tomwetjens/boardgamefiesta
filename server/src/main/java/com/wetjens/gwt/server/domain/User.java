@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
 
-    private static final Duration RETENTION_AFTER_LAST_SEEN = Duration.of(12, ChronoUnit.MONTHS);
+    private static final Duration RETENTION_AFTER_LAST_SEEN = Duration.of(365, ChronoUnit.DAYS);
 
     @Getter
     private final Id id;
