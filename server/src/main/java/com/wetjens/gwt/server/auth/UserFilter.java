@@ -1,16 +1,16 @@
 package com.wetjens.gwt.server.auth;
 
-import com.wetjens.gwt.server.domain.User;
-import com.wetjens.gwt.server.domain.Users;
-import io.quarkus.security.identity.SecurityIdentity;
-import org.eclipse.microprofile.jwt.JsonWebToken;
-
+import java.time.Instant;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.ext.Provider;
-import java.time.Instant;
-import java.util.Optional;
+
+import org.eclipse.microprofile.jwt.JsonWebToken;
+
+import com.wetjens.gwt.server.domain.User;
+import com.wetjens.gwt.server.domain.Users;
+import io.quarkus.security.identity.SecurityIdentity;
 
 /**
  * Ensures User is automatically created in database after first log in with Identity Provider.
@@ -18,20 +18,19 @@ import java.util.Optional;
 @Provider
 public class UserFilter implements ContainerRequestFilter {
 
-    private SecurityIdentity securityIdentity;
     private Users users;
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        securityIdentity = CDI.current().select(SecurityIdentity.class).get();
+        var securityIdentity = CDI.current().select(SecurityIdentity.class).get();
 
         if (!securityIdentity.isAnonymous()) {
-            JsonWebToken jwt = (JsonWebToken) securityIdentity.getPrincipal();
+            var jwt = (JsonWebToken) securityIdentity.getPrincipal();
 
-            User.Id currentUserId = User.Id.of(securityIdentity.getPrincipal().getName());
+            var currentUserId = User.Id.of(securityIdentity.getPrincipal().getName());
 
             users = CDI.current().select(Users.class).get();
-            Optional<User> user = users.findOptionallyById(currentUserId);
+            var user = users.findOptionallyById(currentUserId);
 
             if (user.isEmpty()) {
                 createUser(jwt);
@@ -43,8 +42,8 @@ public class UserFilter implements ContainerRequestFilter {
 
     private void updateUser(User user, JsonWebToken jwt) {
         // TODO Move claim names to configuration properties
-        String username = jwt.getClaim("cognito:username");
-        String email = jwt.getClaim("email");
+        var username = (String) jwt.getClaim("cognito:username");
+        var email = (String) jwt.getClaim("email");
 
         boolean changed = false;
 
@@ -67,8 +66,8 @@ public class UserFilter implements ContainerRequestFilter {
 
     private void createUser(JsonWebToken jwt) {
         // TODO Move claim names to configuration properties
-        String username = jwt.getClaim("cognito:username");
-        String email = jwt.getClaim("email");
+        var username = (String) jwt.getClaim("cognito:username");
+        var email = (String) jwt.getClaim("email");
 
         User user = User.createAutomatically(User.Id.of(jwt.getSubject()), username, email);
 

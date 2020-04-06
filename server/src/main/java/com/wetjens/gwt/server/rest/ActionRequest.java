@@ -20,7 +20,7 @@ public class ActionRequest {
     private final JsonObject jsonObject;
 
     public Action toAction(Game game) {
-        ActionType actionType = ActionType.valueOf(jsonObject.getString("type"));
+        var actionType = ActionType.valueOf(jsonObject.getString("type"));
         return actionType.toAction(jsonObject, game);
     }
 

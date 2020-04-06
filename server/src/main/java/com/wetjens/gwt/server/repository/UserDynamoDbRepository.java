@@ -127,7 +127,7 @@ public class UserDynamoDbRepository implements Users {
     }
 
     private Optional<User> getItem(Map<String, AttributeValue> key) {
-        GetItemResponse response = dynamoDbClient.getItem(GetItemRequest.builder()
+        var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(tableName)
                 .key(key)
                 .consistentRead(true)
@@ -137,7 +137,7 @@ public class UserDynamoDbRepository implements Users {
             return Optional.empty();
         }
 
-        Map<String, AttributeValue> item = response.item();
+        var item = response.item();
 
         return Optional.of(User.builder()
                 .id(User.Id.of(item.get("Id").s()))

@@ -64,7 +64,7 @@ public class Game {
     private Instant ended;
 
     public static Game create(User owner, Set<User> inviteUsers) {
-        Instant created = Instant.now();
+        var created = Instant.now();
 
         return Game.builder()
                 .id(Id.generate())
@@ -122,7 +122,7 @@ public class Game {
     }
 
     public void acceptInvite(User.Id userId) {
-        Player player = players.stream()
+        var player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("Not invited"));
@@ -133,7 +133,7 @@ public class Game {
     }
 
     public void rejectInvite(User.Id userId) {
-        Player player = players.stream()
+        var player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("Not invited"));

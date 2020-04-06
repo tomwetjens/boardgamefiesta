@@ -34,7 +34,7 @@ public class User {
     private Instant expires;
 
     public static User createAutomatically(Id id, String username, String email) {
-        Instant created = Instant.now();
+        var created = Instant.now();
 
         return User.builder()
                 .id(id)

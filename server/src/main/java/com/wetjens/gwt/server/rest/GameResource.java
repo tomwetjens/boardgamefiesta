@@ -1,8 +1,28 @@
 package com.wetjens.gwt.server.rest;
 
-import com.wetjens.gwt.Location;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
+import javax.validation.constraints.NotBlank;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.SecurityContext;
+
 import com.wetjens.gwt.Player;
-import com.wetjens.gwt.PlayerState;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.User;
@@ -13,20 +33,6 @@ import com.wetjens.gwt.server.rest.view.state.PossibleDeliveryView;
 import com.wetjens.gwt.server.rest.view.state.PossibleMoveView;
 import com.wetjens.gwt.server.rest.view.state.StateView;
 
-import javax.annotation.security.RolesAllowed;
-import javax.inject.Inject;
-import javax.validation.constraints.NotBlank;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.SecurityContext;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 @Path("/games")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -34,20 +40,20 @@ import java.util.stream.Collectors;
 public class GameResource {
 
     @Inject
-    public Games games;
+    private Games games;
 
     @Inject
-    public Users users;
+    private Users users;
 
     @Context
-    public SecurityContext securityContext;
+    private SecurityContext securityContext;
 
     @POST
     @Path("/create")
     public void create(CreateGameRequest request) {
-        User user = users.findById(currentUserId());
+        var user = users.findById(currentUserId());
 
-        Set<User> inviteUsers = request.getInviteUserIds().stream()
+        var inviteUsers = request.getInviteUserIds().stream()
                 .map(userId -> users.findById(User.Id.of(userId)))
                 .collect(Collectors.toSet());
 
@@ -56,18 +62,21 @@ public class GameResource {
 
     @GET
     public List<GameView> getGames() {
+        var currentUserId = currentUserId();
+
         var userMap = new HashMap<User.Id, User>();
 
-        return games.findByUserId(currentUserId())
-                .map(game -> new GameView(game, game.getPlayers().stream().map(p -> userMap.computeIfAbsent(p.getUserId(), k -> users.findById(k)))
-                        .collect(Collectors.toMap(User::getId, Function.identity())), currentUserId()))
+        return games.findByUserId(currentUserId)
+                .map(game -> new GameView(game, game.getPlayers().stream()
+                        .map(p -> userMap.computeIfAbsent(p.getUserId(), k -> users.findById(k)))
+                        .collect(Collectors.toMap(User::getId, Function.identity())), currentUserId))
                 .collect(Collectors.toList());
     }
 
     @GET
     @Path("/{id}")
     public GameView get(@PathParam("id") String id) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
         checkViewAllowed(game);
 
@@ -77,7 +86,7 @@ public class GameResource {
     @POST
     @Path("/{id}/start")
     public GameView start(@PathParam("id") String id) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
         checkOwner(game);
 
@@ -91,7 +100,7 @@ public class GameResource {
     @POST
     @Path("/{id}/accept")
     public GameView accept(@PathParam("id") String id) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
         game.acceptInvite(currentUserId());
 
@@ -103,7 +112,7 @@ public class GameResource {
     @POST
     @Path("/{id}/reject")
     public GameView reject(@PathParam("id") String id) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
         game.rejectInvite(currentUserId());
 
@@ -115,9 +124,9 @@ public class GameResource {
     @POST
     @Path("/{id}/perform")
     public StateView perform(@PathParam("id") String id, ActionRequest request) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
-        Player performingPlayer = checkTurn(game);
+        var performingPlayer = checkTurn(game);
 
         game.perform(request.toAction(game.getState()));
 
@@ -129,9 +138,9 @@ public class GameResource {
     @POST
     @Path("/{id}/end-turn")
     public StateView endTurn(@PathParam("id") String id) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
-        Player performingPlayer = checkTurn(game);
+        var performingPlayer = checkTurn(game);
 
         game.endTurn();
 
@@ -143,7 +152,7 @@ public class GameResource {
     @GET
     @Path("/{id}/state")
     public StateView getState(@PathParam("id") String id) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
         if (game.getState() == null) {
             throw new NotFoundException();
@@ -151,8 +160,7 @@ public class GameResource {
 
         checkViewAllowed(game);
 
-
-        Player viewingPlayer = determinePlayer(game.getState());
+        var viewingPlayer = determinePlayer(game.getState());
 
         return new StateView(game.getState(), viewingPlayer);
     }
@@ -160,15 +168,15 @@ public class GameResource {
     @GET
     @Path("/{id}/state/possible-deliveries")
     public Set<PossibleDeliveryView> getPossibleDeliveries(@PathParam("id") String id) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
         if (game.getState() == null) {
             throw new NotFoundException();
         }
 
-        Player viewingPlayer = checkTurn(game);
+        var viewingPlayer = checkTurn(game);
 
-        PlayerState playerState = game.getState().playerState(viewingPlayer);
+        var playerState = game.getState().playerState(viewingPlayer);
 
         return playerState.possibleDeliveries(game.getState().getRailroadTrack()).stream()
                 .map(PossibleDeliveryView::new)
@@ -178,15 +186,15 @@ public class GameResource {
     @GET
     @Path("/{id}/state/possible-buys")
     public Set<PossibleBuyView> getPossibleBuys(@PathParam("id") String id) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
         if (game.getState() == null) {
             throw new NotFoundException();
         }
 
-        Player viewingPlayer = checkTurn(game);
+        var viewingPlayer = checkTurn(game);
 
-        PlayerState playerState = game.getState().playerState(viewingPlayer);
+        var playerState = game.getState().playerState(viewingPlayer);
 
         return game.getState().getCattleMarket().possibleBuys(playerState.getNumberOfCowboys(), playerState.getBalance()).stream()
                 .map(PossibleBuyView::new)
@@ -196,13 +204,13 @@ public class GameResource {
     @GET
     @Path("/{id}/state/possible-moves")
     public Set<PossibleMoveView> getPossibleMoves(@PathParam("id") String id, @NotBlank String toName) {
-        Game game = games.findById(Game.Id.of(id));
+        var game = games.findById(Game.Id.of(id));
 
         if (game.getState() == null) {
             throw new NotFoundException();
         }
 
-        Location to = game.getState().getTrail().getLocation(toName);
+        var to = game.getState().getTrail().getLocation(toName);
 
         return game.getState().possibleMoves(game.getState().getCurrentPlayer(), to).stream()
                 .map(steps -> new PossibleMoveView(game.getState().getPlayers().size(), steps))
@@ -216,7 +224,7 @@ public class GameResource {
     }
 
     private Player determinePlayer(com.wetjens.gwt.Game game) {
-        User.Id currentUserId = currentUserId();
+        var currentUserId = currentUserId();
 
         return game.getPlayers().stream()
                 .filter(player -> player.getName().equals(currentUserId.getId()))
@@ -225,7 +233,8 @@ public class GameResource {
     }
 
     private void checkViewAllowed(Game game) {
-        User.Id currentUserId = currentUserId();
+        var currentUserId = currentUserId();
+
         if (game.getPlayers().stream().noneMatch(player -> player.getUserId().equals(currentUserId))) {
             throw new ForbiddenException("User " + currentUserId.getId() + " not player in game " + game.getId().getId());
         }
@@ -239,7 +248,7 @@ public class GameResource {
     }
 
     private Player checkTurn(Game game) {
-        Player performingPlayer = determinePlayer(game.getState());
+        var performingPlayer = determinePlayer(game.getState());
 
         if (game.getState().getCurrentPlayer() != performingPlayer) {
             throw new ForbiddenException("User not current player");
@@ -253,5 +262,4 @@ public class GameResource {
                 .map(player -> users.findById(player.getUserId()))
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
-
 }
