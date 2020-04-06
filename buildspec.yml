@@ -7,7 +7,7 @@ phases:
       - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
   install:
     runtime-versions:
-      - java:13
+      java: openjdk11
   build:
     commands:
       - echo Build started on `date`
