@@ -44,13 +44,13 @@ class GameDynamoDbRepositoryTest {
 
     @Test
     void add() {
-        User playerA = mock(User.class);
-        when(playerA.getId()).thenReturn(User.Id.of("348413c8-3484-432c-ae1c-d02d1e010222"));
-        User playerB = mock(User.class);
-        when(playerB.getId()).thenReturn(User.Id.of("34efb2e1-8ef6-47e3-a1d1-3f986d2d7c1d"));
+        User tom = mock(User.class);
+        when(tom.getId()).thenReturn(User.Id.of("348413c8-3484-432c-ae1c-d02d1e010222"));
+        User sharon = mock(User.class);
+        when(sharon.getId()).thenReturn(User.Id.of("34efb2e1-8ef6-47e3-a1d1-3f986d2d7c1d"));
 
-        Game game = Game.create(playerA, Collections.singleton(playerB));
-        game.acceptInvite(playerB.getId());
+        Game game = Game.create(tom, Collections.singleton(sharon));
+        game.acceptInvite(sharon.getId());
         game.start();
 
         gameDynamodbRepository.add(game);

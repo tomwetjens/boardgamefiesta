@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
 
@@ -28,31 +29,53 @@ public class Game {
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(2, ChronoUnit.DAYS);
 
     @Getter
+    @NonNull
     private final Id id;
 
     @Getter
+    @NonNull
     private User.Id owner;
+
+    @NonNull
     private final Set<Player> players;
 
     @Getter
+    @NonNull
     private Status status;
 
     @Getter
     private com.wetjens.gwt.Game state;
 
     @Getter
+    @NonNull
     private Instant expires;
 
+    @Getter
+    @NonNull
+    private Instant created;
+
+    @Getter
+    private Instant updated;
+
+    @Getter
+    private Instant started;
+
+    @Getter
+    private Instant ended;
+
     public static Game create(User owner, Set<User> inviteUsers) {
+        Instant created = Instant.now();
+
         return Game.builder()
                 .id(Id.generate())
                 .status(Status.NEW)
-                .expires(Instant.now().plus(START_TIMEOUT))
+                .created(created)
+                .updated(created)
+                .expires(created.plus(START_TIMEOUT))
                 .owner(owner.getId())
                 .players(Stream.concat(
-                        Stream.of(Player.builder().userId(owner.getId()).status(Player.Status.ACCEPTED).build()),
-                        inviteUsers.stream()
-                                .map(user -> Player.builder().userId(user.getId()).status(Player.Status.INVITED).build()))
+                        Stream.of(Player.createAccepted(owner.getId())),
+                        inviteUsers.stream().map(user -> Player.invite(user.getId())))
                         .collect(Collectors.toSet()))
                 .build();
     }
@@ -69,8 +92,9 @@ public class Game {
                         .build(), new Random());
 
         status = Status.STARTED;
-
-        expires = Instant.now().plus(ACTION_TIMEOUT);
+        started = Instant.now();
+        updated = started;
+        expires = started.plus(ACTION_TIMEOUT);
     }
 
     public void perform(Action action) {
@@ -84,38 +108,43 @@ public class Game {
     }
 
     private void afterAction() {
+        updated = Instant.now();
+
         if (state.isEnded()) {
             status = Status.ENDED;
-            expires = Instant.now().plus(RETENTION_AFTER_ENDED);
+            ended = updated;
+            expires = ended.plus(RETENTION_AFTER_ENDED);
 
             // TODO Maybe store scores on this aggregate
         } else {
-            expires = Instant.now().plus(ACTION_TIMEOUT);
+            expires = updated.plus(ACTION_TIMEOUT);
         }
-    }
-
-    public Set<Player> getPlayers() {
-        return Collections.unmodifiableSet(players);
     }
 
     public void acceptInvite(User.Id userId) {
         Player player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
-                .filter(p -> p.getStatus() == Player.Status.INVITED)
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("Not invited"));
 
         player.accept();
+
+        updated = Instant.now();
     }
 
     public void rejectInvite(User.Id userId) {
         Player player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
-                .filter(p -> p.getStatus() == Player.Status.INVITED)
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("Not invited"));
 
         player.reject();
+
+        updated = Instant.now();
+    }
+
+    public Set<Player> getPlayers() {
+        return Collections.unmodifiableSet(players);
     }
 
     public enum Status {

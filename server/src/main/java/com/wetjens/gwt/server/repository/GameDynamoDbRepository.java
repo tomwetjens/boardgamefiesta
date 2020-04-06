@@ -185,6 +185,10 @@ public class GameDynamoDbRepository implements Games {
     private Map<String, AttributeValue> createAttributeValues(Game game) {
         var map = new HashMap<String, AttributeValue>();
         map.put("Status", AttributeValue.builder().s(game.getStatus().name()).build());
+        map.put("Created", AttributeValue.builder().n(Long.toString(game.getCreated().getEpochSecond())).build());
+        map.put("Updated", AttributeValue.builder().n(Long.toString(game.getUpdated().getEpochSecond())).build());
+        map.put("Started", game.getStarted() != null ? AttributeValue.builder().n(Long.toString(game.getStarted().getEpochSecond())).build() : null);
+        map.put("Ended", game.getEnded() != null ? AttributeValue.builder().n(Long.toString(game.getEnded().getEpochSecond())).build() : null);
         map.put("Expires", AttributeValue.builder().n(Long.toString(game.getExpires().getEpochSecond())).build());
         map.put("OwnerUserId", AttributeValue.builder().s(game.getOwner().getId()).build());
         map.put("Players", AttributeValue.builder().l(game.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
@@ -196,6 +200,10 @@ public class GameDynamoDbRepository implements Games {
         return Game.builder()
                 .id(Game.Id.of(item.get("Id").s()))
                 .status(Game.Status.valueOf(item.get("Status").s()))
+                .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
+                .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
+                .started(item.get("Started") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Started").n())) : null)
+                .ended(item.get("Ended") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Ended").n())) : null)
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
                 .owner(User.Id.of(item.get("OwnerUserId").s()))
                 .players(item.get("Players").l().stream()
@@ -242,6 +250,8 @@ public class GameDynamoDbRepository implements Games {
         var map = new HashMap<String, AttributeValue>();
         map.put("UserId", AttributeValue.builder().s(player.getUserId().getId()).build());
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
+        map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
+        map.put("Updated", AttributeValue.builder().n(Long.toString(player.getUpdated().getEpochSecond())).build());
         return AttributeValue.builder().m(map).build();
     }
 
