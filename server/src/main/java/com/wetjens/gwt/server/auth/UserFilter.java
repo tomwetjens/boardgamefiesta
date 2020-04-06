@@ -9,6 +9,7 @@ import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.ext.Provider;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -60,6 +61,8 @@ public class UserFilter implements ContainerRequestFilter {
         if (changed) {
             users.update(user);
         }
+
+        users.updateLastSeen(user.getId(), Instant.now());
     }
 
     private void createUser(JsonWebToken jwt) {

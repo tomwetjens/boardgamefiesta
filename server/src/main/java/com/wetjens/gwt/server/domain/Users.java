@@ -1,5 +1,6 @@
 package com.wetjens.gwt.server.domain;
 
+import java.time.Instant;
 import java.util.Optional;
 
 public interface Users {
@@ -12,4 +13,5 @@ public interface Users {
 
     void update(User user);
 
+    void updateLastSeen(User.Id id, Instant lastSeen);
 }
