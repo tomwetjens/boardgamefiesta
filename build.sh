@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mvn package -Pnative -Dquarkus.native.container-build=true
+mvn package
 
 pushd server
-docker build -f src/main/docker/Dockerfile.native -t gwt .
+docker build -f src/main/docker/Dockerfile.jvm -t gwt .
 popd
