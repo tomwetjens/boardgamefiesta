@@ -3,6 +3,7 @@ package com.wetjens.gwt.server.repository;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.User;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@Disabled
 class GameDynamoDbRepositoryTest {
 
     @Mock
