@@ -146,7 +146,7 @@ public class GameDynamoDbRepository implements Games {
                 .forEach(entry -> dynamoDbClient.updateItem(UpdateItemRequest.builder()
                         .tableName(tableName)
                         .key(keyLookup(game.getId(), entry.getValue().getUserId()))
-                        .attributeUpdates(overwriteAllValues(createAttributeValuesLookup(entry.getValue())))
+                        .attributeUpdates(overwriteAllValues(createAttributeValuesLookup(game, entry.getValue())))
                         .build()));
     }
 
@@ -170,14 +170,15 @@ public class GameDynamoDbRepository implements Games {
     }
 
     private Map<String, AttributeValue> createItemLookup(Game game, Player player) {
-        var map = createAttributeValuesLookup(player);
+        var map = createAttributeValuesLookup(game, player);
         map.putAll(keyLookup(game.getId(), player.getUserId()));
         return map;
     }
 
-    private Map<String, AttributeValue> createAttributeValuesLookup(Player player) {
+    private Map<String, AttributeValue> createAttributeValuesLookup(Game game, Player player) {
         var map = new HashMap<String, AttributeValue>();
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
+        map.put("Expires", AttributeValue.builder().n(Long.toString(game.getExpires().getEpochSecond())).build());
         return map;
     }
 
