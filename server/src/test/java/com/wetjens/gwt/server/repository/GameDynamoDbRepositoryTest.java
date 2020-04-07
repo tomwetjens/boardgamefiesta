@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.util.Collections;
@@ -21,7 +20,7 @@ import static org.mockito.Mockito.when;
 class GameDynamoDbRepositoryTest {
 
     @Mock
-    DynamoDbConfig config;
+    DynamoDbConfiguration config;
 
     GameDynamoDbRepository gameDynamodbRepository;
 

@@ -43,7 +43,7 @@ public class GameDynamoDbRepository implements Games {
     private final String tableName;
 
     @Inject
-    public GameDynamoDbRepository(@NonNull DynamoDbClient dynamoDbClient, @NonNull DynamoDbConfig config) {
+    public GameDynamoDbRepository(@NonNull DynamoDbClient dynamoDbClient, @NonNull DynamoDbConfiguration config) {
         this.dynamoDbClient = dynamoDbClient;
         this.tableName = TABLE_NAME + config.getTableSuffix();
     }
