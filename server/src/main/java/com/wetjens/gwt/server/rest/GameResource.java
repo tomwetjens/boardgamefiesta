@@ -1,9 +1,6 @@
 package com.wetjens.gwt.server.rest;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
@@ -64,11 +61,11 @@ public class GameResource {
     public List<GameView> getGames() {
         var currentUserId = currentUserId();
 
-        var userMap = new HashMap<User.Id, User>();
+        var userMap = new HashMap<User.Id, Optional<User>>();
 
         return games.findByUserId(currentUserId)
                 .map(game -> new GameView(game, game.getPlayers().stream()
-                        .map(p -> userMap.computeIfAbsent(p.getUserId(), k -> users.findById(k)))
+                        .flatMap(p -> userMap.computeIfAbsent(p.getUserId(), k -> users.findOptionallyById(k)).stream())
                         .collect(Collectors.toMap(User::getId, Function.identity())), currentUserId))
                 .collect(Collectors.toList());
     }
@@ -259,7 +256,7 @@ public class GameResource {
 
     private Map<User.Id, User> getUserMap(Game game) {
         return game.getPlayers().stream()
-                .map(player -> users.findById(player.getUserId()))
+                .flatMap(player -> users.findOptionallyById(player.getUserId()).stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 }

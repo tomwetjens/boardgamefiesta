@@ -9,8 +9,8 @@ public class UserView {
     private final String id;
     private final String username;
 
-    public UserView(User user) {
-        this.id = user.getId().getId();
-        this.username = user.getUsername();
+    public UserView(User.Id userId, User user) {
+        this.id = userId.getId();
+        this.username = user != null ? user.getUsername() : null;
     }
 }

@@ -21,7 +21,7 @@ public class GameView {
     public GameView(Game game, Map<User.Id, User> userMap, User.Id currentUserId) {
         id = game.getId().getId();
         status = game.getStatus();
-        owner = new UserView(userMap.get(game.getOwner()));
+        owner = new UserView(game.getOwner(), userMap.get(game.getOwner()));
         players = game.getPlayers().stream()
                 .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
                 .collect(Collectors.toSet());

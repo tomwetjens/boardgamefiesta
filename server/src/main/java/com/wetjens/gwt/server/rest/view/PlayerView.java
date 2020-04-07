@@ -12,7 +12,7 @@ public class PlayerView {
 
     PlayerView(Player player, User user) {
         this.status = player.getStatus();
-        this.user = new UserView(user);
+        this.user = new UserView(player.getUserId(), user);
     }
 
 }
