@@ -1,5 +1,8 @@
 package com.wetjens.gwt.server.domain;
 
+import com.wetjens.gwt.Action;
+import lombok.*;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -9,15 +12,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.wetjens.gwt.Action;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
@@ -63,7 +57,15 @@ public class Game {
     @Getter
     private Instant ended;
 
-    public static Game create(User owner, Set<User> inviteUsers) {
+    public static Game create(@NonNull User owner, @NonNull Set<User> inviteUsers) {
+        if (inviteUsers.size() == 0) {
+            throw new IllegalArgumentException("Should invite at least 1 user");
+        }
+
+        if (inviteUsers.size() > 5) {
+            throw new IllegalArgumentException("Should invite at most 5 users");
+        }
+
         var created = Instant.now();
 
         return Game.builder()

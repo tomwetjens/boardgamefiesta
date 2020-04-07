@@ -1,30 +1,27 @@
 package com.wetjens.gwt.server.repository;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.ws.rs.NotFoundException;
-
 import com.wetjens.gwt.server.domain.User;
 import com.wetjens.gwt.server.domain.Users;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.*;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 @ApplicationScoped
 public class UserDynamoDbRepository implements Users {
 
     private static final String TABLE_NAME = "gwt-users";
+    private static final String USERNAME_INDEX = "Username-index";
+    private static final String EMAIL_INDEX = "Email-index";
 
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
@@ -38,6 +35,33 @@ public class UserDynamoDbRepository implements Users {
     @Override
     public User findById(User.Id id) {
         return findOptionallyById(id).orElseThrow(() -> new NotFoundException("User not found: " + id.getId()));
+    }
+
+    @Override
+    public Stream<User> findByUsernameStartsWith(String username) {
+        return dynamoDbClient.scanPaginator(ScanRequest.builder()
+                .tableName(tableName)
+                .indexName(USERNAME_INDEX)
+                .filterExpression("begins_with(Username, :Username)")
+                .expressionAttributeValues(Collections.singletonMap(":Username", AttributeValue.builder().s(username).build()))
+                .build())
+                .items().stream()
+                .map(this::mapToUser);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        QueryResponse response = dynamoDbClient.query(QueryRequest.builder()
+                .tableName(tableName)
+                .indexName(EMAIL_INDEX)
+                .keyConditionExpression("Email = :Email")
+                .expressionAttributeValues(Collections.singletonMap(":Email", AttributeValue.builder().s(email).build()))
+                .build());
+
+        if (!response.hasItems() || response.count() == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(mapToUser(response.items().get(0)));
     }
 
     @Override
@@ -133,10 +157,11 @@ public class UserDynamoDbRepository implements Users {
         if (!response.hasItem()) {
             return Optional.empty();
         }
+        return Optional.of(mapToUser(response.item()));
+    }
 
-        var item = response.item();
-
-        return Optional.of(User.builder()
+    private User mapToUser(Map<String, AttributeValue> item) {
+        return User.builder()
                 .id(User.Id.of(item.get("Id").s()))
                 .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
@@ -144,7 +169,7 @@ public class UserDynamoDbRepository implements Users {
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
                 .username(item.get("Username").s())
                 .email(item.get("Email").s())
-                .build());
+                .build();
     }
 
     private Map<String, AttributeValue> key(User.Id id) {

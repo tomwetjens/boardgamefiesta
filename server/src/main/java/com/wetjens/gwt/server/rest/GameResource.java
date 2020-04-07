@@ -1,11 +1,22 @@
 package com.wetjens.gwt.server.rest;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import com.wetjens.gwt.Player;
+import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.Games;
+import com.wetjens.gwt.server.domain.User;
+import com.wetjens.gwt.server.domain.Users;
+import com.wetjens.gwt.server.rest.view.GameView;
+import com.wetjens.gwt.server.rest.view.state.PossibleBuyView;
+import com.wetjens.gwt.server.rest.view.state.PossibleDeliveryView;
+import com.wetjens.gwt.server.rest.view.state.PossibleMoveView;
+import com.wetjens.gwt.server.rest.view.state.StateView;
+
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
@@ -18,17 +29,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
-
-import com.wetjens.gwt.Player;
-import com.wetjens.gwt.server.domain.Game;
-import com.wetjens.gwt.server.domain.Games;
-import com.wetjens.gwt.server.domain.User;
-import com.wetjens.gwt.server.domain.Users;
-import com.wetjens.gwt.server.rest.view.GameView;
-import com.wetjens.gwt.server.rest.view.state.PossibleBuyView;
-import com.wetjens.gwt.server.rest.view.state.PossibleDeliveryView;
-import com.wetjens.gwt.server.rest.view.state.PossibleMoveView;
-import com.wetjens.gwt.server.rest.view.state.StateView;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Path("/games")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -47,14 +56,21 @@ public class GameResource {
 
     @POST
     @Path("/create")
-    public void create(CreateGameRequest request) {
-        var user = users.findById(currentUserId());
+    public GameView create(@NotNull @Valid CreateGameRequest request) {
+        var currentUser = users.findById(currentUserId());
 
         var inviteUsers = request.getInviteUserIds().stream()
-                .map(userId -> users.findById(User.Id.of(userId)))
+                .map(userId -> users.findOptionallyById(User.Id.of(userId))
+                        .orElseThrow(() -> new BadRequestException("User not found: " + userId)))
                 .collect(Collectors.toSet());
 
-        games.add(Game.create(user, inviteUsers));
+        Game game = Game.create(currentUser, inviteUsers);
+
+        games.add(game);
+
+        var userMap = Stream.concat(Stream.of(currentUser), inviteUsers.stream())
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+        return new GameView(game, userMap, currentUser.getId());
     }
 
     @GET

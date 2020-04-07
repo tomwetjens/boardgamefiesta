@@ -5,6 +5,7 @@ import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,6 +15,10 @@ public class GameView {
 
     String id;
     Game.Status status;
+    Instant created;
+    Instant started;
+    Instant ended;
+    Instant expires;
     UserView owner;
     Set<PlayerView> players;
     boolean accepted;
@@ -26,5 +31,9 @@ public class GameView {
                 .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
                 .collect(Collectors.toSet());
         accepted = game.getPlayers().stream().filter(player -> player.getUserId().equals(currentUserId)).anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
+        created = game.getCreated();
+        started = game.getStarted();
+        ended = game.getEnded();
+        expires = game.getExpires();
     }
 }

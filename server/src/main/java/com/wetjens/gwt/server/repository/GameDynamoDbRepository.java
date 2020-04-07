@@ -107,7 +107,6 @@ public class GameDynamoDbRepository implements Games {
                 .expressionAttributeValues(Collections.singletonMap(":Id", AttributeValue.builder()
                         .s(game.getId().getId())
                         .build()))
-                .consistentRead(true)
                 .build());
 
         var lookupItemsBySortKey = response.items().stream()
