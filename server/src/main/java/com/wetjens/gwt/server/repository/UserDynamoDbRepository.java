@@ -26,15 +26,13 @@ public class UserDynamoDbRepository implements Users {
 
     private static final String TABLE_NAME = "gwt-users";
 
-    private static final Jsonb JSONB = JsonbBuilder.create();
-
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
 
     @Inject
     public UserDynamoDbRepository(@NonNull DynamoDbClient dynamoDbClient, @NonNull DynamoDbConfiguration config) {
         this.dynamoDbClient = dynamoDbClient;
-        this.tableName = TABLE_NAME + config.getTableSuffix();
+        this.tableName = TABLE_NAME + config.getTableSuffix().orElse("");
     }
 
     @Override

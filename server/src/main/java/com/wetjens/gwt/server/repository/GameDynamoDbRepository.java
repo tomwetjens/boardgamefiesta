@@ -45,7 +45,7 @@ public class GameDynamoDbRepository implements Games {
     @Inject
     public GameDynamoDbRepository(@NonNull DynamoDbClient dynamoDbClient, @NonNull DynamoDbConfiguration config) {
         this.dynamoDbClient = dynamoDbClient;
-        this.tableName = TABLE_NAME + config.getTableSuffix();
+        this.tableName = TABLE_NAME + config.getTableSuffix().orElse("");
     }
 
     @Override
