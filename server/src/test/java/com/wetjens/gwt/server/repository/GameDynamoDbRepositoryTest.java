@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -26,7 +27,7 @@ class GameDynamoDbRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        when(config.getTableSuffix()).thenReturn("-test");
+        when(config.getTableSuffix()).thenReturn(Optional.of("-test"));
 
         gameDynamodbRepository = new GameDynamoDbRepository(DynamoDbClient.create(), config);
     }
