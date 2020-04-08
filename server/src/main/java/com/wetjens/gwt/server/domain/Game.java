@@ -1,8 +1,15 @@
 package com.wetjens.gwt.server.domain;
 
 import com.wetjens.gwt.Action;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.Value;
 
+import javax.enterprise.inject.spi.CDI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -68,7 +75,7 @@ public class Game {
 
         var created = Instant.now();
 
-        return Game.builder()
+        Game game = Game.builder()
                 .id(Id.generate())
                 .status(Status.NEW)
                 .created(created)
@@ -80,6 +87,12 @@ public class Game {
                         inviteUsers.stream().map(user -> Player.invite(user.getId())))
                         .collect(Collectors.toSet()))
                 .build();
+
+        for (User user : inviteUsers) {
+            CDI.current().getBeanManager().fireEvent(game.new Invited(user.getId()));
+        }
+
+        return game;
     }
 
     public void start() {
@@ -97,6 +110,8 @@ public class Game {
         started = Instant.now();
         updated = started;
         expires = started.plus(ACTION_TIMEOUT);
+
+        CDI.current().getBeanManager().fireEvent(new Started());
     }
 
     public void perform(Action action) {
@@ -112,12 +127,16 @@ public class Game {
     private void afterAction() {
         updated = Instant.now();
 
+        CDI.current().getBeanManager().fireEvent(new StateChanged());
+
         if (state.isEnded()) {
             status = Status.ENDED;
             ended = updated;
             expires = ended.plus(RETENTION_AFTER_ENDED);
 
             // TODO Maybe store scores on this aggregate
+
+            CDI.current().getBeanManager().fireEvent(new Ended());
         } else {
             expires = updated.plus(ACTION_TIMEOUT);
         }
@@ -132,6 +151,8 @@ public class Game {
         player.accept();
 
         updated = Instant.now();
+
+        CDI.current().getBeanManager().fireEvent(new Accepted(userId));
     }
 
     public void rejectInvite(User.Id userId) {
@@ -143,6 +164,8 @@ public class Game {
         player.reject();
 
         updated = Instant.now();
+
+        CDI.current().getBeanManager().fireEvent(new Rejected(userId));
     }
 
     public Set<Player> getPlayers() {
@@ -162,5 +185,38 @@ public class Game {
         private static Id generate() {
             return of(UUID.randomUUID().toString());
         }
+    }
+
+    @Value
+    public final class Invited {
+        Game game = Game.this;
+        User.Id userId;
+    }
+
+    @Value
+    public final class Accepted {
+        Game game = Game.this;
+        User.Id userId;
+    }
+
+    @Value
+    public final class Rejected {
+        Game game = Game.this;
+        User.Id userId;
+    }
+
+    @Value
+    public final class Started {
+        Game game = Game.this;
+    }
+
+    @Value
+    public final class Ended {
+        Game game = Game.this;
+    }
+
+    @Value
+    public final class StateChanged {
+        Game game = Game.this;
     }
 }

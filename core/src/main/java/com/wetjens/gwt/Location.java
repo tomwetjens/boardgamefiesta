@@ -1,14 +1,14 @@
 package com.wetjens.gwt;
 
+import lombok.Getter;
+import lombok.NonNull;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
-
-import lombok.Getter;
-import lombok.NonNull;
 
 public abstract class Location implements Serializable {
 
@@ -45,7 +45,7 @@ public abstract class Location implements Serializable {
     }
 
     public boolean isDirect(Location to) {
-        return next.contains(to) || (isEmpty() && next.stream().anyMatch(between -> between.isDirect(to)));
+        return next.stream().anyMatch(between -> between == to || (between.isEmpty() && between.isDirect(to)));
     }
 
     public static final class Start extends Location {
