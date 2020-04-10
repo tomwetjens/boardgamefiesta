@@ -12,7 +12,7 @@ import lombok.Value;
 public class PossibleMoveView {
 
     int cost;
-    List<TrailView.LocationView> steps;
+    List<String> steps;
     Map<String, Integer> playerFees;
 
     public PossibleMoveView(int playerCount, List<Location> steps) {
@@ -34,7 +34,7 @@ public class PossibleMoveView {
                 .sum();
 
         this.steps = steps.stream()
-                .map(TrailView.LocationView::new)
+                .map(Location::getName)
                 .collect(Collectors.toList());
     }
 }

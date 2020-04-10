@@ -96,6 +96,10 @@ public class Game {
     }
 
     public void start() {
+        if (status != Status.NEW) {
+            throw new IllegalStateException("Already started or ended");
+        }
+
         state = new com.wetjens.gwt.Game(players.stream()
                 .filter(player -> player.getStatus() == Player.Status.ACCEPTED)
                 .map(Player::getUserId)
@@ -115,11 +119,19 @@ public class Game {
     }
 
     public void perform(Action action) {
+        if (status != Status.STARTED) {
+            throw new IllegalStateException("Not started");
+        }
+
         state.perform(action, new Random());
         afterAction();
     }
 
     public void endTurn() {
+        if (status != Status.STARTED) {
+            throw new IllegalStateException("Not started");
+        }
+
         state.endTurn(new Random());
         afterAction();
     }
@@ -143,6 +155,10 @@ public class Game {
     }
 
     public void acceptInvite(User.Id userId) {
+        if (status != Status.NEW) {
+            throw new IllegalStateException("Already started or ended");
+        }
+
         var player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
                 .findAny()
@@ -153,9 +169,38 @@ public class Game {
         updated = Instant.now();
 
         CDI.current().getBeanManager().fireEvent(new Accepted(userId));
+
+        if (allPlayersResponded()) {
+            if (numberOfPlayersAccepted() >= 2) {
+                // If enough players have accepted, automatically start
+                start();
+            } else {
+                abandon();
+            }
+        }
+    }
+
+    public void abandon() {
+        if (status != Status.NEW) {
+            throw new IllegalStateException("Already started or ended");
+        }
+
+        expires = Instant.now();
+    }
+
+    private int numberOfPlayersAccepted() {
+        return (int) players.stream().filter(p -> p.getStatus() == Player.Status.ACCEPTED).count();
+    }
+
+    private boolean allPlayersResponded() {
+        return players.stream().allMatch(p -> p.getStatus() == Player.Status.ACCEPTED || p.getStatus() == Player.Status.REJECTED);
     }
 
     public void rejectInvite(User.Id userId) {
+        if (status != Status.NEW) {
+            throw new IllegalStateException("Already started or ended");
+        }
+
         var player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
                 .findAny()
