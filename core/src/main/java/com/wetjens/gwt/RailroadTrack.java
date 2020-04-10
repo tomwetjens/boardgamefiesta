@@ -1,9 +1,28 @@
 package com.wetjens.gwt;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.Value;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -259,21 +278,29 @@ public class RailroadTrack implements Serializable {
             case COLORADO_SPRINGS:
             case ALBUQUERQUE:
                 if (hasMadeDelivery(player, City.SANTA_FE)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.TakeObjectiveCard.class));
+                    return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
             case SANTA_FE:
-                return ImmediateActions.of(PossibleAction.any(Stream.concat(
-                        hasMadeDelivery(player, City.COLORADO_SPRINGS) ? Stream.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class)) : Stream.empty(),
-                        hasMadeDelivery(player, City.ALBUQUERQUE) ? Stream.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class)) : Stream.empty())));
+                ImmediateActions immediateActions = ImmediateActions.none();
+
+                if (hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
+                    immediateActions = ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+
+                if (hasMadeDelivery(player, City.ALBUQUERQUE)) {
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+
+                return immediateActions;
             case TOPEKA:
                 if (hasMadeDelivery(player, City.WICHITA)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.TakeObjectiveCard.class));
+                    return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
             case WICHITA:
                 if (hasMadeDelivery(player, City.TOPEKA)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.TakeObjectiveCard.class));
+                    return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
         }
