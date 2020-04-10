@@ -217,6 +217,10 @@ public class Game {
         return Collections.unmodifiableSet(players);
     }
 
+    public boolean canStart() {
+        return status == Status.NEW && players.stream().filter(p -> p.getStatus() == Player.Status.ACCEPTED).count() > 1;
+    }
+
     public enum Status {
         NEW,
         STARTED,

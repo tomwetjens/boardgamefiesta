@@ -1,9 +1,12 @@
 package com.wetjens.gwt.server.rest.view.state;
 
-import com.wetjens.gwt.Game;
 import com.wetjens.gwt.Player;
+import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.User;
+import com.wetjens.gwt.server.rest.view.UserView;
 import lombok.Value;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,43 +28,51 @@ public class StateView {
     CattleMarketView cattleMarket;
     Set<ObjectiveCardView> objectiveCards;
 
-    String currentPlayer;
+    PlayerView currentPlayer;
     Set<ActionType> actions;
+    Instant expires;
+    boolean turn;
 
-    public StateView(Game game, Player viewingPlayer) {
-        railroadTrack = new RailroadTrackView(game.getRailroadTrack());
+    public StateView(Game game, Player viewingPlayer, Map<User.Id, User> userMap) {
+        railroadTrack = new RailroadTrackView(game.getState().getRailroadTrack());
 
-        player = game.getPlayers().stream()
+        player = game.getState().getPlayers().stream()
                 .filter(p -> p == viewingPlayer)
-                .map(game::playerState)
-                .map(playerState -> new PlayerStateView(playerState, viewingPlayer))
+                .map(game.getState()::playerState)
+                .map(playerState -> new PlayerStateView(playerState, viewingPlayer, userMap.get(User.Id.of(playerState.getPlayer().getName()))))
                 .findAny()
                 .orElse(null);
 
-        otherPlayers = game.getPlayers().stream()
+        otherPlayers = game.getState().getPlayers().stream()
                 .filter(p -> p != viewingPlayer)
-                .collect(Collectors.toMap(Player::getName, p -> new PlayerStateView(game.playerState(p), viewingPlayer)));
+                .collect(Collectors.toMap(Player::getName, p -> new PlayerStateView(game.getState().playerState(p), viewingPlayer, userMap.get(User.Id.of(p.getName())))));
 
-        players = game.getPlayers().stream().map(PlayerView::new).collect(Collectors.toMap(PlayerView::getName, Function.identity()));
-        playerOrder = game.getPlayers().stream().map(Player::getName).collect(Collectors.toList());
+        players = game.getState().getPlayers().stream()
+                .map(player -> new PlayerView(player, userMap.get(User.Id.of(player.getName()))))
+                .collect(Collectors.toMap(PlayerView::getName, Function.identity()));
+        playerOrder = game.getState().getPlayers().stream().map(Player::getName).collect(Collectors.toList());
 
-        foresights = new ForesightsView(game.getForesights());
+        foresights = new ForesightsView(game.getState().getForesights());
 
-        trail = new TrailView(game.getTrail());
+        trail = new TrailView(game.getState().getTrail());
 
-        jobMarket = new JobMarketView(game.getJobMarket());
+        jobMarket = new JobMarketView(game.getState().getJobMarket());
 
-        cattleMarket = new CattleMarketView(game.getCattleMarket());
+        cattleMarket = new CattleMarketView(game.getState().getCattleMarket());
 
-        objectiveCards = game.getObjectiveCards().getAvailable().stream().map(ObjectiveCardView::new).collect(Collectors.toSet());
+        objectiveCards = game.getState().getObjectiveCards().getAvailable().stream().map(ObjectiveCardView::new).collect(Collectors.toSet());
 
-        currentPlayer = game.getCurrentPlayer().getName();
+        currentPlayer = new PlayerView(game.getState().getCurrentPlayer(), userMap.get(User.Id.of(game.getState().getCurrentPlayer().getName())));
 
-        if (viewingPlayer == game.getCurrentPlayer()) {
-            actions = game.possibleActions().stream().map(ActionType::of).collect(Collectors.toSet());
+        if (viewingPlayer == game.getState().getCurrentPlayer()) {
+            actions = game.getState().possibleActions().stream().map(ActionType::of).collect(Collectors.toSet());
+            turn = true;
         } else {
             actions = Collections.emptySet();
+            turn = false;
         }
+
+        expires = game.getExpires();
     }
 
 }

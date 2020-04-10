@@ -20,14 +20,19 @@ public class GameView {
     Instant ended;
     Instant expires;
     UserView owner;
-    Set<PlayerView> players;
+    Set<PlayerView> otherPlayers;
     boolean accepted;
+    boolean startable;
+
+    Boolean turn;
+    UserView currentPlayer;
 
     public GameView(Game game, Map<User.Id, User> userMap, User.Id currentUserId) {
         id = game.getId().getId();
         status = game.getStatus();
         owner = new UserView(game.getOwner(), userMap.get(game.getOwner()));
-        players = game.getPlayers().stream()
+        otherPlayers = game.getPlayers().stream()
+                .filter(player -> !player.getUserId().equals(currentUserId))
                 .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
                 .collect(Collectors.toSet());
         accepted = game.getPlayers().stream().filter(player -> player.getUserId().equals(currentUserId)).anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
@@ -35,5 +40,16 @@ public class GameView {
         started = game.getStarted();
         ended = game.getEnded();
         expires = game.getExpires();
+        startable = game.canStart() && currentUserId.equals(game.getOwner());
+
+        if(game.getState() != null) {
+            turn =  game.getState().getCurrentPlayer().getName().equals(currentUserId.getId());
+
+            User.Id currentPlayerUserId = User.Id.of(game.getState().getCurrentPlayer().getName());
+            currentPlayer = new UserView(currentPlayerUserId, userMap.get(currentPlayerUserId));
+        } else {
+            turn = null;
+            currentPlayer = null;
+        }
     }
 }

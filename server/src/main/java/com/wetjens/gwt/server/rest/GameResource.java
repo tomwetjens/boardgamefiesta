@@ -146,7 +146,7 @@ public class GameResource {
 
         games.update(game);
 
-        return new StateView(game.getState(), performingPlayer);
+        return new StateView(game, performingPlayer, getUserMap(game));
     }
 
     @POST
@@ -160,7 +160,7 @@ public class GameResource {
 
         games.update(game);
 
-        return new StateView(game.getState(), performingPlayer);
+        return new StateView(game, performingPlayer, getUserMap(game));
     }
 
     @GET
@@ -176,7 +176,7 @@ public class GameResource {
 
         var viewingPlayer = determinePlayer(game.getState());
 
-        return new StateView(game.getState(), viewingPlayer);
+        return new StateView(game, viewingPlayer, getUserMap(game));
     }
 
     @GET

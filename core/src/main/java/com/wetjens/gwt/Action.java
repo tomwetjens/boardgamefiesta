@@ -567,7 +567,7 @@ public abstract class Action {
                 }
             }
 
-            return ImmediateActions.none();
+            return ImmediateActions.of(PossibleAction.mandatory(DeliverToCity.class));
         }
     }
 
@@ -598,7 +598,11 @@ public abstract class Action {
                 game.currentPlayerState().payDollars(transportCosts);
             }
 
-            return game.getRailroadTrack().deliverToCity(game.getCurrentPlayer(), city);
+            ImmediateActions immediateActions = game.getRailroadTrack().deliverToCity(game.getCurrentPlayer(), city);
+
+            game.getTrail().moveToStart(game.getCurrentPlayer());
+
+            return immediateActions;
         }
     }
 

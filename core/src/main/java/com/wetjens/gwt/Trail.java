@@ -10,6 +10,8 @@ import lombok.NonNull;
 
 public class Trail implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Getter
     private final Location.Start start;
 
@@ -20,7 +22,7 @@ public class Trail implements Serializable {
 
     private final Map<Player, Location> playerLocations = new HashMap<>();
 
-    public Trail(@NonNull Random random) {
+    public Trail(@NonNull Collection<Player> players, @NonNull Random random) {
         // TODO Randomize building placement if not beginner
         Queue<Building> buildingsToPlace = new LinkedList<>(Arrays.asList(
                 new NeutralBuilding.G(),
@@ -115,6 +117,8 @@ public class Trail implements Serializable {
         a.placeBuilding(buildingsToPlace.poll());
 
         start = new Location.Start(a);
+
+        players.forEach(player -> playerLocations.put(player, start));
     }
 
     public Set<Location> getLocations() {
@@ -270,5 +274,9 @@ public class Trail implements Serializable {
                 .filter(Location.TeepeeLocation::isEmpty)
                 .min(Comparator.comparingInt(Location.TeepeeLocation::getReward))
                 .ifPresent(teepeeLocation -> teepeeLocation.placeTeepee(teepee));
+    }
+
+    void moveToStart(Player player) {
+        playerLocations.put(player, start);
     }
 }

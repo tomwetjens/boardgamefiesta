@@ -76,7 +76,7 @@ public class Game implements Serializable {
 
         this.railroadTrack = new RailroadTrack(this.players, random);
 
-        this.trail = new Trail(random);
+        this.trail = new Trail(this.players, random);
         this.kansasCitySupply = new KansasCitySupply(random);
 
         placeInitialTiles();
@@ -107,13 +107,9 @@ public class Game implements Serializable {
 
     private void placeInitialTile(KansasCitySupply.Tile tile) {
         if (tile.getHazard() != null) {
-            trail.getHazardLocations(tile.getHazard().getType()).stream()
-                    .filter(Location.HazardLocation::isEmpty)
-                    .findFirst().ifPresent(hazardLocation -> hazardLocation.placeHazard(tile.getHazard()));
+            trail.placeHazard(tile.getHazard());
         } else {
-            trail.getTeepeeLocations().stream()
-                    .filter(Location.TeepeeLocation::isEmpty)
-                    .findFirst().ifPresent(teepeeLocation -> teepeeLocation.placeTeepee(tile.getTeepee()));
+            trail.placeTeepee(tile.getTeepee());
         }
     }
 

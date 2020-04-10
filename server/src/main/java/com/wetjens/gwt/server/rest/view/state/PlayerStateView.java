@@ -2,6 +2,7 @@ package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.PlayerState;
+import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
 
 import java.util.Set;
@@ -16,19 +17,21 @@ public class PlayerStateView {
     int cowboys;
     int craftsmen;
     int engineers;
+    int certificates;
 
     Set<CardView> hand;
 
     Set<ActionType> unlockedSingleAuxiliaryActions;
     Set<ActionType> unlockedDoubleAuxiliaryActions;
 
-    PlayerStateView(PlayerState playerState, Player viewingPlayer) {
-        player = new PlayerView(playerState.getPlayer());
+    PlayerStateView(PlayerState playerState, Player viewingPlayer, User user) {
+        player = new PlayerView(playerState.getPlayer(), user);
 
         balance = playerState.getBalance();
         cowboys = playerState.getNumberOfCowboys();
         craftsmen = playerState.getNumberOfCraftsmen();
         engineers = playerState.getNumberOfEngineers();
+        certificates = playerState.getCertificates();
 
         if (viewingPlayer == playerState.getPlayer()) {
             hand = playerState.getHand().stream()
