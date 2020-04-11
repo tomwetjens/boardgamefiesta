@@ -1,12 +1,14 @@
 package com.wetjens.gwt;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 
-import org.junit.jupiter.api.*;
-
 import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class TrailTest {
 
@@ -19,7 +21,7 @@ class TrailTest {
 
     @BeforeEach
     void setUp() {
-        trail = new Trail(new Random(0));
+        trail = new Trail(Arrays.asList(playerA, playerB, playerC, playerD), new Random(0));
 
         ((Location.BuildingLocation) trail.getLocation("A-1")).placeBuilding(new PlayerBuilding.Building1A(playerA));
         ((Location.BuildingLocation) trail.getLocation("A-2")).placeBuilding(new PlayerBuilding.Building2A(playerA));

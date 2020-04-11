@@ -1,13 +1,5 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -16,6 +8,14 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action {
@@ -355,7 +355,7 @@ public abstract class Action {
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class HireWorker extends Action {
 
-        @NonNull  Worker worker;
+        @NonNull Worker worker;
         int modifier;
 
         public HireWorker(Worker worker) {
@@ -515,6 +515,17 @@ public abstract class Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
+    public static final class DowngradeStation extends Action {
+        @NonNull Station station;
+
+        @Override
+        ImmediateActions perform(Game game, Random random) {
+            return station.downgrade(game);
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
     public static final class AppointStationMaster extends Action {
         @NonNull Worker worker;
 
@@ -576,7 +587,6 @@ public abstract class Action {
     public static final class DeliverToCity extends Action {
         @NonNull City city;
         int certificates;
-        @NonNull Unlockable unlockable;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
@@ -590,19 +600,44 @@ public abstract class Action {
             game.currentPlayerState().gainDollars(breedingValue);
             game.currentPlayerState().discardAllCards();
 
-            game.currentPlayerState().deliverToCity(unlockable, city);
-
             int transportCosts = city.getSignals() + game.getRailroadTrack().signalsPassed(game.getCurrentPlayer());
 
             if (transportCosts > 0) {
                 game.currentPlayerState().payDollars(transportCosts);
             }
 
-            ImmediateActions immediateActions = game.getRailroadTrack().deliverToCity(game.getCurrentPlayer(), city);
+            ImmediateActions immediateActions = game.deliverToCity(city);
 
             game.getTrail().moveToStart(game.getCurrentPlayer());
 
             return immediateActions;
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static final class UnlockWhite extends Action {
+        @NonNull Unlockable unlock;
+
+        @Override
+        ImmediateActions perform(Game game, Random random) {
+            if (unlock.getDiscColor() == DiscColor.WHITE) {
+                throw new IllegalArgumentException("Must pick a white disc");
+            }
+            game.currentPlayerState().unlock(unlock);
+            return ImmediateActions.none();
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static final class UnlockBlackOrWhite extends Action {
+        @NonNull Unlockable unlock;
+
+        @Override
+        ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().unlock(unlock);
+            return ImmediateActions.none();
         }
     }
 
@@ -796,7 +831,8 @@ public abstract class Action {
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static final class DiscardPairToGain3Dollars extends Action {
-        @NonNull private final CattleType type;
+        @NonNull
+        private final CattleType type;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
@@ -969,7 +1005,6 @@ public abstract class Action {
     public static final class ExtraordinaryDelivery extends Action {
         @NonNull RailroadTrack.Space to;
         @NonNull City city;
-        @NonNull Unlockable unlock;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
@@ -979,10 +1014,7 @@ public abstract class Action {
                 throw new IllegalArgumentException("City value must be <= spaces that engine moved backwards");
             }
 
-            game.currentPlayerState().deliverToCity(unlock, city);
-
-            return game.getRailroadTrack().deliverToCity(game.getCurrentPlayer(), city)
-                    .andThen(engineMove.getImmediateActions());
+            return game.deliverToCity(city).andThen(engineMove.getImmediateActions());
         }
     }
 
@@ -1101,7 +1133,7 @@ public abstract class Action {
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static final class Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand extends Action {
-        @NonNull  Card.CattleCard cattleCard;
+        @NonNull Card.CattleCard cattleCard;
         @NonNull ObjectiveCard objectiveCard;
 
         @Override
@@ -1178,6 +1210,29 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 4).getImmediateActions();
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static final class Discard1CattleCardToGain1Certificate extends Action {
+        @NonNull Card.CattleCard cattleCard;
+
+        @Override
+        ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().discardCard(cattleCard);
+            game.currentPlayerState().gainCertificates(1);
+            return ImmediateActions.none();
+        }
+    }
+
+    public static final class Discard1JerseyToGain1CertificateAnd2Dollars extends Action {
+        @Override
+        ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
+            game.currentPlayerState().gainCertificates(1);
+            game.currentPlayerState().gainDollars(2);
+            return ImmediateActions.none();
         }
     }
 

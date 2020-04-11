@@ -1,12 +1,22 @@
 package com.wetjens.gwt;
 
-import java.io.Serializable;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import lombok.Getter;
 import lombok.NonNull;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Trail implements Serializable {
 
@@ -50,8 +60,8 @@ public class Trail implements Serializable {
                 new Location.HazardLocation(HazardType.ROCKFALL, 2,
                         new Location.HazardLocation(HazardType.ROCKFALL, 3,
                                 new Location.HazardLocation(HazardType.ROCKFALL, 4,
-                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", true, // TODO Add risk action
-                                                new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", true, f)))))); // TODO Add risk action
+                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, true,
+                                                new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, true, f))))));
 
         Location.BuildingLocation e = new Location.BuildingLocation("E", false,
                 new Location.BuildingLocation("E-1", true,
@@ -63,8 +73,8 @@ public class Trail implements Serializable {
         d.placeBuilding(buildingsToPlace.poll());
 
         Location.TeepeeLocation teepeeLocation10 = new Location.TeepeeLocation(10,
-                new Location.BuildingLocation("INDIAN-TRADE-RISK-1", false,
-                        new Location.BuildingLocation("INDIAN-TRADE-RISK-2", false, e)));
+                new Location.BuildingLocation("INDIAN-TRADE-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false,
+                        new Location.BuildingLocation("INDIAN-TRADE-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, false, e)));
         Location.TeepeeLocation teepeeLocation8 = new Location.TeepeeLocation(8, teepeeLocation10);
         Location.TeepeeLocation teepeeLocation6 = new Location.TeepeeLocation(6, teepeeLocation8);
         Location.TeepeeLocation teepeeLocation4 = new Location.TeepeeLocation(4, teepeeLocation6);
@@ -95,7 +105,7 @@ public class Trail implements Serializable {
                 new Location.HazardLocation(HazardType.DROUGHT, 2,
                         new Location.HazardLocation(HazardType.DROUGHT, 3,
                                 new Location.HazardLocation(HazardType.DROUGHT, 4,
-                                        new Location.BuildingLocation(HazardType.DROUGHT + "-RISK-1", false, c)))));  // TODO Add risk action
+                                        new Location.BuildingLocation(HazardType.DROUGHT + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false, c)))));
 
         Location.BuildingLocation b = new Location.BuildingLocation("B", false, droughtSection,
                 new Location.BuildingLocation("B-1", true,
@@ -107,8 +117,8 @@ public class Trail implements Serializable {
                 new Location.HazardLocation(HazardType.FLOOD, 2,
                         new Location.HazardLocation(HazardType.FLOOD, 3,
                                 new Location.HazardLocation(HazardType.FLOOD, 4,
-                                        new Location.BuildingLocation(HazardType.FLOOD + "-RISK-1", false, // TODO Add risk action
-                                                new Location.BuildingLocation(HazardType.FLOOD + "-RISK-2", true, b))))));  // TODO Add risk action
+                                        new Location.BuildingLocation(HazardType.FLOOD + "-RISK-1", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, false,
+                                                new Location.BuildingLocation(HazardType.FLOOD + "-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, true, b))))));
         Location.BuildingLocation a = new Location.BuildingLocation("A", false,
                 new Location.BuildingLocation("A-1", false,
                         new Location.BuildingLocation("A-2", false,

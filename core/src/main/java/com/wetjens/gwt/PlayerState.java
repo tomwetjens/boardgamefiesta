@@ -1,9 +1,26 @@
 package com.wetjens.gwt;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Singular;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -225,20 +242,12 @@ public class PlayerState implements Serializable {
         }
     }
 
-    void deliverToCity(Unlockable unlockable, City city) {
-        if (!city.accepts(unlockable.getDiscColor())) {
-            throw new IllegalArgumentException("City does not accept: " + unlockable.getDiscColor());
-        }
-
+    void unlock(Unlockable unlockable) {
         if (unlocked.getOrDefault(unlockable, 0) == unlockable.getCount()) {
             throw new IllegalArgumentException("Already unlocked all " + unlockable);
         }
 
         unlocked.compute(unlockable, (k, v) -> v != null ? v + 1 : 1);
-
-        if (city == City.KANSAS_CITY) {
-            balance += 6;
-        }
     }
 
     void gainJobMarketToken() {
@@ -470,5 +479,12 @@ public class PlayerState implements Serializable {
                 new Card.CattleCard(CattleType.GUERNSEY, 0),
                 new Card.CattleCard(CattleType.GUERNSEY, 0),
                 new Card.CattleCard(CattleType.GUERNSEY, 0)));
+    }
+
+    boolean canUnlock(Collection<DiscColor> discColors) {
+        return unlocked.entrySet().stream()
+                .filter(entry -> entry.getValue() < entry.getKey().getCount())
+                .filter(entry -> balance >= entry.getKey().getCost())
+                .anyMatch(entry -> discColors.contains(entry.getKey().getDiscColor()));
     }
 }

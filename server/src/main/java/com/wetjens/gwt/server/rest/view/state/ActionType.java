@@ -17,7 +17,7 @@ public enum ActionType {
 
     APPOINT_STATION_MASTER(Action.AppointStationMaster.class, (jsonObject, game) -> new Action.AppointStationMaster(Worker.valueOf(jsonObject.getString("worker")))),
     BUY_CATTLE(Action.BuyCattle.class, (jsonObject, game) -> new Action.BuyCattle(findCattleCards(game, jsonObject.getJsonArray("cattleCards")))),
-    DELIVER_TO_CITY(Action.DeliverToCity.class, (jsonObject, game) -> new Action.DeliverToCity(City.valueOf(jsonObject.getString("city")), jsonObject.getInt("certificates"), Unlockable.valueOf(jsonObject.getString("unlock")))),
+    DELIVER_TO_CITY(Action.DeliverToCity.class, (jsonObject, game) -> new Action.DeliverToCity(City.valueOf(jsonObject.getString("city")), jsonObject.getInt("certificates"))),
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_CERTIFICATES(Action.Discard1BlackAngusToGain2Certificates.class, (jsonObject, game) -> new Action.Discard1BlackAngusToGain2Certificates()),
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_DOLLARS(Action.Discard1BlackAngusToGain2Dollars.class, (jsonObject, game) -> new Action.Discard1BlackAngusToGain2Dollars()),
     DISCARD_1_CARD(Action.DiscardCards.Discard1Card.class, ((jsonObject, game) -> new Action.DiscardCards.Discard1Card(findCardInHand(game, jsonObject.getJsonObject("card"))))),
@@ -47,7 +47,7 @@ public enum ActionType {
     DRAW_UP_TO_4_CARDS_THEN_DISCARD_CARDS(Action.DrawCardsThenDiscardCards.DrawUpTo4CardsThenDiscardCards.class, (jsonObject, game) -> new Action.DrawCardsThenDiscardCards.DrawUpTo4CardsThenDiscardCards(jsonObject.getInt("amount"))),
     DRAW_UP_TO_5_CARDS_THEN_DISCARD_CARDS(Action.DrawCardsThenDiscardCards.DrawUpTo5CardsThenDiscardCards.class, (jsonObject, game) -> new Action.DrawCardsThenDiscardCards.DrawUpTo5CardsThenDiscardCards(jsonObject.getInt("amount"))),
     DRAW_UP_TO_6_CARDS_THEN_DISCARD_CARDS(Action.DrawCardsThenDiscardCards.DrawUpTo6CardsThenDiscardCards.class, (jsonObject, game) -> new Action.DrawCardsThenDiscardCards.DrawUpTo6CardsThenDiscardCards(jsonObject.getInt("amount"))),
-    EXTRAORDINARY_DELIVERY(Action.ExtraordinaryDelivery.class, (jsonObject, game) -> new Action.ExtraordinaryDelivery(findSpace(game, jsonObject.getJsonObject("to")), City.valueOf(jsonObject.getString("city")), Unlockable.valueOf(jsonObject.getString("unlock")))),
+    EXTRAORDINARY_DELIVERY(Action.ExtraordinaryDelivery.class, (jsonObject, game) -> new Action.ExtraordinaryDelivery(findSpace(game, jsonObject.getJsonObject("to")), City.valueOf(jsonObject.getString("city")))),
     GAIN_1_CERTIFICATE(Action.Gain1Certificate.class, ((jsonObject, game) -> new Action.Gain1Certificate())),
     GAIN_1_DOLLAR(Action.Gain1Dollar.class, ((jsonObject, game) -> new Action.Gain1Dollar())),
     GAIN_1_DOLLAR_PER_BUILDING_IN_WOODS(Action.Gain1DollarPerBuildingInWoods.class, ((jsonObject, game) -> new Action.Gain1DollarPerBuildingInWoods())),
@@ -101,7 +101,14 @@ public enum ActionType {
     CHOOSE_FORESIGHTS(Action.ChooseForesights.class, (jsonObject, game) -> new Action.ChooseForesights(jsonObject.getJsonArray("choices").stream()
             .map(jsonValue -> (JsonNumber) jsonValue)
             .map(JsonNumber::intValue)
-            .collect(Collectors.toList())));
+            .collect(Collectors.toList()))),
+    UNLOCK_BLACK_OR_WHITE(Action.UnlockBlackOrWhite.class, (jsonObject, game) -> new Action.UnlockBlackOrWhite(Unlockable.valueOf(jsonObject.getString("unlock")))),
+    UNLOCK_WHITE(Action.UnlockWhite.class, (jsonObject, game) -> new Action.UnlockWhite(Unlockable.valueOf(jsonObject.getString("unlock")))),
+    DOWNGRADE_STATION(Action.DowngradeStation.class, (jsonObject, game) -> new Action.DowngradeStation(findStation(game, jsonObject.getInt("station"))));
+
+    private static Station findStation(Game game, int index) {
+        return game.getRailroadTrack().getStations().get(index);
+    }
 
     private static ObjectiveCard findObjectiveCard(Game game, JsonObject jsonObject) {
         Set<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, "tasks").stream()

@@ -87,8 +87,6 @@ public class RailroadTrack implements Serializable {
 
             this.turnouts.add(turnout);
         }
-
-        players.forEach(player -> currentSpaces.put(player, start));
     }
 
     private static List<Station> createStations(@NonNull Random random) {
@@ -96,16 +94,16 @@ public class RailroadTrack implements Serializable {
         Collections.shuffle(stationMasters, random);
 
         return Arrays.asList(
-                new Station(2, 1, DiscColor.WHITE, stationMasters.get(0)),
-                new Station(2, 1, DiscColor.WHITE, stationMasters.get(1)),
-                new Station(4, 2, DiscColor.WHITE, stationMasters.get(2)),
-                new Station(4, 2, DiscColor.WHITE, stationMasters.get(3)),
-                new Station(6, 3, DiscColor.BLACK, stationMasters.get(4)),
-                new Station(8, 5, DiscColor.BLACK, null),
-                new Station(7, 6, DiscColor.BLACK, null),
-                new Station(6, 7, DiscColor.BLACK, null),
-                new Station(5, 8, DiscColor.BLACK, null),
-                new Station(3, 9, DiscColor.BLACK, null));
+                new Station(2, 1, Collections.singleton(DiscColor.WHITE), stationMasters.get(0)),
+                new Station(2, 1, Collections.singleton(DiscColor.WHITE), stationMasters.get(1)),
+                new Station(4, 2, Collections.singleton(DiscColor.WHITE), stationMasters.get(2)),
+                new Station(4, 2, Collections.singleton(DiscColor.WHITE), stationMasters.get(3)),
+                new Station(6, 3, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), stationMasters.get(4)),
+                new Station(8, 5, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
+                new Station(7, 6, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
+                new Station(6, 7, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
+                new Station(5, 8, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
+                new Station(3, 9, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null));
     }
 
     private static Map<City, List<Player>> createEmptyCities() {

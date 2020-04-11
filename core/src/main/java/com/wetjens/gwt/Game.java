@@ -44,6 +44,33 @@ public class Game implements Serializable {
     @Getter
     private Player currentPlayer;
 
+    ImmediateActions deliverToCity(City city) {
+        ImmediateActions immediateActions = railroadTrack.deliverToCity(currentPlayer, city)
+                .andThen(placeDisc(city.getDiscColors()));
+
+        if (city == City.KANSAS_CITY) {
+            currentPlayerState().gainDollars(6);
+        }
+
+        return immediateActions;
+    }
+
+    ImmediateActions placeDisc(Collection<DiscColor> discColors) {
+        if (currentPlayerState().canUnlock(discColors)) {
+            return ImmediateActions.of(PossibleAction.mandatory(discColors.contains(DiscColor.BLACK) ? Action.UnlockBlackOrWhite.class : Action.UnlockWhite.class));
+        } else {
+            // If player MUST remove WHITE disc, but player only has BLACK discs left,
+            // then by exception the player may remove a BLACK disc
+            if (currentPlayerState().canUnlock(Collections.singleton(DiscColor.BLACK))) {
+                return ImmediateActions.of(PossibleAction.mandatory(Action.UnlockBlackOrWhite.class));
+            } else {
+                // If player MUST remove a disc, but has no more discs to remove,
+                // then player MUST remove the disc from one of his stations
+                return ImmediateActions.of(PossibleAction.mandatory(Action.DowngradeStation.class));
+            }
+        }
+    }
+
     @Value
     @Builder
     public static final class Options {

@@ -36,8 +36,7 @@ public enum City {
         this.discColors = discColors;
     }
 
-    boolean accepts(DiscColor discColor) {
-        return discColors.contains(discColor);
+    public Collection<DiscColor> getDiscColors() {
+        return Collections.unmodifiableCollection(discColors);
     }
-
 }
