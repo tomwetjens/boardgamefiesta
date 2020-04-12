@@ -14,4 +14,6 @@ public class CreateGameRequest {
     @Size(min = 1, max = 5)
     Set<String> inviteUserIds;
 
+    boolean beginner;
+
 }

@@ -1,31 +1,37 @@
 package com.wetjens.gwt;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-import org.junit.jupiter.api.*;
-
 import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PlayerStateTest {
 
-    private Player player = new Player("Player A", Player.Color.WHITE);
+    private ObjectiveCard startingObjectiveCard = new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0);
+
+    private Player player = Player.WHITE;
 
     @Nested
     class Create {
 
         @Test
         void create() {
-            PlayerState playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            PlayerState playerState = new PlayerState(player, 6, startingObjectiveCard, new Random(0), PlayerBuilding.BuildingSet.beginner());
 
             assertThat(playerState.getBalance()).isEqualTo(6);
             assertThat(playerState.getCertificates()).isEqualTo(0);
             assertThat(playerState.getNumberOfCowboys()).isEqualTo(1);
             assertThat(playerState.getNumberOfCraftsmen()).isEqualTo(1);
             assertThat(playerState.getNumberOfEngineers()).isEqualTo(1);
-            assertThat(playerState.getStepLimit()).isEqualTo(3);
+            assertThat(playerState.getStepLimit(2)).isEqualTo(3);
             assertThat(playerState.getCertificateLimit()).isEqualTo(4);
             assertThat(playerState.getHandLimit()).isEqualTo(4);
             assertThat(playerState.getHazards()).isEmpty();
@@ -45,7 +51,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            playerState = new PlayerState(player, 6, startingObjectiveCard, new Random(0), PlayerBuilding.BuildingSet.beginner());
         }
 
         @Test
@@ -349,7 +355,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            playerState = new PlayerState(player, 6, startingObjectiveCard, new Random(0), PlayerBuilding.BuildingSet.beginner());
         }
 
         @Test

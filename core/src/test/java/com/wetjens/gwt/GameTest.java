@@ -1,15 +1,15 @@
 package com.wetjens.gwt;
 
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
 
-import org.junit.jupiter.api.*;
-
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class GameTest {
 
@@ -18,17 +18,12 @@ class GameTest {
 
         @Test
         void beginner() {
-            Game game = new Game(Arrays.asList("A", "B"), Game.Options.builder().beginner(true).build(), new Random(0));
+            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
 
-            Player playerA = game.getPlayers().get(0);
-            assertThat(playerA.getName()).isEqualTo("A");
-            assertThat(playerA.getColor()).isEqualTo(Player.Color.WHITE);
+            assertThat(game.getPlayers().get(0)).isEqualTo(Player.WHITE);
+            assertThat(game.getPlayers().get(1)).isEqualTo(Player.YELLOW);
 
-            Player playerB = game.getPlayers().get(1);
-            assertThat(playerB.getName()).isEqualTo("B");
-            assertThat(playerB.getColor()).isEqualTo(Player.Color.YELLOW);
-
-            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
+            assertThat(game.getCurrentPlayer()).isEqualByComparingTo(Player.WHITE);
 
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
         }
@@ -39,7 +34,7 @@ class GameTest {
 
         @Test
         void serialize() throws Exception {
-            Game game = new Game(Arrays.asList("A", "B"), Game.Options.builder().beginner(true).build(), new Random(0));
+            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
 
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             game.serialize(byteArrayOutputStream);

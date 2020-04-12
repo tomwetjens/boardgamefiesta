@@ -19,7 +19,7 @@ public class TrailView {
     private LocationView start;
     private LocationView kansasCity;
     private List<LocationView> teepeeLocations;
-    private final Map<Player.Color, String> playerLocations;
+    private final Map<Player, String> playerLocations;
 
     TrailView(Trail trail) {
         start = new LocationView(trail.getStart());
@@ -27,7 +27,7 @@ public class TrailView {
         locations = trail.getLocations().stream().collect(Collectors.toMap(Location::getName, LocationView::new));
         teepeeLocations = trail.getTeepeeLocations().stream().map(LocationView::new).collect(Collectors.toList());
         playerLocations = trail.getPlayerLocations().entrySet().stream()
-                .collect(Collectors.toMap(entry -> entry.getKey().getColor(), entry -> entry.getValue().getName()));
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getName()));
     }
 
     @Value

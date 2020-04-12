@@ -3,6 +3,7 @@ package com.wetjens.gwt;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,6 +28,10 @@ public class ObjectiveCard extends Card {
     List<Task> tasks;
     int points;
     int penalty;
+
+    public Optional<PossibleAction> getPossibleAction() {
+        return Optional.ofNullable(possibleAction);
+    }
 
     static int score(Set<ObjectiveCard> required, Set<ObjectiveCard> optional, Game game, Player player) {
         Counts counts = counts(game, player);

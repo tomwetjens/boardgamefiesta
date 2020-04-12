@@ -1,7 +1,18 @@
 package com.wetjens.gwt;
 
+import lombok.NonNull;
+
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
 
 public final class ObjectiveCards implements Serializable {
 
@@ -14,6 +25,21 @@ public final class ObjectiveCards implements Serializable {
         this.drawStack = createDrawStack(random);
         this.available = new HashSet<>();
         fill();
+    }
+
+    static Queue<ObjectiveCard> createStartingObjectiveCardsDrawStack(@NonNull Random random) {
+        List<ObjectiveCard> deck = new ArrayList<>(createStartingObjectiveCardsSet());
+        Collections.shuffle(deck, random);
+        return new LinkedList<>(deck);
+    }
+
+    private static Collection<ObjectiveCard> createStartingObjectiveCardsSet() {
+        return Arrays.asList(
+                new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BUILDING), 3, 0),
+                new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE), 3, 0),
+                new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD), 3, 0),
+                new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0)
+        );
     }
 
     void remove(ObjectiveCard objectiveCard) {

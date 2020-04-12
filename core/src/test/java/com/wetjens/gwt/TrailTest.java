@@ -12,19 +12,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TrailTest {
 
-    Player playerA = new Player("Player A", Player.Color.BLUE);
-    Player playerB = new Player("Player B", Player.Color.YELLOW);
-    Player playerC = new Player("Player C", Player.Color.RED);
-    Player playerD = new Player("Player D", Player.Color.WHITE);
-
     Trail trail;
 
     @BeforeEach
     void setUp() {
-        trail = new Trail(Arrays.asList(playerA, playerB, playerC, playerD), new Random(0));
+        trail = new Trail(Arrays.asList(Player.BLUE, Player.YELLOW, Player.RED, Player.WHITE), true, new Random(0));
 
-        ((Location.BuildingLocation) trail.getLocation("A-1")).placeBuilding(new PlayerBuilding.Building1A(playerA));
-        ((Location.BuildingLocation) trail.getLocation("A-2")).placeBuilding(new PlayerBuilding.Building2A(playerA));
+        ((Location.BuildingLocation) trail.getLocation("A-1")).placeBuilding(new PlayerBuilding.Building1A(Player.BLUE));
+        ((Location.BuildingLocation) trail.getLocation("A-2")).placeBuilding(new PlayerBuilding.Building2A(Player.BLUE));
 
         ((Location.HazardLocation) trail.getLocation("FLOOD-1")).placeHazard(new Hazard(HazardType.FLOOD, Hand.GREEN, 2));
         ((Location.HazardLocation) trail.getLocation("FLOOD-2")).placeHazard(new Hazard(HazardType.FLOOD, Hand.GREEN, 2));
@@ -63,10 +58,10 @@ class TrailTest {
 
     @Test
     void twoForks() {
-        ((Location.BuildingLocation) trail.getLocation("F-1")).placeBuilding(new PlayerBuilding.Building10A(playerA));
-        ((Location.BuildingLocation) trail.getLocation("F-2")).placeBuilding(new PlayerBuilding.Building10A(playerB));
-        ((Location.BuildingLocation) trail.getLocation("G-1")).placeBuilding(new PlayerBuilding.Building10A(playerC));
-        ((Location.BuildingLocation) trail.getLocation("G-2")).placeBuilding(new PlayerBuilding.Building10A(playerD));
+        ((Location.BuildingLocation) trail.getLocation("F-1")).placeBuilding(new PlayerBuilding.Building10A(Player.BLUE));
+        ((Location.BuildingLocation) trail.getLocation("F-2")).placeBuilding(new PlayerBuilding.Building10A(Player.YELLOW));
+        ((Location.BuildingLocation) trail.getLocation("G-1")).placeBuilding(new PlayerBuilding.Building10A(Player.RED));
+        ((Location.BuildingLocation) trail.getLocation("G-2")).placeBuilding(new PlayerBuilding.Building10A(Player.WHITE));
 
         Location from = trail.getLocation("F");
         Location to = trail.getKansasCity();

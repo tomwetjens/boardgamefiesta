@@ -189,6 +189,7 @@ public class GameDynamoDbRepository implements Games {
     private Map<String, AttributeValue> createAttributeValues(Game game) {
         var map = new HashMap<String, AttributeValue>();
         map.put("Status", AttributeValue.builder().s(game.getStatus().name()).build());
+        map.put("Beginner", AttributeValue.builder().bool(game.isBeginner()).build());
         map.put("Created", AttributeValue.builder().n(Long.toString(game.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(game.getUpdated().getEpochSecond())).build());
         map.put("Started", game.getStarted() != null ? AttributeValue.builder().n(Long.toString(game.getStarted().getEpochSecond())).build() : null);
@@ -204,6 +205,7 @@ public class GameDynamoDbRepository implements Games {
         return Game.builder()
                 .id(Game.Id.of(item.get("Id").s()))
                 .status(Game.Status.valueOf(item.get("Status").s()))
+                .beginner(item.get("Beginner").bool())
                 .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
                 .started(item.get("Started") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Started").n())) : null)
@@ -221,6 +223,7 @@ public class GameDynamoDbRepository implements Games {
         return Player.builder()
                 .userId(User.Id.of(attributeValue.m().get("UserId").s()))
                 .status(Player.Status.valueOf(attributeValue.m().get("Status").s()))
+                .color(attributeValue.m().get("Color") != null ? com.wetjens.gwt.Player.valueOf(attributeValue.m().get("Color").s()) : null)
                 .created(Instant.ofEpochSecond(Long.parseLong(attributeValue.m().get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(attributeValue.m().get("Updated").n())))
                 .build();
@@ -256,6 +259,7 @@ public class GameDynamoDbRepository implements Games {
         var map = new HashMap<String, AttributeValue>();
         map.put("UserId", AttributeValue.builder().s(player.getUserId().getId()).build());
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
+        map.put("Color", player.getColor() != null ? AttributeValue.builder().s(player.getColor().name()).build() : null);
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(player.getUpdated().getEpochSecond())).build());
         return AttributeValue.builder().m(map).build();

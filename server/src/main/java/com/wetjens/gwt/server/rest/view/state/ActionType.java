@@ -6,7 +6,9 @@ import lombok.Getter;
 
 import javax.json.*;
 import javax.ws.rs.BadRequestException;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -20,8 +22,8 @@ public enum ActionType {
     DELIVER_TO_CITY(Action.DeliverToCity.class, (jsonObject, game) -> new Action.DeliverToCity(City.valueOf(jsonObject.getString("city")), jsonObject.getInt("certificates"))),
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_CERTIFICATES(Action.Discard1BlackAngusToGain2Certificates.class, (jsonObject, game) -> new Action.Discard1BlackAngusToGain2Certificates()),
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_DOLLARS(Action.Discard1BlackAngusToGain2Dollars.class, (jsonObject, game) -> new Action.Discard1BlackAngusToGain2Dollars()),
-    DISCARD_1_CARD(Action.DiscardCards.Discard1Card.class, ((jsonObject, game) -> new Action.DiscardCards.Discard1Card(findCardInHand(game, jsonObject.getJsonObject("card"))))),
-    DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class, (((jsonObject, game) -> new Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand(findCattleCardInHand(game, jsonObject.getJsonObject("cattleCard")), findObjectiveCardInHand(game, jsonObject.getJsonObject("objectiveCard")))))),
+    DISCARD_1_CARD(Action.DiscardCards.Discard1Card.class, ((jsonObject, game) -> new Action.DiscardCards.Discard1Card(findCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject("card"))))),
+    DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class, (((jsonObject, game) -> new Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand(findCattleCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject("cattleCard")), findObjectiveCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject("objectiveCard")))))),
     DISCARD_1_DUTCH_BELT_TO_GAIN_2_DOLLARS(Action.Discard1DutchBeltToGain2Dollars.class, (jsonObject, game) -> new Action.Discard1DutchBeltToGain2Dollars()),
     DISCARD_1_DUTCH_BELT_TO_GAIN_3_DOLLARS(Action.Discard1DutchBeltToGain3Dollars.class, (jsonObject, game) -> new Action.Discard1DutchBeltToGain3Dollars()),
     DISCARD_1_GUERNSEY(Action.Discard1Guernsey.class, ((jsonObject, game) -> new Action.Discard1Guernsey())),
@@ -31,7 +33,7 @@ public enum ActionType {
     DISCARD_1_JERSEY_TO_GAIN_2_DOLLARS(Action.Discard1JerseyToGain2Dollars.class, (jsonObject, game) -> new Action.Discard1JerseyToGain2Dollars()),
     DISCARD_1_JERSEY_TO_GAIN_4_DOLLARS(Action.Discard1JerseyToGain4Dollars.class, (jsonObject, game) -> new Action.Discard1JerseyToGain4Dollars()),
     DISCARD_1_JERSEY_TO_MOVE_ENGINE_1_FORWARD(Action.Discard1JerseyToMoveEngine1Forward.class, (jsonObject, game) -> new Action.Discard1JerseyToMoveEngine1Forward(findSpace(game, jsonObject.getJsonObject("to")))),
-    DISCARD_1_OBJECTIVE_CARD_TO_GAIN_2_CERTIFICATES(Action.Discard1ObjectiveCardToGain2Certificates.class, (jsonObject, game) -> new Action.Discard1ObjectiveCardToGain2Certificates(findObjectiveCardInHand(game, jsonObject.getJsonObject("objectiveCard")))),
+    DISCARD_1_OBJECTIVE_CARD_TO_GAIN_2_CERTIFICATES(Action.Discard1ObjectiveCardToGain2Certificates.class, (jsonObject, game) -> new Action.Discard1ObjectiveCardToGain2Certificates(findObjectiveCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject("objectiveCard")))),
     DISCARD_2_CARDS(Action.DiscardCards.Discard2Cards.class, (jsonObject, game) -> new Action.DiscardCards.Discard2Cards(findCardsInHand(game, jsonObject.getJsonArray("cards")))),
     DISCARD_2_GUERNSEY_TO_GAIN_4_DOLLARS(Action.Discard2GuernseyToGain4Dollars.class, (jsonObject, game) -> new Action.Discard2GuernseyToGain4Dollars()),
     DISCARD_3_CARDS(Action.DiscardCards.Discard3Cards.class, (jsonObject, game) -> new Action.DiscardCards.Discard3Cards(findCardsInHand(game, jsonObject.getJsonArray("cards")))),
@@ -85,8 +87,8 @@ public enum ActionType {
     PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD(Action.Pay2DollarsToMoveEngine2Forward.class, ((jsonObject, game) -> new Action.Pay2DollarsToMoveEngine2Forward(findSpace(game, jsonObject.getJsonObject("to"))))),
     PLACE_BUILDING(Action.PlaceBuilding.class, (jsonObject, game) -> new Action.PlaceBuilding((Location.BuildingLocation) game.getTrail().getLocation(jsonObject.getString("location")), findPlayerBuilding(game, jsonObject.getString("building")))),
     PLACE_CHEAP_BUILDING(Action.PlaceCheapBuilding.class, (jsonObject, game) -> new Action.PlaceCheapBuilding((Location.BuildingLocation) game.getTrail().getLocation(jsonObject.getString("location")), findPlayerBuilding(game, jsonObject.getString("building")))),
-    PLAY_OBJECTIVE_CARD(Action.PlayObjectiveCard.class, (jsonObject, game) -> new Action.PlayObjectiveCard(findObjectiveCardInHand(game, jsonObject.getJsonObject("objectiveCard")))),
-    REMOVE_1_CARD(Action.Remove1Card.class, (jsonObject, game) -> new Action.Remove1Card(findCardInHand(game, jsonObject.getJsonObject("card")))),
+    PLAY_OBJECTIVE_CARD(Action.PlayObjectiveCard.class, (jsonObject, game) -> new Action.PlayObjectiveCard(findObjectiveCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject("objectiveCard")))),
+    REMOVE_1_CARD(Action.Remove1Card.class, (jsonObject, game) -> new Action.Remove1Card(findCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject("card")))),
     REMOVE_2_CARDS(Action.Remove2Cards.class, (jsonObject, game) -> new Action.Remove2Cards(findCardsInHand(game, jsonObject.getJsonArray("cards")))),
     REMOVE_HAZARD(Action.RemoveHazard.class, (jsonObject, game) -> new Action.RemoveHazard(findHazard(game, jsonObject.getJsonObject("hazard")))),
     REMOVE_HAZARD_FOR_5_DOLLARS(Action.RemoveHazardFor5Dollars.class, (jsonObject, game) -> new Action.RemoveHazardFor5Dollars(findHazard(game, jsonObject.getJsonObject("hazard")))),
@@ -140,10 +142,19 @@ public enum ActionType {
     }
 
     private static Set<Card> findCardsInHand(Game game, JsonArray jsonArray) {
-        return jsonArray.stream()
-                .map(JsonValue::asJsonObject)
-                .map(jsonObject -> findCardInHand(game, jsonObject))
-                .collect(Collectors.toSet());
+        var remaining = new HashSet<>(game.currentPlayerState().getHand());
+        var result = new HashSet<Card>();
+
+        for (var jsonObject : jsonArray.getValuesAs(JsonObject.class)) {
+            var card = findCardInHand(remaining, jsonObject);
+
+            if (card != null) {
+                result.add(card);
+                remaining.remove(card);
+            }
+        }
+
+        return result;
     }
 
     private static RailroadTrack.Space findSpace(Game game, JsonObject jsonObject) {
@@ -155,11 +166,11 @@ public enum ActionType {
         }
     }
 
-    private static Card.CattleCard findCattleCardInHand(Game game, JsonObject jsonObject) {
+    private static Card.CattleCard findCattleCardInHand(Collection<Card> hand, JsonObject jsonObject) {
         CattleType type = CattleType.valueOf(jsonObject.getString("type"));
         int points = jsonObject.getInt("points");
 
-        return game.currentPlayerState().getHand().stream()
+        return hand.stream()
                 .filter(card -> card instanceof Card.CattleCard)
                 .map(card -> (Card.CattleCard) card)
                 .filter(cattleCard -> cattleCard.getType() == type)
@@ -168,22 +179,22 @@ public enum ActionType {
                 .orElseThrow(() -> new BadRequestException("Cattle card not in hand: " + type + " " + points));
     }
 
-    private static Card findCardInHand(Game game, JsonObject jsonObject) {
+    private static Card findCardInHand(Collection<Card> hand, JsonObject jsonObject) {
         if (jsonObject.containsKey("type")) {
-            return findCattleCardInHand(game, jsonObject);
+            return findCattleCardInHand(hand, jsonObject);
         } else {
-            return findObjectiveCardInHand(game, jsonObject);
+            return findObjectiveCardInHand(hand, jsonObject);
         }
     }
 
-    private static ObjectiveCard findObjectiveCardInHand(Game game, JsonObject jsonObject) {
+    private static ObjectiveCard findObjectiveCardInHand(Collection<Card> hand, JsonObject jsonObject) {
         Set<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, "tasks").stream()
                 .map(JsonString::getString)
                 .map(ObjectiveCard.Task::valueOf)
                 .collect(Collectors.toSet());
         int points = jsonObject.getInt("points");
 
-        return game.currentPlayerState().getHand().stream()
+        return hand.stream()
                 .filter(card -> card instanceof ObjectiveCard)
                 .map(card -> (ObjectiveCard) card)
                 .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))

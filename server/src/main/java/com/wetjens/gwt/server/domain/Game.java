@@ -10,10 +10,16 @@ import lombok.ToString;
 import lombok.Value;
 
 import javax.enterprise.inject.spi.CDI;
+import javax.ws.rs.ForbiddenException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -45,6 +51,9 @@ public class Game {
     private Status status;
 
     @Getter
+    private boolean beginner;
+
+    @Getter
     private com.wetjens.gwt.Game state;
 
     @Getter
@@ -64,7 +73,7 @@ public class Game {
     @Getter
     private Instant ended;
 
-    public static Game create(@NonNull User owner, @NonNull Set<User> inviteUsers) {
+    public static Game create(@NonNull User owner, @NonNull Set<User> inviteUsers, boolean beginner) {
         if (inviteUsers.size() == 0) {
             throw new IllegalArgumentException("Should invite at least 1 user");
         }
@@ -78,6 +87,7 @@ public class Game {
         Game game = Game.builder()
                 .id(Id.generate())
                 .status(Status.NEW)
+                .beginner(beginner)
                 .created(created)
                 .updated(created)
                 .expires(created.plus(START_TIMEOUT))
@@ -100,15 +110,13 @@ public class Game {
             throw new IllegalStateException("Already started or ended");
         }
 
-        state = new com.wetjens.gwt.Game(players.stream()
-                .filter(player -> player.getStatus() == Player.Status.ACCEPTED)
-                .map(Player::getUserId)
-                .map(User.Id::getId)
-                .collect(Collectors.toSet()),
-                // TODO Get options from command
-                com.wetjens.gwt.Game.Options.builder()
-                        .beginner(true)
-                        .build(), new Random());
+        players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
+
+        Random random = new Random();
+
+        assignColors(random);
+
+        state = new com.wetjens.gwt.Game(players.stream().map(Player::getColor).collect(Collectors.toSet()), beginner, random);
 
         status = Status.STARTED;
         started = Instant.now();
@@ -116,6 +124,13 @@ public class Game {
         expires = started.plus(ACTION_TIMEOUT);
 
         CDI.current().getBeanManager().fireEvent(new Started());
+    }
+
+    private void assignColors(Random random) {
+        var randomColors = new LinkedList<>(Arrays.asList(com.wetjens.gwt.Player.values()));
+        Collections.shuffle(randomColors, random);
+
+        players.forEach(player -> player.setColor(randomColors.poll()));
     }
 
     public void perform(Action action) {
@@ -219,6 +234,23 @@ public class Game {
 
     public boolean canStart() {
         return status == Status.NEW && players.stream().filter(p -> p.getStatus() == Player.Status.ACCEPTED).count() > 1;
+    }
+
+    public Optional<Player> getPlayerByUserId(User.Id userId) {
+        return players.stream()
+                .filter(player -> player.getUserId().equals(userId))
+                .findAny();
+    }
+
+    public Player getCurrentPlayer() {
+        if (state == null) {
+            return null;
+        }
+
+        return players.stream()
+                .filter(player -> player.getColor() == state.getCurrentPlayer())
+                .findAny()
+                .orElse(null);
     }
 
     public enum Status {

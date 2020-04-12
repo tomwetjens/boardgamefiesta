@@ -32,7 +32,7 @@ public class Trail implements Serializable {
 
     private final Map<Player, Location> playerLocations = new HashMap<>();
 
-    public Trail(@NonNull Collection<Player> players, @NonNull Random random) {
+    public Trail(@NonNull Collection<Player> players, boolean beginner, @NonNull Random random) {
         // TODO Randomize building placement if not beginner
         Queue<Building> buildingsToPlace = new LinkedList<>(Arrays.asList(
                 new NeutralBuilding.G(),

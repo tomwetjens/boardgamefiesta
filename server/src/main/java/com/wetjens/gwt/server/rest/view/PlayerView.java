@@ -9,10 +9,12 @@ public class PlayerView {
 
     UserView user;
     Player.Status status;
+    com.wetjens.gwt.Player color;
 
     PlayerView(Player player, User user) {
         this.status = player.getStatus();
         this.user = new UserView(player.getUserId(), user);
+        this.color = player.getColor();
     }
 
 }

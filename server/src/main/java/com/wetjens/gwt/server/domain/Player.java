@@ -2,8 +2,10 @@ package com.wetjens.gwt.server.domain;
 
 import java.time.Instant;
 
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Builder
 public class Player {
@@ -19,6 +21,10 @@ public class Player {
 
     @Getter
     private Instant updated;
+
+    @Getter
+    @Setter(value = AccessLevel.PACKAGE)
+    private com.wetjens.gwt.Player color;
 
     static Player createAccepted(User.Id userId) {
         Instant created = Instant.now();

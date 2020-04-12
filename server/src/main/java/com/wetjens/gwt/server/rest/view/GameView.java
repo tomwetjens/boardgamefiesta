@@ -7,6 +7,7 @@ import lombok.Value;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,7 +36,9 @@ public class GameView {
                 .filter(player -> !player.getUserId().equals(currentUserId))
                 .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
                 .collect(Collectors.toSet());
-        accepted = game.getPlayers().stream().filter(player -> player.getUserId().equals(currentUserId)).anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
+        accepted = game.getPlayers().stream()
+                .filter(player -> player.getUserId().equals(currentUserId))
+                .anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
         created = game.getCreated();
         started = game.getStarted();
         ended = game.getEnded();
@@ -43,10 +46,12 @@ public class GameView {
         startable = game.canStart() && currentUserId.equals(game.getOwner());
 
         if(game.getState() != null) {
-            turn =  game.getState().getCurrentPlayer().getName().equals(currentUserId.getId());
+            Player currentUserPlayer = game.getPlayerByUserId(currentUserId).orElseThrow(() -> new IllegalArgumentException("Not a player in game"));
 
-            User.Id currentPlayerUserId = User.Id.of(game.getState().getCurrentPlayer().getName());
-            currentPlayer = new UserView(currentPlayerUserId, userMap.get(currentPlayerUserId));
+            turn =  game.getState().getCurrentPlayer() == currentUserPlayer.getColor();
+
+            Player currentPlayer = game.getCurrentPlayer();
+            this.currentPlayer = new UserView(currentPlayer.getUserId(), userMap.get(currentPlayer.getUserId()));
         } else {
             turn = null;
             currentPlayer = null;

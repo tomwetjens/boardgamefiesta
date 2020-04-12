@@ -28,8 +28,6 @@ public class EventsEndpoint {
 
     @OnOpen
     public void onOpen(Session session) {
-        log.info("onOpen: user={}", session.getUserPrincipal().getName());
-
         User.Id currentUserId = currentUserId(session);
         sessions.put(currentUserId, session);
     }
@@ -40,25 +38,17 @@ public class EventsEndpoint {
 
     @OnClose
     public void onClose(Session session) {
-        log.info("onClose: user={}", session.getUserPrincipal().getName());
-
         sessions.remove(currentUserId(session));
     }
 
     @OnError
     public void onError(Session session, Throwable throwable) {
-        log.info("onError: user={} throwable={}", session.getUserPrincipal().getName(), throwable);
-
         sessions.remove(currentUserId(session));
     }
 
     @OnMessage
     public void onMessage(Session session, String message) {
-        log.info("onMessage: user={} message={}", session.getUserPrincipal().getName(), message);
-
-        Event event = JSONB.fromJson(message, Event.class);
-
-        log.info("onMessage: event={}", event);
+        // Ignore
     }
 
     void accepted(@Observes Game.Accepted accepted) {

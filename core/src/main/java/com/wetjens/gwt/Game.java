@@ -5,9 +5,22 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
-import java.io.*;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 public class Game implements Serializable {
@@ -71,13 +84,7 @@ public class Game implements Serializable {
         }
     }
 
-    @Value
-    @Builder
-    public static final class Options {
-        boolean beginner;
-    }
-
-    public Game(@NonNull Collection<String> players, Options options, Random random) {
+    public Game(@NonNull Set<Player> players, boolean beginner, Random random) {
         if (players.size() < 2) {
             throw new IllegalArgumentException("At least 2 players are required");
         }
@@ -86,24 +93,26 @@ public class Game implements Serializable {
             throw new IllegalArgumentException("A maximum of 4 players is supported");
         }
 
-        this.players = createPlayers(players, random);
+        this.players = new LinkedList<>(players);
         Collections.shuffle(this.players, random);
 
-        PlayerBuilding.BuildingSet buildings = options.isBeginner()
+        PlayerBuilding.BuildingSet buildings = beginner
                 ? PlayerBuilding.BuildingSet.beginner()
                 : PlayerBuilding.BuildingSet.random(random);
+
+        Queue<ObjectiveCard> startingObjectiveCards = ObjectiveCards.createStartingObjectiveCardsDrawStack(random);
 
         this.playerStates = new HashMap<>();
         int startBalance = 6;
         for (Player player : this.players) {
-            this.playerStates.put(player, new PlayerState(player, startBalance++, random, buildings));
+            this.playerStates.put(player, new PlayerState(player, startBalance++, startingObjectiveCards.poll(), random, buildings));
         }
 
         this.currentPlayer = this.players.get(0);
 
         this.railroadTrack = new RailroadTrack(this.players, random);
 
-        this.trail = new Trail(this.players, random);
+        this.trail = new Trail(this.players, beginner, random);
         this.kansasCitySupply = new KansasCitySupply(random);
 
         placeInitialTiles();
@@ -115,15 +124,6 @@ public class Game implements Serializable {
         this.objectiveCards = new ObjectiveCards(random);
 
         this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
-    }
-
-    private List<Player> createPlayers(@NonNull Collection<String> names, @NonNull Random random) {
-        List<Player.Color> randomColors = new LinkedList<>(Arrays.asList(Player.Color.values()));
-        Collections.shuffle(randomColors, random);
-
-        return names.stream()
-                .map(name -> new Player(name, randomColors.remove(0)))
-                .collect(Collectors.toList());
     }
 
     private void placeInitialTiles() {
@@ -222,7 +222,7 @@ public class Game implements Serializable {
             return Collections.emptySet();
         }
         Location from = trail.getCurrentLocation(player);
-        return trail.possibleMoves(from, to, playerState(player).getStepLimit());
+        return trail.possibleMoves(from, to, playerState(player).getStepLimit(players.size()));
     }
 
     public int score(Player player) {

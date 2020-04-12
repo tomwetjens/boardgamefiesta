@@ -1,5 +1,6 @@
 package com.wetjens.gwt.server.rest;
 
+import com.wetjens.gwt.Location;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
@@ -14,7 +15,6 @@ import com.wetjens.gwt.server.rest.view.state.StateView;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -29,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,7 +66,7 @@ public class GameResource {
                         .orElseThrow(() -> new BadRequestException("User not found: " + userId)))
                 .collect(Collectors.toSet());
 
-        Game game = Game.create(currentUser, inviteUsers);
+        Game game = Game.create(currentUser, inviteUsers, request.isBeginner());
 
         games.add(game);
 
@@ -94,7 +95,7 @@ public class GameResource {
 
         checkViewAllowed(game);
 
-        return new GameView(game, getUserMap(game), currentUserId());
+        return new GameView(game, getUserMapById(game), currentUserId());
     }
 
     @POST
@@ -108,7 +109,7 @@ public class GameResource {
 
         games.update(game);
 
-        return new GameView(game, getUserMap(game), currentUserId());
+        return new GameView(game, getUserMapById(game), currentUserId());
     }
 
     @POST
@@ -120,7 +121,7 @@ public class GameResource {
 
         games.update(game);
 
-        return new GameView(game, getUserMap(game), currentUserId());
+        return new GameView(game, getUserMapById(game), currentUserId());
     }
 
     @POST
@@ -132,7 +133,7 @@ public class GameResource {
 
         games.update(game);
 
-        return new GameView(game, getUserMap(game), currentUserId());
+        return new GameView(game, getUserMapById(game), currentUserId());
     }
 
     @POST
@@ -142,11 +143,15 @@ public class GameResource {
 
         var performingPlayer = checkTurn(game);
 
-        game.perform(request.toAction(game.getState()));
+        try {
+            game.perform(request.toAction(game.getState()));
+        } catch (RuntimeException e) {
+            throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(Collections.singletonMap("message", e.getMessage())).build(), e);
+        }
 
         games.update(game);
 
-        return new StateView(game, performingPlayer, getUserMap(game));
+        return new StateView(game, performingPlayer, getUserMapByColor(game));
     }
 
     @POST
@@ -156,11 +161,15 @@ public class GameResource {
 
         var performingPlayer = checkTurn(game);
 
+        try {
         game.endTurn();
+        } catch (RuntimeException e) {
+            throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(Collections.singletonMap("message", e.getMessage())).build(), e);
+        }
 
         games.update(game);
 
-        return new StateView(game, performingPlayer, getUserMap(game));
+        return new StateView(game, performingPlayer, getUserMapByColor(game));
     }
 
     @GET
@@ -174,9 +183,9 @@ public class GameResource {
 
         checkViewAllowed(game);
 
-        var viewingPlayer = determinePlayer(game.getState());
+        var viewingPlayer = determinePlayer(game);
 
-        return new StateView(game, viewingPlayer, getUserMap(game));
+        return new StateView(game, viewingPlayer, getUserMapByColor(game));
     }
 
     @GET
@@ -226,8 +235,15 @@ public class GameResource {
 
         var to = game.getState().getTrail().getLocation(toName);
 
-        return game.getState().possibleMoves(game.getState().getCurrentPlayer(), to).stream()
-                .map(steps -> new PossibleMoveView(game.getState().getPlayers().size(), steps))
+        Set<List<Location>> possibleMoves;
+        try {
+            possibleMoves = game.getState().possibleMoves(game.getState().getCurrentPlayer(), to);
+        } catch (RuntimeException e) {
+            throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(Collections.singletonMap("message", e.getMessage())).build(), e);
+        }
+
+        return possibleMoves.stream()
+                .map(steps -> new PossibleMoveView(game.getState().getPlayers().size(), steps, getUserMapByColor(game)))
                 .collect(Collectors.toSet());
     }
 
@@ -237,12 +253,11 @@ public class GameResource {
         }
     }
 
-    private Player determinePlayer(com.wetjens.gwt.Game game) {
+    private Player determinePlayer(Game game) {
         var currentUserId = currentUserId();
 
-        return game.getPlayers().stream()
-                .filter(player -> player.getName().equals(currentUserId.getId()))
-                .findAny()
+        return game.getPlayerByUserId(currentUserId)
+                .map(com.wetjens.gwt.server.domain.Player::getColor)
                 .orElseThrow(() -> new ForbiddenException("User not player in game"));
     }
 
@@ -262,7 +277,7 @@ public class GameResource {
     }
 
     private Player checkTurn(Game game) {
-        var performingPlayer = determinePlayer(game.getState());
+        var performingPlayer = determinePlayer(game);
 
         if (game.getState().getCurrentPlayer() != performingPlayer) {
             throw new ForbiddenException("User not current player");
@@ -271,7 +286,12 @@ public class GameResource {
         return performingPlayer;
     }
 
-    private Map<User.Id, User> getUserMap(Game game) {
+    private Map<Player, User> getUserMapByColor(Game game) {
+        return game.getPlayers().stream()
+                .collect(Collectors.toMap(com.wetjens.gwt.server.domain.Player::getColor, player -> users.findById(player.getUserId())));
+    }
+
+    private Map<User.Id, User> getUserMapById(Game game) {
         return game.getPlayers().stream()
                 .flatMap(player -> users.findOptionallyById(player.getUserId()).stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));

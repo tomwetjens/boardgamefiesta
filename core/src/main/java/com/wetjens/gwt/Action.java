@@ -865,7 +865,7 @@ public abstract class Action {
 
             PlayerState currentPlayerState = game.currentPlayerState();
 
-            if (steps.size() > Math.min(atMost, currentPlayerState.getStepLimit())) {
+            if (steps.size() > Math.min(atMost, currentPlayerState.getStepLimit(game.getPlayers().size()))) {
                 throw new IllegalArgumentException("Number of steps exceeds limit");
             }
 

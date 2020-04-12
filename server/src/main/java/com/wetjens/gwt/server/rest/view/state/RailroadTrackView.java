@@ -17,20 +17,17 @@ import lombok.Value;
 @Value
 public class RailroadTrackView {
 
-    Map<String, SpaceView> players;
+    Map<Player, SpaceView> players;
     List<StationView> stations;
-    Map<City, List<String>> cities;
+    Map<City, List<Player>> cities;
 
     RailroadTrackView(RailroadTrack railroadTrack) {
         players = railroadTrack.getPlayers().stream()
-                .collect(Collectors.toMap(Player::getName, player -> new SpaceView(railroadTrack, railroadTrack.currentSpace(player))));
+                .collect(Collectors.toMap(Function.identity(), player -> new SpaceView(railroadTrack, railroadTrack.currentSpace(player))));
 
         stations = railroadTrack.getStations().stream().map(StationView::new).collect(Collectors.toList());
 
-        cities = railroadTrack.getCities().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
-                        .map(Player::getName)
-                        .collect(Collectors.toList())));
+        cities = railroadTrack.getCities();
     }
 
     @Value
@@ -61,12 +58,12 @@ public class RailroadTrackView {
 
         Worker worker;
         StationMaster stationMaster;
-        Set<String> players;
+        Set<Player> players;
 
         StationView(Station station) {
             worker = station.getWorker().orElse(null);
             stationMaster = station.getStationMaster().orElse(null);
-            players = station.getPlayers().stream().map(Player::getName).collect(Collectors.toSet());
+            players = station.getPlayers();
         }
     }
 }

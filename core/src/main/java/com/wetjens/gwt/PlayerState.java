@@ -56,7 +56,7 @@ public class PlayerState implements Serializable {
     @Getter
     private boolean jobMarketToken;
 
-    PlayerState(@NonNull Player player, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
+    PlayerState(@NonNull Player player, int balance, @NonNull ObjectiveCard startingObjectiveCard, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
         this.player = player;
         this.balance = balance;
         this.certificates = 0;
@@ -74,7 +74,7 @@ public class PlayerState implements Serializable {
         this.unlocked.put(Unlockable.AUX_GAIN_DOLLAR, 1);
         this.unlocked.put(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, 1);
 
-        // TODO Starting objective card
+        this.objectives.add(startingObjectiveCard);
 
         drawUpToHandLimit(random);
     }
@@ -190,7 +190,7 @@ public class PlayerState implements Serializable {
             throw new IllegalStateException("Objective card not in hand");
         }
         objectives.add(objectiveCard);
-        return ImmediateActions.of(objectiveCard.getPossibleAction());
+        return objectiveCard.getPossibleAction().map(ImmediateActions::of).orElse(ImmediateActions.none());
     }
 
     void removeWorker(Worker worker) {
@@ -377,8 +377,17 @@ public class PlayerState implements Serializable {
         return 3;
     }
 
-    public int getStepLimit() {
-        return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
+    public int getStepLimit(int playerCount) {
+        switch (playerCount) {
+            case 2:
+                return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
+            case 3:
+                return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) * 2 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
+            case 4:
+                return 4 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) * 2 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
+            default:
+                throw new IllegalArgumentException("Cannot determine step limit for player count: " + playerCount);
+        }
     }
 
     boolean canPlayObjectiveCard() {

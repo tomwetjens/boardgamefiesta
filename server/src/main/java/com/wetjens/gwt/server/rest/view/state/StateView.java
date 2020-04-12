@@ -3,7 +3,6 @@ package com.wetjens.gwt.server.rest.view.state;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.User;
-import com.wetjens.gwt.server.rest.view.UserView;
 import lombok.Value;
 
 import java.time.Instant;
@@ -19,9 +18,9 @@ public class StateView {
 
     RailroadTrackView railroadTrack;
     PlayerStateView player;
-    Map<String, PlayerStateView> otherPlayers;
-    Map<String, PlayerView> players;
-    List<String> playerOrder;
+    Map<Player, PlayerStateView> otherPlayers;
+    Map<Player, PlayerView> players;
+    List<Player> playerOrder;
     ForesightsView foresights;
     TrailView trail;
     JobMarketView jobMarket;
@@ -33,24 +32,24 @@ public class StateView {
     Instant expires;
     boolean turn;
 
-    public StateView(Game game, Player viewingPlayer, Map<User.Id, User> userMap) {
+    public StateView(Game game, Player viewingPlayer, Map<Player, User> userMap) {
         railroadTrack = new RailroadTrackView(game.getState().getRailroadTrack());
 
         player = game.getState().getPlayers().stream()
                 .filter(p -> p == viewingPlayer)
                 .map(game.getState()::playerState)
-                .map(playerState -> new PlayerStateView(playerState, viewingPlayer, userMap.get(User.Id.of(playerState.getPlayer().getName()))))
+                .map(playerState -> new PlayerStateView(playerState, viewingPlayer, userMap.get(playerState.getPlayer())))
                 .findAny()
                 .orElse(null);
 
         otherPlayers = game.getState().getPlayers().stream()
                 .filter(p -> p != viewingPlayer)
-                .collect(Collectors.toMap(Player::getName, p -> new PlayerStateView(game.getState().playerState(p), viewingPlayer, userMap.get(User.Id.of(p.getName())))));
+                .collect(Collectors.toMap(Function.identity(), p -> new PlayerStateView(game.getState().playerState(p), viewingPlayer, userMap.get(p))));
 
         players = game.getState().getPlayers().stream()
-                .map(player -> new PlayerView(player, userMap.get(User.Id.of(player.getName()))))
-                .collect(Collectors.toMap(PlayerView::getName, Function.identity()));
-        playerOrder = game.getState().getPlayers().stream().map(Player::getName).collect(Collectors.toList());
+                .map(player -> new PlayerView(player, userMap.get(player)))
+                .collect(Collectors.toMap(PlayerView::getColor, Function.identity()));
+        playerOrder = game.getState().getPlayers();
 
         foresights = new ForesightsView(game.getState().getForesights());
 
@@ -62,7 +61,7 @@ public class StateView {
 
         objectiveCards = game.getState().getObjectiveCards().getAvailable().stream().map(ObjectiveCardView::new).collect(Collectors.toSet());
 
-        currentPlayer = new PlayerView(game.getState().getCurrentPlayer(), userMap.get(User.Id.of(game.getState().getCurrentPlayer().getName())));
+        currentPlayer = new PlayerView(game.getState().getCurrentPlayer(), userMap.get(game.getState().getCurrentPlayer()));
 
         if (viewingPlayer == game.getState().getCurrentPlayer()) {
             actions = game.getState().possibleActions().stream().map(ActionType::of).collect(Collectors.toSet());

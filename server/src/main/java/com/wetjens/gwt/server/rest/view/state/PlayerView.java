@@ -8,13 +8,11 @@ import lombok.Value;
 @Value
 public class PlayerView {
 
-    String name;
     UserView user;
-    Player.Color color;
+    Player color;
 
     PlayerView(Player player, User user) {
-        this.name = player.getName();
         this.user = new UserView(user.getId(), user);
-        this.color = player.getColor();
+        this.color = player;
     }
 }
