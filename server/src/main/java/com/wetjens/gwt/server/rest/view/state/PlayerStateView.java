@@ -2,10 +2,12 @@ package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.PlayerState;
+import com.wetjens.gwt.Unlockable;
 import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,8 +26,7 @@ public class PlayerStateView {
     List<CardView> discardPile;
     Integer drawStackSize;
 
-    Set<ActionType> unlockedSingleAuxiliaryActions;
-    Set<ActionType> unlockedDoubleAuxiliaryActions;
+    Map<Unlockable, Integer> unlocked;
 
     PlayerStateView(PlayerState playerState, Player viewingPlayer, User user) {
         player = new PlayerView(playerState.getPlayer(), user);
@@ -50,13 +51,6 @@ public class PlayerStateView {
             drawStackSize = null;
         }
 
-        unlockedSingleAuxiliaryActions = playerState.unlockedSingleAuxiliaryActions().stream()
-                .map(ActionType::of)
-                .collect(Collectors.toSet());
-
-        unlockedDoubleAuxiliaryActions = playerState.unlockedDoubleAuxiliaryActions().stream()
-                .map(ActionType::of)
-                .collect(Collectors.toSet());
+        unlocked = playerState.getUnlocked();
     }
-
 }

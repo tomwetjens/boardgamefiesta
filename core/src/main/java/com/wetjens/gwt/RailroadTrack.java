@@ -87,6 +87,8 @@ public class RailroadTrack implements Serializable {
 
             this.turnouts.add(turnout);
         }
+
+        players.forEach(player -> currentSpaces.put(player, start));
     }
 
     private static List<Station> createStations(@NonNull Random random) {
@@ -135,7 +137,7 @@ public class RailroadTrack implements Serializable {
     }
 
     public Space currentSpace(Player player) {
-        return currentSpaces.get(player);
+        return currentSpaces.getOrDefault(player, start);
     }
 
     EngineMove moveEngineForward(@NonNull Player player, @NonNull Space to, int atLeast, int atMost) {
@@ -255,7 +257,7 @@ public class RailroadTrack implements Serializable {
         return Arrays.stream(City.values())
                 .filter(city -> city.isMultipleDeliveries() || !hasMadeDelivery(player, city))
                 .filter(city -> city.getValue() <= breedingValue + certificates)
-                .map(city -> new PossibleDelivery(city, Math.max(0, city.getValue() - breedingValue), city.getSignals() - signalsPassed))
+                .map(city -> new PossibleDelivery(city, Math.max(0, city.getValue() - breedingValue), city.getValue() - city.getSignals() + signalsPassed))
                 .collect(Collectors.toSet());
     }
 
@@ -372,7 +374,7 @@ public class RailroadTrack implements Serializable {
     public static final class PossibleDelivery {
         City city;
         int certificates;
-        int cost;
+        int reward;
     }
 
     public static abstract class Space implements Serializable {

@@ -120,7 +120,7 @@ public abstract class Action {
         }
 
         public static Class<? extends Action> exactly(int amount) {
-            return amount == 2 ? Draw1CardThenDiscard1Card.class :
+            return amount == 1 ? Draw1CardThenDiscard1Card.class :
                     Draw2CardsThenDiscard2Cards.class;
         }
 
@@ -245,11 +245,11 @@ public abstract class Action {
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static final class TradeWithIndians extends Action {
-        int cost;
+        int reward;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            Location.TeepeeLocation teepeeLocation = game.getTrail().getTeepeeLocation(cost);
+            Location.TeepeeLocation teepeeLocation = game.getTrail().getTeepeeLocation(reward);
             Teepee teepee = teepeeLocation.getTeepee()
                     .orElseThrow(() -> new IllegalStateException("No teepee at location"));
 
@@ -621,7 +621,7 @@ public abstract class Action {
 
         @Override
         ImmediateActions perform(Game game, Random random) {
-            if (unlock.getDiscColor() == DiscColor.WHITE) {
+            if (unlock.getDiscColor() != DiscColor.WHITE) {
                 throw new IllegalArgumentException("Must pick a white disc");
             }
             game.currentPlayerState().unlock(unlock);

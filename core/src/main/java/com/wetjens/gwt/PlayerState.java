@@ -99,11 +99,11 @@ public class PlayerState implements Serializable {
     }
 
     void gainCard(Card card) {
-        discardPile.add(card);
+        discardPile.add(0, card);
     }
 
     void gainCards(Set<? extends Card> cards) {
-        discardPile.addAll(cards);
+        discardPile.addAll(0, cards);
     }
 
     Set<Card.CattleCard> discardCattleCards(CattleType type, int amount) {
@@ -121,13 +121,13 @@ public class PlayerState implements Serializable {
 
         hand.removeAll(cattleCards);
 
-        discardPile.addAll(cattleCards);
+        discardPile.addAll(0, cattleCards);
 
         return Collections.unmodifiableSet(cattleCards);
     }
 
     void discardAllCards() {
-        discardPile.addAll(hand);
+        discardPile.addAll(0, hand);
         hand.clear();
     }
 
@@ -182,7 +182,7 @@ public class PlayerState implements Serializable {
             throw new IllegalArgumentException("Card must be in hand");
         }
 
-        discardPile.add(card);
+        discardPile.add(0, card);
     }
 
     ImmediateActions playObjectiveCard(ObjectiveCard objectiveCard) {
@@ -324,7 +324,7 @@ public class PlayerState implements Serializable {
         return buildings.contains(building);
     }
 
-    public Set<Class<? extends Action>> unlockedSingleAuxiliaryActions() {
+    Set<Class<? extends Action>> unlockedSingleAuxiliaryActions() {
         Set<Class<? extends Action>> actions = new HashSet<>();
 
         actions.add(Action.Gain1Dollar.class);
@@ -342,7 +342,7 @@ public class PlayerState implements Serializable {
         return actions;
     }
 
-    public Set<Class<? extends Action>> unlockedDoubleAuxiliaryActions() {
+    Set<Class<? extends Action>> unlockedDoubleAuxiliaryActions() {
         Set<Class<? extends Action>> actions = new HashSet<>(unlockedSingleAuxiliaryActions());
 
         if (hasAllUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
@@ -362,6 +362,10 @@ public class PlayerState implements Serializable {
         }
 
         return actions;
+    }
+
+    public Map<Unlockable, Integer> getUnlocked() {
+        return Collections.unmodifiableMap(unlocked);
     }
 
     public int getHandLimit() {

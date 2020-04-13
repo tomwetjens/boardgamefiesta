@@ -96,7 +96,7 @@ public enum ActionType {
     SINGLE_AUXILIARY_ACTION(Action.SingleAuxiliaryAction.class, ((jsonObject, game) -> new Action.SingleAuxiliaryAction())),
     SINGLE_OR_DOUBLE_AUXILIARY_ACTION(Action.SingleOrDoubleAuxiliaryAction.class, ((jsonObject, game) -> new Action.SingleOrDoubleAuxiliaryAction())),
     TAKE_OBJECTIVE_CARD(Action.TakeObjectiveCard.class, (jsonObject, game) -> new Action.TakeObjectiveCard(findObjectiveCard(game, jsonObject.getJsonObject("objectiveCard")))),
-    TRADE_WITH_INDIANS(Action.TradeWithIndians.class, (jsonObject, game) -> new Action.TradeWithIndians(jsonObject.getInt("cost"))),
+    TRADE_WITH_INDIANS(Action.TradeWithIndians.class, (jsonObject, game) -> new Action.TradeWithIndians(jsonObject.getInt("reward"))),
     UPGRADE_ANY_STATION_BEHIND_ENGINE(Action.UpgradeAnyStationBehindEngine.class, (jsonObject, game) -> new Action.UpgradeAnyStationBehindEngine(game.getRailroadTrack().getStations().get(jsonObject.getInt("station")))),
     UPGRADE_STATION(Action.UpgradeStation.class, ((jsonObject, game) -> new Action.UpgradeStation())),
     USE_ADJACENT_BUILDING(Action.UseAdjacentBuilding.class, (jsonObject, game) -> new Action.UseAdjacentBuilding()),
