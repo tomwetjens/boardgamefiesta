@@ -250,11 +250,17 @@ public class RailroadTrack implements Serializable {
     }
 
     public Set<PossibleDelivery> possibleDeliveries(Player player, int breedingValue, int certificates) {
+        int signalsPassed = signalsPassed(player);
+
         return Arrays.stream(City.values())
                 .filter(city -> city.isMultipleDeliveries() || !hasMadeDelivery(player, city))
                 .filter(city -> city.getValue() <= breedingValue + certificates)
-                .map(city -> new PossibleDelivery(city, Math.max(0, city.getValue() - breedingValue)))
+                .map(city -> new PossibleDelivery(city, Math.max(0, city.getValue() - breedingValue), city.getSignals() - signalsPassed))
                 .collect(Collectors.toSet());
+    }
+
+    private int signalsUpUntil(City city) {
+        return (int) spacesWithSignalsUpUntil(getSpace(city.getValue())).count();
     }
 
     public Map<City, List<Player>> getCities() {
@@ -308,11 +314,12 @@ public class RailroadTrack implements Serializable {
 
     int signalsPassed(Player player) {
         Space current = currentSpace(player);
-        return (int) spacesWithSignalsPassed(current).distinct().count();
+        return (int) spacesWithSignalsUpUntil(current).count();
     }
 
-    private Stream<Space> spacesWithSignalsPassed(Space current) {
-        return Stream.concat(Stream.of(current), current.getPrevious().stream().flatMap(this::spacesWithSignalsPassed))
+    private Stream<Space> spacesWithSignalsUpUntil(Space current) {
+        return Stream.concat(Stream.of(current), current.getPrevious().stream().flatMap(this::spacesWithSignalsUpUntil))
+                .distinct()
                 .filter(Space::hasSignal);
     }
 
@@ -365,6 +372,7 @@ public class RailroadTrack implements Serializable {
     public static final class PossibleDelivery {
         City city;
         int certificates;
+        int cost;
     }
 
     public static abstract class Space implements Serializable {

@@ -5,6 +5,7 @@ import com.wetjens.gwt.PlayerState;
 import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,8 @@ public class PlayerStateView {
     int certificates;
 
     Set<CardView> hand;
+    List<CardView> discardPile;
+    Integer drawStackSize;
 
     Set<ActionType> unlockedSingleAuxiliaryActions;
     Set<ActionType> unlockedDoubleAuxiliaryActions;
@@ -37,8 +40,14 @@ public class PlayerStateView {
             hand = playerState.getHand().stream()
                     .map(CardView::of)
                     .collect(Collectors.toSet());
+            discardPile = playerState.getDiscardPile().stream()
+                    .map(CardView::of)
+                    .collect(Collectors.toList());
+            drawStackSize = playerState.getDrawStackSize();
         } else {
             hand = null;
+            discardPile = null;
+            drawStackSize = null;
         }
 
         unlockedSingleAuxiliaryActions = playerState.unlockedSingleAuxiliaryActions().stream()

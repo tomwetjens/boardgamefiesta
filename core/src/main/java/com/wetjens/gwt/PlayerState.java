@@ -390,6 +390,10 @@ public class PlayerState implements Serializable {
         }
     }
 
+    public int getDrawStackSize() {
+        return drawStack.size();
+    }
+
     boolean canPlayObjectiveCard() {
         return hand.stream().anyMatch(card -> card instanceof ObjectiveCard);
     }

@@ -33,28 +33,22 @@ public class Trail implements Serializable {
     private final Map<Player, Location> playerLocations = new HashMap<>();
 
     public Trail(@NonNull Collection<Player> players, boolean beginner, @NonNull Random random) {
-        // TODO Randomize building placement if not beginner
-        Queue<Building> buildingsToPlace = new LinkedList<>(Arrays.asList(
-                new NeutralBuilding.G(),
-                new NeutralBuilding.F(),
-                new NeutralBuilding.E(),
-                new NeutralBuilding.D(),
-                new NeutralBuilding.C(),
-                new NeutralBuilding.B(),
-                new NeutralBuilding.A()
-        ));
+        var neutralBuildings = new LinkedList<>(createNeutralBuildingSet());
+        if (!beginner) {
+            Collections.shuffle(neutralBuildings, random);
+        }
 
         kansasCity = new Location.KansasCity();
 
         Location.BuildingLocation g = new Location.BuildingLocation("G", false,
                 new Location.BuildingLocation("G-1", false, kansasCity),
                 new Location.BuildingLocation("G-2", false, kansasCity));
-        g.placeBuilding(buildingsToPlace.poll());
+        g.placeBuilding(neutralBuildings.poll());
 
         Location.BuildingLocation f = new Location.BuildingLocation("F", false,
                 new Location.BuildingLocation("F-1", false, g),
                 new Location.BuildingLocation("F-2", true, g));
-        f.placeBuilding(buildingsToPlace.poll());
+        f.placeBuilding(neutralBuildings.poll());
 
         Location.HazardLocation rockfallSection = new Location.HazardLocation(HazardType.ROCKFALL, 1,
                 new Location.HazardLocation(HazardType.ROCKFALL, 2,
@@ -67,10 +61,10 @@ public class Trail implements Serializable {
                 new Location.BuildingLocation("E-1", true,
                         new Location.BuildingLocation("E-2", true, f)),
                 rockfallSection);
-        e.placeBuilding(buildingsToPlace.poll());
+        e.placeBuilding(neutralBuildings.poll());
 
         Location.BuildingLocation d = new Location.BuildingLocation("D", false, e);
-        d.placeBuilding(buildingsToPlace.poll());
+        d.placeBuilding(neutralBuildings.poll());
 
         Location.TeepeeLocation teepeeLocation10 = new Location.TeepeeLocation(10,
                 new Location.BuildingLocation("INDIAN-TRADE-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false,
@@ -99,7 +93,7 @@ public class Trail implements Serializable {
                 new Location.BuildingLocation("C-1-1", true,
                         new Location.BuildingLocation("C-1-2", true, e)),
                 crossRoadsIndianTrade);
-        c.placeBuilding(buildingsToPlace.poll());
+        c.placeBuilding(neutralBuildings.poll());
 
         Location.HazardLocation droughtSection = new Location.HazardLocation(HazardType.DROUGHT, 1,
                 new Location.HazardLocation(HazardType.DROUGHT, 2,
@@ -111,7 +105,7 @@ public class Trail implements Serializable {
                 new Location.BuildingLocation("B-1", true,
                         new Location.BuildingLocation("B-2", false,
                                 new Location.BuildingLocation("B-3", false, c))));
-        b.placeBuilding(buildingsToPlace.poll());
+        b.placeBuilding(neutralBuildings.poll());
 
         Location.HazardLocation floodSection = new Location.HazardLocation(HazardType.FLOOD, 1,
                 new Location.HazardLocation(HazardType.FLOOD, 2,
@@ -124,11 +118,23 @@ public class Trail implements Serializable {
                         new Location.BuildingLocation("A-2", false,
                                 new Location.BuildingLocation("A-3", false, b))),
                 floodSection);
-        a.placeBuilding(buildingsToPlace.poll());
+        a.placeBuilding(neutralBuildings.poll());
 
         start = new Location.Start(a);
 
         players.forEach(player -> playerLocations.put(player, start));
+    }
+
+    private static List<NeutralBuilding> createNeutralBuildingSet() {
+        return Arrays.asList(
+                new NeutralBuilding.G(),
+                new NeutralBuilding.F(),
+                new NeutralBuilding.E(),
+                new NeutralBuilding.D(),
+                new NeutralBuilding.C(),
+                new NeutralBuilding.B(),
+                new NeutralBuilding.A()
+        );
     }
 
     public Set<Location> getLocations() {
