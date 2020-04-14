@@ -257,12 +257,8 @@ public class RailroadTrack implements Serializable {
         return Arrays.stream(City.values())
                 .filter(city -> city.isMultipleDeliveries() || !hasMadeDelivery(player, city))
                 .filter(city -> city.getValue() <= breedingValue + certificates)
-                .map(city -> new PossibleDelivery(city, Math.max(0, city.getValue() - breedingValue), city.getValue() - city.getSignals() + signalsPassed))
+                .map(city -> new PossibleDelivery(city, Math.max(0, city.getValue() - breedingValue), breedingValue - city.getSignals() + signalsPassed))
                 .collect(Collectors.toSet());
-    }
-
-    private int signalsUpUntil(City city) {
-        return (int) spacesWithSignalsUpUntil(getSpace(city.getValue())).count();
     }
 
     public Map<City, List<Player>> getCities() {
@@ -316,6 +312,9 @@ public class RailroadTrack implements Serializable {
 
     int signalsPassed(Player player) {
         Space current = currentSpace(player);
+        if (current == null) {
+            return 0;
+        }
         return (int) spacesWithSignalsUpUntil(current).count();
     }
 
