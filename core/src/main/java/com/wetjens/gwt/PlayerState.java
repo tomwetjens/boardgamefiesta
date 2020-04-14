@@ -324,41 +324,45 @@ public class PlayerState implements Serializable {
         return buildings.contains(building);
     }
 
-    Set<Class<? extends Action>> unlockedSingleAuxiliaryActions() {
-        Set<Class<? extends Action>> actions = new HashSet<>();
+    Set<PossibleAction> unlockedSingleAuxiliaryActions() {
+        Set<PossibleAction> actions = new HashSet<>();
 
-        actions.add(Action.Gain1Dollar.class);
-        actions.add(Action.DrawCardsThenDiscardCards.exactly(1));
+        actions.add(PossibleAction.optional(Action.Gain1Dollar.class));
+        actions.add(PossibleAction.whenThen(0, 1, Action.DrawCard.class, Action.DiscardCard.class));
 
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
-            actions.add(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class);
+            actions.add(PossibleAction.optional(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class));
         }
         if (hasUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
-            actions.add(Action.Pay1DollarToMoveEngine1Forward.class);
+            actions.add(PossibleAction.optional(Action.Pay1DollarToMoveEngine1Forward.class));
         }
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
-            actions.add(Action.MoveEngine1BackwardsToRemove1Card.class);
+            actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1Card.class));
         }
         return actions;
     }
 
-    Set<Class<? extends Action>> unlockedDoubleAuxiliaryActions() {
-        Set<Class<? extends Action>> actions = new HashSet<>(unlockedSingleAuxiliaryActions());
+    Set<PossibleAction> unlockedSingleOrDoubleAuxiliaryActions() {
+        Set<PossibleAction> actions = new HashSet<>();
 
         if (hasAllUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
-            actions.add(Action.Gain2Dollars.class);
+            actions.add(PossibleAction.optional(Action.Gain1Dollar.class));
+            actions.add(PossibleAction.optional(Action.Gain2Dollars.class));
         }
         if (hasAllUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-            actions.add(Action.DrawCardsThenDiscardCards.exactly(2));
+            actions.add(PossibleAction.whenThen(0, 2, Action.DrawCard.class, Action.DiscardCard.class));
         }
         if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
-            actions.add(Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates.class);
+            actions.add(PossibleAction.optional(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class));
+            actions.add(PossibleAction.optional(Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates.class));
         }
         if (hasAllUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
-            actions.add(Action.Pay2DollarsToMoveEngine2Forward.class);
+            actions.add(PossibleAction.optional(Action.Pay1DollarToMoveEngine1Forward.class));
+            actions.add(PossibleAction.optional(Action.Pay2DollarsToMoveEngine2Forward.class));
         }
         if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
-            actions.add(Action.MoveEngine2BackwardsToRemove2Cards.class);
+            actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1Card.class));
+            actions.add(PossibleAction.optional(Action.MoveEngine2BackwardsToRemove2Cards.class));
         }
 
         return actions;

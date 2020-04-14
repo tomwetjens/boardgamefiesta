@@ -12,7 +12,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Value;
 
 @Getter
 public abstract class PlayerBuilding extends Building {
@@ -74,7 +73,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.optional(Action.Gain1DollarPerBuildingInWoods.class);
         }
     }
@@ -86,7 +85,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.Discard2GuernseyToGain4Dollars.class, Action.BuyCattle.class);
         }
     }
@@ -98,7 +97,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.DiscardPairToGain3Dollars.class, Action.Move1Forward.class);
         }
     }
@@ -110,7 +109,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.RemoveHazardFor5Dollars.class, Action.Move2Forward.class);
         }
     }
@@ -122,7 +121,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.HireCheapWorker.class, Action.MoveEngineForward.class);
         }
     }
@@ -134,7 +133,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.Discard1HolsteinToGain10Dollars.class, Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }
@@ -146,7 +145,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.optional(Action.Gain2CertificatesAnd2DollarsPerTeepeePair.class);
         }
     }
@@ -158,7 +157,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(
                     PossibleAction.choice(Action.TradeWithIndians.class, Action.SingleOrDoubleAuxiliaryAction.class),
                     Action.MoveEngineAtMost2Forward.class);
@@ -172,7 +171,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.MoveEngineAtMost3Forward.class, Action.ExtraordinaryDelivery.class);
         }
     }
@@ -184,7 +183,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.MaxCertificates.class, Action.MoveEngineAtMost5Forward.class);
         }
     }
@@ -196,7 +195,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.Discard1ObjectiveCardToGain2Certificates.class, Action.MoveEngine1BackwardsToGain3Dollars.class);
         }
     }
@@ -208,7 +207,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.Discard1JerseyToMoveEngine1Forward.class, Action.Discard1DutchBeltToGain3Dollars.class);
         }
     }
@@ -220,7 +219,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.SingleOrDoubleAuxiliaryAction.class, Action.Move1Forward.class);
         }
     }
@@ -232,8 +231,8 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
-            return PossibleAction.any(Action.DrawCardsUpToNumberOfCowboysThenDiscardCards.class, Action.Move3Forward.class);
+        PossibleAction getPossibleAction(Game game) {
+            return PossibleAction.any(PossibleAction.whenThen(0, game.currentPlayerState().getNumberOfCowboys(), Action.DrawCard.class, Action.DiscardCard.class), Action.Move3Forward.class);
         }
     }
 
@@ -244,7 +243,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.Discard1BlackAngusToGain2Certificates.class, Action.Gain1DollarPerEngineer.class);
         }
     }
@@ -256,7 +255,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.optional(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class);
         }
     }
@@ -268,7 +267,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.optional(Action.MoveEngineForwardUpToNumberOfBuildingsInWoods.class);
         }
     }
@@ -280,7 +279,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.optional(Action.UseAdjacentBuilding.class);
         }
     }
@@ -292,7 +291,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.optional(Action.UpgradeAnyStationBehindEngine.class);
         }
     }
@@ -304,7 +303,7 @@ public abstract class PlayerBuilding extends Building {
         }
 
         @Override
-        PossibleAction getPossibleAction() {
+        PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.Gain4Dollars.class, Action.MoveEngineAtMost4Forward.class, Action.Move4Forward.class);
         }
     }

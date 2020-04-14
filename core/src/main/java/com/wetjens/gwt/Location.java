@@ -90,9 +90,9 @@ public abstract class Location implements Serializable {
         ImmediateActions activate(Game game, Player player) {
             if (building != null) {
                 if (riskAction != null) {
-                    return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(), riskAction, Action.SingleAuxiliaryAction.class)));
+                    return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(game), riskAction, Action.SingleAuxiliaryAction.class)));
                 } else {
-                    return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(), Action.SingleAuxiliaryAction.class)));
+                    return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(game), Action.SingleAuxiliaryAction.class)));
                 }
             }
             return ImmediateActions.none();

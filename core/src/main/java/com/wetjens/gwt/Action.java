@@ -1,5 +1,13 @@
 package com.wetjens.gwt;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -8,14 +16,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action {
@@ -75,11 +75,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             PlayerState playerState = game.currentPlayerState();
-
-            Set<Class<? extends Action>> actions = new HashSet<>(playerState.unlockedSingleAuxiliaryActions());
-            actions.addAll(playerState.unlockedDoubleAuxiliaryActions());
-
-            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(actions)));
+            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(playerState.unlockedSingleOrDoubleAuxiliaryActions())));
         }
     }
 
@@ -98,92 +94,12 @@ public abstract class Action {
         }
     }
 
-    @Getter
-    @AllArgsConstructor(access = AccessLevel.PACKAGE)
-    public abstract static class DrawCardsThenDiscardCards extends Action {
-
-        int atLeast;
-        int atMost;
-        int amount;
+    public static final class DrawCard extends Action {
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            if (amount < atLeast || amount > atMost) {
-                throw new IllegalArgumentException("Amount must be " + atLeast + ".." + atMost);
-            }
-
-            for (int i = 0; i < amount; i++) {
-                game.currentPlayerState().drawCard(random);
-            }
-
-            return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.exactly(amount)));
-        }
-
-        public static Class<? extends Action> exactly(int amount) {
-            return amount == 1 ? Draw1CardThenDiscard1Card.class :
-                    Draw2CardsThenDiscard2Cards.class;
-        }
-
-        public static final class Draw1CardThenDiscard1Card extends Action {
-            @Override
-            public ImmediateActions perform(Game game, Random random) {
-                game.currentPlayerState().drawCard(random);
-                return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.Discard1Card.class));
-            }
-        }
-
-        public static final class Draw2CardsThenDiscard2Cards extends Action {
-            @Override
-            public ImmediateActions perform(Game game, Random random) {
-                game.currentPlayerState().drawCard(random);
-                game.currentPlayerState().drawCard(random);
-                return ImmediateActions.of(PossibleAction.mandatory(DiscardCards.Discard2Cards.class));
-            }
-        }
-
-        public static Class<? extends Action> upTo(int amount) {
-            return amount == 6 ? DrawUpTo6CardsThenDiscardCards.class :
-                    amount == 5 ? DrawUpTo5CardsThenDiscardCards.class :
-                            amount == 4 ? DrawUpTo4CardsThenDiscardCards.class :
-                                    amount == 3 ? DrawUpTo3CardsThenDiscardCards.class :
-                                            amount == 2 ? DrawUpTo2CardsThenDiscardCards.class :
-                                                    DrawUpTo1CardsThenDiscardCards.class;
-        }
-
-        public static final class DrawUpTo1CardsThenDiscardCards extends DrawCardsThenDiscardCards {
-            public DrawUpTo1CardsThenDiscardCards(int amount) {
-                super(1, 1, amount);
-            }
-        }
-
-        public static final class DrawUpTo2CardsThenDiscardCards extends DrawCardsThenDiscardCards {
-            public DrawUpTo2CardsThenDiscardCards(int amount) {
-                super(1, 2, amount);
-            }
-        }
-
-        public static final class DrawUpTo3CardsThenDiscardCards extends DrawCardsThenDiscardCards {
-            public DrawUpTo3CardsThenDiscardCards(int amount) {
-                super(1, 3, amount);
-            }
-        }
-
-        public static final class DrawUpTo4CardsThenDiscardCards extends DrawCardsThenDiscardCards {
-            public DrawUpTo4CardsThenDiscardCards(int amount) {
-                super(1, 4, amount);
-            }
-        }
-
-        public static final class DrawUpTo5CardsThenDiscardCards extends DrawCardsThenDiscardCards {
-            public DrawUpTo5CardsThenDiscardCards(int amount) {
-                super(1, 5, amount);
-            }
-        }
-
-        public static final class DrawUpTo6CardsThenDiscardCards extends DrawCardsThenDiscardCards {
-            public DrawUpTo6CardsThenDiscardCards(int amount) {
-                super(1, 6, amount);
-            }
+            game.currentPlayerState().drawCard(random);
+            return ImmediateActions.none();
         }
     }
 
@@ -271,65 +187,13 @@ public abstract class Action {
     @NonFinal
     @EqualsAndHashCode(callSuper = false)
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
-    public abstract static class DiscardCards extends Action {
-
-        int expected;
-        @NonNull Set<Card> cards;
+    public abstract static class DiscardCard extends Action {
+        @NonNull Card card;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            if (cards.size() != expected) {
-                throw new IllegalStateException("Must discard " + expected + " cards");
-            }
-
-            cards.forEach(game.currentPlayerState()::discardCard);
-
+            game.currentPlayerState().discardCard(card);
             return ImmediateActions.none();
-        }
-
-        public static Class<? extends Action> exactly(int amount) {
-            return amount == 6 ? DiscardCards.Discard6Cards.class :
-                    amount == 5 ? DiscardCards.Discard5Cards.class :
-                            amount == 4 ? DiscardCards.Discard4Cards.class :
-                                    amount == 3 ? DiscardCards.Discard3Cards.class :
-                                            amount == 2 ? DiscardCards.Discard2Cards.class :
-                                                    DiscardCards.Discard1Card.class;
-        }
-
-        public static final class Discard1Card extends DiscardCards {
-            public Discard1Card(Card card) {
-                super(1, Collections.singleton(card));
-            }
-        }
-
-        public static final class Discard2Cards extends DiscardCards {
-            public Discard2Cards(Set<Card> cards) {
-                super(2, cards);
-            }
-        }
-
-        public static final class Discard3Cards extends DiscardCards {
-            public Discard3Cards(Set<Card> cards) {
-                super(3, cards);
-            }
-        }
-
-        public static final class Discard4Cards extends DiscardCards {
-            public Discard4Cards(Set<Card> cards) {
-                super(4, cards);
-            }
-        }
-
-        public static final class Discard5Cards extends DiscardCards {
-            public Discard5Cards(Set<Card> cards) {
-                super(5, cards);
-            }
-        }
-
-        public static final class Discard6Cards extends DiscardCards {
-            public Discard6Cards(Set<Card> cards) {
-                super(6, cards);
-            }
         }
     }
 
@@ -1105,14 +969,6 @@ public abstract class Action {
         }
     }
 
-    public static final class DrawCardsUpToNumberOfCowboysThenDiscardCards extends Action {
-        @Override
-        public ImmediateActions perform(Game game, Random random) {
-            int numberOfCowboys = game.currentPlayerState().getNumberOfCowboys();
-            return ImmediateActions.of(PossibleAction.optional(Action.DrawCardsThenDiscardCards.upTo(numberOfCowboys)));
-        }
-    }
-
     public static final class Discard1BlackAngusToGain2Certificates extends Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
@@ -1134,18 +990,13 @@ public abstract class Action {
     @EqualsAndHashCode(callSuper = false)
     public static final class Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand extends Action {
         @NonNull Card.CattleCard cattleCard;
-        @NonNull ObjectiveCard objectiveCard;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCard(cattleCard);
-
             game.currentPlayerState().gainDollars(3);
 
-            game.getObjectiveCards().remove(objectiveCard);
-            game.currentPlayerState().addCardToHand(objectiveCard);
-
-            return ImmediateActions.none();
+            return ImmediateActions.of(PossibleAction.mandatory(Add1ObjectiveCardToHand.class));
         }
     }
 
@@ -1172,7 +1023,7 @@ public abstract class Action {
                     .filter(adjacentLocation -> adjacentLocation instanceof Location.BuildingLocation)
                     .map(adjacentLocation -> (Location.BuildingLocation) adjacentLocation)
                     .flatMap(adjacentBuildingLocation -> adjacentBuildingLocation.getBuilding().stream())
-                    .map(Building::getPossibleAction))));
+                    .map(building -> building.getPossibleAction(game)))));
         }
     }
 
@@ -1236,4 +1087,17 @@ public abstract class Action {
         }
     }
 
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class Add1ObjectiveCardToHand extends Action {
+        @NonNull ObjectiveCard objectiveCard;
+
+        @Override
+        ImmediateActions perform(Game game, Random random) {
+            game.getObjectiveCards().remove(objectiveCard);
+            game.currentPlayerState().addCardToHand(objectiveCard);
+
+            return ImmediateActions.none();
+        }
+    }
 }

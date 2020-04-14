@@ -208,7 +208,7 @@ public class Game implements Serializable {
 
         Set<Class<? extends Action>> possibleActions = actionStack.getPossibleActions();
 
-        if (!actionStack.isEmpty() && !actionStack.peek().isImmediate() && currentPlayerState().canPlayObjectiveCard()) {
+        if ((actionStack.isEmpty() || !actionStack.peek().isImmediate()) && currentPlayerState().canPlayObjectiveCard()) {
             possibleActions = new HashSet<>(possibleActions);
             possibleActions.add(Action.PlayObjectiveCard.class);
             return Collections.unmodifiableSet(possibleActions);

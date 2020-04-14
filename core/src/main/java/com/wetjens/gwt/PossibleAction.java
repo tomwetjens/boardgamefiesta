@@ -69,6 +69,10 @@ abstract class PossibleAction implements Serializable {
                 .collect(Collectors.toCollection(ArrayList::new)));
     }
 
+    static PossibleAction whenThen(int atLeast, int atMost, Class<? extends Action> when, Class<? extends Action> then) {
+        return new WhenThen(atLeast, atMost, when, then);
+    }
+
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
@@ -199,14 +203,19 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         boolean isImmediate() {
-            return false;
+            return actions.stream().anyMatch(PossibleAction::isImmediate);
         }
 
         @Override
         Set<Class<? extends Action>> getPossibleActions() {
+            // If a child is immediate, then only its actions are possible now
             return actions.stream()
-                    .flatMap(action -> action.getPossibleActions().stream())
-                    .collect(Collectors.toUnmodifiableSet());
+                    .filter(PossibleAction::isImmediate)
+                    .findAny() // At most one child can be immediate
+                    .map(PossibleAction::getPossibleActions)
+                    .orElse(actions.stream() // Else just return the aggregated actions
+                            .flatMap(action -> action.getPossibleActions().stream())
+                            .collect(Collectors.toUnmodifiableSet()));
         }
     }
 
@@ -260,7 +269,7 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         boolean isImmediate() {
-            return false;
+            return actions.stream().anyMatch(PossibleAction::isImmediate);
         }
 
         @Override
@@ -269,6 +278,80 @@ abstract class PossibleAction implements Serializable {
             return actions.stream()
                     .flatMap(action -> action.getPossibleActions().stream())
                     .collect(Collectors.toUnmodifiableSet());
+        }
+    }
+
+    private static final class WhenThen extends PossibleAction {
+
+        private final Class<? extends Action> when;
+        private final Class<? extends Action> then;
+
+        private int atLeast;
+        private int atMost;
+
+        private int thens = 0;
+
+        private WhenThen(int atLeast, int atMost, Class<? extends Action> when, Class<? extends Action> then) {
+            this.atLeast = atLeast;
+            this.atMost = atMost;
+            this.when = when;
+            this.then = then;
+        }
+
+        @Override
+        void perform(Class<? extends Action> action) {
+            if (action == when) {
+                if (atMost == 0) {
+                    throw new IllegalArgumentException("Not allowed to perform action");
+                }
+
+                atMost--;
+                atLeast = Math.max(atLeast - 1, 0);
+                thens++;
+            } else if (action == then) {
+                if (thens == 0) {
+                    throw new IllegalArgumentException("Not allowed to perform action");
+                }
+
+                thens--;
+            }
+        }
+
+        @Override
+        void skip() {
+            if (atLeast > 0 || thens > 0) {
+                throw new IllegalArgumentException("Not allowed to skip action");
+            }
+        }
+
+        @Override
+        boolean isFinal() {
+            return atMost == 0 && thens == 0;
+        }
+
+        @Override
+        boolean isImmediate() {
+            // Becomes immediate when performed at least once
+            return thens > 0;
+        }
+
+        @Override
+        boolean canPerform(Class<? extends Action> action) {
+            if (action == when) {
+                return atMost > 0;
+            } else if (action == then) {
+                return thens > 0;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        Set<Class<? extends Action>> getPossibleActions() {
+            return Stream.concat(
+                    atMost > 0 ? Stream.of(when) : Stream.empty(),
+                    thens > 0 ? Stream.of(then) : Stream.empty()
+            ).collect(Collectors.toSet());
         }
     }
 }

@@ -17,6 +17,6 @@ public abstract class Building implements Serializable {
     @Getter
     private final Hand hand;
 
-    abstract PossibleAction getPossibleAction();
+    abstract PossibleAction getPossibleAction(Game game);
 
 }
