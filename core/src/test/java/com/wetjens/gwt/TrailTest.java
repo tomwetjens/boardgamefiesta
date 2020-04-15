@@ -72,4 +72,15 @@ class TrailTest {
                 asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-1"), to),
                 asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-2"), to));
     }
+
+    @Test
+    void placeTeepee() {
+        trail.placeTeepee(Teepee.GREEN);
+        trail.placeTeepee(Teepee.GREEN);
+        trail.placeTeepee(Teepee.GREEN);
+
+        assertThat(trail.getTeepeeLocation(-3).getTeepee()).isEqualTo(Teepee.GREEN);
+        assertThat(trail.getTeepeeLocation(-2).getTeepee()).isEqualTo(Teepee.GREEN);
+        assertThat(trail.getTeepeeLocation(-1).getTeepee()).isEqualTo(Teepee.GREEN);
+    }
 }

@@ -74,6 +74,10 @@ public class Game {
     private Instant ended;
 
     public static Game create(@NonNull User owner, @NonNull Set<User> inviteUsers, boolean beginner) {
+        if (inviteUsers.contains(owner)) {
+            throw new IllegalArgumentException("Cannot invite yourself");
+        }
+
         if (inviteUsers.isEmpty()) {
             throw new IllegalArgumentException("Should invite at least 1 user");
         }

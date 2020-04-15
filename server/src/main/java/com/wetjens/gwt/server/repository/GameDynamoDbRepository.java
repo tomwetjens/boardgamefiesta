@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -74,21 +75,24 @@ public class GameDynamoDbRepository implements Games {
         var item = createItem(game);
 
         var lookupItems = game.getPlayers().stream()
-                .map(player -> createItemLookup(game, player));
+                .map(player -> createItemLookup(game, player))
+                .collect(Collectors.toList());
+
+        List<WriteRequest> writeRequests = Stream.concat(
+                Stream.of(WriteRequest.builder().putRequest(
+                        PutRequest.builder()
+                                .item(item)
+                                .build())
+                        .build()),
+                lookupItems.stream().map(lookupItem -> WriteRequest.builder()
+                        .putRequest(PutRequest.builder()
+                                .item(lookupItem)
+                                .build())
+                        .build()))
+                .collect(Collectors.toList());
 
         dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
-                .requestItems(Collections.singletonMap(tableName, Stream.concat(
-                        Stream.of(WriteRequest.builder().putRequest(
-                                PutRequest.builder()
-                                        .item(item)
-                                        .build())
-                                .build()),
-                        lookupItems.map(lookupItem -> WriteRequest.builder()
-                                .putRequest(PutRequest.builder()
-                                        .item(lookupItem)
-                                        .build())
-                                .build()))
-                        .collect(Collectors.toSet())))
+                .requestItems(Collections.singletonMap(tableName, writeRequests))
                 .build());
     }
 

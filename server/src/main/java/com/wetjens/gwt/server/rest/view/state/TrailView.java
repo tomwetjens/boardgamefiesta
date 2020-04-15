@@ -7,7 +7,6 @@ import com.wetjens.gwt.Teepee;
 import com.wetjens.gwt.Trail;
 import lombok.Value;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,14 +17,15 @@ public class TrailView {
     private Map<String, LocationView> locations;
     private LocationView start;
     private LocationView kansasCity;
-    private List<LocationView> teepeeLocations;
+    private Map<String, LocationView> teepeeLocations;
     private final Map<Player, String> playerLocations;
 
     TrailView(Trail trail) {
         start = new LocationView(trail.getStart());
         kansasCity = new LocationView(trail.getKansasCity());
         locations = trail.getLocations().stream().collect(Collectors.toMap(Location::getName, LocationView::new));
-        teepeeLocations = trail.getTeepeeLocations().stream().map(LocationView::new).collect(Collectors.toList());
+        // Separate property for teepee locations, because not all locations are on the trail
+        teepeeLocations = trail.getTeepeeLocations().stream().collect(Collectors.toMap(Location::getName, LocationView::new));
         playerLocations = trail.getPlayerLocations().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getName()));
     }

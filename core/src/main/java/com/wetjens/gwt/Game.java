@@ -112,15 +112,13 @@ public class Game implements Serializable {
 
         this.railroadTrack = new RailroadTrack(this.players, random);
 
-        this.trail = new Trail(this.players, beginner, random);
         this.kansasCitySupply = new KansasCitySupply(random);
-
+        this.trail = new Trail(this.players, beginner, random);
+        this.jobMarket = new JobMarket(players.size());
         placeInitialTiles();
 
         this.foresights = new Foresights(kansasCitySupply);
-        this.jobMarket = new JobMarket(players.size());
         this.cattleMarket = new CattleMarket(players.size(), random);
-
         this.objectiveCards = new ObjectiveCards(random);
 
         this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
@@ -130,6 +128,11 @@ public class Game implements Serializable {
         IntStream.range(0, 7)
                 .mapToObj(i -> kansasCitySupply.draw(0))
                 .forEach(this::placeInitialTile);
+
+        IntStream.range(0, players.size() == 2 ? 3 : players.size() == 3 ? 5 : 7)
+                .mapToObj(i -> kansasCitySupply.draw(1))
+                .map(KansasCitySupply.Tile::getWorker)
+                .forEach(this.jobMarket::addWorker);
     }
 
     private void placeInitialTile(KansasCitySupply.Tile tile) {

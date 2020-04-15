@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @RolesAllowed("user")
 public class UsersQueries {
 
-    private static final int MIN_USERNAME_LENGTH = 4;
+    private static final int MIN_USERNAME_LENGTH = 3;
     private static final int MAX_SEARCH_RESULTS = 5;
 
     @Inject
