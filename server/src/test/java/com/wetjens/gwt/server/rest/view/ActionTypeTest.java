@@ -4,6 +4,10 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+
+import com.wetjens.gwt.Game;
 import com.wetjens.gwt.server.rest.view.state.ActionType;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -11,6 +15,7 @@ import org.junit.jupiter.params.provider.*;
 import com.wetjens.gwt.Action;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class ActionTypeTest {
 

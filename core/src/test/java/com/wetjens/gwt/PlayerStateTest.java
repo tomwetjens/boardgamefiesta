@@ -32,12 +32,12 @@ class PlayerStateTest {
             assertThat(playerState.getNumberOfCraftsmen()).isEqualTo(1);
             assertThat(playerState.getNumberOfEngineers()).isEqualTo(1);
             assertThat(playerState.getStepLimit(2)).isEqualTo(3);
-            assertThat(playerState.getCertificateLimit()).isEqualTo(4);
+            assertThat(playerState.getCertificateLimit()).isEqualTo(3);
             assertThat(playerState.getHandLimit()).isEqualTo(4);
             assertThat(playerState.getHazards()).isEmpty();
             assertThat(playerState.getTeepees()).isEmpty();
             assertThat(playerState.getStationMasters()).isEmpty();
-            assertThat(playerState.getObjectives()).isEmpty();
+            assertThat(playerState.getObjectives()).containsExactly(startingObjectiveCard);
             assertThat(playerState.getBuildings()).hasSize(10);
             assertThat(playerState.getHand()).hasSize(4);
             assertThat(playerState.getDiscardPile()).isEmpty();

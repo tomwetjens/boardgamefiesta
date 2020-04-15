@@ -184,10 +184,8 @@ public abstract class Action {
     }
 
     @Value
-    @NonFinal
     @EqualsAndHashCode(callSuper = false)
-    @AllArgsConstructor(access = AccessLevel.PACKAGE)
-    public abstract static class DiscardCard extends Action {
+    public static final class DiscardCard extends Action {
         @NonNull Card card;
 
         @Override

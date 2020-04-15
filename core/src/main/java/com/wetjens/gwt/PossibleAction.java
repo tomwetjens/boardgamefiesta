@@ -77,16 +77,16 @@ abstract class PossibleAction implements Serializable {
      * Player MUST perform EXACTLY ONE of the options.
      */
     static PossibleAction choice(Class<? extends Action>... actions) {
-        return choice(Arrays.asList(actions));
+        return new Choice(Arrays.stream(actions)
+                .map(PossibleAction::optional)
+                .collect(Collectors.toCollection(HashSet::new)));
     }
 
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
-    static PossibleAction choice(Collection<Class<? extends Action>> actions) {
-        return new Choice(actions.stream()
-                .map(PossibleAction::optional)
-                .collect(Collectors.toCollection(HashSet::new)));
+    static PossibleAction choice(Collection<PossibleAction> actions) {
+        return new Choice(new HashSet<>(actions));
     }
 
     /**
@@ -322,6 +322,8 @@ abstract class PossibleAction implements Serializable {
             if (atLeast > 0 || thens > 0) {
                 throw new IllegalArgumentException("Not allowed to skip action");
             }
+
+            atMost = 0;
         }
 
         @Override

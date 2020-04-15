@@ -20,10 +20,10 @@ class GameTest {
         void beginner() {
             Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
 
-            assertThat(game.getPlayers().get(0)).isEqualTo(Player.WHITE);
-            assertThat(game.getPlayers().get(1)).isEqualTo(Player.YELLOW);
+            assertThat(game.getPlayers().get(0)).isEqualTo(Player.RED);
+            assertThat(game.getPlayers().get(1)).isEqualTo(Player.BLUE);
 
-            assertThat(game.getCurrentPlayer()).isEqualByComparingTo(Player.WHITE);
+            assertThat(game.getCurrentPlayer()).isEqualByComparingTo(Player.RED);
 
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
         }

@@ -373,7 +373,7 @@ public class PlayerState implements Serializable {
     }
 
     public int getHandLimit() {
-        return 3 + unlocked.getOrDefault(Unlockable.EXTRA_CARD, 0);
+        return 4 + unlocked.getOrDefault(Unlockable.EXTRA_CARD, 0);
     }
 
     public int getCertificateLimit() {

@@ -226,35 +226,6 @@ class PossibleActionTest {
     @Nested
     class WhenThen {
 
-        // Action Stack:
-        // Any(Repeat(0..3xDrawCard), Move3), TakeObjectiveCard
-
-        // After player performs DrawCard:
-        // Any(Repeat(0..2xDrawCard, DiscardCard):mustFinalizeFirst, Move3), TakeObjectiveCard
-        // Must now first do the DiscardCard before Move3
-
-        // After player performs DrawCard:
-        // Any(Repeat(0..1xDrawCard, DiscardCard, DiscardCard):mustFinalizeFirst, Move3), TakeObjectiveCard
-        // Must now first do the 2xDiscardCard before Move3
-
-        // After player performs DrawCard:
-        // Any(Repeat(DiscardCard, DiscardCard, DiscardCard):mustFinalizeFirst, Move3), TakeObjectiveCard
-        // Must now first do the 3xDiscardCard before Move3
-
-        // After player performs DiscardCard:
-        // Any(Repeat(DiscardCard, DiscardCard):mustFinalizeFirst, Move3):, TakeObjectiveCard
-        // Must now first do the 2xDiscardCard before Move3
-
-        // After player performs DiscardCard:
-        // Any(Repeat(DiscardCard), Move3):mustFinalizeFirst, TakeObjectiveCard
-        // Must now first do the DiscardCard before Move3
-
-        // After player performs DiscardCard:
-        // Any(Move3), TakeObjectiveCard
-
-        // After player performs Move3:
-        // TakeObjectiveCard
-
         @Test
         void skip() {
             PossibleAction possibleAction = PossibleAction.whenThen(0, 3, A.class, B.class);
