@@ -74,7 +74,7 @@ public class Game {
     private Instant ended;
 
     public static Game create(@NonNull User owner, @NonNull Set<User> inviteUsers, boolean beginner) {
-        if (inviteUsers.size() == 0) {
+        if (inviteUsers.isEmpty()) {
             throw new IllegalArgumentException("Should invite at least 1 user");
         }
 
@@ -161,7 +161,11 @@ public class Game {
             ended = updated;
             expires = ended.plus(RETENTION_AFTER_ENDED);
 
-            // TODO Maybe store scores on this aggregate
+            Set<com.wetjens.gwt.Player> winners = state.winners();
+            players.forEach(player -> {
+                player.setScore(state.score(player.getColor()));
+                player.setWinner(winners.contains(player.getColor()));
+            });
 
             CDI.current().getBeanManager().fireEvent(new Ended());
         } else {

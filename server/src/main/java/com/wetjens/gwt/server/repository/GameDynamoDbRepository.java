@@ -224,6 +224,8 @@ public class GameDynamoDbRepository implements Games {
                 .userId(User.Id.of(attributeValue.m().get("UserId").s()))
                 .status(Player.Status.valueOf(attributeValue.m().get("Status").s()))
                 .color(attributeValue.m().get("Color") != null ? com.wetjens.gwt.Player.valueOf(attributeValue.m().get("Color").s()) : null)
+                .score(attributeValue.m().get("Score") != null ? Integer.valueOf(attributeValue.m().get("Score").n()) : null)
+                .winner(attributeValue.m().get("Winner") != null ? attributeValue.m().get("Winner").bool() : null)
                 .created(Instant.ofEpochSecond(Long.parseLong(attributeValue.m().get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(attributeValue.m().get("Updated").n())))
                 .build();
@@ -260,6 +262,8 @@ public class GameDynamoDbRepository implements Games {
         map.put("UserId", AttributeValue.builder().s(player.getUserId().getId()).build());
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
         map.put("Color", player.getColor() != null ? AttributeValue.builder().s(player.getColor().name()).build() : null);
+        map.put("Score", player.getScore() != null ? AttributeValue.builder().n(player.getScore().toString()).build() : null);
+        map.put("Winner", player.getWinner() != null ? AttributeValue.builder().bool(player.getWinner()).build() : null);
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(player.getUpdated().getEpochSecond())).build());
         return AttributeValue.builder().m(map).build();

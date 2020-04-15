@@ -217,7 +217,7 @@ public final class CattleMarket implements Serializable {
         int unusedCowboys = numberOfCowboys - cost.getCowboys();
 
         if (unusedCowboys > 0) {
-            // TODO Now assumed unused cowboys can only be used after buying
+            // Assumed unused cowboys can only be used after buying
             List<Class<? extends Action>> drawCardsForEachUnusedCowboy = IntStream.range(0, unusedCowboys)
                     .mapToObj(i -> Action.Draw2CattleCards.class)
                     .collect(Collectors.toList());

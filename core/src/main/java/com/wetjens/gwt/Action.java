@@ -527,7 +527,6 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().payDollars(2);
             ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2).getImmediateActions();
-            // TODO Check if gaining certificates AFTER possible immediate actions from railroad track is OK
             game.currentPlayerState().gainCertificates(2);
             return immediateActions;
         }
@@ -574,7 +573,6 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().payDollars(1);
             ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1).getImmediateActions();
-            // TODO Check if gaining certificate AFTER possible immediate actions from railroad track is OK
             game.currentPlayerState().gainCertificates(1);
             return immediateActions;
         }

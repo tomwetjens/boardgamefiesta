@@ -1,10 +1,5 @@
 package com.wetjens.gwt;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -21,7 +16,12 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import lombok.Getter;
+import lombok.NonNull;
 
 public class Game implements Serializable {
 
@@ -241,5 +241,17 @@ public class Game implements Serializable {
         } catch (ClassNotFoundException e) {
             throw new IOException(e);
         }
+    }
+
+    public Set<Player> winners() {
+        Map<Player, Integer> scores = players.stream()
+                .collect(Collectors.toMap(Function.identity(), this::score));
+
+        int maxScore = scores.values().stream().max(Integer::compare).orElse(0);
+
+        return scores.entrySet().stream()
+                .filter(entry -> entry.getValue() == maxScore)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 }

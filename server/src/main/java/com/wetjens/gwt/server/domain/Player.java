@@ -26,6 +26,14 @@ public class Player {
     @Setter(value = AccessLevel.PACKAGE)
     private com.wetjens.gwt.Player color;
 
+    @Getter
+    @Setter(value = AccessLevel.PACKAGE)
+    private Integer score;
+
+    @Getter
+    @Setter(value = AccessLevel.PACKAGE)
+    private Boolean winner;
+
     static Player createAccepted(User.Id userId) {
         Instant created = Instant.now();
 
