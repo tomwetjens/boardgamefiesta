@@ -198,7 +198,13 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            return actions.stream().anyMatch(fa -> fa.canPerform(action));
+            // If a child is immediate, then only its actions can be performed now
+            return actions.stream()
+                    .filter(PossibleAction::isImmediate)
+                    .findAny() // At most one child can be immediate
+                    .map(immediate -> immediate.canPerform(action))
+                    .orElseGet(() -> actions.stream() // Else just return if any can be performed
+                            .anyMatch(possibleAction -> possibleAction.canPerform(action)));
         }
 
         @Override
@@ -213,7 +219,7 @@ abstract class PossibleAction implements Serializable {
                     .filter(PossibleAction::isImmediate)
                     .findAny() // At most one child can be immediate
                     .map(PossibleAction::getPossibleActions)
-                    .orElse(actions.stream() // Else just return the aggregated actions
+                    .orElseGet(() -> actions.stream() // Else just return the aggregated actions
                             .flatMap(action -> action.getPossibleActions().stream())
                             .collect(Collectors.toUnmodifiableSet()));
         }
