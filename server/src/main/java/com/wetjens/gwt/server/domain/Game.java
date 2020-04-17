@@ -74,6 +74,13 @@ public class Game {
     private Instant ended;
 
     public static Game create(@NonNull User owner, @NonNull Set<User> inviteUsers, boolean beginner) {
+        Games games = CDI.current().select(Games.class).get();
+
+        int count = games.countByUserId(owner.getId());
+        if (count >= 3) {
+            throw new IllegalStateException("Cannot participate in more than 3 games");
+        }
+
         if (inviteUsers.contains(owner)) {
             throw new IllegalArgumentException("Cannot invite yourself");
         }

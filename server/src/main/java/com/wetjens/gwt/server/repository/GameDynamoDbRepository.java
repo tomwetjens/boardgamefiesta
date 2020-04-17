@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.dynamodb.model.DeleteRequest;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.Select;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
@@ -68,6 +69,21 @@ public class GameDynamoDbRepository implements Games {
 
         return response.items().stream()
                 .flatMap(item -> findOptionallyById(Game.Id.of(item.get("Id").s())).stream());
+    }
+
+    @Override
+    public int countByUserId(User.Id userId) {
+        var response = dynamoDbClient.query(QueryRequest.builder()
+                .tableName(tableName)
+                .indexName(USER_ID_ID_INDEX)
+                .keyConditionExpression("UserId = :UserId")
+                .expressionAttributeValues(Collections.singletonMap(":UserId", AttributeValue.builder()
+                        .s("User-" + userId.getId())
+                        .build()))
+                .select(Select.COUNT)
+                .build());
+
+        return response.count();
     }
 
     @Override

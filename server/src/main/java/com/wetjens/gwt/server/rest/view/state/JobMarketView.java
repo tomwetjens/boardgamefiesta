@@ -11,10 +11,12 @@ import java.util.stream.Collectors;
 public class JobMarketView {
 
     List<RowView> rows;
-    int columns;
+    int rowLimit;
+    int currentRowIndex;
 
     JobMarketView(JobMarket jobMarket) {
-        columns = jobMarket.getRowLimit();
+        rowLimit = jobMarket.getRowLimit();
+        currentRowIndex = jobMarket.getCurrentRowIndex();
         rows = jobMarket.getRows().stream()
                 .limit(jobMarket.getCurrentRowIndex() + 1)
                 .map(RowView::new)

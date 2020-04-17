@@ -12,4 +12,5 @@ public interface Games {
 
     Stream<Game> findByUserId(User.Id id);
 
+    int countByUserId(User.Id id);
 }

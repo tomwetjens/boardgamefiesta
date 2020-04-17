@@ -345,23 +345,37 @@ public class PlayerState implements Serializable {
     Set<PossibleAction> unlockedSingleOrDoubleAuxiliaryActions() {
         Set<PossibleAction> actions = new HashSet<>();
 
-        if (hasAllUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
+        if (hasUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
             actions.add(PossibleAction.optional(Action.Gain1Dollar.class));
+        }
+        if (hasAllUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
             actions.add(PossibleAction.optional(Action.Gain2Dollars.class));
         }
+
         if (hasAllUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
             actions.add(PossibleAction.whenThen(0, 2, Action.DrawCard.class, Action.DiscardCard.class));
+        } else if (hasUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
+            actions.add(PossibleAction.whenThen(0, 1, Action.DrawCard.class, Action.DiscardCard.class));
+        }
+
+        if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
+            actions.add(PossibleAction.optional(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class));
         }
         if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
-            actions.add(PossibleAction.optional(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class));
             actions.add(PossibleAction.optional(Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates.class));
         }
-        if (hasAllUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
+
+        if (hasUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
             actions.add(PossibleAction.optional(Action.Pay1DollarToMoveEngine1Forward.class));
+        }
+        if (hasAllUnlocked(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD)) {
             actions.add(PossibleAction.optional(Action.Pay2DollarsToMoveEngine2Forward.class));
         }
-        if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
+
+        if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
             actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1Card.class));
+        }
+        if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
             actions.add(PossibleAction.optional(Action.MoveEngine2BackwardsToRemove2Cards.class));
         }
 

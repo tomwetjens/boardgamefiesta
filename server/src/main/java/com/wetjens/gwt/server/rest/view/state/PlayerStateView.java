@@ -1,11 +1,14 @@
 package com.wetjens.gwt.server.rest.view.state;
 
+import com.wetjens.gwt.Building;
 import com.wetjens.gwt.Player;
+import com.wetjens.gwt.PlayerBuilding;
 import com.wetjens.gwt.PlayerState;
 import com.wetjens.gwt.Unlockable;
 import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +30,7 @@ public class PlayerStateView {
     Integer drawStackSize;
 
     Map<Unlockable, Integer> unlocked;
+    List<String> buildings;
 
     PlayerStateView(PlayerState playerState, Player viewingPlayer, User user) {
         player = new PlayerView(playerState.getPlayer(), user);
@@ -52,5 +56,10 @@ public class PlayerStateView {
         }
 
         unlocked = playerState.getUnlocked();
+
+        buildings = playerState.getBuildings().stream()
+                .sorted(Comparator.comparingInt(PlayerBuilding::getNumber))
+                .map(Building::getName)
+                .collect(Collectors.toList());
     }
 }

@@ -21,10 +21,14 @@ public abstract class PlayerBuilding extends Building {
     private final Player player;
     private final int craftsmen;
     private final int points;
+    private final int number;
+    private final BuildingSet.Side side;
 
-    private PlayerBuilding(String name, Player player, Hand hand, int craftsmen, int points) {
-        super(name, hand);
+    private PlayerBuilding(int number, BuildingSet.Side side, Player player, Hand hand, int craftsmen, int points) {
+        super(number + "" + side.toString().toLowerCase(), hand);
 
+        this.number = number;
+        this.side = side;
         this.player = player;
         this.craftsmen = craftsmen;
         this.points = points;
@@ -69,7 +73,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building1A extends PlayerBuilding {
 
         Building1A(Player player) {
-            super("1a", player, Hand.GREEN, 1, 1);
+            super(1, BuildingSet.Side.A, player, Hand.GREEN, 1, 1);
         }
 
         @Override
@@ -81,7 +85,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building2A extends PlayerBuilding {
 
         Building2A(Player player) {
-            super("2a", player, Hand.NONE, 1, 1);
+            super(2, BuildingSet.Side.A, player, Hand.NONE, 1, 1);
         }
 
         @Override
@@ -93,7 +97,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building3A extends PlayerBuilding {
 
         Building3A(Player player) {
-            super("3a", player, Hand.NONE, 1, 1);
+            super(3, BuildingSet.Side.A, player, Hand.NONE, 1, 1);
         }
 
         @Override
@@ -105,7 +109,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building4A extends PlayerBuilding {
 
         Building4A(Player player) {
-            super("4a", player, Hand.BLACK, 2, 3);
+            super(4, BuildingSet.Side.A, player, Hand.BLACK, 2, 3);
         }
 
         @Override
@@ -117,7 +121,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building5A extends PlayerBuilding {
 
         Building5A(Player player) {
-            super("5a", player, Hand.NONE, 3, 4);
+            super(5, BuildingSet.Side.A, player, Hand.NONE, 3, 4);
         }
 
         @Override
@@ -129,7 +133,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building6A extends PlayerBuilding {
 
         Building6A(Player player) {
-            super("6a", player, Hand.NONE, 4, 5);
+            super(6, BuildingSet.Side.A, player, Hand.NONE, 4, 5);
         }
 
         @Override
@@ -141,7 +145,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building7A extends PlayerBuilding {
 
         Building7A(Player player) {
-            super("7a", player, Hand.BOTH, 5, 6);
+            super(7, BuildingSet.Side.A, player, Hand.BOTH, 5, 6);
         }
 
         @Override
@@ -153,7 +157,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building8A extends PlayerBuilding {
 
         Building8A(Player player) {
-            super("8a", player, Hand.GREEN, 5, 6);
+            super(8, BuildingSet.Side.A, player, Hand.GREEN, 5, 6);
         }
 
         @Override
@@ -167,7 +171,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building9A extends PlayerBuilding {
 
         Building9A(Player player) {
-            super("9a", player, Hand.NONE, 7, 9);
+            super(9, BuildingSet.Side.A, player, Hand.NONE, 7, 9);
         }
 
         @Override
@@ -179,7 +183,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building10A extends PlayerBuilding {
 
         Building10A(Player player) {
-            super("10a", player, Hand.BLACK, 9, 13);
+            super(10, BuildingSet.Side.A, player, Hand.BLACK, 9, 13);
         }
 
         @Override
@@ -191,7 +195,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building1B extends PlayerBuilding {
 
         Building1B(Player player) {
-            super("1b", player, Hand.GREEN, 1, 1);
+            super(1, BuildingSet.Side.B, player, Hand.GREEN, 1, 1);
         }
 
         @Override
@@ -203,7 +207,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building2B extends PlayerBuilding {
 
         Building2B(Player player) {
-            super("2b", player, Hand.NONE, 1, 1);
+            super(2, BuildingSet.Side.B, player, Hand.NONE, 1, 1);
         }
 
         @Override
@@ -215,7 +219,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building3B extends PlayerBuilding {
 
         Building3B(Player player) {
-            super("3b", player, Hand.NONE, 2, 3);
+            super(3, BuildingSet.Side.B, player, Hand.NONE, 2, 3);
         }
 
         @Override
@@ -227,7 +231,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building4B extends PlayerBuilding {
 
         Building4B(Player player) {
-            super("4b", player, Hand.BLACK, 2, 3);
+            super(4, BuildingSet.Side.B, player, Hand.BLACK, 2, 3);
         }
 
         @Override
@@ -239,7 +243,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building5B extends PlayerBuilding {
 
         Building5B(Player player) {
-            super("5b", player, Hand.NONE, 3, 4);
+            super(5, BuildingSet.Side.B, player, Hand.NONE, 3, 4);
         }
 
         @Override
@@ -251,7 +255,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building6B extends PlayerBuilding {
 
         Building6B(Player player) {
-            super("6b", player, Hand.NONE, 4, 5);
+            super(6, BuildingSet.Side.B, player, Hand.NONE, 4, 5);
         }
 
         @Override
@@ -263,7 +267,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building7B extends PlayerBuilding {
 
         Building7B(Player player) {
-            super("7b", player, Hand.BOTH, 5, 6);
+            super(7, BuildingSet.Side.B, player, Hand.BOTH, 5, 6);
         }
 
         @Override
@@ -275,7 +279,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building8B extends PlayerBuilding {
 
         Building8B(Player player) {
-            super("8b", player, Hand.NONE, 6, 8);
+            super(8, BuildingSet.Side.B, player, Hand.NONE, 6, 8);
         }
 
         @Override
@@ -287,7 +291,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building9B extends PlayerBuilding {
 
         Building9B(Player player) {
-            super("9b", player, Hand.NONE, 6, 8);
+            super(9, BuildingSet.Side.B, player, Hand.NONE, 6, 8);
         }
 
         @Override
@@ -299,7 +303,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building10B extends PlayerBuilding {
 
         Building10B(Player player) {
-            super("10b", player, Hand.BLACK, 8, 11);
+            super(10, BuildingSet.Side.B, player, Hand.BLACK, 8, 11);
         }
 
         @Override

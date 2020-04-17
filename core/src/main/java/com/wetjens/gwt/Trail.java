@@ -121,8 +121,6 @@ public class Trail implements Serializable {
         a.placeBuilding(neutralBuildings.poll());
 
         start = new Location.Start(a);
-
-        players.forEach(player -> playerLocations.put(player, start));
     }
 
     private static List<NeutralBuilding> createNeutralBuildingSet() {

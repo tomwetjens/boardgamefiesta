@@ -39,7 +39,7 @@ public class TrailView {
         HazardView hazard;
         Teepee teepee;
         Integer reward;
-        String building;
+        BuildingView building;
 
         LocationView(Location location) {
             this.name = location.getName();
@@ -52,7 +52,9 @@ public class TrailView {
                 building = null;
             } else if (location instanceof Location.BuildingLocation) {
                 type = Type.BUILDING;
-                building = ((Location.BuildingLocation) location).getBuilding().map(Building::getName).orElse(null);
+                building = ((Location.BuildingLocation) location).getBuilding()
+                        .map(BuildingView::new)
+                        .orElse(null);
                 hazard = null;
                 teepee = null;
                 reward = null;
