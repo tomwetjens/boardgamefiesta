@@ -29,8 +29,12 @@ public class ObjectiveCard extends Card {
     int points;
     int penalty;
 
-    public Optional<PossibleAction> getPossibleAction() {
+    Optional<PossibleAction> getPossibleAction() {
         return Optional.ofNullable(possibleAction);
+    }
+
+    public Optional<Class<? extends Action>> getAction() {
+        return possibleAction != null ? Optional.of(possibleAction.getPossibleActions().iterator().next()) : Optional.empty();
     }
 
     static int score(Set<ObjectiveCard> required, Set<ObjectiveCard> optional, Game game, Player player) {
@@ -113,4 +117,5 @@ public class ObjectiveCard extends Card {
         BREEDING_VALUE_5,
         SAN_FRANCISCO;
     }
+
 }

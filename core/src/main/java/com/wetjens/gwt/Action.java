@@ -470,6 +470,10 @@ public abstract class Action {
 
             ImmediateActions immediateActions = game.deliverToCity(city);
 
+            if (city == City.KANSAS_CITY) {
+                game.currentPlayerState().gainDollars(6);
+            }
+
             game.getTrail().moveToStart(game.getCurrentPlayer());
 
             return immediateActions;

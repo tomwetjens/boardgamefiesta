@@ -1,10 +1,20 @@
 package com.wetjens.gwt.server.domain;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Value;
+import org.apache.commons.codec.binary.Hex;
+
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-
-import lombok.*;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -33,7 +43,7 @@ public class User {
     @Getter
     private Instant expires;
 
-    public static User createAutomatically(Id id, String username, String email) {
+    public static User createAutomatically(@NonNull Id id, @NonNull String username, @NonNull String email) {
         var created = Instant.now();
 
         return User.builder()
@@ -57,6 +67,10 @@ public class User {
         updated = Instant.now();
     }
 
+    public URI getAvatarUrl() {
+        return getGravatarUrl(email);
+    }
+
     public static Instant calculateExpires(Instant lastSeen) {
         return lastSeen.plus(RETENTION_AFTER_LAST_SEEN);
     }
@@ -64,5 +78,20 @@ public class User {
     @Value(staticConstructor = "of")
     public static class Id {
         String id;
+    }
+
+    private static URI getGravatarUrl(String email) {
+        String hash = md5String(email.trim().toLowerCase().getBytes(StandardCharsets.US_ASCII));
+        return URI.create("https://www.gravatar.com/avatar/" + hash + "?s=48&d=identicon&r=g");
+    }
+
+    private static String md5String(byte[] bytes) {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            byte[] digest = md5.digest(bytes);
+            return Hex.encodeHexString(digest);
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
     }
 }

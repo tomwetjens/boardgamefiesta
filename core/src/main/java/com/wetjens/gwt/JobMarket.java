@@ -86,6 +86,8 @@ public final class JobMarket implements Serializable {
 
     public final class Row implements Serializable {
 
+        private static final long serialVersionUID = 1L;
+
         @Getter
         private final int cost;
         @Getter

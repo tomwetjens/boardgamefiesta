@@ -105,6 +105,8 @@ abstract class PossibleAction implements Serializable {
                 .collect(Collectors.toCollection(HashSet::new)));
     }
 
+    public abstract PossibleAction clone();
+
     abstract void perform(Class<? extends Action> action);
 
     abstract void skip();
@@ -155,6 +157,11 @@ abstract class PossibleAction implements Serializable {
         @Override
         Set<Class<? extends Action>> getPossibleActions() {
             return action != null ? Collections.singleton(action) : Collections.emptySet();
+        }
+
+        @Override
+        public PossibleAction clone() {
+            return new Mandatory(action);
         }
     }
 
@@ -223,6 +230,11 @@ abstract class PossibleAction implements Serializable {
                             .flatMap(action -> action.getPossibleActions().stream())
                             .collect(Collectors.toUnmodifiableSet()));
         }
+
+        @Override
+        public PossibleAction clone() {
+            return new Any(new ArrayList<>(actions));
+        }
     }
 
     private static final class Choice extends PossibleAction {
@@ -285,9 +297,16 @@ abstract class PossibleAction implements Serializable {
                     .flatMap(action -> action.getPossibleActions().stream())
                     .collect(Collectors.toUnmodifiableSet());
         }
+
+        @Override
+        public PossibleAction clone() {
+            return new Choice(new HashSet<>(actions));
+        }
     }
 
     private static final class WhenThen extends PossibleAction {
+
+        private static final long serialVersionUID = 1L;
 
         private final Class<? extends Action> when;
         private final Class<? extends Action> then;
@@ -360,6 +379,11 @@ abstract class PossibleAction implements Serializable {
                     atMost > 0 ? Stream.of(when) : Stream.empty(),
                     thens > 0 ? Stream.of(then) : Stream.empty()
             ).collect(Collectors.toSet());
+        }
+
+        @Override
+        public PossibleAction clone() {
+            return new WhenThen(atLeast, atMost, when, then);
         }
     }
 }

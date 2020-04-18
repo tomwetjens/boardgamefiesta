@@ -39,6 +39,8 @@ class ImmediateActions {
 
     private static final class ImmediateAction extends PossibleAction {
 
+        private static final long serialVersionUID = 1L;
+
         private final PossibleAction possibleAction;
 
         private ImmediateAction(PossibleAction possibleAction) {
@@ -73,6 +75,11 @@ class ImmediateActions {
         @Override
         public boolean isImmediate() {
             return true;
+        }
+
+        @Override
+        public PossibleAction clone() {
+            return new ImmediateAction(possibleAction.clone());
         }
     }
 }

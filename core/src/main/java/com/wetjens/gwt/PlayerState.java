@@ -110,8 +110,6 @@ public class PlayerState implements Serializable {
         Set<Card.CattleCard> cattleCards = hand.stream().filter(card -> card instanceof Card.CattleCard)
                 .map(card -> (Card.CattleCard) card)
                 .filter(cattleCard -> cattleCard.getType() == type)
-                // Assumed for now player wants to discard the lowest points to keep a good hand value
-                .sorted(Comparator.comparingInt(Card.CattleCard::getPoints))
                 .limit(amount)
                 .collect(Collectors.toSet());
 
@@ -189,8 +187,13 @@ public class PlayerState implements Serializable {
         if (!hand.remove(objectiveCard)) {
             throw new IllegalStateException("Objective card not in hand");
         }
+
         objectives.add(objectiveCard);
-        return objectiveCard.getPossibleAction().map(ImmediateActions::of).orElse(ImmediateActions.none());
+
+        return objectiveCard.getPossibleAction()
+                .map(PossibleAction::clone)
+                .map(ImmediateActions::of)
+                .orElse(ImmediateActions.none());
     }
 
     void removeWorker(Worker worker) {
@@ -248,6 +251,10 @@ public class PlayerState implements Serializable {
         }
 
         unlocked.compute(unlockable, (k, v) -> v != null ? v + 1 : 1);
+
+        if (unlockable == Unlockable.EXTRA_STEP_DOLLARS) {
+            gainDollars(3);
+        }
     }
 
     void gainJobMarketToken() {

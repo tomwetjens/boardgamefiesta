@@ -106,10 +106,10 @@ public enum ActionType {
     }
 
     private static ObjectiveCard findObjectiveCard(Game game, JsonObject jsonObject) {
-        Set<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, "tasks").stream()
+        List<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, "tasks").stream()
                 .map(JsonString::getString)
                 .map(ObjectiveCard.Task::valueOf)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
         int points = jsonObject.getInt("points");
 
         return game.getObjectiveCards().getAvailable().stream()
@@ -151,7 +151,7 @@ public enum ActionType {
     }
 
     private static RailroadTrack.Space findSpace(Game game, JsonObject jsonObject) {
-        if (jsonObject.containsKey("number")) {
+        if (jsonObject.containsKey("number") && jsonObject.get("number").getValueType() == JsonValue.ValueType.NUMBER) {
             int number = jsonObject.getInt("number");
             return game.getRailroadTrack().getSpace(number);
         } else {

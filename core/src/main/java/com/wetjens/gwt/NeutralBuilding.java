@@ -24,6 +24,8 @@ public abstract class NeutralBuilding extends Building {
 
     public static final class B extends NeutralBuilding {
 
+        private static final long serialVersionUID = 1L;
+
         B() {
             super("B");
         }
@@ -35,6 +37,8 @@ public abstract class NeutralBuilding extends Building {
     }
 
     public static final class C extends NeutralBuilding {
+
+        private static final long serialVersionUID = 1L;
 
         C() {
             super("C");
@@ -50,6 +54,8 @@ public abstract class NeutralBuilding extends Building {
 
     public static final class D extends NeutralBuilding {
 
+        private static final long serialVersionUID = 1L;
+
         D() {
             super("D");
         }
@@ -63,6 +69,8 @@ public abstract class NeutralBuilding extends Building {
     }
 
     public static final class E extends NeutralBuilding {
+
+        private static final long serialVersionUID = 1L;
 
         E() {
             super("E");
@@ -87,6 +95,8 @@ public abstract class NeutralBuilding extends Building {
     }
 
     public static final class G extends NeutralBuilding {
+
+        private static final long serialVersionUID = 1L;
 
         G() {
             super("G");

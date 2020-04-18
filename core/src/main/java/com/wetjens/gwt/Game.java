@@ -58,14 +58,8 @@ public class Game implements Serializable {
     private Player currentPlayer;
 
     ImmediateActions deliverToCity(City city) {
-        ImmediateActions immediateActions = railroadTrack.deliverToCity(currentPlayer, city)
+        return railroadTrack.deliverToCity(currentPlayer, city)
                 .andThen(placeDisc(city.getDiscColors()));
-
-        if (city == City.KANSAS_CITY) {
-            currentPlayerState().gainDollars(6);
-        }
-
-        return immediateActions;
     }
 
     ImmediateActions placeDisc(Collection<DiscColor> discColors) {

@@ -433,6 +433,8 @@ public class RailroadTrack implements Serializable {
         @ToString
         public static final class StartSpace extends NumberedSpace {
 
+            private static final long serialVersionUID = 1L;
+
             private StartSpace(@NonNull NumberedSpace next) {
                 super(false, 0, Collections.singleton(next));
             }
@@ -441,14 +443,18 @@ public class RailroadTrack implements Serializable {
         @ToString
         public static final class TurnoutSpace extends Space {
 
+            private static final long serialVersionUID = 1L;
+
             public TurnoutSpace(@NonNull Space previous, @NonNull Space next, @NonNull Station station) {
-                super(false, station, Collections.singleton(previous));
-                this.previous.add(next);
+                super(false, station, Collections.singleton(next));
+                this.previous.add(previous);
             }
         }
 
         @ToString
         public static final class EndSpace extends NumberedSpace {
+            private static final long serialVersionUID = 1L;
+
             public EndSpace(int number, @NonNull Station station) {
                 super(false, number, station, Collections.emptySet());
             }

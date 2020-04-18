@@ -3,11 +3,11 @@ package com.wetjens.gwt;
 import lombok.Getter;
 
 public enum CattleType {
-    
-    DUTCH_BELT(3),
-    BLACK_ANGUS(2),
-    GUERNSEY(1),
+
     JERSEY(1),
+    DUTCH_BELT(2),
+    BLACK_ANGUS(2),
+    GUERNSEY(2),
     HOLSTEIN(3),
     BROWN_SWISS(3),
     AYRSHIRE(3),

@@ -18,6 +18,9 @@ public abstract class Card implements Serializable {
     @Getter
     @ToString
     public static final class CattleCard extends Card {
+
+        private static final long serialVersionUID = 1L;
+
         CattleType type;
         int points;
     }

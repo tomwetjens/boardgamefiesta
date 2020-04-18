@@ -46,6 +46,8 @@ public final class ObjectiveCards implements Serializable {
         if (!available.remove(objectiveCard)) {
             throw new IllegalArgumentException("Objective card not available");
         }
+
+        fill();
     }
 
     public Set<ObjectiveCard> getAvailable() {

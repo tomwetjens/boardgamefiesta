@@ -7,10 +7,10 @@ import lombok.Getter;
 @Getter
 public enum Unlockable {
 
-    CERT_LIMIT_4(1, DiscColor.WHITE, 9),
+    CERT_LIMIT_4(1, DiscColor.WHITE, 0),
     CERT_LIMIT_6(1, DiscColor.BLACK, 0),
-    EXTRA_STEP_DOLLARS(1, DiscColor.BLACK, 9),
-    EXTRA_STEP_POINTS(1, DiscColor.BLACK, 9),
+    EXTRA_STEP_DOLLARS(1, DiscColor.BLACK, 0),
+    EXTRA_STEP_POINTS(1, DiscColor.BLACK, 0),
     EXTRA_CARD(2, DiscColor.BLACK, 5),
     AUX_GAIN_DOLLAR(2, DiscColor.WHITE,0),
     AUX_DRAW_CARD_TO_DISCARD_CARD(2, DiscColor.WHITE, 0),
