@@ -7,7 +7,6 @@ import lombok.Value;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -21,6 +20,7 @@ public class GameView {
     Instant ended;
     Instant expires;
     UserView owner;
+    PlayerView player;
     Set<PlayerView> otherPlayers;
     boolean accepted;
     boolean startable;
@@ -32,6 +32,11 @@ public class GameView {
         id = game.getId().getId();
         status = game.getStatus();
         owner = new UserView(game.getOwner(), userMap.get(game.getOwner()));
+        player = game.getPlayers().stream()
+                .filter(player -> player.getUserId().equals(currentUserId))
+                .findAny()
+                .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
+                .orElse(null);
         otherPlayers = game.getPlayers().stream()
                 .filter(player -> !player.getUserId().equals(currentUserId))
                 .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
@@ -45,10 +50,10 @@ public class GameView {
         expires = game.getExpires();
         startable = game.canStart() && currentUserId.equals(game.getOwner());
 
-        if(game.getState() != null) {
+        if (game.getState() != null) {
             Player currentUserPlayer = game.getPlayerByUserId(currentUserId).orElseThrow(() -> new IllegalArgumentException("Not a player in game"));
 
-            turn =  game.getState().getCurrentPlayer() == currentUserPlayer.getColor();
+            turn = game.getState().getCurrentPlayer() == currentUserPlayer.getColor();
 
             Player currentPlayer = game.getCurrentPlayer();
             this.currentPlayer = new UserView(currentPlayer.getUserId(), userMap.get(currentPlayer.getUserId()));

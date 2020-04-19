@@ -1,21 +1,19 @@
 package com.wetjens.gwt;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action {
@@ -129,31 +127,23 @@ public abstract class Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static class Remove1Card extends Action {
-        @NonNull Card card;
+    public static final class MoveEngine1Forward extends Action {
+        @NonNull RailroadTrack.Space to;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            game.currentPlayerState().removeCards(Collections.singleton(card));
-            return ImmediateActions.none();
+            return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 1).getImmediateActions();
         }
     }
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static class Remove2Cards extends Action {
-        @NonNull Set<Card> cards;
-
-        public Remove2Cards(@NonNull Set<Card> cards) {
-            if (cards.size() != 2) {
-                throw new IllegalArgumentException("Must specify 2 cards");
-            }
-            this.cards = new HashSet<>(cards);
-        }
+    public static class RemoveCard extends Action {
+        @NonNull Card card;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            game.currentPlayerState().removeCards(cards);
+            game.currentPlayerState().removeCards(Collections.singleton(card));
             return ImmediateActions.none();
         }
     }
@@ -545,7 +535,7 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             return game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2)
                     .getImmediateActions()
-                    .andThen(PossibleAction.mandatory(Remove2Cards.class));
+                    .andThen(PossibleAction.mandatory(RemoveCard.class), PossibleAction.mandatory(RemoveCard.class));
         }
     }
 
@@ -603,7 +593,7 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             return game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1)
                     .getImmediateActions()
-                    .andThen(PossibleAction.mandatory(Remove1Card.class));
+                    .andThen(PossibleAction.mandatory(RemoveCard.class));
         }
     }
 
@@ -948,15 +938,11 @@ public abstract class Action {
         }
     }
 
-    @Value
-    @EqualsAndHashCode(callSuper = false)
     public static final class Discard1JerseyToMoveEngine1Forward extends Action {
-        @NonNull RailroadTrack.Space to;
-
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
-            return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 1).getImmediateActions();
+            return ImmediateActions.of(PossibleAction.mandatory(MoveEngine1Forward.class));
         }
     }
 
@@ -989,11 +975,11 @@ public abstract class Action {
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static final class Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand extends Action {
-        @NonNull Card.CattleCard cattleCard;
+        @NonNull CattleType cattleType;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            game.currentPlayerState().discardCard(cattleCard);
+            game.currentPlayerState().discardCattleCards(cattleType, 1);
             game.currentPlayerState().gainDollars(3);
 
             return ImmediateActions.of(PossibleAction.mandatory(Add1ObjectiveCardToHand.class));
@@ -1067,11 +1053,11 @@ public abstract class Action {
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static final class Discard1CattleCardToGain1Certificate extends Action {
-        @NonNull Card.CattleCard cattleCard;
+        @NonNull CattleType cattleType;
 
         @Override
         ImmediateActions perform(Game game, Random random) {
-            game.currentPlayerState().discardCard(cattleCard);
+            game.currentPlayerState().discardCattleCards(cattleType, 1);
             game.currentPlayerState().gainCertificates(1);
             return ImmediateActions.none();
         }

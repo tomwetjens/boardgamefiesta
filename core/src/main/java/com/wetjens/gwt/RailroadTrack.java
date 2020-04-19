@@ -58,7 +58,8 @@ public class RailroadTrack implements Serializable {
         this.stations = createStations(random);
         this.cities = createEmptyCities();
 
-        this.end = new Space.EndSpace(MAX_SPACE, stations.get(stations.size() - 1));
+        end = new Space.EndSpace(MAX_SPACE, stations.get(stations.size() - 1));
+        normalSpaces.put(end.getNumber(), end);
 
         Space.NumberedSpace last = end;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
@@ -70,8 +71,9 @@ public class RailroadTrack implements Serializable {
             normalSpaces.put(number, current);
         }
 
-        this.start = new Space.StartSpace(last);
+        start = new Space.StartSpace(last);
         last.previous.add(start);
+        normalSpaces.put(start.getNumber(), start);
 
         // Turn outs
         for (int i = 0; i < TURNOUTS.size(); i++) {

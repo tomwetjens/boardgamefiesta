@@ -27,8 +27,8 @@ class ImmediateActions {
         return Collections.unmodifiableList(actions);
     }
 
-    ImmediateActions andThen(PossibleAction possibleAction) {
-        return new ImmediateActions(Stream.concat(actions.stream(), Stream.of(new ImmediateAction(possibleAction)))
+    ImmediateActions andThen(PossibleAction... possibleAction) {
+        return new ImmediateActions(Stream.concat(actions.stream(), Arrays.stream(possibleAction).map(ImmediateAction::new))
                 .collect(Collectors.toUnmodifiableList()));
     }
 
