@@ -1,9 +1,25 @@
 package com.wetjens.gwt;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Value;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -98,7 +114,7 @@ public final class CattleMarket implements Serializable {
     /**
      * Calculates the minimum amount of dollars needed to buy specified cards with the specified number of cowboys.
      *
-     * @param cattleCards The cards to buy.
+     * @param cattleCards     The cards to buy.
      * @param numberOfCowboys The number of cowboys available.
      * @return Minimum amount of dollars.
      */
@@ -109,9 +125,9 @@ public final class CattleMarket implements Serializable {
     /**
      * Calculates the minimum cost needed to buy the specified cards with the specified number of cowboys, based on the cost preference.
      *
-     * @param cattleCards The cards to buy.
+     * @param cattleCards     The cards to buy.
      * @param numberOfCowboys The number of cowboys available.
-     * @param preference The cost preference: either calculate the minimum amount of dollars or the minimum amount of cowboys.
+     * @param preference      The cost preference: either calculate the minimum amount of dollars or the minimum amount of cowboys.
      * @return The minimum cost based on the specified cost preference.
      */
     public Cost cost(Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
@@ -208,7 +224,8 @@ public final class CattleMarket implements Serializable {
     }
 
     ImmediateActions buy(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
-        Cost cost = cost(cattleCards, numberOfCowboys, CostPreference.LESS_COWBOYS);
+        // Assume player wants cheaper instead of less cowboys
+        Cost cost = cost(cattleCards, numberOfCowboys, CostPreference.CHEAPER_COST);
 
         market.removeAll(cattleCards);
 

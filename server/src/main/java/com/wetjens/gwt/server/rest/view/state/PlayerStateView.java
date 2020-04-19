@@ -5,6 +5,7 @@ import com.wetjens.gwt.Player;
 import com.wetjens.gwt.PlayerBuilding;
 import com.wetjens.gwt.PlayerState;
 import com.wetjens.gwt.StationMaster;
+import com.wetjens.gwt.Teepee;
 import com.wetjens.gwt.Unlockable;
 import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
@@ -33,6 +34,9 @@ public class PlayerStateView {
     Map<Unlockable, Integer> unlocked;
     List<String> buildings;
     Set<StationMaster> stationMasters;
+    List<HazardView> hazards;
+    List<Teepee> teepees;
+    Set<ObjectiveCardView> objectives;
 
     PlayerStateView(PlayerState playerState, Player viewingPlayer, User user) {
         player = new PlayerView(playerState.getPlayer(), user);
@@ -65,5 +69,11 @@ public class PlayerStateView {
                 .collect(Collectors.toList());
 
         stationMasters = playerState.getStationMasters();
+
+        hazards = playerState.getHazards().stream().map(HazardView::new).collect(Collectors.toList());
+
+        teepees = playerState.getTeepees();
+
+        objectives = playerState.getObjectives().stream().map(ObjectiveCardView::new).collect(Collectors.toSet());
     }
 }

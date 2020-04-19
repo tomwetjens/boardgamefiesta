@@ -1,13 +1,18 @@
 package com.wetjens.gwt;
 
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -100,6 +105,13 @@ class CattleMarketTest {
 
                 assertThat(possibleBuys).hasSize(8);
             }
+        }
+
+        @Test
+        void pair3s() {
+            CattleMarket cattleMarket = createCattleMarketWithAllCards();
+            Set<CattleMarket.PossibleBuy> possibleBuys = cattleMarket.possibleBuys(3, 6);
+            assertThat(possibleBuys).contains(new CattleMarket.PossibleBuy(Arrays.asList(3, 3), 5, 3));
         }
 
         private void assertBasics(Set<CattleMarket.PossibleBuy> possibleBuys, CattleMarket cattleMarket, int numberOfCowboys, int balance) {
