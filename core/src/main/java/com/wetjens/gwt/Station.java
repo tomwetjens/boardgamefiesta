@@ -62,11 +62,11 @@ public class Station implements Serializable {
 
         players.add(game.getCurrentPlayer());
 
-        game.placeDisc(discColors);
+        ImmediateActions placeDiscActions = game.placeDisc(discColors);
 
         return stationMaster != null
-                ? ImmediateActions.of(PossibleAction.optional(Action.AppointStationMaster.class))
-                : ImmediateActions.none();
+                ? placeDiscActions.andThen(PossibleAction.optional(Action.AppointStationMaster.class))
+                : placeDiscActions;
     }
 
     ImmediateActions appointStationMaster(@NonNull Game game, @NonNull Worker worker) {
