@@ -524,9 +524,9 @@ public class PlayerState implements Serializable {
     }
 
     boolean canUnlock(Collection<DiscColor> discColors) {
-        return unlocked.entrySet().stream()
-                .filter(entry -> entry.getValue() < entry.getKey().getCount())
-                .filter(entry -> balance >= entry.getKey().getCost())
-                .anyMatch(entry -> discColors.contains(entry.getKey().getDiscColor()));
+        return Arrays.stream(Unlockable.values())
+                .filter(unlockable -> unlocked.getOrDefault(unlockable, 0) < unlockable.getCount())
+                .filter(unlockable -> balance >= unlockable.getCost())
+                .anyMatch(unlockable -> discColors.contains(unlockable.getDiscColor()));
     }
 }

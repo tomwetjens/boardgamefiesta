@@ -23,7 +23,7 @@ class ImmediateActions {
         return new ImmediateActions(Collections.emptyList());
     }
 
-    List<ImmediateAction> getActions() {
+    List<PossibleAction> getActions() {
         return Collections.unmodifiableList(actions);
     }
 

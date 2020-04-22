@@ -71,9 +71,14 @@ public class Game implements Serializable {
             if (currentPlayerState().canUnlock(Collections.singleton(DiscColor.BLACK))) {
                 return ImmediateActions.of(PossibleAction.mandatory(Action.UnlockBlackOrWhite.class));
             } else {
-                // If player MUST remove a disc, but has no more discs to remove,
+                // If player MUST remove a disc, but has no more discs to remove from player board,
                 // then player MUST remove the disc from one of his stations
-                return ImmediateActions.of(PossibleAction.mandatory(Action.DowngradeStation.class));
+                if (railroadTrack.getStations().stream().anyMatch(station -> station.getPlayers().contains(currentPlayer))) {
+                    return ImmediateActions.of(PossibleAction.mandatory(Action.DowngradeStation.class));
+                } else {
+                    // EXCEPTIONAL CASE: If player only has discs on cities, then he cannot remove a disc anymore
+                    return ImmediateActions.none();
+                }
             }
         }
     }
