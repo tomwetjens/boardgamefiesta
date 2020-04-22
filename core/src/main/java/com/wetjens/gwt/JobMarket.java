@@ -32,18 +32,21 @@ public final class JobMarket implements Serializable {
                 new Row(7),
                 new Row(5),
                 new Row(7),
-                new Row(9, true),
-                new Row(6),
+                new Row(9),
+                new Row(6, true),
                 new Row(8),
-                new Row(10, true),
-                new Row(6),
+                new Row(10),
+                new Row(6, true),
                 new Row(5),
                 new Row(4));
 
         this.currentRowIndex = 1;
     }
 
-    void addWorker(Worker worker) {
+    /**
+     * @return <code>true</code> if the cattle market should be filled because of this action.
+     */
+    boolean addWorker(Worker worker) {
         if (isClosed()) {
             throw new IllegalStateException("Job market closed");
         }
@@ -54,15 +57,15 @@ public final class JobMarket implements Serializable {
 
         if (row.workers.size() == rowLimit) {
             currentRowIndex++;
+
+            return rows.get(currentRowIndex).cattleMarket;
         }
+
+        return false;
     }
 
     public boolean isClosed() {
         return currentRowIndex >= rows.size();
-    }
-
-    boolean fillUpCattleMarket() {
-        return rows.get(currentRowIndex).cattleMarket;
     }
 
     void takeWorker(Worker worker) {

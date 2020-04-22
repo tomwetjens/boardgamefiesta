@@ -80,7 +80,7 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(Game game) {
-            return PossibleAction.optional(Action.Gain1DollarPerBuildingInWoods.class);
+            return PossibleAction.optional(Action.Gain2DollarsPerBuildingInWoods.class);
         }
     }
 

@@ -413,9 +413,9 @@ public abstract class Action {
                     JobMarket jobMarket = game.getJobMarket();
 
                     if (!jobMarket.isClosed()) {
-                        jobMarket.addWorker(tile.getWorker());
+                        boolean fillUpCattleMarket = jobMarket.addWorker(tile.getWorker());
 
-                        if (game.getJobMarket().fillUpCattleMarket()) {
+                        if (fillUpCattleMarket) {
                             game.getCattleMarket().fillUp();
                         }
 
@@ -880,7 +880,7 @@ public abstract class Action {
         }
     }
 
-    public static final class Gain1DollarPerBuildingInWoods extends Action {
+    public static final class Gain2DollarsPerBuildingInWoods extends Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             int buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
