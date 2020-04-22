@@ -1,15 +1,14 @@
 package com.wetjens.gwt.server.rest.view.state;
 
-import com.wetjens.gwt.Building;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.wetjens.gwt.Location;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.Teepee;
 import com.wetjens.gwt.Trail;
 import lombok.Value;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Value
 public class TrailView {

@@ -1,5 +1,6 @@
 package com.wetjens.gwt.server.rest.view.state;
 
+import com.wetjens.gwt.ObjectiveCard;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.User;
@@ -7,6 +8,7 @@ import lombok.Value;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,10 +27,10 @@ public class StateView {
     TrailView trail;
     JobMarketView jobMarket;
     CattleMarketView cattleMarket;
-    Set<ObjectiveCardView> objectiveCards;
+    List<ObjectiveCardView> objectiveCards;
 
     PlayerView currentPlayer;
-    Set<ActionType> actions;
+    List<ActionType> actions;
     Instant expires;
     boolean turn;
 
@@ -59,15 +61,22 @@ public class StateView {
 
         cattleMarket = new CattleMarketView(game.getState().getCattleMarket());
 
-        objectiveCards = game.getState().getObjectiveCards().getAvailable().stream().map(ObjectiveCardView::new).collect(Collectors.toSet());
+        objectiveCards = game.getState().getObjectiveCards().getAvailable().stream()
+                .sorted(Comparator.comparingInt(ObjectiveCard::getPoints)
+                        .thenComparingInt(objectiveCard -> objectiveCard.getTasks().hashCode()))
+                .map(ObjectiveCardView::new)
+                .collect(Collectors.toList());
 
         currentPlayer = new PlayerView(game.getState().getCurrentPlayer(), userMap.get(game.getState().getCurrentPlayer()));
 
         if (viewingPlayer == game.getState().getCurrentPlayer()) {
-            actions = game.getState().possibleActions().stream().map(ActionType::of).collect(Collectors.toSet());
+            actions = game.getState().possibleActions().stream()
+                    .map(ActionType::of)
+                    .sorted(Comparator.comparing(Enum::name))
+                    .collect(Collectors.toList());
             turn = true;
         } else {
-            actions = Collections.emptySet();
+            actions = Collections.emptyList();
             turn = false;
         }
 

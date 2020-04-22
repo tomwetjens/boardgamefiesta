@@ -15,13 +15,13 @@ import java.util.stream.Collectors;
 @Value
 public class ForesightsView {
 
-    List<Set<TileView>> choices;
+    List<List<TileView>> choices;
 
     ForesightsView(Foresights foresights) {
         choices = Arrays.asList(
-                foresights.choices(0).stream().map(TileView::new).collect(Collectors.toSet()),
-                foresights.choices(1).stream().map(TileView::new).collect(Collectors.toSet()),
-                foresights.choices(2).stream().map(TileView::new).collect(Collectors.toSet())
+                foresights.choices(0).stream().map(TileView::new).collect(Collectors.toList()),
+                foresights.choices(1).stream().map(TileView::new).collect(Collectors.toList()),
+                foresights.choices(2).stream().map(TileView::new).collect(Collectors.toList())
         );
     }
 

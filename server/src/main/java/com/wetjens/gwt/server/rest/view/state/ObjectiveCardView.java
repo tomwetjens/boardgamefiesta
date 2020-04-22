@@ -1,11 +1,13 @@
 package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.ObjectiveCard;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 import java.util.List;
 
 @Value
+@EqualsAndHashCode(callSuper = false)
 public class ObjectiveCardView extends CardView {
 
     private final int points;

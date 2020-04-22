@@ -14,6 +14,8 @@ public enum CattleType {
     WEST_HIGHLAND(4),
     TEXAS_LONGHORN(5);
 
+    public static final int MAX_VALUE = 5;
+
     @Getter
     private final int value;
 
