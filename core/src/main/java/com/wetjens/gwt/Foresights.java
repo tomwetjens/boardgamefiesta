@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public final class Foresights implements Serializable {
@@ -16,7 +17,6 @@ public final class Foresights implements Serializable {
     private final KansasCitySupply kansasCitySupply;
     private final KansasCitySupply.Tile[][] spaces;
 
-    @SuppressWarnings("unchecked")
     Foresights(KansasCitySupply kansasCitySupply) {
         this.kansasCitySupply = kansasCitySupply;
 
@@ -39,6 +39,6 @@ public final class Foresights implements Serializable {
     }
 
     public Collection<KansasCitySupply.Tile> choices(int columnIndex) {
-        return Collections.unmodifiableList(Arrays.asList(spaces[columnIndex]));
+        return List.of(spaces[columnIndex]);
     }
 }

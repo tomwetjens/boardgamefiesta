@@ -27,12 +27,12 @@ class PlayerStateTest {
             PlayerState playerState = new PlayerState(player, 6, startingObjectiveCard, new Random(0), PlayerBuilding.BuildingSet.beginner());
 
             assertThat(playerState.getBalance()).isEqualTo(6);
-            assertThat(playerState.getCertificates()).isEqualTo(0);
+            assertThat(playerState.getTempCertificates()).isEqualTo(0);
             assertThat(playerState.getNumberOfCowboys()).isEqualTo(1);
             assertThat(playerState.getNumberOfCraftsmen()).isEqualTo(1);
             assertThat(playerState.getNumberOfEngineers()).isEqualTo(1);
             assertThat(playerState.getStepLimit(2)).isEqualTo(3);
-            assertThat(playerState.getCertificateLimit()).isEqualTo(3);
+            assertThat(playerState.getTempCertificateLimit()).isEqualTo(3);
             assertThat(playerState.getHandLimit()).isEqualTo(4);
             assertThat(playerState.getHazards()).isEmpty();
             assertThat(playerState.getTeepees()).isEmpty();
@@ -198,153 +198,153 @@ class PlayerStateTest {
         @Test
         void gain1() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(0)
+                    .tempCertificates(0)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
-            playerState.gainCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(1);
+            playerState.gainTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(1);
 
-            playerState.gainCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(2);
+            playerState.gainTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(2);
 
-            playerState.gainCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(3);
+            playerState.gainTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(3);
 
-            playerState.gainCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(4);
+            playerState.gainTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(4);
 
-            playerState.gainCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(6);
+            playerState.gainTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(6);
         }
 
         @Test
         void gain2() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(0)
+                    .tempCertificates(0)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
-            playerState.gainCertificates(2);
-            assertThat(playerState.getCertificates()).isEqualTo(2);
+            playerState.gainTempCertificates(2);
+            assertThat(playerState.getTempCertificates()).isEqualTo(2);
 
-            playerState.gainCertificates(2);
-            assertThat(playerState.getCertificates()).isEqualTo(4);
+            playerState.gainTempCertificates(2);
+            assertThat(playerState.getTempCertificates()).isEqualTo(4);
 
-            playerState.gainCertificates(2);
-            assertThat(playerState.getCertificates()).isEqualTo(6);
+            playerState.gainTempCertificates(2);
+            assertThat(playerState.getTempCertificates()).isEqualTo(6);
         }
 
         @Test
         void limit4() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(0)
+                    .tempCertificates(0)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .build();
 
-            playerState.gainCertificates(4);
+            playerState.gainTempCertificates(4);
 
-            assertThat(playerState.getCertificates()).isEqualTo(4);
+            assertThat(playerState.getTempCertificates()).isEqualTo(4);
         }
 
         @Test
         void limit6() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(0)
+                    .tempCertificates(0)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
-            playerState.gainCertificates(6);
+            playerState.gainTempCertificates(6);
 
-            assertThat(playerState.getCertificates()).isEqualTo(6);
+            assertThat(playerState.getTempCertificates()).isEqualTo(6);
         }
 
         @Test
         void max4() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(0)
+                    .tempCertificates(0)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .build();
 
-            playerState.gainMaxCertificates();
+            playerState.gainMaxTempCertificates();
 
-            assertThat(playerState.getCertificates()).isEqualTo(4);
+            assertThat(playerState.getTempCertificates()).isEqualTo(4);
         }
 
         @Test
         void max6() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(0)
+                    .tempCertificates(0)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
-            playerState.gainMaxCertificates();
+            playerState.gainMaxTempCertificates();
 
-            assertThat(playerState.getCertificates()).isEqualTo(6);
+            assertThat(playerState.getTempCertificates()).isEqualTo(6);
         }
 
         @Test
         void spend1() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(6)
+                    .tempCertificates(6)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
-            playerState.spendCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(4);
+            playerState.spendTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(4);
 
-            playerState.spendCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(3);
+            playerState.spendTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(3);
 
-            playerState.spendCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(2);
+            playerState.spendTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(2);
 
-            playerState.spendCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(1);
+            playerState.spendTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(1);
 
-            playerState.spendCertificates(1);
-            assertThat(playerState.getCertificates()).isEqualTo(0);
+            playerState.spendTempCertificates(1);
+            assertThat(playerState.getTempCertificates()).isEqualTo(0);
 
-            assertThatThrownBy(() -> playerState.spendCertificates(1)).hasMessage("Not enough certificates");
+            assertThatThrownBy(() -> playerState.spendTempCertificates(1)).hasMessage("Not enough certificates");
         }
 
         @Test
         void spend2() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(6)
+                    .tempCertificates(6)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
-            playerState.spendCertificates(2);
-            assertThat(playerState.getCertificates()).isEqualTo(4);
+            playerState.spendTempCertificates(2);
+            assertThat(playerState.getTempCertificates()).isEqualTo(4);
 
-            playerState.spendCertificates(2);
-            assertThat(playerState.getCertificates()).isEqualTo(2);
+            playerState.spendTempCertificates(2);
+            assertThat(playerState.getTempCertificates()).isEqualTo(2);
 
-            playerState.spendCertificates(2);
-            assertThat(playerState.getCertificates()).isEqualTo(0);
+            playerState.spendTempCertificates(2);
+            assertThat(playerState.getTempCertificates()).isEqualTo(0);
 
-            assertThatThrownBy(() -> playerState.spendCertificates(2)).hasMessage("Not enough certificates");
+            assertThatThrownBy(() -> playerState.spendTempCertificates(2)).hasMessage("Not enough certificates");
         }
 
         @Test
         void spend4() {
             PlayerState playerState = PlayerState.builder()
-                    .certificates(6)
+                    .tempCertificates(6)
                     .unlocked(Unlockable.CERT_LIMIT_4, 1)
                     .unlocked(Unlockable.CERT_LIMIT_6, 1)
                     .build();
 
-            playerState.spendCertificates(4);
-            assertThat(playerState.getCertificates()).isEqualTo(2);
+            playerState.spendTempCertificates(4);
+            assertThat(playerState.getTempCertificates()).isEqualTo(2);
 
-            assertThatThrownBy(() -> playerState.spendCertificates(4)).hasMessage("Not enough certificates");
+            assertThatThrownBy(() -> playerState.spendTempCertificates(4)).hasMessage("Not enough certificates");
         }
     }
 

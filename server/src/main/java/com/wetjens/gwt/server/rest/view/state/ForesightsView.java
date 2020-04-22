@@ -1,16 +1,15 @@
 package com.wetjens.gwt.server.rest.view.state;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.wetjens.gwt.Foresights;
 import com.wetjens.gwt.KansasCitySupply;
 import com.wetjens.gwt.Teepee;
 import com.wetjens.gwt.Worker;
 import lombok.Getter;
 import lombok.Value;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Value
 public class ForesightsView {
@@ -28,29 +27,18 @@ public class ForesightsView {
     @Getter
     public static class TileView {
 
-        Type type;
-
         Worker worker;
         HazardView hazard;
         Teepee teepee;
 
         TileView(KansasCitySupply.Tile tile) {
             if (tile.getWorker() != null) {
-                type = Type.WORKER;
                 worker = tile.getWorker();
             } else if (tile.getHazard() != null) {
-                type = Type.HAZARD;
                 hazard = new HazardView(tile.getHazard());
             } else {
-                type = Type.TEEPEE;
                 teepee = tile.getTeepee();
             }
-        }
-
-        public enum Type {
-            WORKER,
-            HAZARD,
-            TEEPEE;
         }
     }
 }

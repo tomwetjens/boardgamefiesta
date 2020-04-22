@@ -48,7 +48,7 @@ public class PlayerStateView {
         cowboys = playerState.getNumberOfCowboys();
         craftsmen = playerState.getNumberOfCraftsmen();
         engineers = playerState.getNumberOfEngineers();
-        certificates = playerState.getCertificates();
+        certificates = playerState.getTempCertificates();
 
         if (viewingPlayer == playerState.getPlayer()) {
             hand = playerState.getHand().stream()

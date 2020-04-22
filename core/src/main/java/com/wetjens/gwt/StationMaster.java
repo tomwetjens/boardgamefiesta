@@ -13,7 +13,7 @@ public enum StationMaster {
             PossibleAction.choice(Action.TradeWithIndians.class, Action.RemoveHazardForFree.class))), playerState -> (playerState.numberOfObjectiveCards() / 2) * 3),
     PERM_CERT_POINTS_FOR_EACH_2_HAZARDS(ImmediateActions::none, playerState -> (playerState.getHazards().size() / 2) * 3),
     PERM_CERT_POINTS_FOR_TEEPEE_PAIRS(ImmediateActions::none, playerState -> playerState.numberOfTeepeePairs() * 3),
-    PERM_CERT_POINTS_FOR_EACH_2_CERTS(ImmediateActions::none, playerState -> ((playerState.getCertificates() + playerState.permanentCertificates()) / 2) * 3);
+    PERM_CERT_POINTS_FOR_EACH_2_CERTS(ImmediateActions::none, playerState -> ((playerState.getTempCertificates() + playerState.permanentCertificates()) / 2) * 3);
 
     private final Supplier<ImmediateActions> immediateActionsSupplier;
     private final Function<PlayerState, Integer> scoreFunction;

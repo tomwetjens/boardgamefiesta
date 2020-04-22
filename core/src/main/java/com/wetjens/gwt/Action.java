@@ -1,5 +1,12 @@
 package com.wetjens.gwt;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -7,13 +14,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action {
@@ -242,7 +242,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
-            game.currentPlayerState().gainCertificates(1);
+            game.currentPlayerState().gainTempCertificates(1);
             return ImmediateActions.none();
         }
     }
@@ -266,7 +266,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
-            game.currentPlayerState().gainCertificates(2);
+            game.currentPlayerState().gainTempCertificates(2);
             return ImmediateActions.none();
         }
     }
@@ -275,7 +275,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
-            game.currentPlayerState().gainCertificates(4);
+            game.currentPlayerState().gainTempCertificates(4);
             return ImmediateActions.none();
         }
     }
@@ -438,22 +438,25 @@ public abstract class Action {
     @EqualsAndHashCode(callSuper = false)
     public static final class DeliverToCity extends Action {
         @NonNull City city;
-        int certificates;
+        int certificates; // temp + perm player wants to use
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
             int breedingValue = game.currentPlayerState().handValue() + certificates;
 
             if (breedingValue < city.getValue()) {
-                throw new IllegalArgumentException("Not enough hand value for city");
+                throw new IllegalArgumentException("Not enough certificates for city");
             }
 
-            game.currentPlayerState().spendCertificates(certificates);
+            int tempCertificates = Math.max(0, certificates - game.currentPlayerState().permanentCertificates());
+            if (tempCertificates > 0) {
+                game.currentPlayerState().spendTempCertificates(tempCertificates);
+            }
+
             game.currentPlayerState().gainDollars(breedingValue);
             game.currentPlayerState().discardAllCards();
 
-            int transportCosts = city.getSignals() + game.getRailroadTrack().signalsPassed(game.getCurrentPlayer());
-
+            int transportCosts = Math.max(0, city.getSignals() - game.getRailroadTrack().signalsPassed(game.getCurrentPlayer()));
             if (transportCosts > 0) {
                 game.currentPlayerState().payDollars(transportCosts);
             }
@@ -521,7 +524,7 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().payDollars(2);
             ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2).getImmediateActions();
-            game.currentPlayerState().gainCertificates(2);
+            game.currentPlayerState().gainTempCertificates(2);
             return immediateActions;
         }
     }
@@ -567,7 +570,7 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().payDollars(1);
             ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1).getImmediateActions();
-            game.currentPlayerState().gainCertificates(1);
+            game.currentPlayerState().gainTempCertificates(1);
             return immediateActions;
         }
     }
@@ -658,7 +661,7 @@ public abstract class Action {
     public static final class Gain1Certificate extends Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            game.currentPlayerState().gainCertificates(1);
+            game.currentPlayerState().gainTempCertificates(1);
             return ImmediateActions.none();
         }
     }
@@ -875,7 +878,7 @@ public abstract class Action {
     public static final class MaxCertificates extends Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            game.currentPlayerState().gainMaxCertificates();
+            game.currentPlayerState().gainMaxTempCertificates();
             return ImmediateActions.none();
         }
     }
@@ -894,7 +897,7 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             int pairs = game.currentPlayerState().numberOfTeepeePairs();
 
-            game.currentPlayerState().gainCertificates(pairs * 2);
+            game.currentPlayerState().gainTempCertificates(pairs * 2);
             game.currentPlayerState().gainDollars(pairs * 2);
 
             return ImmediateActions.none();
@@ -920,7 +923,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCard(card);
-            game.currentPlayerState().gainCertificates(2);
+            game.currentPlayerState().gainTempCertificates(2);
             return ImmediateActions.none();
         }
     }
@@ -959,7 +962,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCattleCards(CattleType.BLACK_ANGUS, 1);
-            game.currentPlayerState().gainCertificates(2);
+            game.currentPlayerState().gainTempCertificates(2);
             return ImmediateActions.none();
         }
     }
@@ -1058,7 +1061,7 @@ public abstract class Action {
         @Override
         ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCattleCards(cattleType, 1);
-            game.currentPlayerState().gainCertificates(1);
+            game.currentPlayerState().gainTempCertificates(1);
             return ImmediateActions.none();
         }
     }
@@ -1067,7 +1070,7 @@ public abstract class Action {
         @Override
         ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
-            game.currentPlayerState().gainCertificates(1);
+            game.currentPlayerState().gainTempCertificates(1);
             game.currentPlayerState().gainDollars(2);
             return ImmediateActions.none();
         }

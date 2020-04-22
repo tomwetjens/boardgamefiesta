@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -50,7 +49,7 @@ public class PlayerState implements Serializable {
     private final Set<Hazard> hazards = new HashSet<>();
 
     @Getter
-    private int certificates;
+    private int tempCertificates;
     @Getter
     private int balance;
     @Getter
@@ -59,7 +58,7 @@ public class PlayerState implements Serializable {
     PlayerState(@NonNull Player player, int balance, @NonNull ObjectiveCard startingObjectiveCard, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
         this.player = player;
         this.balance = balance;
-        this.certificates = 0;
+        this.tempCertificates = 0;
 
         this.drawStack = createDrawStack(random);
 
@@ -227,22 +226,42 @@ public class PlayerState implements Serializable {
         }
     }
 
-    void gainCertificates(int amount) {
-        int step = Math.min(CERTIFICATE_STEPS.size() - 1, CERTIFICATE_STEPS.indexOf(certificates) + amount);
-        certificates = CERTIFICATE_STEPS.get(Math.min(getCertificateLimit(), step));
+    void gainTempCertificates(int steps) {
+        int newIndex = Math.min(CERTIFICATE_STEPS.size() - 1, CERTIFICATE_STEPS.indexOf(tempCertificates) + steps);
+        tempCertificates = Math.min(getTempCertificateLimit(), CERTIFICATE_STEPS.get(newIndex));
     }
 
-    void spendCertificates(int amount) {
-        if (amount - permanentCertificates() > certificates) {
+    void gainMaxTempCertificates() {
+        tempCertificates = getTempCertificateLimit();
+    }
+
+    public int getTempCertificateLimit() {
+        if (hasUnlocked(Unlockable.CERT_LIMIT_6) && hasUnlocked(Unlockable.CERT_LIMIT_4)) {
+            return 6;
+        } else if (hasUnlocked(Unlockable.CERT_LIMIT_4)) {
+            return 4;
+        }
+        return 3;
+    }
+
+    void spendTempCertificates(int amount) {
+        if (amount > tempCertificates) {
             throw new IllegalArgumentException("Not enough certificates");
         }
-        int remaining = amount - permanentCertificates();
+        int remaining = amount;
         while (remaining > 0) {
-            int step = Math.max(0, CERTIFICATE_STEPS.indexOf(certificates) - 1);
-            int spent = certificates - CERTIFICATE_STEPS.get(step);
-            certificates -= spent;
+            // Move up one step
+            int index = Math.max(0, CERTIFICATE_STEPS.indexOf(tempCertificates) - 1);
+            int spent = tempCertificates - CERTIFICATE_STEPS.get(index);
+            tempCertificates -= spent;
             remaining -= spent;
         }
+    }
+
+    int permanentCertificates() {
+        return (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS) ? 1 : 0)
+                + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_HAZARDS) ? 1 : 0)
+                + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_TEEPEE_PAIRS) ? 1 : 0);
     }
 
     void unlock(Unlockable unlockable) {
@@ -259,10 +278,6 @@ public class PlayerState implements Serializable {
 
     void gainJobMarketToken() {
         jobMarketToken = true;
-    }
-
-    void gainMaxCertificates() {
-        certificates = Math.min(getCertificateLimit(), CERTIFICATE_STEPS.get(CERTIFICATE_STEPS.size() - 1));
     }
 
     void addCardToHand(Card card) {
@@ -302,7 +317,7 @@ public class PlayerState implements Serializable {
     }
 
     public Set<RailroadTrack.PossibleDelivery> possibleDeliveries(RailroadTrack railroadTrack) {
-        return railroadTrack.possibleDeliveries(player, handValue(), certificates + permanentCertificates());
+        return railroadTrack.possibleDeliveries(player, handValue(), tempCertificates + permanentCertificates());
     }
 
     public int handValue() {
@@ -397,15 +412,6 @@ public class PlayerState implements Serializable {
         return 4 + unlocked.getOrDefault(Unlockable.EXTRA_CARD, 0);
     }
 
-    public int getCertificateLimit() {
-        if (hasUnlocked(Unlockable.CERT_LIMIT_6) && hasUnlocked(Unlockable.CERT_LIMIT_4)) {
-            return 6;
-        } else if (hasUnlocked(Unlockable.CERT_LIMIT_4)) {
-            return 4;
-        }
-        return 3;
-    }
-
     public int getStepLimit(int playerCount) {
         switch (playerCount) {
             case 2:
@@ -448,12 +454,6 @@ public class PlayerState implements Serializable {
                 .filter(card -> card instanceof ObjectiveCard)
                 .map(card -> (ObjectiveCard) card)
                 .count();
-    }
-
-    int permanentCertificates() {
-        return (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS) ? 1 : 0)
-                + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_HAZARDS) ? 1 : 0)
-                + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_TEEPEE_PAIRS) ? 1 : 0);
     }
 
     int score(Game game) {
