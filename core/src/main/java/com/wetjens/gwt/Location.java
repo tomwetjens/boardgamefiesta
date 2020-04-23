@@ -118,22 +118,23 @@ public abstract class Location implements Serializable {
         void placeBuilding(Building building) {
             if (this.building != null) {
                 if (this.building instanceof NeutralBuilding) {
-                    throw new IllegalStateException("Cannot replace a neutral building");
+                    throw new GWTException(GWTError.CANNOT_REPLACE_NEUTRAL_BUILDING);
                 }
+
                 if (this.building instanceof PlayerBuilding) {
                     if (!(building instanceof PlayerBuilding)) {
-                        throw new IllegalStateException("Replacement must be a player building");
+                        throw new GWTException(GWTError.REPLACEMENT_BUILDING_MUST_BE_PLAYER_BUILDING);
                     }
 
                     PlayerBuilding existing = (PlayerBuilding) this.building;
                     PlayerBuilding replacement = (PlayerBuilding) building;
 
                     if (replacement.getPlayer() != existing.getPlayer()) {
-                        throw new IllegalStateException("Can only replace building of same player");
+                        throw new GWTException(GWTError.CANNOT_REPLACE_BUILDING_OF_OTHER_PLAYER);
                     }
 
                     if (replacement.getCraftsmen() < existing.getCraftsmen()) {
-                        throw new IllegalStateException("Replacement building must be higher valued that existing building");
+                        throw new GWTException(GWTError.REPLACEMENT_BUILDING_MUST_BE_HIGHER);
                     }
                 }
             }
@@ -188,11 +189,11 @@ public abstract class Location implements Serializable {
 
         void placeHazard(@NonNull Hazard hazard) {
             if (this.hazard != null) {
-                throw new IllegalStateException("Location already has a hazard");
+                throw new GWTException(GWTError.LOCATION_NOT_EMPTY);
             }
 
             if (hazard.getType() != this.type) {
-                throw new IllegalArgumentException("Hazard must be of type " + this.type);
+                throw new GWTException(GWTError.HAZARD_MUST_BE_OF_TYPE, type);
             }
 
             this.hazard = hazard;
@@ -200,7 +201,7 @@ public abstract class Location implements Serializable {
 
         void removeHazard() {
             if (this.hazard == null) {
-                throw new IllegalStateException("No hazard at location");
+                throw new GWTException(GWTError.LOCATION_EMPTY);
             }
             this.hazard = null;
         }
@@ -257,14 +258,14 @@ public abstract class Location implements Serializable {
 
         void placeTeepee(@NonNull Teepee teepee) {
             if (this.teepee != null) {
-                throw new IllegalStateException("Location already has a teepee");
+                throw new GWTException(GWTError.LOCATION_NOT_EMPTY);
             }
             this.teepee = teepee;
         }
 
         void removeTeepee() {
             if (this.teepee == null) {
-                throw new IllegalStateException("No teepee at location");
+                throw new GWTException(GWTError.LOCATION_EMPTY);
             }
             this.teepee = null;
         }

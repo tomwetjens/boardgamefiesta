@@ -1,5 +1,31 @@
 package com.wetjens.gwt.server.rest;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.SecurityContext;
+
+import com.wetjens.gwt.GWTException;
 import com.wetjens.gwt.Location;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.server.domain.Game;
@@ -11,35 +37,6 @@ import com.wetjens.gwt.server.rest.view.state.PossibleBuyView;
 import com.wetjens.gwt.server.rest.view.state.PossibleDeliveryView;
 import com.wetjens.gwt.server.rest.view.state.PossibleMoveView;
 import com.wetjens.gwt.server.rest.view.state.StateView;
-
-import javax.annotation.security.RolesAllowed;
-import javax.inject.Inject;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Path("/games")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -59,11 +56,12 @@ public class GameResource {
     @POST
     @Path("/create")
     public GameView create(@NotNull @Valid CreateGameRequest request) {
-        var currentUser = users.findById(currentUserId());
+        var currentUser = users.findOptionallyById(currentUserId())
+                .orElseThrow(() -> APIException.serverError(APIError.NO_SUCH_USER));
 
         var inviteUsers = request.getInviteUserIds().stream()
                 .map(userId -> users.findOptionallyById(User.Id.of(userId))
-                        .orElseThrow(() -> new BadRequestException("User not found: " + userId)))
+                        .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, userId)))
                 .collect(Collectors.toSet());
 
         Game game = Game.create(currentUser, inviteUsers, request.isBeginner());
@@ -145,8 +143,8 @@ public class GameResource {
 
         try {
             game.perform(request.toAction(game.getState()));
-        } catch (RuntimeException e) {
-            throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(Collections.singletonMap("message", e.getMessage())).build(), e);
+        } catch (GWTException e) {
+            throw new APIException(e.getError(), e.getParams());
         }
 
         games.update(game);
@@ -162,9 +160,9 @@ public class GameResource {
         var performingPlayer = checkTurn(game);
 
         try {
-        game.endTurn();
-        } catch (RuntimeException e) {
-            throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(Collections.singletonMap("message", e.getMessage())).build(), e);
+            game.endTurn();
+        } catch (GWTException e) {
+            throw new APIException(e.getError(), e.getParams());
         }
 
         games.update(game);
@@ -238,8 +236,8 @@ public class GameResource {
         Set<List<Location>> possibleMoves;
         try {
             possibleMoves = game.getState().possibleMoves(game.getState().getCurrentPlayer(), to);
-        } catch (RuntimeException e) {
-            throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(Collections.singletonMap("message", e.getMessage())).build(), e);
+        } catch (GWTException e) {
+            throw new APIException(e.getError(), e.getParams());
         }
 
         return possibleMoves.stream()
@@ -249,7 +247,7 @@ public class GameResource {
 
     private void checkOwner(Game game) {
         if (!game.getOwner().equals(currentUserId())) {
-            throw new ForbiddenException();
+            throw APIException.forbidden(APIError.MUST_BE_OWNER);
         }
     }
 
@@ -258,20 +256,20 @@ public class GameResource {
 
         return game.getPlayerByUserId(currentUserId)
                 .map(com.wetjens.gwt.server.domain.Player::getColor)
-                .orElseThrow(() -> new ForbiddenException("User not player in game"));
+                .orElseThrow(() -> APIException.forbidden(APIError.NOT_PLAYER_IN_GAME));
     }
 
     private void checkViewAllowed(Game game) {
         var currentUserId = currentUserId();
 
         if (game.getPlayers().stream().noneMatch(player -> player.getUserId().equals(currentUserId))) {
-            throw new ForbiddenException("User " + currentUserId.getId() + " not player in game " + game.getId().getId());
+            throw APIException.forbidden(APIError.NOT_PLAYER_IN_GAME);
         }
     }
 
     private User.Id currentUserId() {
         if (securityContext.getUserPrincipal() == null) {
-            throw new NotAuthorizedException("User not logged in");
+            throw new NotAuthorizedException("");
         }
         return User.Id.of(securityContext.getUserPrincipal().getName());
     }
@@ -280,7 +278,7 @@ public class GameResource {
         var performingPlayer = determinePlayer(game);
 
         if (game.getState().getCurrentPlayer() != performingPlayer) {
-            throw new ForbiddenException("User not current player");
+            throw APIException.forbidden(APIError.NOT_YOUR_TURN);
         }
 
         return performingPlayer;
@@ -288,7 +286,8 @@ public class GameResource {
 
     private Map<Player, User> getUserMapByColor(Game game) {
         return game.getPlayers().stream()
-                .collect(Collectors.toMap(com.wetjens.gwt.server.domain.Player::getColor, player -> users.findById(player.getUserId())));
+                .collect(Collectors.toMap(com.wetjens.gwt.server.domain.Player::getColor, player -> users.findOptionallyById(player.getUserId())
+                        .orElseThrow(() -> APIException.serverError(APIError.NO_SUCH_USER, player.getUserId().getId()))));
     }
 
     private Map<User.Id, User> getUserMapById(Game game) {

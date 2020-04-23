@@ -42,7 +42,7 @@ public class UsersQueries {
                     .map(user -> new UserView(user.getId(), user))
                     .collect(Collectors.toList());
         } else {
-            throw new BadRequestException("Must specify username or email");
+            throw APIException.badRequest(APIError.MUST_SPECIFY_USERNAME_OR_EMAIL);
         }
     }
 

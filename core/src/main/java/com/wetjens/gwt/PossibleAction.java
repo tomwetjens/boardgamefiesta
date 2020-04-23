@@ -136,7 +136,7 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         void skip() {
-            throw new IllegalArgumentException("Not allowed to skip action");
+            throw new GWTException(GWTError.CANNOT_SKIP_ACTION);
         }
 
         @Override
@@ -195,7 +195,7 @@ abstract class PossibleAction implements Serializable {
             return actions.stream()
                     .filter(fa -> fa.canPerform(action))
                     .findAny()
-                    .orElseThrow(() -> new IllegalArgumentException("Not an allowed action"));
+                    .orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
         }
 
         @Override
@@ -265,14 +265,14 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         void skip() {
-            throw new IllegalArgumentException("Must make a choice");
+            throw new GWTException(GWTError.MUST_CHOOSE_ACTION);
         }
 
         private PossibleAction check(Class<? extends Action> action) {
             return actions.stream()
                     .filter(fa -> fa.canPerform(action))
                     .findAny()
-                    .orElseThrow(() -> new IllegalArgumentException("Not an allowed action"));
+                    .orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
         }
 
         @Override
@@ -327,7 +327,7 @@ abstract class PossibleAction implements Serializable {
         void perform(Class<? extends Action> action) {
             if (action == when) {
                 if (atMost == 0) {
-                    throw new IllegalArgumentException("Not allowed to perform action");
+                    throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
                 }
 
                 atMost--;
@@ -335,7 +335,7 @@ abstract class PossibleAction implements Serializable {
                 thens++;
             } else if (action == then) {
                 if (thens == 0) {
-                    throw new IllegalArgumentException("Not allowed to perform action");
+                    throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
                 }
 
                 thens--;
@@ -345,7 +345,7 @@ abstract class PossibleAction implements Serializable {
         @Override
         void skip() {
             if (atLeast > 0 || thens > 0) {
-                throw new IllegalArgumentException("Not allowed to skip action");
+                throw new GWTException(GWTError.CANNOT_SKIP_ACTION);
             }
 
             atMost = 0;

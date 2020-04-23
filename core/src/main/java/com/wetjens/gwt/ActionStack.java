@@ -43,7 +43,7 @@ class ActionStack implements Serializable {
         PossibleAction element = peek();
 
         if (!element.canPerform(action)) {
-            throw new IllegalArgumentException("Not first action");
+            throw new GWTException(GWTError.NOT_FIRST_ACTION);
         }
 
         return element;
@@ -51,7 +51,7 @@ class ActionStack implements Serializable {
 
     PossibleAction peek() {
         if (actions.isEmpty()) {
-            throw new IllegalStateException("No actions");
+            throw new GWTException(GWTError.NO_ACTIONS);
         }
         return actions.peek();
     }

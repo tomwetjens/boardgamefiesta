@@ -1,6 +1,22 @@
 package com.wetjens.gwt.server.domain;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.enterprise.inject.spi.CDI;
+
 import com.wetjens.gwt.Action;
+import com.wetjens.gwt.server.rest.APIError;
+import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,23 +24,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
-
-import javax.enterprise.inject.spi.CDI;
-import javax.ws.rs.ForbiddenException;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
@@ -78,19 +77,19 @@ public class Game {
 
         int count = games.countByUserId(owner.getId());
         if (count >= 3) {
-            throw new IllegalStateException("Cannot participate in more than 3 games");
+            throw APIException.forbidden(APIError.REACHED_MAX_GAMES);
         }
 
         if (inviteUsers.contains(owner)) {
-            throw new IllegalArgumentException("Cannot invite yourself");
+            throw APIException.badRequest(APIError.CANNOT_INVITE_YOURSELF);
         }
 
         if (inviteUsers.isEmpty()) {
-            throw new IllegalArgumentException("Should invite at least 1 user");
+            throw APIException.badRequest(APIError.MUST_INVITE_AT_LEAST_1_USER);
         }
 
         if (inviteUsers.size() > 5) {
-            throw new IllegalArgumentException("Should invite at most 5 users");
+            throw APIException.badRequest(APIError.MAY_INVITE_AT_MOST_5_USERS);
         }
 
         var created = Instant.now();
@@ -118,7 +117,7 @@ public class Game {
 
     public void start() {
         if (status != Status.NEW) {
-            throw new IllegalStateException("Already started or ended");
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
         players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
@@ -146,7 +145,7 @@ public class Game {
 
     public void perform(Action action) {
         if (status != Status.STARTED) {
-            throw new IllegalStateException("Not started");
+            throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
         state.perform(action, new Random());
@@ -155,7 +154,7 @@ public class Game {
 
     public void endTurn() {
         if (status != Status.STARTED) {
-            throw new IllegalStateException("Not started");
+            throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
         state.endTurn(new Random());
@@ -186,13 +185,13 @@ public class Game {
 
     public void acceptInvite(User.Id userId) {
         if (status != Status.NEW) {
-            throw new IllegalStateException("Already started or ended");
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
         var player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
                 .findAny()
-                .orElseThrow(() -> new IllegalStateException("Not invited"));
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_INVITED));
 
         player.accept();
 
@@ -212,7 +211,7 @@ public class Game {
 
     public void abandon() {
         if (status != Status.NEW) {
-            throw new IllegalStateException("Already started or ended");
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
         expires = Instant.now();
@@ -228,13 +227,13 @@ public class Game {
 
     public void rejectInvite(User.Id userId) {
         if (status != Status.NEW) {
-            throw new IllegalStateException("Already started or ended");
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
         var player = players.stream()
                 .filter(p -> p.getUserId().equals(userId))
                 .findAny()
-                .orElseThrow(() -> new IllegalStateException("Not invited"));
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_INVITED));
 
         player.reject();
 

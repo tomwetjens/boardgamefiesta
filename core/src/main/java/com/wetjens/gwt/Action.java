@@ -35,12 +35,16 @@ public abstract class Action {
 
         @NonNull Set<Card.CattleCard> cattleCards;
 
-        @Override
-        public ImmediateActions perform(Game game, Random random) {
+        public BuyCattle(@NonNull Set<Card.CattleCard> cattleCards) {
             if (cattleCards.isEmpty()) {
-                throw new IllegalArgumentException("Must specify cattle cards");
+                throw new GWTException(GWTError.MUST_SPECIFY_CATTLE_CARD);
             }
 
+            this.cattleCards = cattleCards;
+        }
+
+        @Override
+        public ImmediateActions perform(Game game, Random random) {
             int cost = game.getCattleMarket().cost(cattleCards, game.currentPlayerState().getNumberOfCowboys());
 
             game.currentPlayerState().payDollars(cost);
@@ -157,7 +161,7 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             Location.TeepeeLocation teepeeLocation = game.getTrail().getTeepeeLocation(reward);
             Teepee teepee = teepeeLocation.getTeepee()
-                    .orElseThrow(() -> new IllegalStateException("No teepee at location"));
+                    .orElseThrow(() -> new GWTException(GWTError.NO_TEEPEE_AT_LOCATION));
 
             if (teepeeLocation.getReward() > 0) {
                 teepeeLocation.removeTeepee();
@@ -306,13 +310,13 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             if (!game.currentPlayerState().hasAvailable(building)) {
-                throw new IllegalStateException("Building not available for player");
+                throw new GWTException(GWTError.BUILDING_NOT_AVAILABLE);
             }
 
             int craftsmenNeeded = craftsmenNeeded();
 
             if (craftsmenNeeded > game.currentPlayerState().getNumberOfCraftsmen()) {
-                throw new IllegalStateException("Not enough craftsmen");
+                throw new GWTException(GWTError.NOT_ENOUGH_CRAFTSMEN);
             }
 
             int cost = craftsmenNeeded * costPerCraftsman;
@@ -329,7 +333,7 @@ public abstract class Action {
                     // If replacing an existing building, only the difference is needed
                     .filter(existingBuilding -> {
                         if (existingBuilding.getCraftsmen() > building.getCraftsmen()) {
-                            throw new IllegalStateException("Replacement building must be higher valued that existing building");
+                            throw new GWTException(GWTError.REPLACEMENT_BUILDING_MUST_BE_HIGHER);
                         }
                         return true;
                     })
@@ -341,14 +345,14 @@ public abstract class Action {
             return location.getBuilding()
                     .filter(existingBuilding -> {
                         if (!(existingBuilding instanceof PlayerBuilding)) {
-                            throw new IllegalStateException("Can only replace a player building");
+                            throw new GWTException(GWTError.CANNOT_REPLACE_NEUTRAL_BUILDING);
                         }
                         return true;
                     })
                     .map(existingBuilding -> (PlayerBuilding) existingBuilding)
                     .filter(existingBuilding -> {
                         if (existingBuilding.getPlayer() != building.getPlayer()) {
-                            throw new IllegalStateException("Can only replace building of same player");
+                            throw new GWTException(GWTError.CANNOT_REPLACE_BUILDING_OF_OTHER_PLAYER);
                         }
                         return true;
                     });
@@ -359,7 +363,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(@NonNull Game game, Random random) {
             RailroadTrack.Space current = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
-            Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
+            Station station = current.getStation().orElseThrow(() -> new GWTException(GWTError.NOT_AT_STATION));
 
             return station.upgrade(game);
         }
@@ -384,7 +388,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(@NonNull Game game, Random random) {
             RailroadTrack.Space current = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
-            Station station = current.getStation().orElseThrow(() -> new IllegalStateException("Not at station"));
+            Station station = current.getStation().orElseThrow(() -> new GWTException(GWTError.NOT_AT_STATION));
 
             return station.appointStationMaster(game, worker);
         }
@@ -397,7 +401,7 @@ public abstract class Action {
 
         public ChooseForesights(@NonNull List<Integer> choices) {
             if (choices.size() != 3) {
-                throw new IllegalArgumentException("Must have 3 choices");
+                throw new GWTException(GWTError.MUST_SPECIFY_3_FORESIGHTS);
             }
             this.choices = new ArrayList<>(choices);
         }
@@ -445,7 +449,7 @@ public abstract class Action {
             int breedingValue = game.currentPlayerState().handValue() + certificates;
 
             if (breedingValue < city.getValue()) {
-                throw new IllegalArgumentException("Not enough certificates for city");
+                throw new GWTException(GWTError.NOT_ENOUGH_BREEDING_VALUE, breedingValue, city.getValue());
             }
 
             int tempCertificates = Math.max(0, certificates - game.currentPlayerState().permanentCertificates());
@@ -481,7 +485,7 @@ public abstract class Action {
         @Override
         ImmediateActions perform(Game game, Random random) {
             if (unlock.getDiscColor() != DiscColor.WHITE) {
-                throw new IllegalArgumentException("Must pick a white disc");
+                throw new GWTException(GWTError.MUST_PICK_WHITE_DISC);
             }
             game.currentPlayerState().unlock(unlock);
             return ImmediateActions.none();
@@ -716,18 +720,19 @@ public abstract class Action {
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            if (steps.isEmpty()) {
-                throw new IllegalArgumentException("Must take at least one step");
+            if (atLeast < 0 || steps.isEmpty()) {
+                throw new GWTException(GWTError.MUST_MOVE_AT_LEAST_STEPS, 1);
             }
 
             PlayerState currentPlayerState = game.currentPlayerState();
 
-            if (steps.size() > Math.min(atMost, currentPlayerState.getStepLimit(game.getPlayers().size()))) {
-                throw new IllegalArgumentException("Number of steps exceeds limit");
+            int stepLimit = currentPlayerState.getStepLimit(game.getPlayers().size());
+            if (steps.size() > Math.min(atMost, stepLimit)) {
+                throw new GWTException(GWTError.STEPS_EXCEED_LIMIT, stepLimit);
             }
 
             if (steps.size() < atLeast) {
-                throw new IllegalArgumentException("Number of steps below minimum");
+                throw new GWTException(GWTError.MUST_MOVE_AT_LEAST_STEPS, atLeast);
             }
 
             Player player = game.getCurrentPlayer();
@@ -752,7 +757,7 @@ public abstract class Action {
         private void checkDirectAndConsecutiveSteps(Location from, List<Location> steps) {
             Location to = steps.get(0);
             if (!from.isDirect(to)) {
-                throw new IllegalArgumentException("Cannot step from " + from + " to " + to);
+                throw new GWTException(GWTError.CANNOT_STEP_DIRECTLY_FROM_TO, from, to);
             }
             if (steps.size() > 1) {
                 checkDirectAndConsecutiveSteps(to, steps.subList(1, steps.size()));
@@ -868,7 +873,7 @@ public abstract class Action {
             RailroadTrack.EngineMove engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, Integer.MAX_VALUE);
 
             if (city.getValue() > engineMove.getSteps()) {
-                throw new IllegalArgumentException("City value must be <= spaces that engine moved backwards");
+                throw new GWTException(GWTError.CITY_VALUE_MUST_BE_LESS_THEN_OR_EQUAL_TO_SPACES_THAT_ENGINE_MOVED_BACKWARDS);
             }
 
             return game.deliverToCity(city).andThen(engineMove.getImmediateActions());
@@ -1027,7 +1032,7 @@ public abstract class Action {
             RailroadTrack.Space currentSpace = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
 
             if (!stationSpace.isBefore(currentSpace)) {
-                throw new IllegalArgumentException("Station must be behind engine");
+                throw new GWTException(GWTError.STATION_MUST_BE_BEHIND_ENGINE);
             }
 
             return station.upgrade(game);

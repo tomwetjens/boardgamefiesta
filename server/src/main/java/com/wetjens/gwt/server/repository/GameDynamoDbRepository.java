@@ -1,5 +1,21 @@
 package com.wetjens.gwt.server.repository;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.Player;
@@ -19,22 +35,6 @@ import software.amazon.awssdk.services.dynamodb.model.Select;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 @ApplicationScoped
 public class GameDynamoDbRepository implements Games {
 
@@ -53,7 +53,7 @@ public class GameDynamoDbRepository implements Games {
     @Override
     public Game findById(Game.Id id) {
         return findOptionallyById(id)
-                .orElseThrow(() -> new NotFoundException("Game not found: " + id));
+                .orElseThrow(NotFoundException::new);
     }
 
     @Override
@@ -270,11 +270,7 @@ public class GameDynamoDbRepository implements Games {
             return null;
         }
 
-        try {
-            return com.wetjens.gwt.Game.deserialize(attributeValue.b().asInputStream());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return com.wetjens.gwt.Game.deserialize(attributeValue.b().asInputStream());
     }
 
     private AttributeValue mapFromPlayer(Player player) {

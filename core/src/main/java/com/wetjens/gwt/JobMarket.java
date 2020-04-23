@@ -48,7 +48,7 @@ public final class JobMarket implements Serializable {
      */
     boolean addWorker(Worker worker) {
         if (isClosed()) {
-            throw new IllegalStateException("Job market closed");
+            throw new GWTException(GWTError.JOB_MARKET_CLOSED);
         }
 
         Row row = rows.get(currentRowIndex);
@@ -84,7 +84,7 @@ public final class JobMarket implements Serializable {
         return availableRows()
                 .filter(row -> row.workers.contains(worker))
                 .min(Comparator.comparingInt(Row::getCost))
-                .orElseThrow(() -> new IllegalStateException("No " + worker + " available in job market"));
+                .orElseThrow(() -> new GWTException(GWTError.WORKER_NOT_AVAILABLE_IN_JOB_MARKET, worker));
     }
 
     public final class Row implements Serializable {

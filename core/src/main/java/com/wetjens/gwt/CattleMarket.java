@@ -152,7 +152,7 @@ public final class CattleMarket implements Serializable {
 
     private static Cost cost(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
         return costIfEnoughCowboys(cattleCardsRemaining, cattleCards, numberOfCowboys, preference)
-                .orElseThrow(() -> new IllegalArgumentException("Not enough cowboys"));
+                .orElseThrow(() -> new GWTException(GWTError.NOT_ENOUGH_COWBOYS));
     }
 
     private static Optional<Cost> costIfEnoughCowboys(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
@@ -192,7 +192,7 @@ public final class CattleMarket implements Serializable {
 
     private static List<Card.CattleCard> removeAll(Collection<Card.CattleCard> market, Collection<Card.CattleCard> buy) {
         if (!market.containsAll(buy)) {
-            throw new IllegalArgumentException("Cattle cards must be available");
+            throw new GWTException(GWTError.CATTLE_CARD_NOT_AVAILABLE);
         }
         return market.stream().filter(e -> !buy.contains(e)).collect(Collectors.toList());
     }
@@ -206,7 +206,7 @@ public final class CattleMarket implements Serializable {
                 .collect(Collectors.toSet());
 
         if (possibleSingles.isEmpty()) {
-            throw new IllegalArgumentException("Not enough cards with breeding value " + breedingValue + " available");
+            throw new GWTException(GWTError.NOT_ENOUGH_CATTLE_CARDS_OF_BREEDING_VALUE_AVAILABLE, breedingValue);
         }
 
         Set<PossibleBuy> possiblePairs = Collections.emptySet();

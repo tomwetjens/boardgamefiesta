@@ -34,7 +34,7 @@ public class UserDynamoDbRepository implements Users {
 
     @Override
     public User findById(User.Id id) {
-        return findOptionallyById(id).orElseThrow(() -> new NotFoundException("User not found: " + id.getId()));
+        return findOptionallyById(id).orElseThrow(NotFoundException::new);
     }
 
     @Override

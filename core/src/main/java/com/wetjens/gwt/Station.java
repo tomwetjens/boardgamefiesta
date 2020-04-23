@@ -55,7 +55,7 @@ public class Station implements Serializable {
 
     ImmediateActions upgrade(@NonNull Game game) {
         if (players.contains(game.getCurrentPlayer())) {
-            throw new IllegalStateException("Already upgraded station");
+            throw new GWTException(GWTError.ALREADY_UPGRADED_STATION);
         }
 
         game.currentPlayerState().payDollars(cost);
@@ -83,7 +83,7 @@ public class Station implements Serializable {
 
     ImmediateActions downgrade(Game game) {
         if (!players.remove(game.getCurrentPlayer())) {
-            throw new IllegalStateException("Player did not upgrade station");
+            throw new GWTException(GWTError.STATION_NOT_UPGRADED_BY_PLAYER);
         }
         return ImmediateActions.none();
     }

@@ -25,7 +25,7 @@ public abstract class PlayerBuilding extends Building {
     private final BuildingSet.Side side;
 
     private PlayerBuilding(int number, BuildingSet.Side side, Player player, Hand hand, int craftsmen, int points) {
-        super(number + "" + side.toString().toLowerCase(), hand);
+        super(number + side.toString().toLowerCase(), hand);
 
         this.number = number;
         this.side = side;

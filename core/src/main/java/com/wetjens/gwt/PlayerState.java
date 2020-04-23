@@ -1,12 +1,5 @@
 package com.wetjens.gwt;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Singular;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +15,13 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Singular;
 
 @Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -113,7 +113,7 @@ public class PlayerState implements Serializable {
                 .collect(Collectors.toSet());
 
         if (cattleCards.size() != amount) {
-            throw new IllegalArgumentException("Player hand does not contain " + amount + " cattle cards of type " + type);
+            throw new GWTException(GWTError.CATTLE_CARDS_NOT_IN_HAND, type, amount);
         }
 
         hand.removeAll(cattleCards);
@@ -134,7 +134,7 @@ public class PlayerState implements Serializable {
 
     void payDollars(int amount) {
         if (balance < amount) {
-            throw new IllegalArgumentException("Not enough balance to pay " + amount);
+            throw new GWTException(GWTError.NOT_ENOUGH_BALANCE_TO_PAY, amount);
         }
         balance -= amount;
     }
@@ -170,13 +170,13 @@ public class PlayerState implements Serializable {
 
     void removeBuilding(PlayerBuilding building) {
         if (!buildings.remove(building)) {
-            throw new IllegalStateException("Building not available for player");
+            throw new GWTException(GWTError.BUILDING_NOT_AVAILABLE);
         }
     }
 
     void discardCard(Card card) {
         if (!hand.remove(card)) {
-            throw new IllegalArgumentException("Card must be in hand");
+            throw new GWTException(GWTError.CARD_NOT_IN_HAND);
         }
 
         discardPile.add(0, card);
@@ -184,7 +184,7 @@ public class PlayerState implements Serializable {
 
     ImmediateActions playObjectiveCard(ObjectiveCard objectiveCard) {
         if (!hand.remove(objectiveCard)) {
-            throw new IllegalStateException("Objective card not in hand");
+            throw new GWTException(GWTError.CARD_NOT_IN_HAND);
         }
 
         objectives.add(objectiveCard);
@@ -197,7 +197,7 @@ public class PlayerState implements Serializable {
 
     void removeWorker(Worker worker) {
         if (workers.get(worker) <= 1) {
-            throw new IllegalStateException("Not enough workers");
+            throw new GWTException(GWTError.NOT_ENOUGH_WORKERS, worker);
         }
 
         workers.computeIfPresent(worker, (k, v) -> v - 1);
@@ -205,7 +205,7 @@ public class PlayerState implements Serializable {
 
     void addStationMaster(StationMaster stationMaster) {
         if (!stationMasters.add(stationMaster)) {
-            throw new IllegalArgumentException("Already has station master");
+            throw new GWTException(GWTError.ALREADY_HAS_STATION_MASTER);
         }
     }
 
@@ -215,14 +215,14 @@ public class PlayerState implements Serializable {
 
     void removeCards(Set<Card> cards) {
         if (!hand.containsAll(cards)) {
-            throw new IllegalArgumentException("Cards not in hand");
+            throw new GWTException(GWTError.CARD_NOT_IN_HAND);
         }
         hand.removeAll(cards);
     }
 
     void addHazard(Hazard hazard) {
         if (!hazards.add(hazard)) {
-            throw new IllegalArgumentException("Already has hazard");
+            throw new GWTException(GWTError.ALREADY_HAS_HAZARD);
         }
     }
 
@@ -246,7 +246,7 @@ public class PlayerState implements Serializable {
 
     void spendTempCertificates(int amount) {
         if (amount > tempCertificates) {
-            throw new IllegalArgumentException("Not enough certificates");
+            throw new GWTException(GWTError.NOT_ENOUGH_CERTIFICATES);
         }
         int remaining = amount;
         while (remaining > 0) {
@@ -266,7 +266,7 @@ public class PlayerState implements Serializable {
 
     void unlock(Unlockable unlockable) {
         if (unlocked.getOrDefault(unlockable, 0) == unlockable.getCount()) {
-            throw new IllegalArgumentException("Already unlocked all " + unlockable);
+            throw new GWTException(GWTError.ALREADY_UNLOCKED, unlockable);
         }
 
         unlocked.compute(unlockable, (k, v) -> v != null ? v + 1 : 1);
@@ -413,15 +413,12 @@ public class PlayerState implements Serializable {
     }
 
     public int getStepLimit(int playerCount) {
-        switch (playerCount) {
-            case 2:
-                return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
-            case 3:
-                return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) * 2 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
-            case 4:
-                return 4 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) * 2 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
-            default:
-                throw new IllegalArgumentException("Cannot determine step limit for player count: " + playerCount);
+        if (playerCount == 2) {
+            return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
+        } else if (playerCount == 3) {
+            return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) * 2 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
+        } else {
+            return 4 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) * 2 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
         }
     }
 

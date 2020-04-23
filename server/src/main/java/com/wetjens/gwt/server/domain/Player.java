@@ -2,6 +2,8 @@ package com.wetjens.gwt.server.domain;
 
 import java.time.Instant;
 
+import com.wetjens.gwt.server.rest.APIError;
+import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -58,7 +60,7 @@ public class Player {
 
     void accept() {
         if (status != Status.INVITED) {
-            throw new IllegalStateException("Not invited");
+            throw APIException.badRequest(APIError.ALREADY_RESPONDED);
         }
 
         status = Status.ACCEPTED;
@@ -67,7 +69,7 @@ public class Player {
 
     void reject() {
         if (status != Status.INVITED) {
-            throw new IllegalStateException("Not invited");
+            throw APIException.badRequest(APIError.ALREADY_RESPONDED);
         }
 
         status = Status.REJECTED;

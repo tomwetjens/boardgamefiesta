@@ -125,7 +125,7 @@ public class RailroadTrack implements Serializable {
     public Space.NumberedSpace getSpace(int number) {
         Space.NumberedSpace numberedSpace = normalSpaces.get(number);
         if (numberedSpace == null) {
-            throw new IllegalArgumentException("No such space: " + number);
+            throw new GWTException(GWTError.NO_SUCH_SPACE, number);
         }
         return numberedSpace;
     }
@@ -160,13 +160,13 @@ public class RailroadTrack implements Serializable {
         }
 
         if (to != start && playerAt(to).isPresent()) {
-            throw new IllegalStateException("Another player already on space");
+            throw new GWTException(GWTError.ALREADY_PLAYER_ON_SPACE);
         }
 
         Space from = currentSpace(player);
 
         if (to == from) {
-            throw new IllegalArgumentException("Must specify different space than current");
+            throw new GWTException(GWTError.ALREADY_AT_SPACE);
         }
 
         Set<ReachableSpace> reachableSpaces = reachableSpaces(from, from, atLeast, atMost, 0, direction);
@@ -174,7 +174,7 @@ public class RailroadTrack implements Serializable {
         ReachableSpace reachableSpace = reachableSpaces.stream()
                 .filter(rs -> rs.space == to)
                 .min(Comparator.comparingInt(ReachableSpace::getSteps))
-                .orElseThrow(() -> new IllegalArgumentException("Space not reachable within " + atLeast + ".." + atMost + " steps"));
+                .orElseThrow(() -> new GWTException(GWTError.SPACE_NOT_REACHABLE, atLeast, atMost));
 
         currentSpaces.put(player, to);
 
@@ -273,7 +273,7 @@ public class RailroadTrack implements Serializable {
 
     ImmediateActions deliverToCity(Player player, City city) {
         if (!city.isMultipleDeliveries() && hasMadeDelivery(player, city)) {
-            throw new IllegalStateException("Already delivered to city");
+            throw new GWTException(GWTError.ALREADY_DELIVERED_TO_CITY, city);
         }
 
         cities.computeIfAbsent(city, k -> new LinkedList<>()).add(player);

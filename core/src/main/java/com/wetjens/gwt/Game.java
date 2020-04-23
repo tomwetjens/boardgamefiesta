@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,11 +86,11 @@ public class Game implements Serializable {
 
     public Game(@NonNull Set<Player> players, boolean beginner, Random random) {
         if (players.size() < 2) {
-            throw new IllegalArgumentException("At least 2 players are required");
+            throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
         }
 
         if (players.size() > 4) {
-            throw new IllegalArgumentException("A maximum of 4 players is supported");
+            throw new GWTException(GWTError.AT_MOST_4_PLAYERS_SUPPORTED);
         }
 
         this.players = new LinkedList<>(players);
@@ -128,7 +129,7 @@ public class Game implements Serializable {
                 .mapToObj(i -> kansasCitySupply.draw(0))
                 .forEach(this::placeInitialTile);
 
-        IntStream.range(0, players.size() == 2 ? 3 : players.size() == 3 ? 5 : 7)
+        IntStream.range(0, players.size() == 2 ? 3 : jobMarket.getRowLimit() * 2 - 1)
                 .mapToObj(i -> kansasCitySupply.draw(1))
                 .map(KansasCitySupply.Tile::getWorker)
                 .forEach(this.jobMarket::addWorker);
@@ -144,19 +145,19 @@ public class Game implements Serializable {
 
     public void perform(@NonNull Action action, @NonNull Random random) {
         if (isEnded()) {
-            throw new IllegalStateException("Game has ended");
+            throw new GWTException(GWTError.GAME_ENDED);
         }
 
         if (action.canPlayAnyTime()) {
             if (!actionStack.isEmpty() && actionStack.peek().isImmediate()) {
-                throw new IllegalStateException("Immediate action to be performed first");
+                throw new GWTException(GWTError.IMMEDIATE_ACTION_MUST_BE_PERFORMED_FIRST);
             }
 
             ImmediateActions immediateActions = action.perform(this, random);
             actionStack.push(immediateActions.getActions());
         } else {
             if (!actionStack.canPerform(action.getClass())) {
-                throw new IllegalStateException("Not allowed to perform action");
+                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
             ImmediateActions immediateActions = action.perform(this, random);
@@ -177,7 +178,7 @@ public class Game implements Serializable {
 
     public void endTurn(@NonNull Random random) {
         if (isEnded()) {
-            throw new IllegalStateException("Game has ended");
+            throw new GWTException(GWTError.GAME_ENDED);
         }
 
         actionStack.skip();
@@ -231,17 +232,23 @@ public class Game implements Serializable {
         return playerState(player).score(this) + trail.score(player) + railroadTrack.score(player);
     }
 
-    public void serialize(OutputStream outputStream) throws IOException {
+    public void serialize(OutputStream outputStream) {
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
             objectOutputStream.writeObject(this);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    public static Game deserialize(InputStream inputStream) throws IOException {
+    public static Game deserialize(InputStream inputStream) {
         try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-            return (Game) objectInputStream.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new IOException(e);
+            try {
+                return (Game) objectInputStream.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException(e);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

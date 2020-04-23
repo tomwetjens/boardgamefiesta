@@ -1,18 +1,37 @@
 package com.wetjens.gwt.server.rest.view.state;
 
-import com.wetjens.gwt.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-import javax.json.*;
-import javax.ws.rs.BadRequestException;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import javax.json.JsonArray;
+import javax.json.JsonException;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
+import com.wetjens.gwt.Action;
+import com.wetjens.gwt.Card;
+import com.wetjens.gwt.CattleType;
+import com.wetjens.gwt.City;
+import com.wetjens.gwt.GWTError;
+import com.wetjens.gwt.Game;
+import com.wetjens.gwt.Hazard;
+import com.wetjens.gwt.HazardType;
+import com.wetjens.gwt.Location;
+import com.wetjens.gwt.ObjectiveCard;
+import com.wetjens.gwt.PlayerBuilding;
+import com.wetjens.gwt.RailroadTrack;
+import com.wetjens.gwt.Station;
+import com.wetjens.gwt.Unlockable;
+import com.wetjens.gwt.Worker;
+import com.wetjens.gwt.server.rest.APIError;
+import com.wetjens.gwt.server.rest.APIException;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 @AllArgsConstructor
 public enum ActionType {
@@ -23,9 +42,9 @@ public enum ActionType {
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_CERTIFICATES(Action.Discard1BlackAngusToGain2Certificates.class, (jsonObject, game) -> new Action.Discard1BlackAngusToGain2Certificates()),
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_DOLLARS(Action.Discard1BlackAngusToGain2Dollars.class, (jsonObject, game) -> new Action.Discard1BlackAngusToGain2Dollars()),
     DISCARD_CARD(Action.DiscardCard.class, (jsonObject, game) -> new Action.DiscardCard(findCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject(JsonProperties.CARD)))),
-    DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class, (jsonObject, game) -> new Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)))),
+    DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class, (jsonObject, game) -> new Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand(CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE)))),
     ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Add1ObjectiveCardToHand.class, (jsonObject, game) -> new Action.Add1ObjectiveCardToHand(findObjectiveCard(game, jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)))),
-    DISCARD_1_CATTLE_CARD_TO_GAIN_1_CERTIFICATE(Action.Discard1CattleCardToGain1Certificate.class, (jsonObject, game) -> new Action.Discard1CattleCardToGain1Certificate(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)))),
+    DISCARD_1_CATTLE_CARD_TO_GAIN_1_CERTIFICATE(Action.Discard1CattleCardToGain1Certificate.class, (jsonObject, game) -> new Action.Discard1CattleCardToGain1Certificate(CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE)))),
     DISCARD_1_DUTCH_BELT_TO_GAIN_2_DOLLARS(Action.Discard1DutchBeltToGain2Dollars.class, (jsonObject, game) -> new Action.Discard1DutchBeltToGain2Dollars()),
     DISCARD_1_DUTCH_BELT_TO_GAIN_3_DOLLARS(Action.Discard1DutchBeltToGain3Dollars.class, (jsonObject, game) -> new Action.Discard1DutchBeltToGain3Dollars()),
     DISCARD_1_GUERNSEY(Action.Discard1Guernsey.class, (jsonObject, game) -> new Action.Discard1Guernsey()),
@@ -38,8 +57,8 @@ public enum ActionType {
     DISCARD_1_JERSEY_TO_MOVE_ENGINE_1_FORWARD(Action.Discard1JerseyToMoveEngine1Forward.class, (jsonObject, game) -> new Action.Discard1JerseyToMoveEngine1Forward()),
     DISCARD_1_OBJECTIVE_CARD_TO_GAIN_2_CERTIFICATES(Action.Discard1ObjectiveCardToGain2Certificates.class, (jsonObject, game) -> new Action.Discard1ObjectiveCardToGain2Certificates(findObjectiveCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)))),
     DISCARD_2_GUERNSEY_TO_GAIN_4_DOLLARS(Action.Discard2GuernseyToGain4Dollars.class, (jsonObject, game) -> new Action.Discard2GuernseyToGain4Dollars()),
-    DISCARD_PAIR_TO_GAIN_3_DOLLARS(Action.DiscardPairToGain3Dollars.class, (jsonObject, game) -> new Action.DiscardPairToGain3Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)))),
-    DISCARD_PAIR_TO_GAIN_4_DOLLARS(Action.DiscardPairToGain4Dollars.class, (jsonObject, game) -> new Action.DiscardPairToGain4Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)))),
+    DISCARD_PAIR_TO_GAIN_3_DOLLARS(Action.DiscardPairToGain3Dollars.class, (jsonObject, game) -> new Action.DiscardPairToGain3Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE)))),
+    DISCARD_PAIR_TO_GAIN_4_DOLLARS(Action.DiscardPairToGain4Dollars.class, (jsonObject, game) -> new Action.DiscardPairToGain4Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE)))),
     DRAW_CARD(Action.DrawCard.class, (jsonObject, game) -> new Action.DrawCard()),
     DRAW_2_CATTLE_CARDS(Action.Draw2CattleCards.class, ((jsonObject, game) -> new Action.Draw2CattleCards())),
     EXTRAORDINARY_DELIVERY(Action.ExtraordinaryDelivery.class, (jsonObject, game) -> new Action.ExtraordinaryDelivery(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)), City.valueOf(jsonObject.getString(JsonProperties.CITY)))),
@@ -79,101 +98,83 @@ public enum ActionType {
     PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD(Action.Pay1DollarToMoveEngine1Forward.class, (jsonObject, game) -> new Action.Pay1DollarToMoveEngine1Forward(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)))),
     PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES(Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates.class, (jsonObject, game) -> new Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)))),
     PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD(Action.Pay2DollarsToMoveEngine2Forward.class, (jsonObject, game) -> new Action.Pay2DollarsToMoveEngine2Forward(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)))),
-    PLACE_BUILDING(Action.PlaceBuilding.class, (jsonObject, game) -> new Action.PlaceBuilding((Location.BuildingLocation) game.getTrail().getLocation(jsonObject.getString("location")), findPlayerBuilding(game, jsonObject.getString("building")))),
-    PLACE_CHEAP_BUILDING(Action.PlaceCheapBuilding.class, (jsonObject, game) -> new Action.PlaceCheapBuilding((Location.BuildingLocation) game.getTrail().getLocation(jsonObject.getString("location")), findPlayerBuilding(game, jsonObject.getString("building")))),
+    PLACE_BUILDING(Action.PlaceBuilding.class, (jsonObject, game) -> new Action.PlaceBuilding((Location.BuildingLocation) game.getTrail().getLocation(jsonObject.getString(JsonProperties.LOCATION)), findPlayerBuilding(game, jsonObject.getString(JsonProperties.BUILDING)))),
+    PLACE_CHEAP_BUILDING(Action.PlaceCheapBuilding.class, (jsonObject, game) -> new Action.PlaceCheapBuilding((Location.BuildingLocation) game.getTrail().getLocation(jsonObject.getString(JsonProperties.LOCATION)), findPlayerBuilding(game, jsonObject.getString(JsonProperties.BUILDING)))),
     PLAY_OBJECTIVE_CARD(Action.PlayObjectiveCard.class, (jsonObject, game) -> new Action.PlayObjectiveCard(findObjectiveCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)))),
     REMOVE_CARD(Action.RemoveCard.class, (jsonObject, game) -> new Action.RemoveCard(findCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject(JsonProperties.CARD)))),
-    REMOVE_HAZARD(Action.RemoveHazard.class, (jsonObject, game) -> new Action.RemoveHazard(findHazard(game, jsonObject.getJsonObject("hazard")))),
-    REMOVE_HAZARD_FOR_5_DOLLARS(Action.RemoveHazardFor5Dollars.class, (jsonObject, game) -> new Action.RemoveHazardFor5Dollars(findHazard(game, jsonObject.getJsonObject("hazard")))),
-    REMOVE_HAZARD_FOR_FREE(Action.RemoveHazardForFree.class, (jsonObject, game) -> new Action.RemoveHazardForFree(findHazard(game, jsonObject.getJsonObject("hazard")))),
+    REMOVE_HAZARD(Action.RemoveHazard.class, (jsonObject, game) -> new Action.RemoveHazard(findHazard(game, jsonObject.getJsonObject(JsonProperties.HAZARD)))),
+    REMOVE_HAZARD_FOR_5_DOLLARS(Action.RemoveHazardFor5Dollars.class, (jsonObject, game) -> new Action.RemoveHazardFor5Dollars(findHazard(game, jsonObject.getJsonObject(JsonProperties.HAZARD)))),
+    REMOVE_HAZARD_FOR_FREE(Action.RemoveHazardForFree.class, (jsonObject, game) -> new Action.RemoveHazardForFree(findHazard(game, jsonObject.getJsonObject(JsonProperties.HAZARD)))),
     SINGLE_AUXILIARY_ACTION(Action.SingleAuxiliaryAction.class, (jsonObject, game) -> new Action.SingleAuxiliaryAction()),
     SINGLE_OR_DOUBLE_AUXILIARY_ACTION(Action.SingleOrDoubleAuxiliaryAction.class, ((jsonObject, game) -> new Action.SingleOrDoubleAuxiliaryAction())),
     TAKE_OBJECTIVE_CARD(Action.TakeObjectiveCard.class, (jsonObject, game) -> new Action.TakeObjectiveCard(findObjectiveCard(game, jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)))),
-    TRADE_WITH_INDIANS(Action.TradeWithIndians.class, (jsonObject, game) -> new Action.TradeWithIndians(jsonObject.getInt("reward"))),
-    UPGRADE_ANY_STATION_BEHIND_ENGINE(Action.UpgradeAnyStationBehindEngine.class, (jsonObject, game) -> new Action.UpgradeAnyStationBehindEngine(game.getRailroadTrack().getStations().get(jsonObject.getInt("station")))),
+    TRADE_WITH_INDIANS(Action.TradeWithIndians.class, (jsonObject, game) -> new Action.TradeWithIndians(jsonObject.getInt(JsonProperties.REWARD))),
+    UPGRADE_ANY_STATION_BEHIND_ENGINE(Action.UpgradeAnyStationBehindEngine.class, (jsonObject, game) -> new Action.UpgradeAnyStationBehindEngine(game.getRailroadTrack().getStations().get(jsonObject.getInt(JsonProperties.STATION)))),
     UPGRADE_STATION(Action.UpgradeStation.class, (jsonObject, game) -> new Action.UpgradeStation()),
     USE_ADJACENT_BUILDING(Action.UseAdjacentBuilding.class, (jsonObject, game) -> new Action.UseAdjacentBuilding()),
-    CHOOSE_FORESIGHTS(Action.ChooseForesights.class, (jsonObject, game) -> new Action.ChooseForesights(jsonObject.getJsonArray("choices").stream()
+    CHOOSE_FORESIGHTS(Action.ChooseForesights.class, (jsonObject, game) -> new Action.ChooseForesights(jsonObject.getJsonArray(JsonProperties.CHOICES).stream()
             .map(jsonValue -> (JsonNumber) jsonValue)
             .map(JsonNumber::intValue)
             .collect(Collectors.toList()))),
-    UNLOCK_BLACK_OR_WHITE(Action.UnlockBlackOrWhite.class, (jsonObject, game) -> new Action.UnlockBlackOrWhite(Unlockable.valueOf(jsonObject.getString("unlock")))),
-    UNLOCK_WHITE(Action.UnlockWhite.class, (jsonObject, game) -> new Action.UnlockWhite(Unlockable.valueOf(jsonObject.getString("unlock")))),
-    DOWNGRADE_STATION(Action.DowngradeStation.class, (jsonObject, game) -> new Action.DowngradeStation(findStation(game, jsonObject.getInt("station"))));
+    UNLOCK_BLACK_OR_WHITE(Action.UnlockBlackOrWhite.class, (jsonObject, game) -> new Action.UnlockBlackOrWhite(Unlockable.valueOf(jsonObject.getString(JsonProperties.UNLOCK)))),
+    UNLOCK_WHITE(Action.UnlockWhite.class, (jsonObject, game) -> new Action.UnlockWhite(Unlockable.valueOf(jsonObject.getString(JsonProperties.UNLOCK)))),
+    DOWNGRADE_STATION(Action.DowngradeStation.class, (jsonObject, game) -> new Action.DowngradeStation(findStation(game, jsonObject.getInt(JsonProperties.STATION))));
 
     private static Station findStation(Game game, int index) {
         return game.getRailroadTrack().getStations().get(index);
     }
 
     private static ObjectiveCard findObjectiveCard(Game game, JsonObject jsonObject) {
-        List<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, "tasks").stream()
+        List<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
                 .map(JsonString::getString)
                 .map(ObjectiveCard.Task::valueOf)
                 .collect(Collectors.toList());
-        int points = jsonObject.getInt("points");
+        int points = jsonObject.getInt(JsonProperties.POINTS);
 
         return game.getObjectiveCards().getAvailable().stream()
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
                 .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
                 .findAny()
-                .orElseThrow(() -> new BadRequestException("Objective card not available: " + tasks + " " + points));
+                .orElseThrow(() -> new APIException(GWTError.OBJECTIVE_CARD_NOT_AVAILABLE));
     }
 
     private static Hazard findHazard(Game game, JsonObject jsonObject) {
-        HazardType hazardType = HazardType.valueOf(jsonObject.getString("type"));
+        HazardType hazardType = HazardType.valueOf(jsonObject.getString(JsonProperties.TYPE));
         return game.getTrail().getHazardLocations(hazardType).stream()
                 .flatMap(hazardLocation -> hazardLocation.getHazard().stream())
                 .max(Comparator.comparingInt(Hazard::getPoints))
-                .orElseThrow(() -> new BadRequestException("Hazard not on trail: " + hazardType));
+                .orElseThrow(() -> new APIException(GWTError.HAZARD_NOT_ON_TRAIL));
     }
 
     private static PlayerBuilding findPlayerBuilding(Game game, String building) {
         return game.currentPlayerState().getBuildings().stream()
                 .filter(playerBuilding -> playerBuilding.getName().equals(building))
                 .findAny()
-                .orElseThrow(() -> new BadRequestException("Building not available: " + building));
-    }
-
-    private static Set<Card> findCardsInHand(Game game, JsonArray jsonArray) {
-        var remaining = new HashSet<>(game.currentPlayerState().getHand());
-        var result = new HashSet<Card>();
-
-        for (var jsonObject : jsonArray.getValuesAs(JsonObject.class)) {
-            var card = findCardInHand(remaining, jsonObject);
-
-            if (card != null) {
-                result.add(card);
-                remaining.remove(card);
-            }
-        }
-
-        return result;
+                .orElseThrow(() -> new APIException(GWTError.BUILDING_NOT_AVAILABLE));
     }
 
     private static RailroadTrack.Space findSpace(Game game, JsonObject jsonObject) {
-        if (jsonObject.containsKey("number") && jsonObject.get("number").getValueType() == JsonValue.ValueType.NUMBER) {
-            int number = jsonObject.getInt("number");
+        if (jsonObject.containsKey(JsonProperties.NUMBER) && jsonObject.get(JsonProperties.NUMBER).getValueType() == JsonValue.ValueType.NUMBER) {
+            int number = jsonObject.getInt(JsonProperties.NUMBER);
             return game.getRailroadTrack().getSpace(number);
         } else {
-            return game.getRailroadTrack().getTurnouts().get(jsonObject.getInt("turnout"));
+            return game.getRailroadTrack().getTurnouts().get(jsonObject.getInt(JsonProperties.TURNOUT));
         }
     }
 
     private static Card.CattleCard findCattleCardInHand(Collection<Card> hand, JsonObject jsonObject) {
-        CattleType type = CattleType.valueOf(jsonObject.getString("type"));
-        int points = jsonObject.getInt("points");
+        CattleType type = CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE));
 
         return hand.stream()
                 .filter(card -> card instanceof Card.CattleCard)
                 .map(card -> (Card.CattleCard) card)
                 .filter(cattleCard -> cattleCard.getType() == type)
-                .filter(cattleCard -> cattleCard.getPoints() == points)
                 .findAny()
-                .orElseThrow(() -> new BadRequestException("Cattle card not in hand: " + type + " " + points));
+                .orElseThrow(() -> new APIException(GWTError.CARD_NOT_IN_HAND));
     }
 
     private static Card findCardInHand(Collection<Card> hand, JsonObject jsonObject) {
-        if (jsonObject.containsKey("type")) {
+        if (jsonObject.containsKey(JsonProperties.TYPE)) {
             return findCattleCardInHand(hand, jsonObject);
         } else {
             return findObjectiveCardInHand(hand, jsonObject);
@@ -181,11 +182,11 @@ public enum ActionType {
     }
 
     private static ObjectiveCard findObjectiveCardInHand(Collection<Card> hand, JsonObject jsonObject) {
-        Set<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, "tasks").stream()
+        Set<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
                 .map(JsonString::getString)
                 .map(ObjectiveCard.Task::valueOf)
                 .collect(Collectors.toSet());
-        int points = jsonObject.getInt("points");
+        int points = jsonObject.getInt(JsonProperties.POINTS);
 
         return hand.stream()
                 .filter(card -> card instanceof ObjectiveCard)
@@ -193,20 +194,20 @@ public enum ActionType {
                 .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
                 .findAny()
-                .orElseThrow(() -> new BadRequestException("Objective card not in hand: " + tasks + " " + points));
+                .orElseThrow(() -> new APIException(GWTError.CARD_NOT_IN_HAND));
     }
 
     private static Set<Card.CattleCard> findCattleCards(Game game, JsonArray cattleCards) {
         return cattleCards.stream()
                 .map(JsonValue::asJsonObject)
                 .map(cattleCardJsonObject -> {
-                    CattleType type = CattleType.valueOf(cattleCardJsonObject.getString("type"));
-                    int points = cattleCardJsonObject.getInt("points");
+                    CattleType type = CattleType.valueOf(cattleCardJsonObject.getString(JsonProperties.TYPE));
+                    int points = cattleCardJsonObject.getInt(JsonProperties.POINTS);
 
                     return game.getCattleMarket().getMarket().stream()
                             .filter(cattleCard -> cattleCard.getType() == type)
                             .filter(cattleCard -> cattleCard.getPoints() == points)
-                            .findAny().orElseThrow(() -> new BadRequestException("Cattle card not in market: " + type + " " + points));
+                            .findAny().orElseThrow(() -> new APIException(GWTError.CATTLE_CARD_NOT_AVAILABLE));
                 })
                 .collect(Collectors.toSet());
     }
@@ -222,7 +223,7 @@ public enum ActionType {
                 return value;
             }
         }
-        throw new IllegalArgumentException("Unsupported action: " + action);
+        throw APIException.badRequest(APIError.NO_SUCH_ACTION);
     }
 
     public Action toAction(JsonObject jsonObject, Game game) {
@@ -240,13 +241,22 @@ public enum ActionType {
     private static class JsonProperties {
         private static final String WORKER = "worker";
         private static final String CARD = "card";
-        private static final String CARDS = "cards";
-        private static final String CATTLE_CARD = "cattleCard";
         private static final String CATTLE_CARDS = "cattleCards";
         private static final String OBJECTIVE_CARD = "objectiveCard";
         private static final String CERTIFICATES = "certificates";
         private static final String CITY = "city";
-        private static final String CATTLE_TYPE = "cattleType";
         private static final String TO = "to";
+        private static final String HAZARD = "hazard";
+        private static final String REWARD = "reward";
+        private static final String LOCATION = "location";
+        private static final String BUILDING = "building";
+        private static final String STATION = "station";
+        private static final String CHOICES = "choices";
+        private static final String UNLOCK = "unlock";
+        private static final String TASKS = "tasks";
+        private static final String POINTS = "points";
+        private static final String TYPE = "type";
+        private static final String NUMBER = "number";
+        private static final String TURNOUT = "turnout";
     }
 }

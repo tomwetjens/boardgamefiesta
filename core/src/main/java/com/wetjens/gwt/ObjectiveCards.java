@@ -44,7 +44,7 @@ public final class ObjectiveCards implements Serializable {
 
     void remove(ObjectiveCard objectiveCard) {
         if (!available.remove(objectiveCard)) {
-            throw new IllegalArgumentException("Objective card not available");
+            throw new GWTException(GWTError.OBJECTIVE_CARD_NOT_AVAILABLE);
         }
 
         fill();

@@ -1,8 +1,5 @@
 package com.wetjens.gwt;
 
-import lombok.Getter;
-import lombok.NonNull;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,11 +9,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import lombok.Getter;
+import lombok.NonNull;
 
 public class Trail implements Serializable {
 
@@ -155,16 +154,6 @@ public class Trail implements Serializable {
         return Collections.unmodifiableList(teepeeLocations);
     }
 
-    public Location.BuildingLocation getBuildingLocation(Class<? extends Building> clazz) {
-        return getBuildingLocations()
-                .stream()
-                .filter(buildingLocation -> buildingLocation.getBuilding()
-                        .map(building -> clazz.equals(building.getClass()))
-                        .orElse(false))
-                .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("Building not on trail: " + clazz.getSimpleName()));
-    }
-
     public Set<Location.BuildingLocation> getBuildingLocations() {
         return getLocations().stream()
                 .filter(location -> location instanceof Location.BuildingLocation)
@@ -175,7 +164,7 @@ public class Trail implements Serializable {
     public Location getCurrentLocation(Player player) {
         Location location = playerLocations.get(player);
         if (location == null) {
-            throw new IllegalStateException("Player currently not at a location");
+            throw new GWTException(GWTError.NOT_AT_LOCATION, player);
         }
         return location;
     }
@@ -192,7 +181,7 @@ public class Trail implements Serializable {
         Location.HazardLocation hazardLocation = getHazardLocations(hazard.getType()).stream()
                 .filter(location -> hazard == location.getHazard().orElse(null))
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("Hazard not on trail"));
+                .orElseThrow(() -> new GWTException(GWTError.HAZARD_NOT_ON_TRAIL, hazard.getType(), hazard.getHand(), hazard.getPoints()));
 
         hazardLocation.removeHazard();
     }
@@ -201,22 +190,22 @@ public class Trail implements Serializable {
         return getLocations().stream()
                 .filter(location -> location.getName().equals(name))
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("Unknown location: " + name));
+                .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION, name));
     }
 
     public Location.TeepeeLocation getTeepeeLocation(int reward) {
         return teepeeLocations.stream()
                 .filter(teepeeLocation -> teepeeLocation.getReward() == reward).findAny()
-                .orElseThrow(() -> new IllegalArgumentException("No teepee location for " + reward));
+                .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION, reward));
     }
 
     Set<List<Location>> possibleMoves(Location from, Location to, int stepLimit) {
         if (from.isEmpty()) {
-            throw new IllegalArgumentException("From location cannot be empty");
+            throw new GWTException(GWTError.LOCATION_EMPTY, from.getName());
         }
 
         if (to.isEmpty()) {
-            throw new IllegalArgumentException("To location cannot be empty");
+            throw new GWTException(GWTError.LOCATION_EMPTY, to.getName());
         }
 
         return reachableLocations(from, to, stepLimit)
@@ -250,11 +239,11 @@ public class Trail implements Serializable {
 
     public Set<Location> getAdjacentLocations(Location location) {
         return Stream.concat(location.getNext().stream(), getLocations().stream()
-                .filter(l -> l.isDirect(location))).collect(Collectors.toSet());
+                .filter(l -> l.getNext().contains(location))).collect(Collectors.toSet());
     }
 
     int numberOfBuildings(Player player) {
-        return (int) getBuildings(player).size();
+        return getBuildings(player).size();
     }
 
     Set<PlayerBuilding> getBuildings(Player player) {
