@@ -42,9 +42,9 @@ public enum ActionType {
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_CERTIFICATES(Action.Discard1BlackAngusToGain2Certificates.class, (jsonObject, game) -> new Action.Discard1BlackAngusToGain2Certificates()),
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_DOLLARS(Action.Discard1BlackAngusToGain2Dollars.class, (jsonObject, game) -> new Action.Discard1BlackAngusToGain2Dollars()),
     DISCARD_CARD(Action.DiscardCard.class, (jsonObject, game) -> new Action.DiscardCard(findCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject(JsonProperties.CARD)))),
-    DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class, (jsonObject, game) -> new Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand(CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE)))),
+    DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class, (jsonObject, game) -> new Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)))),
     ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Add1ObjectiveCardToHand.class, (jsonObject, game) -> new Action.Add1ObjectiveCardToHand(findObjectiveCard(game, jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)))),
-    DISCARD_1_CATTLE_CARD_TO_GAIN_1_CERTIFICATE(Action.Discard1CattleCardToGain1Certificate.class, (jsonObject, game) -> new Action.Discard1CattleCardToGain1Certificate(CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE)))),
+    DISCARD_1_CATTLE_CARD_TO_GAIN_1_CERTIFICATE(Action.Discard1CattleCardToGain1Certificate.class, (jsonObject, game) -> new Action.Discard1CattleCardToGain1Certificate(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)))),
     DISCARD_1_DUTCH_BELT_TO_GAIN_2_DOLLARS(Action.Discard1DutchBeltToGain2Dollars.class, (jsonObject, game) -> new Action.Discard1DutchBeltToGain2Dollars()),
     DISCARD_1_DUTCH_BELT_TO_GAIN_3_DOLLARS(Action.Discard1DutchBeltToGain3Dollars.class, (jsonObject, game) -> new Action.Discard1DutchBeltToGain3Dollars()),
     DISCARD_1_GUERNSEY(Action.Discard1Guernsey.class, (jsonObject, game) -> new Action.Discard1Guernsey()),
@@ -57,8 +57,8 @@ public enum ActionType {
     DISCARD_1_JERSEY_TO_MOVE_ENGINE_1_FORWARD(Action.Discard1JerseyToMoveEngine1Forward.class, (jsonObject, game) -> new Action.Discard1JerseyToMoveEngine1Forward()),
     DISCARD_1_OBJECTIVE_CARD_TO_GAIN_2_CERTIFICATES(Action.Discard1ObjectiveCardToGain2Certificates.class, (jsonObject, game) -> new Action.Discard1ObjectiveCardToGain2Certificates(findObjectiveCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)))),
     DISCARD_2_GUERNSEY_TO_GAIN_4_DOLLARS(Action.Discard2GuernseyToGain4Dollars.class, (jsonObject, game) -> new Action.Discard2GuernseyToGain4Dollars()),
-    DISCARD_PAIR_TO_GAIN_3_DOLLARS(Action.DiscardPairToGain3Dollars.class, (jsonObject, game) -> new Action.DiscardPairToGain3Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE)))),
-    DISCARD_PAIR_TO_GAIN_4_DOLLARS(Action.DiscardPairToGain4Dollars.class, (jsonObject, game) -> new Action.DiscardPairToGain4Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.TYPE)))),
+    DISCARD_PAIR_TO_GAIN_3_DOLLARS(Action.DiscardPairToGain3Dollars.class, (jsonObject, game) -> new Action.DiscardPairToGain3Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)))),
+    DISCARD_PAIR_TO_GAIN_4_DOLLARS(Action.DiscardPairToGain4Dollars.class, (jsonObject, game) -> new Action.DiscardPairToGain4Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)))),
     DRAW_CARD(Action.DrawCard.class, (jsonObject, game) -> new Action.DrawCard()),
     DRAW_2_CATTLE_CARDS(Action.Draw2CattleCards.class, ((jsonObject, game) -> new Action.Draw2CattleCards())),
     EXTRAORDINARY_DELIVERY(Action.ExtraordinaryDelivery.class, (jsonObject, game) -> new Action.ExtraordinaryDelivery(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)), City.valueOf(jsonObject.getString(JsonProperties.CITY)))),
@@ -239,6 +239,7 @@ public enum ActionType {
     }
 
     private static class JsonProperties {
+        private static final String CATTLE_TYPE = "cattleType";
         private static final String WORKER = "worker";
         private static final String CARD = "card";
         private static final String CATTLE_CARDS = "cattleCards";

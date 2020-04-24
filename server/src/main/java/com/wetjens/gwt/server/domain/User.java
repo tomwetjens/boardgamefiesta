@@ -22,6 +22,8 @@ public class User {
 
     private static final Duration RETENTION_AFTER_LAST_SEEN = Duration.of(365, ChronoUnit.DAYS);
 
+    public static final String DEFAULT_LANGUAGE = "en";
+
     @Getter
     private final Id id;
 
@@ -43,6 +45,9 @@ public class User {
     @Getter
     private Instant expires;
 
+    @Getter
+    private String language;
+
     public static User createAutomatically(@NonNull Id id, @NonNull String username, @NonNull String email) {
         var created = Instant.now();
 
@@ -54,6 +59,7 @@ public class User {
                 .expires(calculateExpires(created))
                 .username(username)
                 .email(email)
+                .language(DEFAULT_LANGUAGE)
                 .build();
     }
 
@@ -64,6 +70,11 @@ public class User {
 
     public void confirmEmail(String email) {
         this.email = email;
+        updated = Instant.now();
+    }
+
+    public void changeLanguage(String language) {
+        this.language = language;
         updated = Instant.now();
     }
 

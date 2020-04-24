@@ -37,11 +37,13 @@ import com.wetjens.gwt.server.rest.view.state.PossibleBuyView;
 import com.wetjens.gwt.server.rest.view.state.PossibleDeliveryView;
 import com.wetjens.gwt.server.rest.view.state.PossibleMoveView;
 import com.wetjens.gwt.server.rest.view.state.StateView;
+import lombok.extern.slf4j.Slf4j;
 
 @Path("/games")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @RolesAllowed("user")
+@Slf4j
 public class GameResource {
 
     @Inject
@@ -278,6 +280,7 @@ public class GameResource {
         var performingPlayer = determinePlayer(game);
 
         if (game.getState().getCurrentPlayer() != performingPlayer) {
+            log.debug("End Turn: current user {} is {}, but current player is {}", currentUserId().getId(), performingPlayer, game.getState().getCurrentPlayer());
             throw APIException.forbidden(APIError.NOT_YOUR_TURN);
         }
 

@@ -73,6 +73,7 @@ public class UserDynamoDbRepository implements Users {
         item.put("Updated", AttributeValue.builder().n(Long.toString(user.getUpdated().getEpochSecond())).build());
         item.put("LastSeen", AttributeValue.builder().n(Long.toString(user.getLastSeen().getEpochSecond())).build());
         item.put("Expires", AttributeValue.builder().n(Long.toString(user.getExpires().getEpochSecond())).build());
+        item.put("Language", AttributeValue.builder().s(user.getLanguage()).build());
 
         dynamoDbClient.putItem(PutItemRequest.builder()
                 .tableName(tableName)
@@ -112,6 +113,11 @@ public class UserDynamoDbRepository implements Users {
         updates.put("Expires", AttributeValueUpdate.builder()
                 .action(AttributeAction.PUT)
                 .value(AttributeValue.builder().n(Long.toString(user.getExpires().getEpochSecond())).build())
+                .build());
+
+        updates.put("Language", AttributeValueUpdate.builder()
+                .action(AttributeAction.PUT)
+                .value(AttributeValue.builder().s(user.getLanguage()).build())
                 .build());
 
         dynamoDbClient.updateItem(UpdateItemRequest.builder()
@@ -169,6 +175,7 @@ public class UserDynamoDbRepository implements Users {
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
                 .username(item.get("Username").s())
                 .email(item.get("Email").s())
+                .language(item.get("Language") != null ? item.get("Language").s() : User.DEFAULT_LANGUAGE)
                 .build();
     }
 
