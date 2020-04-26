@@ -256,6 +256,14 @@ public abstract class Location implements Serializable {
             return Optional.ofNullable(teepee);
         }
 
+        @Override
+        public Hand getHand() {
+            if (teepee != null) {
+                return teepee.getHand();
+            }
+            return Hand.NONE;
+        }
+
         void placeTeepee(@NonNull Teepee teepee) {
             if (this.teepee != null) {
                 throw new GWTException(GWTError.LOCATION_NOT_EMPTY);

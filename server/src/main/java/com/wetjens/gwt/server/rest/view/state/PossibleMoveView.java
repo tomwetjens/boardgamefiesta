@@ -29,6 +29,7 @@ public class PossibleMoveView {
                 .map(entry -> new PlayerFeeView(new PlayerView(entry.getKey(), userMap.get(entry.getKey())), entry.getValue().stream()
                         .mapToInt(playerBuilding -> playerBuilding.getHand().getFee(playerCount))
                         .sum()))
+                .filter(playerFeeView -> playerFeeView.getFee() > 0)
                 .collect(Collectors.toList());
 
         this.cost = steps.stream()

@@ -1,6 +1,13 @@
 package com.wetjens.gwt;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
 public enum Teepee {
-    BLUE,
-    GREEN;
+    BLUE(Hand.BLACK),
+    GREEN(Hand.GREEN);
+
+    Hand hand;
 }
