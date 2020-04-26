@@ -796,32 +796,32 @@ public abstract class Action {
     }
 
     public static final class Move1Forward extends Move {
-        public Move1Forward(Location to) {
-            super(Collections.singletonList(to), 1, 1, true);
+        public Move1Forward(List<Location> steps) {
+            super(steps, 1, 1, true);
         }
     }
 
     public static final class Move2Forward extends Move {
-        public Move2Forward(Location to) {
-            super(Collections.singletonList(to), 1, 2, true);
+        public Move2Forward(List<Location> steps) {
+            super(steps, 1, 2, true);
         }
     }
 
     public static final class Move3Forward extends Move {
-        public Move3Forward(Location to) {
-            super(Collections.singletonList(to), 1, 3, true);
+        public Move3Forward(List<Location> steps) {
+            super(steps, 1, 3, true);
         }
     }
 
     public static final class Move3ForwardWithoutFees extends Move {
-        public Move3ForwardWithoutFees(Location to) {
-            super(Collections.singletonList(to), 1, 3, false);
+        public Move3ForwardWithoutFees(List<Location> steps) {
+            super(steps, 1, 3, false);
         }
     }
 
     public static final class Move4Forward extends Move {
-        public Move4Forward(Location to) {
-            super(Collections.singletonList(to), 1, 4, true);
+        public Move4Forward(List<Location> steps) {
+            super(steps, 1, 4, true);
         }
     }
 

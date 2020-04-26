@@ -165,6 +165,10 @@ public class Game implements Serializable {
             actionStack.push(immediateActions.getActions());
         }
 
+        endTurnIfNoMoreActions(random);
+    }
+
+    private void endTurnIfNoMoreActions(@NonNull Random random) {
         if (actionStack.isEmpty() && !currentPlayerState().canPlayObjectiveCard()) {
             // Can only automatically end turn when no actions remaining,
             // and player cannot (optionally) play an objective card
@@ -176,12 +180,22 @@ public class Game implements Serializable {
         return jobMarket.isClosed() && currentPlayerState().hasJobMarketToken();
     }
 
-    public void endTurn(@NonNull Random random) {
+    public void skip(@NonNull Random random) {
         if (isEnded()) {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
         actionStack.skip();
+
+        endTurnIfNoMoreActions(random);
+    }
+
+    public void endTurn(@NonNull Random random) {
+        if (isEnded()) {
+            throw new GWTException(GWTError.GAME_ENDED);
+        }
+
+        actionStack.skipAll();
 
         if (!isEnded()) {
             currentPlayerState().drawUpToHandLimit(random);

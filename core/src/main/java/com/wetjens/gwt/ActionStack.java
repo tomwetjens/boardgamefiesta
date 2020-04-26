@@ -60,10 +60,18 @@ class ActionStack implements Serializable {
         return actions.isEmpty();
     }
 
-    public void skip() {
+    public void skipAll() {
         while (!actions.isEmpty()) {
-            actions.peek().skip();
-            actions.poll();
+            skip();
         }
+    }
+
+    public void skip() {
+        if (actions.isEmpty()) {
+            throw new GWTException(GWTError.NO_ACTIONS);
+        }
+
+        actions.peek().skip();
+        actions.poll();
     }
 }

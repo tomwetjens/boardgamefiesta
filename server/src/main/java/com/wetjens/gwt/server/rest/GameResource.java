@@ -155,6 +155,24 @@ public class GameResource {
     }
 
     @POST
+    @Path("/{id}/skip")
+    public StateView skip(@PathParam("id") String id) {
+        var game = games.findById(Game.Id.of(id));
+
+        var performingPlayer = checkTurn(game);
+
+        try {
+            game.skip();
+        } catch (GWTException e) {
+            throw new APIException(e.getError(), e.getParams());
+        }
+
+        games.update(game);
+
+        return new StateView(game, performingPlayer, getUserMapByColor(game));
+    }
+
+    @POST
     @Path("/{id}/end-turn")
     public StateView endTurn(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));

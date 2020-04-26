@@ -233,7 +233,7 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         public PossibleAction clone() {
-            return new Any(new ArrayList<>(actions));
+            return new Any(actions.stream().map(PossibleAction::clone).collect(Collectors.toList()));
         }
     }
 
@@ -300,7 +300,7 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         public PossibleAction clone() {
-            return new Choice(new HashSet<>(actions));
+            return new Choice(actions.stream().map(PossibleAction::clone).collect(Collectors.toSet()));
         }
     }
 

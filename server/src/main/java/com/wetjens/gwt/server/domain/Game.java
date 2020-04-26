@@ -152,6 +152,15 @@ public class Game {
         afterAction();
     }
 
+    public void skip() {
+        if (status != Status.STARTED) {
+            throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
+        }
+
+        state.skip(new Random());
+        afterAction();
+    }
+
     public void endTurn() {
         if (status != Status.STARTED) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);

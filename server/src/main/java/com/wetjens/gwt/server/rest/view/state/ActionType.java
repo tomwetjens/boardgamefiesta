@@ -1,18 +1,5 @@
 package com.wetjens.gwt.server.rest.view.state;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-
 import com.wetjens.gwt.Action;
 import com.wetjens.gwt.Card;
 import com.wetjens.gwt.CattleType;
@@ -32,6 +19,19 @@ import com.wetjens.gwt.server.rest.APIError;
 import com.wetjens.gwt.server.rest.APIException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import javax.json.JsonArray;
+import javax.json.JsonException;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public enum ActionType {
@@ -73,15 +73,30 @@ public enum ActionType {
     HIRE_SECOND_WORKER(Action.HireSecondWorker.class, (jsonObject, game) -> new Action.HireSecondWorker(Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)))),
     HIRE_WORKER(Action.HireWorker.class, (jsonObject, game) -> new Action.HireWorker(Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)))),
     MAX_CERTIFICATES(Action.MaxCertificates.class, ((jsonObject, game) -> new Action.MaxCertificates())),
-    MOVE(Action.Move.class, ((jsonObject, game) -> new Action.Move(getJsonStrings(jsonObject, "steps").stream()
+    MOVE(Action.Move.class, ((jsonObject, game) -> new Action.Move(getJsonStrings(jsonObject, JsonProperties.STEPS).stream()
             .map(JsonString::getString)
             .map(game.getTrail()::getLocation)
             .collect(Collectors.toList())))),
-    MOVE_1_FORWARD(Action.Move1Forward.class, (jsonObject, game) -> new Action.Move1Forward(game.getTrail().getLocation(jsonObject.getString(JsonProperties.TO)))),
-    MOVE_2_FORWARD(Action.Move2Forward.class, (jsonObject, game) -> new Action.Move2Forward(game.getTrail().getLocation(jsonObject.getString(JsonProperties.TO)))),
-    MOVE_3_FORWARD(Action.Move3Forward.class, (jsonObject, game) -> new Action.Move3Forward(game.getTrail().getLocation(jsonObject.getString(JsonProperties.TO)))),
-    MOVE_3_FORWARD_WITHOUT_FEES(Action.Move3ForwardWithoutFees.class, (jsonObject, game) -> new Action.Move3ForwardWithoutFees(game.getTrail().getLocation(jsonObject.getString(JsonProperties.TO)))),
-    MOVE_4_FORWARD(Action.Move4Forward.class, (jsonObject, game) -> new Action.Move4Forward(game.getTrail().getLocation(jsonObject.getString(JsonProperties.TO)))),
+    MOVE_1_FORWARD(Action.Move1Forward.class, (jsonObject, game) -> new Action.Move1Forward(getJsonStrings(jsonObject, JsonProperties.STEPS).stream()
+            .map(JsonString::getString)
+            .map(game.getTrail()::getLocation)
+            .collect(Collectors.toList()))),
+    MOVE_2_FORWARD(Action.Move2Forward.class, (jsonObject, game) -> new Action.Move2Forward(getJsonStrings(jsonObject, JsonProperties.STEPS).stream()
+            .map(JsonString::getString)
+            .map(game.getTrail()::getLocation)
+            .collect(Collectors.toList()))),
+    MOVE_3_FORWARD(Action.Move3Forward.class, (jsonObject, game) -> new Action.Move3Forward(getJsonStrings(jsonObject, JsonProperties.STEPS).stream()
+            .map(JsonString::getString)
+            .map(game.getTrail()::getLocation)
+            .collect(Collectors.toList()))),
+    MOVE_3_FORWARD_WITHOUT_FEES(Action.Move3ForwardWithoutFees.class, (jsonObject, game) -> new Action.Move3ForwardWithoutFees(getJsonStrings(jsonObject, JsonProperties.STEPS).stream()
+            .map(JsonString::getString)
+            .map(game.getTrail()::getLocation)
+            .collect(Collectors.toList()))),
+    MOVE_4_FORWARD(Action.Move4Forward.class, (jsonObject, game) -> new Action.Move4Forward(getJsonStrings(jsonObject, JsonProperties.STEPS).stream()
+            .map(JsonString::getString)
+            .map(game.getTrail()::getLocation)
+            .collect(Collectors.toList()))),
     MOVE_ENGINE_1_FORWARD(Action.MoveEngine1Forward.class, ((jsonObject, game) -> new Action.MoveEngine1Forward(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO))))),
     MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS(Action.MoveEngine1BackwardsToGain3Dollars.class, (jsonObject, game) -> new Action.MoveEngine1BackwardsToGain3Dollars(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)))),
     MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD(Action.MoveEngine1BackwardsToRemove1Card.class, (jsonObject, game) -> new Action.MoveEngine1BackwardsToRemove1Card(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)))),
@@ -259,5 +274,6 @@ public enum ActionType {
         private static final String TYPE = "type";
         private static final String NUMBER = "number";
         private static final String TURNOUT = "turnout";
+        private static final String STEPS = "steps";
     }
 }
