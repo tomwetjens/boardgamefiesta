@@ -34,7 +34,7 @@ public class ObjectiveCard extends Card {
     }
 
     public Optional<Class<? extends Action>> getAction() {
-        return possibleAction != null ? Optional.of(possibleAction.getPossibleActions().iterator().next()) : Optional.empty();
+        return possibleAction != null ? possibleAction.getPossibleActions().stream().findFirst() : Optional.empty();
     }
 
     static int score(Set<ObjectiveCard> required, Set<ObjectiveCard> optional, Game game, Player player) {

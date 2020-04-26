@@ -230,7 +230,7 @@ public class RailroadTrack implements Serializable {
             reachable.addAll(direction.apply(current).stream()
                     .flatMap(next -> reachableSpaces(from, next, atLeast, atMost, steps, direction).stream())
                     .collect(Collectors.toSet()));
-        } else if (possible && atMost > 1) {
+        } else if (available && atMost > 1) {
             // Space is possible so count as step
             reachable.addAll(direction.apply(current).stream()
                     .flatMap(next -> reachableSpaces(from, next, Math.max(atLeast - 1, 0), atMost - 1, steps + 1, direction).stream())
