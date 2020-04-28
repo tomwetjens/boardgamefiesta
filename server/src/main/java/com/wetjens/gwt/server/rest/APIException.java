@@ -26,7 +26,7 @@ public class APIException extends WebApplicationException {
     }
 
     private APIException(Response.Status status, String errorCode, Object... params) {
-        super(Response.status(status)
+        super(errorCode, Response.status(status)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(new Error(errorCode, params))
                 .build());

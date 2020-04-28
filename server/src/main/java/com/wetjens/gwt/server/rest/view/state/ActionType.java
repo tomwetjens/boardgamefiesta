@@ -1,5 +1,18 @@
 package com.wetjens.gwt.server.rest.view.state;
 
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import javax.json.JsonArray;
+import javax.json.JsonException;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
 import com.wetjens.gwt.Action;
 import com.wetjens.gwt.Card;
 import com.wetjens.gwt.CattleType;
@@ -197,19 +210,31 @@ public enum ActionType {
     }
 
     private static ObjectiveCard findObjectiveCardInHand(Collection<Card> hand, JsonObject jsonObject) {
-        Set<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
+        List<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
                 .map(JsonString::getString)
                 .map(ObjectiveCard.Task::valueOf)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
         int points = jsonObject.getInt(JsonProperties.POINTS);
 
         return hand.stream()
                 .filter(card -> card instanceof ObjectiveCard)
                 .map(card -> (ObjectiveCard) card)
-                .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
+                .filter(objectiveCard -> containsExactlyInAnyOrder(objectiveCard.getTasks(), tasks))
                 .findAny()
                 .orElseThrow(() -> new APIException(GWTError.CARD_NOT_IN_HAND));
+    }
+
+    private static <T> boolean containsExactlyInAnyOrder(Collection<T> actual, Collection<T> values) {
+        List<Object> notExpected = new ArrayList<>(actual);
+
+        for (T value : values) {
+            if (!notExpected.remove(value)) {
+                return false;
+            }
+        }
+
+        return notExpected.isEmpty();
     }
 
     private static Set<Card.CattleCard> findCattleCards(Game game, JsonArray cattleCards) {
