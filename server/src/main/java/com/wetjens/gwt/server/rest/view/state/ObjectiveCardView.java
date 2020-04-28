@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.wetjens.gwt.ObjectiveCard;
+import com.wetjens.gwt.server.domain.ActionType;
 import com.wetjens.gwt.server.rest.view.IterableComparator;
 import lombok.EqualsAndHashCode;
 import lombok.Value;

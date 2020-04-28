@@ -1,6 +1,8 @@
 package com.wetjens.gwt.server.rest;
 
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,10 +27,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 
+import com.wetjens.gwt.Action;
 import com.wetjens.gwt.GWTException;
 import com.wetjens.gwt.Location;
 import com.wetjens.gwt.Player;
+import com.wetjens.gwt.server.domain.ActionType;
 import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.GameLog;
+import com.wetjens.gwt.server.domain.GameLogEntry;
+import com.wetjens.gwt.server.domain.GameLogEntryType;
 import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.User;
 import com.wetjens.gwt.server.domain.Users;
@@ -50,6 +57,9 @@ public class GameResource {
     private Games games;
 
     @Inject
+    private GameLog gameLog;
+
+    @Inject
     private Users users;
 
     @Context
@@ -58,8 +68,7 @@ public class GameResource {
     @POST
     @Path("/create")
     public GameView create(@NotNull @Valid CreateGameRequest request) {
-        var currentUser = users.findOptionallyById(currentUserId())
-                .orElseThrow(() -> APIException.serverError(APIError.NO_SUCH_USER));
+        var currentUser = currentUser();
 
         var inviteUsers = request.getInviteUserIds().stream()
                 .map(userId -> users.findOptionallyById(User.Id.of(userId))
@@ -69,6 +78,9 @@ public class GameResource {
         Game game = Game.create(currentUser, inviteUsers, request.isBeginner());
 
         games.add(game);
+
+        inviteUsers.forEach(invitedUser -> gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.INVITE,
+                currentUser.getUsername(), invitedUser.getUsername()));
 
         var userMap = Stream.concat(Stream.of(currentUser), inviteUsers.stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));
@@ -102,12 +114,15 @@ public class GameResource {
     @Path("/{id}/start")
     public GameView start(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
+        var currentUser = currentUser();
 
         checkOwner(game);
 
         game.start();
 
         games.update(game);
+
+        gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.START, currentUser.getUsername());
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -116,10 +131,13 @@ public class GameResource {
     @Path("/{id}/accept")
     public GameView accept(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
+        var currentUser = currentUser();
 
         game.acceptInvite(currentUserId());
 
         games.update(game);
+
+        gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.ACCEPT, currentUser.getUsername());
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -128,10 +146,13 @@ public class GameResource {
     @Path("/{id}/reject")
     public GameView reject(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
+        var currentUser = currentUser();
 
         game.rejectInvite(currentUserId());
 
         games.update(game);
+
+        gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.REJECT, currentUser.getUsername());
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -143,21 +164,47 @@ public class GameResource {
 
         var performingPlayer = checkTurn(game);
 
+        Map<Player, User> playerUserMap = getUserMapByColor(game);
+
+        List<GameLogEntry> logEntries = new LinkedList<>();
         try {
-            game.perform(request.toAction(game.getState()));
+            Action action = request.toAction(game.getState());
+
+            game.getState().addEventLogger((player, event, values) ->
+                    logEntries.add(GameLogEntry.of(playerUserMap.get(player), event, translateEventValues(values, playerUserMap))));
+
+            game.perform(action);
         } catch (GWTException e) {
             throw new APIException(e.getError(), e.getParams());
         }
 
         games.update(game);
 
-        return new StateView(game, performingPlayer, getUserMapByColor(game));
+        gameLog.addAll(logEntries);
+
+        return new StateView(game, performingPlayer, playerUserMap);
+    }
+
+    private List<Object> translateEventValues(List<Object> values, Map<Player, User> playerUserMap) {
+        return values.stream()
+                .map(value -> {
+                    if (value instanceof Player) {
+                        return playerUserMap.get(value).getUsername();
+                    } else if (value instanceof Action) {
+                        return ActionType.of(((Action) value).getClass()).name();
+                    } else if (value instanceof Enum<?>) {
+                        return value.toString();
+                    }
+                    return value;
+                })
+                .collect(Collectors.toList());
     }
 
     @POST
     @Path("/{id}/skip")
     public StateView skip(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
+        var currentUser = currentUser();
 
         var performingPlayer = checkTurn(game);
 
@@ -169,6 +216,8 @@ public class GameResource {
 
         games.update(game);
 
+        gameLog.add(GameLogEntry.of(currentUser, GameLogEntryType.SKIP,
+
         return new StateView(game, performingPlayer, getUserMapByColor(game));
     }
 
@@ -176,6 +225,7 @@ public class GameResource {
     @Path("/{id}/end-turn")
     public StateView endTurn(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
+        var currentUser = currentUser();
 
         var performingPlayer = checkTurn(game);
 
@@ -186,6 +236,8 @@ public class GameResource {
         }
 
         games.update(game);
+
+        gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.END_TURN, currentUser.getUsername());
 
         return new StateView(game, performingPlayer, getUserMapByColor(game));
     }
@@ -265,6 +317,19 @@ public class GameResource {
                 .collect(Collectors.toSet());
     }
 
+    @GET
+    @Path("/{id}/log")
+    public List<LogEntryView> getLog(@PathParam("id") String id, @QueryParam("since") Instant since) {
+        var game = games.findById(Game.Id.of(id));
+
+        checkViewAllowed(game);
+
+        return gameLog.findSince(Game.Id.of(id), since)
+                .limit(100)
+                .map(LogEntryView::new)
+                .collect(Collectors.toList());
+    }
+
     private void checkOwner(Game game) {
         if (!game.getOwner().equals(currentUserId())) {
             throw APIException.forbidden(APIError.MUST_BE_OWNER);
@@ -292,6 +357,11 @@ public class GameResource {
             throw new NotAuthorizedException("");
         }
         return User.Id.of(securityContext.getUserPrincipal().getName());
+    }
+
+    private User currentUser() {
+        return users.findOptionallyById(currentUserId())
+                .orElseThrow(() -> APIException.serverError(APIError.NO_SUCH_USER));
     }
 
     private Player checkTurn(Game game) {

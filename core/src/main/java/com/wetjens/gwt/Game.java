@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -57,6 +58,16 @@ public class Game implements Serializable {
 
     @Getter
     private Player currentPlayer;
+
+    private Set<GWTEventLogger> eventLoggers = new HashSet<>();
+
+    public void addEventLogger(GWTEventLogger eventLogger) {
+        eventLoggers.add(eventLogger);
+    }
+
+    void logEvent(Player player, GWTEvent event, List<Object> values) {
+        eventLoggers.forEach(eventLogger -> eventLogger.log(player, event, values));
+    }
 
     ImmediateActions deliverToCity(City city) {
         return railroadTrack.deliverToCity(currentPlayer, city)
@@ -153,19 +164,33 @@ public class Game implements Serializable {
                 throw new GWTException(GWTError.IMMEDIATE_ACTION_MUST_BE_PERFORMED_FIRST);
             }
 
+            logAction(action);
+
             ImmediateActions immediateActions = action.perform(this, random);
-            actionStack.push(immediateActions.getActions());
+
+            if (!immediateActions.isEmpty()) {
+                actionStack.push(immediateActions.getActions());
+            }
         } else {
             if (!actionStack.canPerform(action.getClass())) {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
+            logAction(action);
+
             ImmediateActions immediateActions = action.perform(this, random);
             actionStack.perform(action.getClass());
-            actionStack.push(immediateActions.getActions());
+
+            if (!immediateActions.isEmpty()) {
+                actionStack.push(immediateActions.getActions());
+            }
         }
 
         endTurnIfNoMoreActions(random);
+    }
+
+    private void logAction(Action action) {
+        logEvent(currentPlayer, GWTEvent.ACTION, Stream.concat(Stream.of(action), action.toEventParams(this).stream()).collect(Collectors.toList()));
     }
 
     private void endTurnIfNoMoreActions(@NonNull Random random) {
@@ -256,11 +281,9 @@ public class Game implements Serializable {
 
     public static Game deserialize(InputStream inputStream) {
         try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-            try {
-                return (Game) objectInputStream.readObject();
-            } catch (ClassNotFoundException e) {
-                throw new IOException(e);
-            }
+            return (Game) objectInputStream.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new UnsupportedOperationException(e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -1,7 +1,7 @@
 package com.wetjens.gwt.server.rest.view.state;
 
-import com.wetjens.gwt.ObjectiveCard;
 import com.wetjens.gwt.Player;
+import com.wetjens.gwt.server.domain.ActionType;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 

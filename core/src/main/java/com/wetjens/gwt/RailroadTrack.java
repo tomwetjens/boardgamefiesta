@@ -413,6 +413,8 @@ public class RailroadTrack implements Serializable {
             return previous.stream().anyMatch(prev -> prev == space || prev.isBefore(space));
         }
 
+        public abstract String getName();
+
         @Getter
         @ToString
         public static class NumberedSpace extends Space {
@@ -429,6 +431,11 @@ public class RailroadTrack implements Serializable {
             private NumberedSpace(boolean signal, int number, Station station, @NonNull Collection<Space> next) {
                 super(signal, station, next);
                 this.number = number;
+            }
+
+            @Override
+            public String getName() {
+                return Integer.toString(number);
             }
         }
 
@@ -450,6 +457,11 @@ public class RailroadTrack implements Serializable {
             public TurnoutSpace(@NonNull Space previous, @NonNull Space next, @NonNull Station station) {
                 super(false, station, Collections.singleton(next));
                 this.previous.add(previous);
+            }
+
+            @Override
+            public String getName() {
+                return previous.iterator().next().getName() + ".5";
             }
         }
 

@@ -18,7 +18,7 @@ import com.wetjens.gwt.Action;
 import com.wetjens.gwt.Game;
 import com.wetjens.gwt.ObjectiveCard;
 import com.wetjens.gwt.PlayerState;
-import com.wetjens.gwt.server.rest.view.state.ActionType;
+import com.wetjens.gwt.server.domain.ActionType;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;

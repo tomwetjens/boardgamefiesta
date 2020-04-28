@@ -34,6 +34,8 @@ public class Game {
     private static final Duration ACTION_TIMEOUT = Duration.of(1, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(2, ChronoUnit.DAYS);
 
+    private static final Random RANDOM = new Random();
+
     @Getter
     @NonNull
     private final Id id;
@@ -122,11 +124,9 @@ public class Game {
 
         players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
 
-        Random random = new Random();
+        assignColors();
 
-        assignColors(random);
-
-        state = new com.wetjens.gwt.Game(players.stream().map(Player::getColor).collect(Collectors.toSet()), beginner, random);
+        state = new com.wetjens.gwt.Game(players.stream().map(Player::getColor).collect(Collectors.toSet()), beginner, RANDOM);
 
         status = Status.STARTED;
         started = Instant.now();
@@ -136,9 +136,9 @@ public class Game {
         CDI.current().getBeanManager().fireEvent(new Started());
     }
 
-    private void assignColors(Random random) {
+    private void assignColors() {
         var randomColors = new LinkedList<>(Arrays.asList(com.wetjens.gwt.Player.values()));
-        Collections.shuffle(randomColors, random);
+        Collections.shuffle(randomColors, RANDOM);
 
         players.forEach(player -> player.setColor(randomColors.poll()));
     }
@@ -148,7 +148,7 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        state.perform(action, new Random());
+        state.perform(action, RANDOM);
         afterAction();
     }
 
@@ -157,7 +157,7 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        state.skip(new Random());
+        state.skip(RANDOM);
         afterAction();
     }
 
@@ -166,7 +166,7 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        state.endTurn(new Random());
+        state.endTurn(RANDOM);
         afterAction();
     }
 

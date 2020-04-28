@@ -38,7 +38,7 @@ public final class Foresights implements Serializable {
         return tile;
     }
 
-    public Collection<KansasCitySupply.Tile> choices(int columnIndex) {
+    public List<KansasCitySupply.Tile> choices(int columnIndex) {
         return List.of(spaces[columnIndex]);
     }
 }

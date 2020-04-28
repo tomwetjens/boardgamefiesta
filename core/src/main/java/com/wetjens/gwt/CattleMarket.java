@@ -223,24 +223,13 @@ public final class CattleMarket implements Serializable {
                 .filter(pb -> pb.getCowboysNeeded() <= numberOfCowboys);
     }
 
-    ImmediateActions buy(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
+    int buy(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
         // Assume player wants cheaper instead of less cowboys
         Cost cost = cost(cattleCards, numberOfCowboys, CostPreference.CHEAPER_COST);
 
         market.removeAll(cattleCards);
 
-        //Any of the cowboys that you do not put to use buying a cattle card during this action may instead
-        //be used to draw 2 cards from the market cattle stack and add them face up to the cattle market
-        int unusedCowboys = numberOfCowboys - cost.getCowboys();
-
-        if (unusedCowboys > 0) {
-            // Assumed unused cowboys can only be used after buying
-            List<Class<? extends Action>> drawCardsForEachUnusedCowboy = IntStream.range(0, unusedCowboys)
-                    .mapToObj(i -> Action.Draw2CattleCards.class)
-                    .collect(Collectors.toList());
-            return ImmediateActions.of(PossibleAction.any(drawCardsForEachUnusedCowboy));
-        }
-        return ImmediateActions.none();
+        return numberOfCowboys - cost.getCowboys();
     }
 
     void fillUp() {

@@ -37,6 +37,10 @@ class ImmediateActions {
                 .collect(Collectors.toUnmodifiableList()));
     }
 
+    public boolean isEmpty() {
+        return actions.isEmpty();
+    }
+
     private static final class ImmediateAction extends PossibleAction {
 
         private static final long serialVersionUID = 1L;
