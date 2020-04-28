@@ -1,10 +1,8 @@
 package com.wetjens.gwt.server.rest.view.state;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.wetjens.gwt.Card;
 import com.wetjens.gwt.CattleMarket;
 import lombok.Value;
 
@@ -15,9 +13,8 @@ public class CattleMarketView {
 
     CattleMarketView(CattleMarket cattleMarket) {
         cards = cattleMarket.getMarket().stream()
-                .sorted(Comparator.<Card.CattleCard>comparingInt(card -> card.getType().getValue())
-                        .thenComparingInt(Card.CattleCard::getPoints))
                 .map(CattleCardView::new)
+                .sorted()
                 .collect(Collectors.toList());
     }
 }

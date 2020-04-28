@@ -62,9 +62,8 @@ public class StateView {
         cattleMarket = new CattleMarketView(game.getState().getCattleMarket());
 
         objectiveCards = game.getState().getObjectiveCards().getAvailable().stream()
-                .sorted(Comparator.comparingInt(ObjectiveCard::getPoints)
-                        .thenComparingInt(objectiveCard -> objectiveCard.getTasks().hashCode()))
                 .map(ObjectiveCardView::new)
+                .sorted()
                 .collect(Collectors.toList());
 
         currentPlayer = new PlayerView(game.getState().getCurrentPlayer(), userMap.get(game.getState().getCurrentPlayer()));

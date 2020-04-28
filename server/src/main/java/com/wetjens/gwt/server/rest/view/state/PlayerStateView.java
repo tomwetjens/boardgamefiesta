@@ -52,22 +52,8 @@ public class PlayerStateView {
 
         if (viewingPlayer == playerState.getPlayer()) {
             hand = playerState.getHand().stream()
-                    .sorted(Comparator.<Card>comparingInt(card -> {
-                        // Cattle cards first, by breeding value
-                        if (card instanceof Card.CattleCard) {
-                            return ((Card.CattleCard) card).getType().getValue();
-                        }
-                        // Then objective cards, by points
-                        return CattleType.MAX_VALUE + ((ObjectiveCard) card).getPoints();
-                    }).thenComparingInt(card -> {
-                        // Cattle cards by points
-                        if (card instanceof Card.CattleCard) {
-                            return ((Card.CattleCard) card).getPoints();
-                        }
-                        // Objective cards by tasks
-                        return ((ObjectiveCard) card).getTasks().hashCode();
-                    }))
                     .map(CardView::of)
+                    .sorted()
                     .collect(Collectors.toList());
 
             discardPile = playerState.getDiscardPile().stream()
@@ -95,9 +81,8 @@ public class PlayerStateView {
         teepees = playerState.getTeepees();
 
         objectives = playerState.getObjectives().stream()
-                .sorted(Comparator.comparingInt(ObjectiveCard::getPoints)
-                        .thenComparingInt(objectiveCard -> objectiveCard.getTasks().hashCode()))
                 .map(ObjectiveCardView::new)
+                .sorted()
                 .collect(Collectors.toList());
     }
 }
