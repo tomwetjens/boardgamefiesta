@@ -1,23 +1,5 @@
 package com.wetjens.gwt.server.rest;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.bind.annotation.JsonbTypeDeserializer;
-import javax.json.bind.serializer.DeserializationContext;
-import javax.json.bind.serializer.JsonbDeserializer;
-import javax.json.stream.JsonParser;
-
 import com.wetjens.gwt.Action;
 import com.wetjens.gwt.Card;
 import com.wetjens.gwt.CattleType;
@@ -34,13 +16,30 @@ import com.wetjens.gwt.Station;
 import com.wetjens.gwt.Unlockable;
 import com.wetjens.gwt.Worker;
 import com.wetjens.gwt.server.domain.ActionType;
-import com.wetjens.gwt.server.domain.User;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import javax.json.JsonArray;
+import javax.json.JsonException;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import javax.json.bind.annotation.JsonbTypeDeserializer;
+import javax.json.bind.serializer.DeserializationContext;
+import javax.json.bind.serializer.JsonbDeserializer;
+import javax.json.stream.JsonParser;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @JsonbTypeDeserializer(ActionRequest.Deserializer.class)
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class ActionRequest {
 
     @Getter
@@ -89,8 +88,8 @@ public class ActionRequest {
                 return new Action.Discard1JerseyToMoveEngine1Forward();
             case DISCARD_1_OBJECTIVE_CARD_TO_GAIN_2_CERTIFICATES:
                 return new Action.Discard1ObjectiveCardToGain2Certificates(findObjectiveCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)));
-            case DISCARD_2_GUERNSEY_TO_GAIN_4_DOLLARS:
-                return new Action.Discard2GuernseyToGain4Dollars();
+            case DISCARD_1_GUERNSEY_TO_GAIN_4_DOLLARS:
+                return new Action.Discard1GuernseyToGain4Dollars();
             case DISCARD_PAIR_TO_GAIN_3_DOLLARS:
                 return new Action.DiscardPairToGain3Dollars(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)));
             case DISCARD_PAIR_TO_GAIN_4_DOLLARS:

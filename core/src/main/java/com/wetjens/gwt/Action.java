@@ -69,7 +69,7 @@ public abstract class Action {
                         .mapToObj(i -> Action.Draw2CattleCards.class)
                         .collect(Collectors.toList());
 
-                game.logEvent(game.getCurrentPlayer(), GWTEvent.MAY_DRAW_CATTLE_CARDS, Collections.emptyList());
+                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.MAY_DRAW_CATTLE_CARDS, Collections.emptyList());
 
                 return ImmediateActions.of(PossibleAction.any(drawCardsForEachUnusedCowboy));
             }
@@ -822,11 +822,11 @@ public abstract class Action {
         }
     }
 
-    public static final class Discard2GuernseyToGain4Dollars extends Action {
+    public static final class Discard1GuernseyToGain4Dollars extends Action {
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            game.currentPlayerState().discardCattleCards(CattleType.GUERNSEY, 2);
+            game.currentPlayerState().discardCattleCards(CattleType.GUERNSEY, 1);
             game.currentPlayerState().gainDollars(4);
             return ImmediateActions.none();
         }
@@ -930,9 +930,9 @@ public abstract class Action {
             currentPlayerState.payDollars(amount);
 
             feeRecipient(location).ifPresentOrElse(recipient -> {
-                game.logEvent(game.getCurrentPlayer(), GWTEvent.PAY_DOLLARS, List.of(amount, recipient));
+                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_DOLLARS, List.of(amount, recipient));
                 game.playerState(recipient).gainDollars(amount);
-            }, () -> game.logEvent(game.getCurrentPlayer(), GWTEvent.PAY_DOLLARS, List.of(amount)));
+            }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_DOLLARS, List.of(amount)));
         }
 
         private Optional<Player> feeRecipient(Location location) {

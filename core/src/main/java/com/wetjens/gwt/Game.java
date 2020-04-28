@@ -56,18 +56,10 @@ public class Game implements Serializable {
 
     private final ActionStack actionStack;
 
+    private final Set<GWTEventListener> eventListeners = new HashSet<>();
+
     @Getter
     private Player currentPlayer;
-
-    private Set<GWTEventLogger> eventLoggers = new HashSet<>();
-
-    public void addEventLogger(GWTEventLogger eventLogger) {
-        eventLoggers.add(eventLogger);
-    }
-
-    void logEvent(Player player, GWTEvent event, List<Object> values) {
-        eventLoggers.forEach(eventLogger -> eventLogger.log(player, event, values));
-    }
 
     ImmediateActions deliverToCity(City city) {
         return railroadTrack.deliverToCity(currentPlayer, city)
@@ -164,7 +156,7 @@ public class Game implements Serializable {
                 throw new GWTException(GWTError.IMMEDIATE_ACTION_MUST_BE_PERFORMED_FIRST);
             }
 
-            logAction(action);
+            fireEvent(action);
 
             ImmediateActions immediateActions = action.perform(this, random);
 
@@ -176,7 +168,7 @@ public class Game implements Serializable {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
-            logAction(action);
+            fireEvent(action);
 
             ImmediateActions immediateActions = action.perform(this, random);
             actionStack.perform(action.getClass());
@@ -189,8 +181,16 @@ public class Game implements Serializable {
         endTurnIfNoMoreActions(random);
     }
 
-    private void logAction(Action action) {
-        logEvent(currentPlayer, GWTEvent.ACTION, Stream.concat(Stream.of(action), action.toEventParams(this).stream()).collect(Collectors.toList()));
+    public void addEventListener(GWTEventListener eventLogger) {
+        eventListeners.add(eventLogger);
+    }
+
+    void fireEvent(Player player, GWTEvent.Type type, List<Object> values) {
+        eventListeners.forEach(eventLogger -> eventLogger.event(new GWTEvent(player, type, values)));
+    }
+
+    private void fireEvent(Action action) {
+        fireEvent(currentPlayer, GWTEvent.Type.ACTION, Stream.concat(Stream.of(action), action.toEventParams(this).stream()).collect(Collectors.toList()));
     }
 
     private void endTurnIfNoMoreActions(@NonNull Random random) {

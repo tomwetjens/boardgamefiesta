@@ -1,5 +1,19 @@
 package com.wetjens.gwt;
 
-public enum GWTEvent {
-    PAY_DOLLARS, ACTION, MAY_DRAW_CATTLE_CARDS;
+import lombok.Value;
+
+import java.util.List;
+
+@Value
+public class GWTEvent {
+
+    Player player;
+    Type type;
+    List<Object> values;
+
+    public enum Type {
+        ACTION,
+        PAY_DOLLARS,
+        MAY_DRAW_CATTLE_CARDS;
+    }
 }

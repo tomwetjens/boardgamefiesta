@@ -1,15 +1,22 @@
 package com.wetjens.gwt.server.rest;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.wetjens.gwt.Action;
+import com.wetjens.gwt.GWTException;
+import com.wetjens.gwt.Location;
+import com.wetjens.gwt.Player;
+import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.Games;
+import com.wetjens.gwt.server.domain.LogEntries;
+import com.wetjens.gwt.server.domain.LogEntry;
+import com.wetjens.gwt.server.domain.User;
+import com.wetjens.gwt.server.domain.Users;
+import com.wetjens.gwt.server.rest.view.GameView;
+import com.wetjens.gwt.server.rest.view.state.PossibleBuyView;
+import com.wetjens.gwt.server.rest.view.state.PossibleDeliveryView;
+import com.wetjens.gwt.server.rest.view.state.PossibleMoveView;
+import com.wetjens.gwt.server.rest.view.state.StateView;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
@@ -26,25 +33,17 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
-
-import com.wetjens.gwt.Action;
-import com.wetjens.gwt.GWTException;
-import com.wetjens.gwt.Location;
-import com.wetjens.gwt.Player;
-import com.wetjens.gwt.server.domain.ActionType;
-import com.wetjens.gwt.server.domain.Game;
-import com.wetjens.gwt.server.domain.GameLog;
-import com.wetjens.gwt.server.domain.GameLogEntry;
-import com.wetjens.gwt.server.domain.GameLogEntryType;
-import com.wetjens.gwt.server.domain.Games;
-import com.wetjens.gwt.server.domain.User;
-import com.wetjens.gwt.server.domain.Users;
-import com.wetjens.gwt.server.rest.view.GameView;
-import com.wetjens.gwt.server.rest.view.state.PossibleBuyView;
-import com.wetjens.gwt.server.rest.view.state.PossibleDeliveryView;
-import com.wetjens.gwt.server.rest.view.state.PossibleMoveView;
-import com.wetjens.gwt.server.rest.view.state.StateView;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Path("/games")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -57,7 +56,7 @@ public class GameResource {
     private Games games;
 
     @Inject
-    private GameLog gameLog;
+    private LogEntries logEntries;
 
     @Inject
     private Users users;
@@ -70,19 +69,20 @@ public class GameResource {
     public GameView create(@NotNull @Valid CreateGameRequest request) {
         var currentUser = currentUser();
 
-        var inviteUsers = request.getInviteUserIds().stream()
+        var invitedUsers = request.getInviteUserIds().stream()
                 .map(userId -> users.findOptionallyById(User.Id.of(userId))
                         .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, userId)))
                 .collect(Collectors.toSet());
 
-        Game game = Game.create(currentUser, inviteUsers, request.isBeginner());
+        Game game = Game.create(currentUser, invitedUsers, request.isBeginner());
 
         games.add(game);
 
-        inviteUsers.forEach(invitedUser -> gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.INVITE,
-                currentUser.getUsername(), invitedUser.getUsername()));
+        logEntries.addAll(invitedUsers.stream()
+                .map(invitedUser -> new LogEntry(game.getId(), currentUser.getId(), LogEntry.Type.INVITE, List.of(currentUser.getUsername(), invitedUser.getUsername())))
+                .collect(Collectors.toList()));
 
-        var userMap = Stream.concat(Stream.of(currentUser), inviteUsers.stream())
+        var userMap = Stream.concat(Stream.of(currentUser), invitedUsers.stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));
         return new GameView(game, userMap, currentUser.getId());
     }
@@ -114,7 +114,6 @@ public class GameResource {
     @Path("/{id}/start")
     public GameView start(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
-        var currentUser = currentUser();
 
         checkOwner(game);
 
@@ -122,7 +121,7 @@ public class GameResource {
 
         games.update(game);
 
-        gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.START, currentUser.getUsername());
+        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.START, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -131,13 +130,12 @@ public class GameResource {
     @Path("/{id}/accept")
     public GameView accept(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
-        var currentUser = currentUser();
 
         game.acceptInvite(currentUserId());
 
         games.update(game);
 
-        gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.ACCEPT, currentUser.getUsername());
+        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.ACCEPT, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -146,13 +144,12 @@ public class GameResource {
     @Path("/{id}/reject")
     public GameView reject(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
-        var currentUser = currentUser();
 
         game.rejectInvite(currentUserId());
 
         games.update(game);
 
-        gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.REJECT, currentUser.getUsername());
+        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.REJECT, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -166,12 +163,11 @@ public class GameResource {
 
         Map<Player, User> playerUserMap = getUserMapByColor(game);
 
-        List<GameLogEntry> logEntries = new LinkedList<>();
+        List<LogEntry> logEntries = new LinkedList<>();
         try {
             Action action = request.toAction(game.getState());
 
-            game.getState().addEventLogger((player, event, values) ->
-                    logEntries.add(GameLogEntry.of(playerUserMap.get(player), event, translateEventValues(values, playerUserMap))));
+            game.getState().addEventListener(event -> logEntries.add(new LogEntry(game.getId(), event, playerUserMap)));
 
             game.perform(action);
         } catch (GWTException e) {
@@ -180,31 +176,15 @@ public class GameResource {
 
         games.update(game);
 
-        gameLog.addAll(logEntries);
+        this.logEntries.addAll(logEntries);
 
         return new StateView(game, performingPlayer, playerUserMap);
-    }
-
-    private List<Object> translateEventValues(List<Object> values, Map<Player, User> playerUserMap) {
-        return values.stream()
-                .map(value -> {
-                    if (value instanceof Player) {
-                        return playerUserMap.get(value).getUsername();
-                    } else if (value instanceof Action) {
-                        return ActionType.of(((Action) value).getClass()).name();
-                    } else if (value instanceof Enum<?>) {
-                        return value.toString();
-                    }
-                    return value;
-                })
-                .collect(Collectors.toList());
     }
 
     @POST
     @Path("/{id}/skip")
     public StateView skip(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
-        var currentUser = currentUser();
 
         var performingPlayer = checkTurn(game);
 
@@ -216,7 +196,7 @@ public class GameResource {
 
         games.update(game);
 
-        gameLog.add(GameLogEntry.of(currentUser, GameLogEntryType.SKIP,
+        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.SKIP, Collections.emptyList()));
 
         return new StateView(game, performingPlayer, getUserMapByColor(game));
     }
@@ -225,7 +205,6 @@ public class GameResource {
     @Path("/{id}/end-turn")
     public StateView endTurn(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
-        var currentUser = currentUser();
 
         var performingPlayer = checkTurn(game);
 
@@ -237,7 +216,7 @@ public class GameResource {
 
         games.update(game);
 
-        gameLog.log(game.getId(), currentUser.getId(), GameLogEntryType.END_TURN, currentUser.getUsername());
+        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.END_TURN, Collections.emptyList()));
 
         return new StateView(game, performingPlayer, getUserMapByColor(game));
     }
@@ -324,9 +303,11 @@ public class GameResource {
 
         checkViewAllowed(game);
 
-        return gameLog.findSince(Game.Id.of(id), since)
+        Map<User.Id, User> userMap = getUserMapById(game);
+
+        return logEntries.findSince(Game.Id.of(id), since)
                 .limit(100)
-                .map(LogEntryView::new)
+                .map(logEntry -> new LogEntryView(logEntry, userMap))
                 .collect(Collectors.toList());
     }
 

@@ -94,7 +94,7 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(Game game) {
-            return PossibleAction.any(Action.Discard2GuernseyToGain4Dollars.class, Action.BuyCattle.class);
+            return PossibleAction.any(Action.Discard1GuernseyToGain4Dollars.class, Action.BuyCattle.class);
         }
     }
 

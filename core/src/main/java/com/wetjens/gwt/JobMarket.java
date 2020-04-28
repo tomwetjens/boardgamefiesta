@@ -58,7 +58,7 @@ public final class JobMarket implements Serializable {
         if (row.workers.size() == rowLimit) {
             currentRowIndex++;
 
-            return rows.get(currentRowIndex).cattleMarket;
+            return currentRowIndex < rows.size() && rows.get(currentRowIndex).cattleMarket;
         }
 
         return false;
