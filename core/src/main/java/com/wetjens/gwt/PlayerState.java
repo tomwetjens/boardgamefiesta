@@ -269,6 +269,10 @@ public class PlayerState implements Serializable {
             throw new GWTException(GWTError.ALREADY_UNLOCKED, unlockable);
         }
 
+        if (unlockable.getCost() > 0) {
+            payDollars(unlockable.getCost());
+        }
+
         unlocked.compute(unlockable, (k, v) -> v != null ? v + 1 : 1);
 
         if (unlockable == Unlockable.EXTRA_STEP_DOLLARS) {
