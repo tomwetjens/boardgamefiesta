@@ -109,18 +109,41 @@ abstract class PossibleAction implements Serializable {
                 .collect(Collectors.toCollection(HashSet::new)));
     }
 
+    /**
+     * Makes a copy.
+     */
     public abstract PossibleAction clone();
 
+    /**
+     * Performs an action from this possible action.
+     * E.g. if it is a choice, it picks the choice, or if it is a repeating action it counts one, or if it's a set, it removes the action.
+     */
     abstract void perform(Class<? extends Action> action);
 
+    /**
+     * Skips (all) actions in this possible action.
+     */
     abstract void skip();
 
+    /**
+     * Determines if the action is completed and can be removed from the stack.
+     */
     abstract boolean isFinal();
 
+    /**
+     * Determines if the action must be performed before any other action.
+     */
     abstract boolean isImmediate();
 
+    /**
+     * Determines if the action can be performed.
+     */
     abstract boolean canPerform(Class<? extends Action> action);
 
+    /**
+     * Returns all possible actions that a player can perform next.
+     * E.g. if it is a choice, all possible choices, or if it is a repeating action the action that can be performed once more.
+     */
     abstract Set<Class<? extends Action>> getPossibleActions();
 
     private static final class Mandatory extends PossibleAction {
