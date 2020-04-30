@@ -73,6 +73,10 @@ abstract class PossibleAction implements Serializable {
         return new WhenThen(atLeast, atMost, when, then);
     }
 
+    static PossibleAction repeat(int atLeast, int atMost, Class<? extends Action> action) {
+        return new Repeat(atLeast, atMost, action);
+    }
+
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
@@ -131,6 +135,10 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         void perform(Class<? extends Action> action) {
+            if (!this.action.equals(action)) {
+                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
+            }
+
             this.action = null;
         }
 
@@ -384,6 +392,68 @@ abstract class PossibleAction implements Serializable {
         @Override
         public PossibleAction clone() {
             return new WhenThen(atLeast, atMost, when, then);
+        }
+    }
+
+    private static class Repeat extends PossibleAction {
+
+        private final Class<? extends Action> action;
+
+        private int atLeast;
+        private int atMost;
+
+        private Repeat(int atLeast, int atMost, Class<? extends Action> action) {
+            this.atLeast = atLeast;
+            this.atMost = atMost;
+            this.action = action;
+        }
+
+        @Override
+        public PossibleAction clone() {
+            return new Repeat(atLeast, atMost, action);
+        }
+
+        @Override
+        void perform(Class<? extends Action> action) {
+            if (!this.action.equals(action)) {
+                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
+            }
+
+            if (atMost == 0) {
+                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
+            }
+
+            atLeast = Math.max(0, atLeast - 1);
+            atMost--;
+        }
+
+        @Override
+        void skip() {
+            if (atLeast > 0) {
+                throw new GWTException(GWTError.CANNOT_SKIP_ACTION);
+            }
+
+            atMost = 0;
+        }
+
+        @Override
+        boolean isFinal() {
+            return atMost == 0;
+        }
+
+        @Override
+        boolean isImmediate() {
+            return false;
+        }
+
+        @Override
+        boolean canPerform(Class<? extends Action> action) {
+            return this.action.equals(action) && atMost > 0;
+        }
+
+        @Override
+        Set<Class<? extends Action>> getPossibleActions() {
+            return atMost > 0 ? Collections.singleton(action) : Collections.emptySet();
         }
     }
 }

@@ -285,6 +285,58 @@ class PossibleActionTest {
         }
     }
 
+    @Nested
+    class Repeat {
+
+        @Test
+        void skip() {
+            PossibleAction possibleAction = PossibleAction.repeat(0, 1, A.class);
+
+            possibleAction.skip();
+
+            assertThat(possibleAction.isFinal()).isTrue();
+        }
+
+        @Test
+        void skipAtLeastNotMet() {
+            PossibleAction possibleAction = PossibleAction.repeat(1, 1, A.class);
+
+            assertThatThrownBy(possibleAction::skip).isInstanceOf(GWTException.class).hasMessage(GWTError.CANNOT_SKIP_ACTION.toString());
+        }
+
+        @Test
+        void atLeast1() {
+            PossibleAction possibleAction = PossibleAction.repeat(1, 3, A.class);
+
+            possibleAction.perform(A.class);
+            possibleAction.perform(A.class);
+            possibleAction.perform(A.class);
+
+            assertThat(possibleAction.isFinal()).isTrue();
+        }
+
+        @Test
+        void atLeast0() {
+            PossibleAction possibleAction = PossibleAction.repeat(0, 3, A.class);
+
+            possibleAction.perform(A.class);
+            possibleAction.perform(A.class);
+            possibleAction.perform(A.class);
+
+            assertThat(possibleAction.isFinal()).isTrue();
+        }
+
+        @Test
+        void atMost() {
+            PossibleAction possibleAction = PossibleAction.repeat(0, 2, A.class);
+
+            possibleAction.perform(A.class);
+            possibleAction.perform(A.class);
+
+            assertThatThrownBy(() -> possibleAction.perform(A.class)).isInstanceOf(GWTException.class).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+        }
+    }
+
     abstract class A extends Action {
     }
 

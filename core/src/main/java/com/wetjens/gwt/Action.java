@@ -64,14 +64,8 @@ public abstract class Action {
             if (unusedCowboys > 0) {
                 //Any of the cowboys that you do not put to use buying a cattle card during this action may instead
                 //be used to draw 2 cards from the market cattle stack and add them face up to the cattle market
-                // TODO Replace with a repeating action, instead of adding N times the same action to the stack
-                List<Class<? extends Action>> drawCardsForEachUnusedCowboy = IntStream.range(0, unusedCowboys)
-                        .mapToObj(i -> Action.Draw2CattleCards.class)
-                        .collect(Collectors.toList());
-
                 game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.MAY_DRAW_CATTLE_CARDS, Collections.emptyList());
-
-                return ImmediateActions.of(PossibleAction.any(drawCardsForEachUnusedCowboy));
+                return ImmediateActions.of(PossibleAction.repeat(0, unusedCowboys, Action.Draw2CattleCards.class));
             }
             return ImmediateActions.none();
         }
