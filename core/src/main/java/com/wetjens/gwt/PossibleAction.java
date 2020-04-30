@@ -135,7 +135,7 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (!this.action.equals(action)) {
+            if (this.action != action) {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
@@ -154,7 +154,7 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            return action != null && action.equals(this.action);
+            return action != null && action == this.action;
         }
 
         @Override
@@ -312,34 +312,24 @@ abstract class PossibleAction implements Serializable {
         }
     }
 
-    private static final class WhenThen extends PossibleAction {
+    private static final class WhenThen extends Repeat {
 
         private static final long serialVersionUID = 1L;
 
-        private final Class<? extends Action> when;
         private final Class<? extends Action> then;
-
-        private int atLeast;
-        private int atMost;
 
         private int thens = 0;
 
         private WhenThen(int atLeast, int atMost, Class<? extends Action> when, Class<? extends Action> then) {
-            this.atLeast = atLeast;
-            this.atMost = atMost;
-            this.when = when;
+            super(atLeast, atMost, when);
             this.then = then;
         }
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (action == when) {
-                if (atMost == 0) {
-                    throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
-                }
+            if (this.action == action) {
+                super.perform(action);
 
-                atMost--;
-                atLeast = Math.max(atLeast - 1, 0);
                 thens++;
             } else if (action == then) {
                 if (thens == 0) {
@@ -352,46 +342,47 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         void skip() {
-            if (atLeast > 0 || thens > 0) {
+            if (thens > 0) {
                 throw new GWTException(GWTError.CANNOT_SKIP_ACTION);
             }
 
-            atMost = 0;
+            super.skip();
         }
 
         @Override
         boolean isFinal() {
-            return atMost == 0 && thens == 0;
+            return thens == 0 && super.isFinal();
         }
 
         @Override
         boolean isImmediate() {
             // Becomes immediate when performed at least once
-            return thens > 0;
+            return thens > 0 || super.isImmediate();
         }
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            if (action == when) {
-                return atMost > 0;
-            } else if (action == then) {
+            if (action == then) {
                 return thens > 0;
             } else {
-                return false;
+                return super.canPerform(action);
             }
         }
 
         @Override
         Set<Class<? extends Action>> getPossibleActions() {
-            return Stream.concat(
-                    atMost > 0 ? Stream.of(when) : Stream.empty(),
-                    thens > 0 ? Stream.of(then) : Stream.empty()
-            ).collect(Collectors.toSet());
+            if (thens > 0) {
+                return Stream.concat(
+                        super.getPossibleActions().stream(),
+                        Stream.of(then)
+                ).collect(Collectors.toSet());
+            }
+            return super.getPossibleActions();
         }
 
         @Override
         public PossibleAction clone() {
-            return new WhenThen(atLeast, atMost, when, then);
+            return new WhenThen(atLeast, atMost, action, then);
         }
     }
 
@@ -399,10 +390,10 @@ abstract class PossibleAction implements Serializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final Class<? extends Action> action;
+        protected final Class<? extends Action> action;
 
-        private int atLeast;
-        private int atMost;
+        protected int atLeast;
+        protected int atMost;
 
         private Repeat(int atLeast, int atMost, Class<? extends Action> action) {
             this.atLeast = atLeast;
@@ -417,7 +408,7 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (!this.action.equals(action)) {
+            if (this.action != action) {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
@@ -450,7 +441,7 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            return this.action.equals(action) && atMost > 0;
+            return this.action == action && atMost > 0;
         }
 
         @Override
