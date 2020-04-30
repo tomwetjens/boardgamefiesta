@@ -20,6 +20,8 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,8 +30,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class LogDynamoDbRepository implements LogEntries {
 
-    private static final String TABLE_NAME = "gwt-game-log";
-    private static final String GAME_ID_TIMESTAMP_INDEX = "GameId-Timestamp-index";
+    private static final String TABLE_NAME = "gwt-log";
 
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
@@ -42,11 +43,15 @@ public class LogDynamoDbRepository implements LogEntries {
 
     @Override
     public Stream<LogEntry> findSince(Game.Id gameId, Instant since) {
+        var expressionAttributeValues = new HashMap<String, AttributeValue>();
+        expressionAttributeValues.put(":GameId", AttributeValue.builder().s(gameId.getId()).build());
+        expressionAttributeValues.put(":Since", AttributeValue.builder().n(Long.toString(since.toEpochMilli())).build());
+
         return dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)
-                .indexName(GAME_ID_TIMESTAMP_INDEX)
-                .filterExpression("Timestamp > :Since")
-                .expressionAttributeValues(Collections.singletonMap(":Since", AttributeValue.builder().n(Long.toString(since.getEpochSecond())).build()))
+                .filterExpression("GameId = :GameId AND #Timestamp > :Since")
+                .expressionAttributeNames(Collections.singletonMap("#Timestamp", "Timestamp"))
+                .expressionAttributeValues(expressionAttributeValues)
                 .build())
                 .items().stream()
                 .map(this::mapToLogEntry);
@@ -54,16 +59,28 @@ public class LogDynamoDbRepository implements LogEntries {
 
     @Override
     public void addAll(Collection<LogEntry> entries) {
+        List<WriteRequest> writeRequests = new LinkedList<>();
+        long lastTimestamp = 0;
+
+        for (LogEntry entry : entries) {
+            long timestamp = entry.getTimestamp().toEpochMilli();
+
+            // Make sure timestamp is unique, because it is sort key
+            if (timestamp <= lastTimestamp) {
+                timestamp = lastTimestamp + 1;
+            }
+
+            writeRequests.add(WriteRequest.builder()
+                    .putRequest(PutRequest.builder()
+                            .item(mapToItem(entry, timestamp))
+                            .build())
+                    .build());
+
+            lastTimestamp = timestamp;
+        }
+
         dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
-                .requestItems(Collections.singletonMap(tableName, entries.stream()
-                        .map(this::mapToItem)
-                        .map(item -> PutRequest.builder()
-                                .item(item)
-                                .build())
-                        .map(putRequest -> WriteRequest.builder()
-                                .putRequest(putRequest)
-                                .build())
-                        .collect(Collectors.toList())))
+                .requestItems(Collections.singletonMap(tableName, writeRequests))
                 .build());
     }
 
@@ -71,18 +88,18 @@ public class LogDynamoDbRepository implements LogEntries {
     public void add(LogEntry entry) {
         dynamoDbClient.putItem(PutItemRequest.builder()
                 .tableName(tableName)
-                .item(mapToItem(entry))
+                .item(mapToItem(entry, entry.getTimestamp().toEpochMilli()))
                 .build());
     }
 
-    private Map<String, AttributeValue> mapToItem(LogEntry entry) {
+    private Map<String, AttributeValue> mapToItem(LogEntry entry, long timestamp) {
         var item = new HashMap<String, AttributeValue>();
 
         item.put("GameId", AttributeValue.builder().s(entry.getGameId().getId()).build());
-        item.put("Timestamp", AttributeValue.builder().n(Long.toString(Instant.now().getEpochSecond())).build());
+        item.put("Timestamp", AttributeValue.builder().n(Long.toString(timestamp)).build());
         item.put("UserId", AttributeValue.builder().s(entry.getUserId().getId()).build());
         item.put("Expires", AttributeValue.builder().n(Long.toString(entry.getExpires().getEpochSecond())).build());
-        item.put("Type", AttributeValue.builder().s(entry.getType().name()).build());
+        item.put("Type", AttributeValue.builder().s(entry.getType()).build());
         item.put("Values", AttributeValue.builder().l(entry.getValues().stream()
                 .map(value -> value instanceof Number
                         ? AttributeValue.builder().n(value.toString()).build()
@@ -96,10 +113,10 @@ public class LogDynamoDbRepository implements LogEntries {
     private LogEntry mapToLogEntry(Map<String, AttributeValue> item) {
         return LogEntry.builder()
                 .gameId(Game.Id.of(item.get("GameId").s()))
-                .timestamp(Instant.ofEpochSecond(Long.parseLong(item.get("Timestamp").n())))
+                .timestamp(Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n())))
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
                 .userId(User.Id.of(item.get("UserId").s()))
-                .type(LogEntry.Type.valueOf(item.get("Type").s()))
+                .type(item.get("Type").s())
                 .values(item.get("Values").l().stream()
                         .map(attributeValue -> attributeValue.n() != null ? Float.parseFloat(attributeValue.n()) : attributeValue.s())
                         .collect(Collectors.toList()))

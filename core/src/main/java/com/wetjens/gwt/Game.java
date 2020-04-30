@@ -56,7 +56,7 @@ public class Game implements Serializable {
 
     private final ActionStack actionStack;
 
-    private final Set<GWTEventListener> eventListeners = new HashSet<>();
+    private transient Set<GWTEventListener> eventListeners = new HashSet<>();
 
     @Getter
     private Player currentPlayer;
@@ -184,6 +184,10 @@ public class Game implements Serializable {
     }
 
     public void addEventListener(GWTEventListener eventLogger) {
+        if (eventListeners == null) {
+            // Could be null after deserialization
+            eventListeners = new HashSet<>();
+        }
         eventListeners.add(eventLogger);
     }
 
@@ -261,12 +265,12 @@ public class Game implements Serializable {
         return possibleActions;
     }
 
-    public Set<List<Location>> possibleMoves(Player player, Location to) {
+    public Set<PossibleMove> possibleMoves(Player player, Location to) {
         if (isEnded()) {
             return Collections.emptySet();
         }
         Location from = trail.getCurrentLocation(player);
-        return trail.possibleMoves(from, to, playerState(player).getStepLimit(players.size()));
+        return trail.possibleMoves(from, to, playerState(player).getStepLimit(players.size()), players.size());
     }
 
     public int score(Player player) {

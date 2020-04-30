@@ -21,12 +21,11 @@ import java.util.stream.Collectors;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class LogEntry {
 
-    private static final Duration DEFAULT_RETENTION = Duration.of(1, ChronoUnit.YEARS);
+    private static final Duration DEFAULT_RETENTION = Duration.of(365, ChronoUnit.DAYS);
 
     @NonNull
     Game.Id gameId;
 
-    @NonNull
     User.Id userId;
 
     @NonNull
@@ -36,21 +35,24 @@ public class LogEntry {
     Instant expires;
 
     @NonNull
-    Type type;
+    String type;
 
     @NonNull
     List<Object> values;
 
     public LogEntry(@NonNull Game.Id gameId, GWTEvent event, Map<Player, User> playerUserMap) {
+        User user = playerUserMap.get(event.getPlayer());
+
         this.gameId = gameId;
-        this.userId = playerUserMap.get(event.getPlayer()).getId();
+        this.userId = user != null ? user.getId() : null;
         this.timestamp = Instant.now();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
-        this.type = Type.EVENT;
+        this.type = event.getType().name();
         this.values = event.getValues().stream()
                 .map(value -> {
                     if (value instanceof Player) {
-                        return playerUserMap.get(value).getUsername();
+                        User valueUser = playerUserMap.get(value);
+                        return valueUser != null ? valueUser.getUsername() : ((Player) value).name();
                     } else if (value instanceof Action) {
                         return ActionType.of(((Action) value).getClass()).name();
                     } else if (value instanceof Enum<?>) {
@@ -66,7 +68,7 @@ public class LogEntry {
         this.userId = userId;
         this.timestamp = Instant.now();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
-        this.type = type;
+        this.type = type.name();
         this.values = values;
     }
 
@@ -77,6 +79,7 @@ public class LogEntry {
         START,
         END_TURN,
         INVITE,
+        CREATE,
         EVENT
     }
 }

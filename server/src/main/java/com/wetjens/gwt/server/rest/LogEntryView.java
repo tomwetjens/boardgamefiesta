@@ -14,7 +14,7 @@ public class LogEntryView {
 
     Instant timestamp;
     UserView user;
-    LogEntry.Type type;
+    String type;
     List<Object> values;
 
     public LogEntryView(LogEntry logEntry, Map<User.Id, User> userMap) {

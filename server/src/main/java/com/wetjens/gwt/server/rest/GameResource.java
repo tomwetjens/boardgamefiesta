@@ -4,6 +4,7 @@ import com.wetjens.gwt.Action;
 import com.wetjens.gwt.GWTException;
 import com.wetjens.gwt.Location;
 import com.wetjens.gwt.Player;
+import com.wetjens.gwt.PossibleMove;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.LogEntries;
@@ -78,8 +79,10 @@ public class GameResource {
 
         games.add(game);
 
-        logEntries.addAll(invitedUsers.stream()
-                .map(invitedUser -> new LogEntry(game.getId(), currentUser.getId(), LogEntry.Type.INVITE, List.of(currentUser.getUsername(), invitedUser.getUsername())))
+        logEntries.addAll(Stream.concat(Stream.of(
+                new LogEntry(game.getId(), currentUser.getId(), LogEntry.Type.CREATE, Collections.emptyList())),
+                invitedUsers.stream()
+                        .map(invitedUser -> new LogEntry(game.getId(), currentUser.getId(), LogEntry.Type.INVITE, List.of(invitedUser.getUsername()))))
                 .collect(Collectors.toList()));
 
         var userMap = Stream.concat(Stream.of(currentUser), invitedUsers.stream())
@@ -284,28 +287,29 @@ public class GameResource {
 
         var to = game.getState().getTrail().getLocation(toName);
 
-        Set<List<Location>> possibleMoves;
+        Set<PossibleMove> possibleMoves;
         try {
             possibleMoves = game.getState().possibleMoves(game.getState().getCurrentPlayer(), to);
         } catch (GWTException e) {
             throw new APIException(e.getError(), e.getParams());
         }
 
+        Map<Player, User> userMapByColor = getUserMapByColor(game);
         return possibleMoves.stream()
-                .map(steps -> new PossibleMoveView(game.getState().getPlayers().size(), steps, getUserMapByColor(game)))
+                .map(possibleMove -> new PossibleMoveView(possibleMove, userMapByColor))
                 .collect(Collectors.toSet());
     }
 
     @GET
     @Path("/{id}/log")
-    public List<LogEntryView> getLog(@PathParam("id") String id, @QueryParam("since") Instant since) {
+    public List<LogEntryView> getLog(@PathParam("id") String id, @QueryParam("since") String since) {
         var game = games.findById(Game.Id.of(id));
 
         checkViewAllowed(game);
 
         Map<User.Id, User> userMap = getUserMapById(game);
 
-        return logEntries.findSince(Game.Id.of(id), since)
+        return logEntries.findSince(Game.Id.of(id), Instant.parse(since))
                 .limit(100)
                 .map(logEntry -> new LogEntryView(logEntry, userMap))
                 .collect(Collectors.toList());

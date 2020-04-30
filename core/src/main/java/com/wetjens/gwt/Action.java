@@ -18,6 +18,8 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
+import javax.swing.text.html.HTMLDocument;
+
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action {
 
@@ -895,6 +897,7 @@ public abstract class Action {
         @Override
         List<Object> toEventParams(Game game) {
             Location to = steps.get(steps.size() - 1);
+            // TODO Include name of building, hazard or teepee in the params
             return List.of(to.getName());
         }
 
@@ -921,12 +924,14 @@ public abstract class Action {
             int amount = Math.min(currentPlayerState.getBalance(),
                     location.getHand().getFee(game.getPlayers().size()));
 
-            currentPlayerState.payDollars(amount);
+            if (amount > 0) {
+                currentPlayerState.payDollars(amount);
 
-            feeRecipient(location).ifPresentOrElse(recipient -> {
-                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount, recipient));
-                game.playerState(recipient).gainDollars(amount);
-            }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount)));
+                feeRecipient(location).ifPresentOrElse(recipient -> {
+                    game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount, recipient));
+                    game.playerState(recipient).gainDollars(amount);
+                }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount)));
+            }
         }
 
         private Optional<Player> feeRecipient(Location location) {
