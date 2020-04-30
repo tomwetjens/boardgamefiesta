@@ -47,7 +47,7 @@ class GameTest {
             assertThat(((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get()).isInstanceOf(NeutralBuilding.G.class);
 
             // Player buildings should not be randomized
-            assertThat(game.currentPlayerState().getBuildings()).extracting(PlayerBuilding::getClass).containsExactly(A_BUILDINGS);
+            assertThat(game.currentPlayerState().getBuildings()).extracting(PlayerBuilding::getClass).containsExactlyInAnyOrder(A_BUILDINGS);
 
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
         }
