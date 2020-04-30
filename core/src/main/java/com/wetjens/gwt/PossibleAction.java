@@ -397,6 +397,8 @@ abstract class PossibleAction implements Serializable {
 
     private static class Repeat extends PossibleAction {
 
+        private static final long serialVersionUID = 1L;
+
         private final Class<? extends Action> action;
 
         private int atLeast;
