@@ -1,32 +1,88 @@
 package com.wetjens.gwt;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Random;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 class GameTest {
+
+    private static final Class[] A_BUILDINGS = {
+            PlayerBuilding.Building1A.class,
+            PlayerBuilding.Building2A.class,
+            PlayerBuilding.Building3A.class,
+            PlayerBuilding.Building4A.class,
+            PlayerBuilding.Building5A.class,
+            PlayerBuilding.Building6A.class,
+            PlayerBuilding.Building7A.class,
+            PlayerBuilding.Building8A.class,
+            PlayerBuilding.Building9A.class,
+            PlayerBuilding.Building10A.class
+    };
 
     @Nested
     class Create {
 
         @Test
         void beginner() {
-            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            Game game = new Game(new LinkedHashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
 
-            assertThat(game.getPlayers().get(0)).isEqualTo(Player.RED);
-            assertThat(game.getPlayers().get(1)).isEqualTo(Player.BLUE);
+            assertThat(game.getPlayers()).containsExactly(Player.BLUE, Player.RED);
+            assertThat(game.getCurrentPlayer()).isEqualByComparingTo(Player.BLUE);
 
-            assertThat(game.getCurrentPlayer()).isEqualByComparingTo(Player.RED);
+            // Neutral buildings should not be randomized
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get()).isInstanceOf(NeutralBuilding.A.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("B")).getBuilding().get()).isInstanceOf(NeutralBuilding.B.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("C")).getBuilding().get()).isInstanceOf(NeutralBuilding.C.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("D")).getBuilding().get()).isInstanceOf(NeutralBuilding.D.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("E")).getBuilding().get()).isInstanceOf(NeutralBuilding.E.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("F")).getBuilding().get()).isInstanceOf(NeutralBuilding.F.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get()).isInstanceOf(NeutralBuilding.G.class);
+
+            // Player buildings should not be randomized
+            assertThat(game.currentPlayerState().getBuildings()).extracting(PlayerBuilding::getClass).containsExactly(A_BUILDINGS);
 
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
+        }
+
+        @Test
+        void randomized() {
+            Game game = new Game(new LinkedHashSet<>(Arrays.asList(Player.BLUE, Player.RED)), false, new Random(0));
+
+            assertThat(game.getPlayers()).containsExactly(Player.BLUE, Player.RED);
+            assertThat(game.getCurrentPlayer()).isEqualByComparingTo(Player.BLUE);
+            assertThat(game.possibleActions()).containsExactly(Action.Move.class);
+
+            // Neutral buildings should be randomized
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get()).isInstanceOf(NeutralBuilding.D.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("B")).getBuilding().get()).isInstanceOf(NeutralBuilding.B.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("C")).getBuilding().get()).isInstanceOf(NeutralBuilding.E.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("D")).getBuilding().get()).isInstanceOf(NeutralBuilding.A.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("E")).getBuilding().get()).isInstanceOf(NeutralBuilding.G.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("F")).getBuilding().get()).isInstanceOf(NeutralBuilding.C.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get()).isInstanceOf(NeutralBuilding.F.class);
+
+            // Player buildings should be randomized
+            Class[] randomizedBuildings = {
+                    PlayerBuilding.Building1A.class,
+                    PlayerBuilding.Building2B.class,
+                    PlayerBuilding.Building3A.class,
+                    PlayerBuilding.Building4A.class,
+                    PlayerBuilding.Building5B.class,
+                    PlayerBuilding.Building6A.class,
+                    PlayerBuilding.Building7B.class,
+                    PlayerBuilding.Building8A.class,
+                    PlayerBuilding.Building9A.class,
+                    PlayerBuilding.Building10B.class
+            };
+            assertThat(game.currentPlayerState().getBuildings()).extracting(PlayerBuilding::getClass).containsExactlyInAnyOrder(randomizedBuildings);
         }
     }
 
@@ -42,7 +98,6 @@ class GameTest {
 
             Game deserialized = Game.deserialize(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
         }
-
     }
 
     @Nested
@@ -63,7 +118,7 @@ class GameTest {
 
         }
     }
-    
+
     @Nested
     class PlaceDisc {
 
@@ -107,6 +162,8 @@ class GameTest {
         @Test
         void cannotUnlockButStationsUpgraded() {
             Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            // Enough money to pay for unlocks
+            game.currentPlayerState().gainDollars(10);
 
             // Remove all discs
             game.currentPlayerState().unlock(Unlockable.AUX_GAIN_DOLLAR);
@@ -135,6 +192,8 @@ class GameTest {
         @Test
         void cannotUnlockNoStationsUpgraded() {
             Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            // Enough money to pay for unlocks
+            game.currentPlayerState().gainDollars(10);
 
             assertThat(game.placeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
             assertThat(game.placeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);

@@ -79,8 +79,8 @@ class TrailTest {
         trail.placeTeepee(Teepee.GREEN);
         trail.placeTeepee(Teepee.GREEN);
 
-        assertThat(trail.getTeepeeLocation(-3).getTeepee()).isEqualTo(Teepee.GREEN);
-        assertThat(trail.getTeepeeLocation(-2).getTeepee()).isEqualTo(Teepee.GREEN);
-        assertThat(trail.getTeepeeLocation(-1).getTeepee()).isEqualTo(Teepee.GREEN);
+        assertThat(trail.getTeepeeLocation(-3).getTeepee().get()).isEqualTo(Teepee.GREEN);
+        assertThat(trail.getTeepeeLocation(-2).getTeepee().get()).isEqualTo(Teepee.GREEN);
+        assertThat(trail.getTeepeeLocation(-1).getTeepee().get()).isEqualTo(Teepee.GREEN);
     }
 }

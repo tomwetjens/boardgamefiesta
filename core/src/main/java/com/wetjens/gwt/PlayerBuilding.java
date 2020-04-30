@@ -226,7 +226,7 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
-    private static class Building2B extends PlayerBuilding {
+    static class Building2B extends PlayerBuilding {
 
         private static final long serialVersionUID = 1L;
 
@@ -268,7 +268,7 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
-    private static class Building5B extends PlayerBuilding {
+    static class Building5B extends PlayerBuilding {
 
         private static final long serialVersionUID = 1L;
 
@@ -296,7 +296,7 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
-    private static class Building7B extends PlayerBuilding {
+    static class Building7B extends PlayerBuilding {
 
         private static final long serialVersionUID = 1L;
 
@@ -338,7 +338,7 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
-    private static class Building10B extends PlayerBuilding {
+    static class Building10B extends PlayerBuilding {
 
         private static final long serialVersionUID = 1L;
 

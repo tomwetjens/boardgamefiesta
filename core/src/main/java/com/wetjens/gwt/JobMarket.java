@@ -40,7 +40,7 @@ public final class JobMarket implements Serializable {
                 new Row(5),
                 new Row(4));
 
-        this.currentRowIndex = 1;
+        this.currentRowIndex = 0;
     }
 
     /**

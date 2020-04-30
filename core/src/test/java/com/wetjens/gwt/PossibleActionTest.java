@@ -9,8 +9,6 @@ import static org.assertj.core.api.Assertions.*;
 @ExtendWith(MockitoExtension.class)
 class PossibleActionTest {
 
-    private static final String NOT_ALLOWED = "Not an allowed action";
-
     @Nested
     class NeutralBuildingActions {
 
@@ -36,15 +34,15 @@ class PossibleActionTest {
             assertThat(possibleAction.canPerform(B.class)).isFalse();
             assertThat(possibleAction.canPerform(C.class)).isTrue();
             assertThat(possibleAction.canPerform(SingleAuxAction.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(NOT_ALLOWED);
-            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
 
             possibleAction.perform(C.class);
             assertThat(possibleAction.isFinal()).isTrue();
             assertThat(possibleAction.canPerform(C.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
 
-            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
         }
 
         @Test
@@ -55,15 +53,15 @@ class PossibleActionTest {
             assertThat(possibleAction.canPerform(B.class)).isTrue();
             assertThat(possibleAction.canPerform(C.class)).isFalse();
             assertThat(possibleAction.canPerform(SingleAuxAction.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
 
             possibleAction.perform(A.class);
             assertThat(possibleAction.isFinal()).isTrue();
             assertThat(possibleAction.canPerform(A.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(NOT_ALLOWED);
-            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
 
-            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
         }
 
         @Test
@@ -74,15 +72,15 @@ class PossibleActionTest {
             assertThat(possibleAction.canPerform(B.class)).isFalse();
             assertThat(possibleAction.canPerform(C.class)).isTrue();
             assertThat(possibleAction.canPerform(SingleAuxAction.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(NOT_ALLOWED);
-            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
 
             possibleAction.perform(C.class);
             assertThat(possibleAction.isFinal()).isTrue();
             assertThat(possibleAction.canPerform(C.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
 
-            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
         }
 
         @Test
@@ -93,15 +91,15 @@ class PossibleActionTest {
             assertThat(possibleAction.canPerform(B.class)).isTrue();
             assertThat(possibleAction.canPerform(C.class)).isFalse();
             assertThat(possibleAction.canPerform(SingleAuxAction.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
 
             possibleAction.perform(B.class);
             assertThat(possibleAction.isFinal()).isTrue();
             assertThat(possibleAction.canPerform(A.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(NOT_ALLOWED);
-            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
 
-            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
         }
 
         @Test
@@ -112,10 +110,10 @@ class PossibleActionTest {
             assertThat(possibleAction.canPerform(B.class)).isFalse();
             assertThat(possibleAction.canPerform(C.class)).isFalse();
             assertThat(possibleAction.canPerform(SingleAuxAction.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(NOT_ALLOWED);
-            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(NOT_ALLOWED);
-            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(NOT_ALLOWED);
-            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(A.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+            assertThatThrownBy(() -> possibleAction.perform(B.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+            assertThatThrownBy(() -> possibleAction.perform(C.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
         }
 
         @Test
@@ -183,7 +181,7 @@ class PossibleActionTest {
 
             assertThat(possibleAction.isFinal()).isTrue();
             assertThat(possibleAction.canPerform(SingleAuxAction.class)).isFalse();
-            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(NOT_ALLOWED);
+            assertThatThrownBy(() -> possibleAction.perform(SingleAuxAction.class)).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
         }
 
         @Test
@@ -219,7 +217,7 @@ class PossibleActionTest {
 
         @Test
         void skip() {
-            assertThatThrownBy(() -> possibleAction.skip()).hasMessage("Not allowed to skip action");
+            assertThatThrownBy(() -> possibleAction.skip()).hasMessage(GWTError.CANNOT_SKIP_ACTION.toString());
         }
     }
 

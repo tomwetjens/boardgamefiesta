@@ -5,10 +5,12 @@ import lombok.Getter;
 @Getter
 public class GWTException extends RuntimeException {
 
-    GWTError error;
-    Object[] params;
+    private final GWTError error;
+    private final transient Object[] params;
 
     public GWTException(GWTError error, Object... params) {
+        super(error.toString());
+
         this.error = error;
         this.params = params;
     }

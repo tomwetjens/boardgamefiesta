@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -64,9 +65,11 @@ public class Station implements Serializable {
 
         ImmediateActions placeDiscActions = game.placeDisc(discColors);
 
-        return stationMaster != null
-                ? placeDiscActions.andThen(PossibleAction.optional(Action.AppointStationMaster.class))
-                : placeDiscActions;
+        if (stationMaster != null) {
+            game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.MAY_APPOINT_STATION_MASTER, List.of(stationMaster));
+            return placeDiscActions.andThen(PossibleAction.optional(Action.AppointStationMaster.class));
+        }
+        return placeDiscActions;
     }
 
     ImmediateActions appointStationMaster(@NonNull Game game, @NonNull Worker worker) {
@@ -78,7 +81,7 @@ public class Station implements Serializable {
         game.currentPlayerState().addStationMaster(reward);
         this.stationMaster = null;
 
-        return reward.getImmediateActions();
+        return reward.activate(game);
     }
 
     ImmediateActions downgrade(Game game) {

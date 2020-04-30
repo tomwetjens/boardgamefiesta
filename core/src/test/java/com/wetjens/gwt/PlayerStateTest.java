@@ -78,7 +78,7 @@ class PlayerStateTest {
             Card card = playerState.getHand().iterator().next();
             playerState.discardCard(card);
 
-            assertThatThrownBy(() -> playerState.discardCard(card)).hasMessage("Card must be in hand");
+            assertThatThrownBy(() -> playerState.discardCard(card)).hasMessage(GWTError.CARD_NOT_IN_HAND.toString());
         }
 
         @Test
@@ -101,14 +101,14 @@ class PlayerStateTest {
 
         @Test
         void discardCattleCardsNotInHand() {
-            assertThatThrownBy(() -> playerState.discardCattleCards(CattleType.HOLSTEIN, 1)).hasMessage("Player hand does not contain 1 cattle cards of type HOLSTEIN");
+            assertThatThrownBy(() -> playerState.discardCattleCards(CattleType.HOLSTEIN, 1)).hasMessage(GWTError.CATTLE_CARDS_NOT_IN_HAND.toString());
 
             assertThat(playerState.getHand()).hasSize(4);
         }
 
         @Test
         void discardCattleCardsNotEnoughInHand() {
-            assertThatThrownBy(() -> playerState.discardCattleCards(CattleType.BLACK_ANGUS, 3)).hasMessage("Player hand does not contain 3 cattle cards of type BLACK_ANGUS");
+            assertThatThrownBy(() -> playerState.discardCattleCards(CattleType.BLACK_ANGUS, 3)).hasMessage(GWTError.CATTLE_CARDS_NOT_IN_HAND.toString());
 
             assertThat(playerState.getHand()).hasSize(4);
         }
@@ -176,7 +176,7 @@ class PlayerStateTest {
             PlayerState playerState = PlayerState.builder().build();
             playerState.addHazard(hazard);
 
-            assertThatThrownBy(() -> playerState.addHazard(hazard)).hasMessage("Already has hazard");
+            assertThatThrownBy(() -> playerState.addHazard(hazard)).hasMessage(GWTError.ALREADY_HAS_HAZARD.toString());
         }
 
         @Test
@@ -310,7 +310,7 @@ class PlayerStateTest {
             playerState.spendTempCertificates(1);
             assertThat(playerState.getTempCertificates()).isEqualTo(0);
 
-            assertThatThrownBy(() -> playerState.spendTempCertificates(1)).hasMessage("Not enough certificates");
+            assertThatThrownBy(() -> playerState.spendTempCertificates(1)).hasMessage(GWTError.NOT_ENOUGH_CERTIFICATES.toString());
         }
 
         @Test
@@ -330,7 +330,7 @@ class PlayerStateTest {
             playerState.spendTempCertificates(2);
             assertThat(playerState.getTempCertificates()).isEqualTo(0);
 
-            assertThatThrownBy(() -> playerState.spendTempCertificates(2)).hasMessage("Not enough certificates");
+            assertThatThrownBy(() -> playerState.spendTempCertificates(2)).hasMessage(GWTError.NOT_ENOUGH_CERTIFICATES.toString());
         }
 
         @Test
@@ -344,7 +344,7 @@ class PlayerStateTest {
             playerState.spendTempCertificates(4);
             assertThat(playerState.getTempCertificates()).isEqualTo(2);
 
-            assertThatThrownBy(() -> playerState.spendTempCertificates(4)).hasMessage("Not enough certificates");
+            assertThatThrownBy(() -> playerState.spendTempCertificates(4)).hasMessage(GWTError.NOT_ENOUGH_CERTIFICATES.toString());
         }
     }
 
@@ -373,7 +373,7 @@ class PlayerStateTest {
             PlayerBuilding building = playerState.getBuildings().iterator().next();
             playerState.removeBuilding(building);
 
-            assertThatThrownBy(() -> playerState.removeBuilding(building)).hasMessage("Building not available for player");
+            assertThatThrownBy(() -> playerState.removeBuilding(building)).hasMessage(GWTError.BUILDING_NOT_AVAILABLE.toString());
         }
     }
 }

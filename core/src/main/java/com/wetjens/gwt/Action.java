@@ -277,7 +277,7 @@ public abstract class Action {
 
             game.getJobMarket().takeWorker(worker);
 
-            return game.currentPlayerState().gainWorker(worker);
+            return game.currentPlayerState().gainWorker(worker, game);
         }
 
         @Override
@@ -930,9 +930,9 @@ public abstract class Action {
             currentPlayerState.payDollars(amount);
 
             feeRecipient(location).ifPresentOrElse(recipient -> {
-                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_DOLLARS, List.of(amount, recipient));
+                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount, recipient));
                 game.playerState(recipient).gainDollars(amount);
-            }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_DOLLARS, List.of(amount)));
+            }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount)));
         }
 
         private Optional<Player> feeRecipient(Location location) {

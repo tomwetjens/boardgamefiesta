@@ -139,29 +139,37 @@ public class PlayerState implements Serializable {
         balance -= amount;
     }
 
-    ImmediateActions gainWorker(Worker worker) {
+    ImmediateActions gainWorker(Worker worker, Game game) {
         int count = workers.compute(worker, (k, v) -> v + 1);
 
         if (worker == Worker.COWBOY) {
             if (count == 4) {
+                game.fireEvent(player, GWTEvent.Type.MAY_REMOVE_HAZARD_FOR_FREE, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.RemoveHazardForFree.class));
             } else if (count == 6) {
+                game.fireEvent(player, GWTEvent.Type.MAY_TRADE_WITH_INDIANS, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.TradeWithIndians.class));
             }
         } else if (worker == Worker.CRAFTSMAN) {
             if (count == 4 || count == 6) {
+                game.fireEvent(player, GWTEvent.Type.MAY_PLACE_CHEAP_BUILDING, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.PlaceCheapBuilding.class));
             }
         } else {
             if (count == 2) {
+                game.fireEvent(player, GWTEvent.Type.MAY_DISCARD_1_JERSEY_TO_GAIN_1_CERTIFICATE, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain1Certificate.class));
             } else if (count == 3) {
+                game.fireEvent(player, GWTEvent.Type.MAY_DISCARD_1_JERSEY_TO_GAIN_2_DOLLARS, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain2Dollars.class));
             } else if (count == 4) {
+                game.fireEvent(player, GWTEvent.Type.MAY_HIRE_CHEAP_WORKER, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.HireCheapWorker.class));
             } else if (count == 5) {
+                game.fireEvent(player, GWTEvent.Type.MAY_DISCARD_1_JERSEY_TO_GAIN_2_CERTIFICATES, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain2Certificates.class));
             } else if (count == 6) {
+                game.fireEvent(player, GWTEvent.Type.MAY_DISCARD_1_JERSEY_TO_GAIN_4_DOLLARS, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain4Dollars.class));
             }
         }

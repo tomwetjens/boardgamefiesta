@@ -149,7 +149,8 @@ class CattleMarketTest {
             if (expectedCostOrMessage instanceof Integer) {
                 assertThat(cattleMarket.cost(cattleCards, numberOfCowboys)).isEqualTo(expectedCostOrMessage);
             } else {
-                assertThatThrownBy(() -> cattleMarket.cost(cattleCards, numberOfCowboys)).hasMessage((String) expectedCostOrMessage);
+                assertThatThrownBy(() -> cattleMarket.cost(cattleCards, numberOfCowboys))
+                        .hasMessage(GWTError.NOT_ENOUGH_COWBOYS.toString());
             }
         }
 

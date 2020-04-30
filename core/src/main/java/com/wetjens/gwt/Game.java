@@ -62,7 +62,7 @@ public class Game implements Serializable {
     private Player currentPlayer;
 
     ImmediateActions deliverToCity(City city) {
-        return railroadTrack.deliverToCity(currentPlayer, city)
+        return railroadTrack.deliverToCity(currentPlayer, city, this)
                 .andThen(placeDisc(city.getDiscColors()));
     }
 
@@ -73,11 +73,13 @@ public class Game implements Serializable {
             // If player MUST remove WHITE disc, but player only has BLACK discs left,
             // then by exception the player may remove a BLACK disc
             if (currentPlayerState().canUnlock(Collections.singleton(DiscColor.BLACK))) {
+                fireEvent(currentPlayer, GWTEvent.Type.MAY_REMOVE_BLACK_DISC_INSTEAD_OF_WHITE, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.mandatory(Action.UnlockBlackOrWhite.class));
             } else {
                 // If player MUST remove a disc, but has no more discs to remove from player board,
                 // then player MUST remove the disc from one of his stations
                 if (railroadTrack.getStations().stream().anyMatch(station -> station.getPlayers().contains(currentPlayer))) {
+                    fireEvent(currentPlayer, GWTEvent.Type.MUST_REMOVE_DISC_FROM_STATION, Collections.emptyList());
                     return ImmediateActions.of(PossibleAction.mandatory(Action.DowngradeStation.class));
                 } else {
                     // EXCEPTIONAL CASE: If player only has discs on cities, then he cannot remove a disc anymore

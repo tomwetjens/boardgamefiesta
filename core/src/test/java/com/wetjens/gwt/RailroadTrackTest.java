@@ -1,23 +1,18 @@
 package com.wetjens.gwt;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
+
+import org.junit.jupiter.api.*;
 
 import static com.wetjens.gwt.RailroadTrack.MAX_CERTIFICATES;
 import static com.wetjens.gwt.RailroadTrack.MAX_HAND_VALUE;
 import static com.wetjens.gwt.RailroadTrack.MIN_HAND_VALUE;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 class RailroadTrackTest {
 
@@ -54,13 +49,13 @@ class RailroadTrackTest {
     @Test
     void moveEngineForwardNotFarEnough() {
         // When
-        assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.BLUE, railroadTrack.getSpace(1), 2, 6)).hasMessage("Space not reachable within 2..6 steps");
+        assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.BLUE, railroadTrack.getSpace(1), 2, 6)).hasMessage(GWTError.SPACE_NOT_REACHABLE.toString());
     }
 
     @Test
     void moveEngineForwardTooFar() {
         // When
-        assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.BLUE, railroadTrack.getSpace(2), 0, 1)).hasMessage("Space not reachable within 0..1 steps");
+        assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.BLUE, railroadTrack.getSpace(2), 0, 1)).hasMessage(GWTError.SPACE_NOT_REACHABLE.toString());
     }
 
     @Test
@@ -109,7 +104,7 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(Player.RED, railroadTrack.getSpace(2), 1, 1);
 
         // When
-        assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.WHITE, railroadTrack.getSpace(4), 1, 1)).hasMessage("Space not reachable within 1..1 steps");
+        assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.WHITE, railroadTrack.getSpace(4), 1, 1)).hasMessage(GWTError.SPACE_NOT_REACHABLE.toString());
     }
 
     @Test
@@ -119,7 +114,7 @@ class RailroadTrackTest {
         railroadTrack.moveEngineForward(Player.RED, railroadTrack.getSpace(2), 1, 1);
 
         // When
-        assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.WHITE, railroadTrack.getSpace(3), 2, 2)).hasMessage("Space not reachable within 2..2 steps");
+        assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.WHITE, railroadTrack.getSpace(3), 2, 2)).hasMessage(GWTError.SPACE_NOT_REACHABLE.toString());
     }
 
     @Test
@@ -146,7 +141,7 @@ class RailroadTrackTest {
 
         // When
         assertThatThrownBy(() -> railroadTrack.moveEngineForward(Player.RED, railroadTrack.getSpace(1), 1, 1))
-                .hasMessage("Another player already on space");
+                .hasMessage(GWTError.ALREADY_PLAYER_ON_SPACE.toString());
     }
 
     @Test
@@ -201,7 +196,7 @@ class RailroadTrackTest {
 
         // When
         assertThatThrownBy(() -> railroadTrack.moveEngineBackwards(Player.RED, railroadTrack.getSpace(1), 1, 1))
-                .hasMessage("Another player already on space");
+                .hasMessage(GWTError.ALREADY_PLAYER_ON_SPACE.toString());
     }
 
     @Test
