@@ -84,7 +84,7 @@ public final class JobMarket implements Serializable {
         return availableRows()
                 .filter(row -> row.workers.contains(worker))
                 .min(Comparator.comparingInt(Row::getCost))
-                .orElseThrow(() -> new GWTException(GWTError.WORKER_NOT_AVAILABLE_IN_JOB_MARKET, worker));
+                .orElseThrow(() -> new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker));
     }
 
     public final class Row implements Serializable {

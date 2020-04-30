@@ -1,8 +1,10 @@
 package com.wetjens.gwt;
 
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
+@ToString
 public class GWTException extends RuntimeException {
 
     private final GWTError error;
