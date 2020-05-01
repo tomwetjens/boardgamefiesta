@@ -97,7 +97,7 @@ public class LogDynamoDbRepository implements LogEntries {
 
         item.put("GameId", AttributeValue.builder().s(entry.getGameId().getId()).build());
         item.put("Timestamp", AttributeValue.builder().n(Long.toString(timestamp)).build());
-        item.put("UserId", AttributeValue.builder().s(entry.getUserId().getId()).build());
+        item.put("UserId", entry.getUserId() != null ? AttributeValue.builder().s(entry.getUserId().getId()).build() : null);
         item.put("Expires", AttributeValue.builder().n(Long.toString(entry.getExpires().getEpochSecond())).build());
         item.put("Type", AttributeValue.builder().s(entry.getType()).build());
         item.put("Values", AttributeValue.builder().l(entry.getValues().stream()
@@ -115,7 +115,7 @@ public class LogDynamoDbRepository implements LogEntries {
                 .gameId(Game.Id.of(item.get("GameId").s()))
                 .timestamp(Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n())))
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
-                .userId(User.Id.of(item.get("UserId").s()))
+                .userId(item.containsKey("UserId") ? User.Id.of(item.get("UserId").s()) : null)
                 .type(item.get("Type").s())
                 .values(item.get("Values").l().stream()
                         .map(attributeValue -> attributeValue.n() != null ? Float.parseFloat(attributeValue.n()) : attributeValue.s())

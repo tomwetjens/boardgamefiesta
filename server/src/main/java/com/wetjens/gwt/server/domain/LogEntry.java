@@ -13,7 +13,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Builder
@@ -40,19 +39,19 @@ public class LogEntry {
     @NonNull
     List<Object> values;
 
-    public LogEntry(@NonNull Game.Id gameId, GWTEvent event, Map<Player, User> playerUserMap) {
-        User user = playerUserMap.get(event.getPlayer());
+    public LogEntry(@NonNull Game.Id gameId, GWTEvent event) {
 
         this.gameId = gameId;
-        this.userId = user != null ? user.getId() : null;
+        // TODO Store userId
+        this.userId = null;
         this.timestamp = Instant.now();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = event.getType().name();
         this.values = event.getValues().stream()
                 .map(value -> {
                     if (value instanceof Player) {
-                        User valueUser = playerUserMap.get(value);
-                        return valueUser != null ? valueUser.getUsername() : ((Player) value).name();
+                        // TODO Map to userId if user player
+                        return ((Player) value).name();
                     } else if (value instanceof Action) {
                         return ActionType.of(((Action) value).getClass()).name();
                     } else if (value instanceof Enum<?>) {
@@ -73,13 +72,10 @@ public class LogEntry {
     }
 
     public enum Type {
-        SKIP,
         ACCEPT,
         REJECT,
         START,
-        END_TURN,
         INVITE,
-        CREATE,
-        EVENT
+        CREATE
     }
 }

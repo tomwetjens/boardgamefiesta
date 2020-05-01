@@ -39,7 +39,7 @@ class GameDynamoDbRepositoryTest {
         User sharon = mock(User.class);
         when(sharon.getId()).thenReturn(User.Id.of("34efb2e1-8ef6-47e3-a1d1-3f986d2d7c1d"));
 
-        Game game = Game.create(tom, Collections.singleton(sharon), true);
+        Game game = Game.create(tom, 2, Collections.singleton(sharon), true);
         game.acceptInvite(sharon.getId());
         game.start();
 

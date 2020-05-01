@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class Location implements Serializable {
 
@@ -46,6 +48,23 @@ public abstract class Location implements Serializable {
 
     public boolean isDirect(Location to) {
         return next.stream().anyMatch(between -> between == to || (between.isEmpty() && between.isDirect(to)));
+    }
+
+    public Set<Location> reachableLocations(int atLeast, int atMost) {
+        if (atMost <= 0) {
+            return Collections.emptySet();
+        }
+
+        return next.stream()
+                .flatMap(step -> {
+                    if (!step.isEmpty()) {
+                        return Stream.concat(atLeast <= 1 ? Stream.of(step) : Stream.empty(),
+                                step.reachableLocations(atLeast - 1, atMost - 1).stream());
+                    } else {
+                        return step.reachableLocations(atLeast, atMost).stream();
+                    }
+                })
+                .collect(Collectors.toSet());
     }
 
     public static final class Start extends Location {

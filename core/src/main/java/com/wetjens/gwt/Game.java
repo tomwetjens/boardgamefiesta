@@ -1,5 +1,8 @@
 package com.wetjens.gwt;
 
+import lombok.Getter;
+import lombok.NonNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -21,9 +24,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import lombok.Getter;
-import lombok.NonNull;
 
 public class Game implements Serializable {
 
@@ -218,6 +218,8 @@ public class Game implements Serializable {
 
         actionStack.skip();
 
+        fireEvent(currentPlayer, GWTEvent.Type.SKIP, Collections.emptyList());
+
         endTurnIfNoMoreActions(random);
     }
 
@@ -227,6 +229,8 @@ public class Game implements Serializable {
         }
 
         actionStack.skipAll();
+
+        fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
         if (!isEnded()) {
             currentPlayerState().drawUpToHandLimit(random);
@@ -269,7 +273,8 @@ public class Game implements Serializable {
         if (isEnded()) {
             return Collections.emptySet();
         }
-        Location from = trail.getCurrentLocation(player);
+        Location from = trail.getCurrentLocation(player)
+                .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION, player));
         return trail.possibleMoves(from, to, playerState(player).getStepLimit(players.size()), players.size());
     }
 

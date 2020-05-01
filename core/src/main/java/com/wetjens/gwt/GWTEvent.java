@@ -12,6 +12,8 @@ public class GWTEvent {
     List<Object> values;
 
     public enum Type {
+        SKIP,
+        END_TURN,
         ACTION,
         PAY_FEE,
         MAY_DRAW_CATTLE_CARDS,

@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -36,7 +37,6 @@ import javax.ws.rs.core.SecurityContext;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,8 +64,20 @@ public class GameResource {
     @Context
     private SecurityContext securityContext;
 
+    @GET
+    public List<GameView> getGames() {
+        var currentUserId = currentUserId();
+
+        var userMap = new HashMap<User.Id, Optional<User>>();
+
+        return games.findByUserId(currentUserId)
+                .map(game -> new GameView(game, getUserMapById(game), currentUserId))
+                .collect(Collectors.toList());
+    }
+
     @POST
     @Path("/create")
+    @Transactional
     public GameView create(@NotNull @Valid CreateGameRequest request) {
         var currentUser = currentUser();
 
@@ -77,6 +89,7 @@ public class GameResource {
         Game game = Game.create(currentUser, request.getNumberOfPlayers(), invitedUsers, request.isBeginner());
 
         games.add(game);
+        log.debug("saved after create");
 
         logEntries.addAll(Stream.concat(Stream.of(
                 new LogEntry(game.getId(), currentUser.getId(), LogEntry.Type.CREATE, Collections.emptyList())),
@@ -87,17 +100,6 @@ public class GameResource {
         var userMap = Stream.concat(Stream.of(currentUser), invitedUsers.stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));
         return new GameView(game, userMap, currentUser.getId());
-    }
-
-    @GET
-    public List<GameView> getGames() {
-        var currentUserId = currentUserId();
-
-        var userMap = new HashMap<User.Id, Optional<User>>();
-
-        return games.findByUserId(currentUserId)
-                .map(game -> new GameView(game, getUserMapById(game), currentUserId))
-                .collect(Collectors.toList());
     }
 
     @GET
@@ -112,6 +114,7 @@ public class GameResource {
 
     @POST
     @Path("/{id}/start")
+    @Transactional
     public GameView start(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
 
@@ -120,6 +123,7 @@ public class GameResource {
         game.start();
 
         games.update(game);
+        log.debug("saved after start");
 
         logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.START, Collections.emptyList()));
 
@@ -128,12 +132,14 @@ public class GameResource {
 
     @POST
     @Path("/{id}/accept")
+    @Transactional
     public GameView accept(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
 
         game.acceptInvite(currentUserId());
 
         games.update(game);
+        log.debug("saved after accept");
 
         logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.ACCEPT, Collections.emptyList()));
 
@@ -142,12 +148,14 @@ public class GameResource {
 
     @POST
     @Path("/{id}/reject")
+    @Transactional
     public GameView reject(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
 
         game.rejectInvite(currentUserId());
 
         games.update(game);
+        log.debug("saved after reject");
 
         logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.REJECT, Collections.emptyList()));
 
@@ -156,6 +164,7 @@ public class GameResource {
 
     @POST
     @Path("/{id}/perform")
+    @Transactional
     public StateView perform(@PathParam("id") String id, ActionRequest request) {
         var game = games.findById(Game.Id.of(id));
 
@@ -163,12 +172,8 @@ public class GameResource {
 
         Map<Player, User> playerUserMap = getUserMapByColor(game);
 
-        List<LogEntry> logEntries = new LinkedList<>();
         try {
             Action action = request.toAction(game.getState());
-
-            game.getState().addEventListener(event ->
-                    logEntries.add(new LogEntry(game.getId(), event, playerUserMap)));
 
             game.perform(action);
         } catch (GWTException e) {
@@ -176,14 +181,14 @@ public class GameResource {
         }
 
         games.update(game);
-
-        this.logEntries.addAll(logEntries);
+        log.debug("saved after perform");
 
         return new StateView(game, performingPlayer, playerUserMap);
     }
 
     @POST
     @Path("/{id}/skip")
+    @Transactional
     public StateView skip(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
 
@@ -196,14 +201,14 @@ public class GameResource {
         }
 
         games.update(game);
-
-        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.SKIP, Collections.emptyList()));
+        log.debug("saved after skip");
 
         return new StateView(game, performingPlayer, getUserMapByColor(game));
     }
 
     @POST
     @Path("/{id}/end-turn")
+    @Transactional
     public StateView endTurn(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
 
@@ -216,8 +221,7 @@ public class GameResource {
         }
 
         games.update(game);
-
-        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.END_TURN, Collections.emptyList()));
+        log.debug("saved after endTurn");
 
         return new StateView(game, performingPlayer, getUserMapByColor(game));
     }
@@ -351,7 +355,6 @@ public class GameResource {
         var performingPlayer = determinePlayer(game);
 
         if (game.getState().getCurrentPlayer() != performingPlayer) {
-            log.debug("End Turn: current user {} is {}, but current player is {}", currentUserId().getId(), performingPlayer, game.getState().getCurrentPlayer());
             throw APIException.forbidden(APIError.NOT_YOUR_TURN);
         }
 

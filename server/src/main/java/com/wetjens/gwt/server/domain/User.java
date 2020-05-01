@@ -8,6 +8,7 @@ import lombok.NonNull;
 import lombok.Value;
 import org.apache.commons.codec.binary.Hex;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -87,7 +88,9 @@ public class User {
     }
 
     @Value(staticConstructor = "of")
-    public static class Id {
+    public static class Id implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         String id;
     }
 

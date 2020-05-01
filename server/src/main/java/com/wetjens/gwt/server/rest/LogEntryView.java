@@ -19,7 +19,7 @@ public class LogEntryView {
 
     public LogEntryView(LogEntry logEntry, Map<User.Id, User> userMap) {
         this.timestamp = logEntry.getTimestamp();
-        this.user = new UserView(logEntry.getUserId(), userMap.get(logEntry.getUserId()));
+        this.user = logEntry.getUserId() != null ? new UserView(logEntry.getUserId(), userMap.get(logEntry.getUserId())) : null;
         this.type = logEntry.getType();
         this.values = logEntry.getValues();
     }

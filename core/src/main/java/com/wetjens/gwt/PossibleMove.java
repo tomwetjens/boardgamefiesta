@@ -1,5 +1,6 @@
 package com.wetjens.gwt;
 
+import lombok.AllArgsConstructor;
 import lombok.Value;
 
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Value
+@AllArgsConstructor
 public class PossibleMove {
 
     Location from;

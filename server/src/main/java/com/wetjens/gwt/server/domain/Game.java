@@ -1,6 +1,7 @@
 package com.wetjens.gwt.server.domain;
 
 import com.wetjens.gwt.Action;
+import com.wetjens.gwt.Automa;
 import com.wetjens.gwt.server.rest.APIError;
 import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
@@ -10,6 +11,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.inject.spi.CDI;
 import java.time.Duration;
@@ -18,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -29,6 +32,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @ToString(doNotUseGetters = true)
+@Slf4j
 public class Game {
 
     private static final Duration START_TIMEOUT = Duration.of(2, ChronoUnit.DAYS);
@@ -137,14 +141,14 @@ public class Game {
 
         assignColors();
 
+        // TODO Pass player ids
         state = new com.wetjens.gwt.Game(players.stream().map(Player::getColor).collect(Collectors.toSet()), beginner, RANDOM);
+        afterStateChange();
 
         status = Status.STARTED;
         started = Instant.now();
         updated = started;
         expires = started.plus(ACTION_TIMEOUT);
-
-        CDI.current().getBeanManager().fireEvent(new Started());
     }
 
     private void assignColors() {
@@ -159,8 +163,46 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        state.perform(action, RANDOM);
-        afterAction();
+        List<LogEntry> logEntries = new LinkedList<>();
+
+        state.addEventListener(event ->
+                logEntries.add(new LogEntry(id, event)));
+
+        runStateChange(() -> state.perform(action, RANDOM));
+    }
+
+    public void executeAutoma() {
+        if (status != Status.STARTED) {
+            throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
+        }
+
+        var currentPlayer = getCurrentPlayer();
+        if (currentPlayer.getType() != Player.Type.COMPUTER) {
+            throw new IllegalStateException("Current player is not computer");
+        }
+
+        runStateChange(() -> {
+            new Automa().execute(state, RANDOM);
+        });
+    }
+
+    private void runStateChange(Runnable runnable) {
+        List<LogEntry> logEntries = new LinkedList<>();
+
+        state.addEventListener(event ->
+                logEntries.add(new LogEntry(id, event)));
+
+        runnable.run();
+
+        if (!logEntries.isEmpty()) {
+            try {
+                CDI.current().select(LogEntries.class).get().addAll(logEntries);
+            } catch (RuntimeException e) {
+                log.error("Error saving log entries", e);
+            }
+        }
+
+        afterStateChange();
     }
 
     public void skip() {
@@ -168,8 +210,7 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        state.skip(RANDOM);
-        afterAction();
+        runStateChange(() -> state.skip(RANDOM));
     }
 
     public void endTurn() {
@@ -177,11 +218,10 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        state.endTurn(RANDOM);
-        afterAction();
+        runStateChange(() -> state.endTurn(RANDOM));
     }
 
-    private void afterAction() {
+    private void afterStateChange() {
         updated = Instant.now();
 
         CDI.current().getBeanManager().fireEvent(new StateChanged());
@@ -196,8 +236,6 @@ public class Game {
                 player.setScore(state.score(player.getColor()));
                 player.setWinner(winners.contains(player.getColor()));
             });
-
-            CDI.current().getBeanManager().fireEvent(new Ended());
         } else {
             expires = updated.plus(ACTION_TIMEOUT);
         }

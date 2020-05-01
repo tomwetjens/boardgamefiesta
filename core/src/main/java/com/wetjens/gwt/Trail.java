@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -161,19 +162,11 @@ public class Trail implements Serializable {
                 .collect(Collectors.toSet());
     }
 
-    public Location getCurrentLocation(Player player) {
-        Location location = playerLocations.get(player);
-        if (location == null) {
-            throw new GWTException(GWTError.NOT_AT_LOCATION, player);
-        }
-        return location;
+    public Optional<Location> getCurrentLocation(Player player) {
+        return Optional.ofNullable(playerLocations.get(player));
     }
 
-    public boolean isAtLocation(Player player) {
-        return playerLocations.get(player) != null;
-    }
-
-    public void movePlayer(Player player, Location to) {
+    void movePlayer(Player player, Location to) {
         playerLocations.put(player, to);
     }
 

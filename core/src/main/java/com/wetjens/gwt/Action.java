@@ -1,5 +1,13 @@
 package com.wetjens.gwt;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.Value;
+import lombok.experimental.NonFinal;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,16 +17,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.Value;
-import lombok.experimental.NonFinal;
-
-import javax.swing.text.html.HTMLDocument;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action {
@@ -463,7 +461,9 @@ public abstract class Action {
 
         @Override
         List<Object> toEventParams(Game game) {
-            return List.of(worker, getStation(game).getStationMaster());
+            return getStation(game).getStationMaster()
+                    .map(stationMaster -> List.of(worker, (Object) stationMaster))
+                    .orElseGet(() -> List.of(worker));
         }
 
         private Station getStation(Game game) {
@@ -879,15 +879,13 @@ public abstract class Action {
 
             Location to = steps.get(steps.size() - 1);
 
-            if (game.getTrail().isAtLocation(player)) {
-                Location from = game.getTrail().getCurrentLocation(player);
-
+            game.getTrail().getCurrentLocation(player).ifPresent(from -> {
                 checkDirectAndConsecutiveSteps(from, steps);
 
                 if (fees) {
                     payFees(game);
                 }
-            }
+            });
 
             game.getTrail().movePlayer(player, to);
 
@@ -1185,7 +1183,8 @@ public abstract class Action {
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            Location currentLocation = game.getTrail().getCurrentLocation(game.getCurrentPlayer());
+            Location currentLocation = game.getTrail().getCurrentLocation(game.getCurrentPlayer())
+                    .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION, game.getCurrentPlayer()));
 
             Set<Location> adjacentLocations = game.getTrail().getAdjacentLocations(currentLocation);
 

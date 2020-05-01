@@ -29,21 +29,22 @@ class TrailTest {
     void startToA() {
         Location a = trail.getLocation("A");
 
-        assertThat(trail.possibleMoves(trail.getStart(), a, 3)).containsOnly(Collections.singletonList(a));
+        assertThat(trail.possibleMoves(trail.getStart(), a, 3, 4)).containsOnly(
+                new PossibleMove(trail.getStart(), a, Collections.singletonList(a), 0, Collections.emptyMap()));
     }
 
     @Test
     void backwards() {
         Location a = trail.getLocation("A");
 
-        assertThat(trail.possibleMoves(a, trail.getStart(), 3)).isEmpty();
+        assertThat(trail.possibleMoves(a, trail.getStart(), 3, 4)).isEmpty();
     }
 
     @Test
     void fromToEqual() {
         Location a = trail.getLocation("A");
 
-        assertThat(trail.possibleMoves(a, a, 6)).isEmpty();
+        assertThat(trail.possibleMoves(a, a, 6, 4)).isEmpty();
     }
 
     @Test
@@ -51,9 +52,9 @@ class TrailTest {
         Location a = trail.getLocation("A");
         Location b = trail.getLocation("B");
 
-        assertThat(trail.possibleMoves(a, b, 6)).containsExactlyInAnyOrder(
-                asList(trail.getLocation("A-1"), trail.getLocation("A-2"), b),
-                asList(trail.getLocation("FLOOD-1"), trail.getLocation("FLOOD-2"), b));
+        assertThat(trail.possibleMoves(a, b, 6, 4)).containsExactlyInAnyOrder(
+                new PossibleMove(a, b, asList(trail.getLocation("A-1"), trail.getLocation("A-2"), b), 0, Collections.emptyMap()),
+                new PossibleMove(a, b, asList(trail.getLocation("FLOOD-1"), trail.getLocation("FLOOD-2"), b), 0, Collections.emptyMap()));
     }
 
     @Test
@@ -66,11 +67,11 @@ class TrailTest {
         Location from = trail.getLocation("F");
         Location to = trail.getKansasCity();
 
-        assertThat(trail.possibleMoves(from, to, 4)).containsExactlyInAnyOrder(
-                asList(trail.getLocation("F-1"), trail.getLocation("G"), trail.getLocation("G-1"), to),
-                asList(trail.getLocation("F-1"), trail.getLocation("G"), trail.getLocation("G-2"), to),
-                asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-1"), to),
-                asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-2"), to));
+        assertThat(trail.possibleMoves(from, to, 4, 4)).containsExactlyInAnyOrder(
+                new PossibleMove(from, to, asList(trail.getLocation("F-1"), trail.getLocation("G"), trail.getLocation("G-1"), to), 0, Collections.emptyMap()),
+                new PossibleMove(from, to, asList(trail.getLocation("F-1"), trail.getLocation("G"), trail.getLocation("G-2"), to), 0, Collections.emptyMap()),
+                new PossibleMove(from, to, asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-1"), to), 0, Collections.emptyMap()),
+                new PossibleMove(from, to, asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-2"), to), 0, Collections.emptyMap()));
     }
 
     @Test
