@@ -85,7 +85,7 @@ public abstract class Action {
     public static final class SingleAuxiliaryAction extends Action {
 
         public ImmediateActions perform(Game game, Random random) {
-            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions())));
+            return ImmediateActions.of(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions()));
         }
     }
 
@@ -103,7 +103,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             PlayerState playerState = game.currentPlayerState();
-            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(playerState.unlockedSingleOrDoubleAuxiliaryActions())));
+            return ImmediateActions.of(PossibleAction.choice(playerState.unlockedSingleOrDoubleAuxiliaryActions()));
         }
     }
 

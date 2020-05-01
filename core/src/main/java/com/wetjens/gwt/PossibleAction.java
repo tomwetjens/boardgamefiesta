@@ -296,7 +296,17 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         void skip() {
-            throw new GWTException(GWTError.MUST_CHOOSE_ACTION);
+            if (actions.size() > 1) {
+                throw new GWTException(GWTError.MUST_CHOOSE_ACTION);
+            } else if (!actions.isEmpty()) {
+                var action = actions.iterator().next();
+
+                action.skip();
+
+                if (action.isFinal()) {
+                    actions.clear();
+                }
+            }
         }
 
         private PossibleAction check(Class<? extends Action> action) {
