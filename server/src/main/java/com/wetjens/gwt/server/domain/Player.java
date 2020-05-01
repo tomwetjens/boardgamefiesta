@@ -7,21 +7,29 @@ import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
 @Builder
 public class Player {
 
     @Getter
+    @NonNull
+    private final Type type;
+
+    @Getter
     private final User.Id userId;
 
     @Getter
+    @NonNull
     private Status status;
 
     @Getter
+    @NonNull
     private Instant created;
 
     @Getter
+    @NonNull
     private Instant updated;
 
     @Getter
@@ -36,10 +44,11 @@ public class Player {
     @Setter(value = AccessLevel.PACKAGE)
     private Boolean winner;
 
-    static Player createAccepted(User.Id userId) {
+    static Player accepted(User.Id userId) {
         Instant created = Instant.now();
 
         return Player.builder()
+                .type(Type.USER)
                 .userId(userId)
                 .status(Status.ACCEPTED)
                 .created(created)
@@ -51,10 +60,22 @@ public class Player {
         Instant invited = Instant.now();
 
         return Player.builder()
+                .type(Type.USER)
                 .userId(userId)
                 .status(Status.INVITED)
                 .created(invited)
                 .updated(invited)
+                .build();
+    }
+
+    static Player computer() {
+        Instant created = Instant.now();
+
+        return Player.builder()
+                .type(Type.COMPUTER)
+                .status(Status.ACCEPTED)
+                .created(created)
+                .updated(created)
                 .build();
     }
 
@@ -82,4 +103,8 @@ public class Player {
         REJECTED;
     }
 
+    public enum Type {
+        USER,
+        COMPUTER
+    }
 }

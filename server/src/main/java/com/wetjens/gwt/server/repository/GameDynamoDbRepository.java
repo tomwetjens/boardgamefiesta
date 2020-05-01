@@ -1,21 +1,5 @@
 package com.wetjens.gwt.server.repository;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.Player;
@@ -34,6 +18,22 @@ import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.Select;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @ApplicationScoped
 public class GameDynamoDbRepository implements Games {
@@ -91,6 +91,7 @@ public class GameDynamoDbRepository implements Games {
         var item = createItem(game);
 
         var lookupItems = game.getPlayers().stream()
+                .filter(player -> player.getType() == Player.Type.USER)
                 .map(player -> createItemLookup(game, player))
                 .collect(Collectors.toList());
 
@@ -133,6 +134,7 @@ public class GameDynamoDbRepository implements Games {
                 .collect(Collectors.toMap(item -> item.get("UserId").s(), Function.identity()));
 
         var playersBySortKey = game.getPlayers().stream()
+                .filter(player -> player.getType() == Player.Type.USER)
                 .collect(Collectors.toMap(player -> "User-" + player.getUserId().getId(), Function.identity()));
 
         var lookupItemsToDelete = lookupItemsBySortKey.entrySet().stream()
@@ -240,14 +242,16 @@ public class GameDynamoDbRepository implements Games {
     }
 
     private Player mapToPlayer(AttributeValue attributeValue) {
+        Map<String, AttributeValue> map = attributeValue.m();
         return Player.builder()
-                .userId(User.Id.of(attributeValue.m().get("UserId").s()))
-                .status(Player.Status.valueOf(attributeValue.m().get("Status").s()))
-                .color(attributeValue.m().get("Color") != null ? com.wetjens.gwt.Player.valueOf(attributeValue.m().get("Color").s()) : null)
-                .score(attributeValue.m().get("Score") != null ? Integer.valueOf(attributeValue.m().get("Score").n()) : null)
-                .winner(attributeValue.m().get("Winner") != null ? attributeValue.m().get("Winner").bool() : null)
-                .created(Instant.ofEpochSecond(Long.parseLong(attributeValue.m().get("Created").n())))
-                .updated(Instant.ofEpochSecond(Long.parseLong(attributeValue.m().get("Updated").n())))
+                .type(map.containsKey("Type") ? Player.Type.valueOf(map.get("Type").s()) : Player.Type.USER)
+                .userId(map.containsKey("UserId") ? User.Id.of(map.get("UserId").s()) : null)
+                .status(Player.Status.valueOf(map.get("Status").s()))
+                .color(map.get("Color") != null ? com.wetjens.gwt.Player.valueOf(map.get("Color").s()) : null)
+                .score(map.get("Score") != null ? Integer.valueOf(map.get("Score").n()) : null)
+                .winner(map.get("Winner") != null ? map.get("Winner").bool() : null)
+                .created(Instant.ofEpochSecond(Long.parseLong(map.get("Created").n())))
+                .updated(Instant.ofEpochSecond(Long.parseLong(map.get("Updated").n())))
                 .build();
     }
 
@@ -275,7 +279,8 @@ public class GameDynamoDbRepository implements Games {
 
     private AttributeValue mapFromPlayer(Player player) {
         var map = new HashMap<String, AttributeValue>();
-        map.put("UserId", AttributeValue.builder().s(player.getUserId().getId()).build());
+        map.put("Type", AttributeValue.builder().s(player.getType().name()).build());
+        map.put("UserId", player.getUserId() != null ? AttributeValue.builder().s(player.getUserId().getId()).build(): null);
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
         map.put("Color", player.getColor() != null ? AttributeValue.builder().s(player.getColor().name()).build() : null);
         map.put("Score", player.getScore() != null ? AttributeValue.builder().n(player.getScore().toString()).build() : null);

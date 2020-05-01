@@ -17,6 +17,7 @@ import com.wetjens.gwt.StationMaster;
 import com.wetjens.gwt.Teepee;
 import com.wetjens.gwt.Unlockable;
 import com.wetjens.gwt.server.domain.User;
+import lombok.NonNull;
 import lombok.Value;
 
 @Value
@@ -41,7 +42,7 @@ public class PlayerStateView {
     List<Teepee> teepees;
     List<ObjectiveCardView> objectives;
 
-    PlayerStateView(PlayerState playerState, Player viewingPlayer, User user) {
+    PlayerStateView(@NonNull PlayerState playerState, @NonNull Player viewingPlayer, User user) {
         player = new PlayerView(playerState.getPlayer(), user);
 
         balance = playerState.getBalance();

@@ -23,45 +23,28 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class EventsEndpoint {
 
-    public static final Jsonb JSONB = JsonbBuilder.create();
-    private final Map<User.Id, Session> sessions = new ConcurrentHashMap<>();
+    private static final Jsonb JSONB = JsonbBuilder.create();
+
+    private static final Map<User.Id, Session> SESSIONS = new ConcurrentHashMap<>();
 
     @OnOpen
     public void onOpen(Session session) {
         User.Id currentUserId = currentUserId(session);
-        sessions.put(currentUserId, session);
-    }
-
-    public User.Id currentUserId(Session session) {
-        return User.Id.of(session.getUserPrincipal().getName());
+        SESSIONS.put(currentUserId, session);
     }
 
     @OnClose
     public void onClose(Session session) {
-        sessions.remove(currentUserId(session));
+        SESSIONS.remove(currentUserId(session));
     }
 
     @OnError
     public void onError(Session session, Throwable throwable) {
-        sessions.remove(currentUserId(session));
-    }
-
-    @OnMessage
-    public void onMessage(Session session, String message) {
-        // Ignore
+        SESSIONS.remove(currentUserId(session));
     }
 
     void accepted(@Observes Game.Accepted accepted) {
         notifyOtherPlayers(accepted.getUserId(), accepted.getGame(), new Event(EventType.ACCEPTED, accepted.getGame().getId().getId(), accepted.getUserId().getId()));
-    }
-
-    private void notifyOtherPlayers(User.Id exclude, Game game, Event event) {
-        game.getPlayers().stream()
-                .map(Player::getUserId)
-                .filter(userId -> !userId.equals(exclude))
-                .filter(sessions::containsKey)
-                .map(sessions::get)
-                .forEach(session -> session.getAsyncRemote().sendObject(JSONB.toJson(event)));
     }
 
     void rejected(@Observes Game.Rejected rejected) {
@@ -81,10 +64,26 @@ public class EventsEndpoint {
     }
 
     void invited(@Observes Game.Invited invited) {
-        Session session = sessions.get(invited.getUserId());
+        notifyUser(invited.getUserId(), new Event(EventType.INVITED, invited.getGame().getId().getId(), null));
+        notifyOtherPlayers(invited.getUserId(), invited.getGame(), new Event(EventType.INVITED, invited.getGame().getId().getId(), invited.getUserId().getId()));
+    }
 
+    private void notifyOtherPlayers(User.Id exclude, Game game, Event event) {
+        game.getPlayers().stream()
+                .map(Player::getUserId)
+                .filter(userId -> !userId.equals(exclude))
+                .forEach(userId -> notifyUser(userId, event));
+    }
+
+    private void notifyUser(User.Id userId, Event event) {
+        Session session = SESSIONS.get(userId);
         if (session != null) {
-            session.getAsyncRemote().sendObject("INVITED");
+            session.getAsyncRemote().sendObject(JSONB.toJson(event));
         }
     }
+
+    private User.Id currentUserId(Session session) {
+        return User.Id.of(session.getUserPrincipal().getName());
+    }
+
 }

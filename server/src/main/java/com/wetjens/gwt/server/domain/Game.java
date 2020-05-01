@@ -1,5 +1,17 @@
 package com.wetjens.gwt.server.domain;
 
+import com.wetjens.gwt.Action;
+import com.wetjens.gwt.server.rest.APIError;
+import com.wetjens.gwt.server.rest.APIException;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.Value;
+
+import javax.enterprise.inject.spi.CDI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -11,19 +23,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import javax.enterprise.inject.spi.CDI;
-
-import com.wetjens.gwt.Action;
-import com.wetjens.gwt.server.rest.APIError;
-import com.wetjens.gwt.server.rest.APIException;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
@@ -74,28 +75,36 @@ public class Game {
     @Getter
     private Instant ended;
 
-    public static Game create(@NonNull User owner, @NonNull Set<User> inviteUsers, boolean beginner) {
-        Games games = CDI.current().select(Games.class).get();
+    public static Game create(@NonNull User owner, int numberOfPlayers, @NonNull Set<User> inviteUsers, boolean beginner) {
+        int minNumberOfPlayers = 2;
+        int maxNumberOfPlayers = 4;
 
-        int count = games.countByUserId(owner.getId());
-        if (count >= 3) {
-            throw APIException.forbidden(APIError.REACHED_MAX_GAMES);
+        if (numberOfPlayers < minNumberOfPlayers) {
+            throw APIException.badRequest(APIError.MIN_PLAYERS);
+        }
+
+        if (numberOfPlayers > maxNumberOfPlayers) {
+            throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
         if (inviteUsers.contains(owner)) {
             throw APIException.badRequest(APIError.CANNOT_INVITE_YOURSELF);
         }
 
-        if (inviteUsers.isEmpty()) {
-            throw APIException.badRequest(APIError.MUST_INVITE_AT_LEAST_1_USER);
+        if (inviteUsers.size() > numberOfPlayers - 1) {
+            throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        if (inviteUsers.size() > 5) {
-            throw APIException.badRequest(APIError.MAY_INVITE_AT_MOST_5_USERS);
+        Games games = CDI.current().select(Games.class).get();
+        if (games.countByUserId(owner.getId()) >= 3) {
+            throw APIException.forbidden(APIError.REACHED_MAX_GAMES);
         }
+
+        var player = Player.accepted(owner.getId());
+        var invitedPlayers = inviteUsers.stream().map(user -> Player.invite(user.getId()));
+        var computerPlayers = IntStream.range(0, numberOfPlayers - inviteUsers.size() - 1).mapToObj(i -> Player.computer());
 
         var created = Instant.now();
-
         Game game = Game.builder()
                 .id(Id.generate())
                 .status(Status.NEW)
@@ -104,11 +113,11 @@ public class Game {
                 .updated(created)
                 .expires(created.plus(START_TIMEOUT))
                 .owner(owner.getId())
-                .players(Stream.concat(
-                        Stream.of(Player.createAccepted(owner.getId())),
-                        inviteUsers.stream().map(user -> Player.invite(user.getId())))
+                .players(Stream.concat(Stream.concat(Stream.of(player), invitedPlayers), computerPlayers)
                         .collect(Collectors.toSet()))
                 .build();
+
+        CDI.current().getBeanManager().fireEvent(game.new Created());
 
         for (User user : inviteUsers) {
             CDI.current().getBeanManager().fireEvent(game.new Invited(user.getId()));
@@ -192,13 +201,13 @@ public class Game {
         }
     }
 
-    public void acceptInvite(User.Id userId) {
+    public void acceptInvite(@NonNull User.Id userId) {
         if (status != Status.NEW) {
             throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
         var player = players.stream()
-                .filter(p -> p.getUserId().equals(userId))
+                .filter(p -> userId.equals(p.getUserId()))
                 .findAny()
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_INVITED));
 
@@ -234,13 +243,13 @@ public class Game {
         return players.stream().allMatch(p -> p.getStatus() == Player.Status.ACCEPTED || p.getStatus() == Player.Status.REJECTED);
     }
 
-    public void rejectInvite(User.Id userId) {
+    public void rejectInvite(@NonNull User.Id userId) {
         if (status != Status.NEW) {
             throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
         var player = players.stream()
-                .filter(p -> p.getUserId().equals(userId))
+                .filter(p -> userId.equals(p.getUserId()))
                 .findAny()
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_INVITED));
 
@@ -261,19 +270,19 @@ public class Game {
 
     public Optional<Player> getPlayerByUserId(User.Id userId) {
         return players.stream()
-                .filter(player -> player.getUserId().equals(userId))
+                .filter(player -> userId.equals(player.getUserId()))
                 .findAny();
     }
 
     public Player getCurrentPlayer() {
         if (state == null) {
-            return null;
+            throw APIException.serverError(APIError.GAME_NOT_STARTED_YET);
         }
 
         return players.stream()
                 .filter(player -> player.getColor() == state.getCurrentPlayer())
                 .findAny()
-                .orElse(null);
+                .orElseThrow(() -> APIException.serverError(APIError.NOT_PLAYER_IN_GAME));
     }
 
     public enum Status {
@@ -321,6 +330,11 @@ public class Game {
 
     @Value
     public final class StateChanged {
+        Game game = Game.this;
+    }
+
+    @Value
+    private final class Created {
         Game game = Game.this;
     }
 }
