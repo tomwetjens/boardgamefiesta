@@ -123,6 +123,8 @@ public class Game {
             CDI.current().getBeanManager().fireEvent(game.new Invited(user.getId()));
         }
 
+        game.afterRespond();
+
         return game;
     }
 
@@ -217,6 +219,10 @@ public class Game {
 
         CDI.current().getBeanManager().fireEvent(new Accepted(userId));
 
+        afterRespond();
+    }
+
+    private void afterRespond() {
         if (allPlayersResponded()) {
             if (numberOfPlayersAccepted() >= 2) {
                 // If enough players have accepted, automatically start
@@ -258,6 +264,8 @@ public class Game {
         updated = Instant.now();
 
         CDI.current().getBeanManager().fireEvent(new Rejected(userId));
+
+        afterRespond();
     }
 
     public Set<Player> getPlayers() {

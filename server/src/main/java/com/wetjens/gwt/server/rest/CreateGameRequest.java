@@ -10,6 +10,8 @@ import javax.validation.constraints.Size;
 @Data
 public class CreateGameRequest {
 
+    int numberOfPlayers;
+
     @NotNull
     @Size(min = 1, max = 5)
     Set<String> inviteUserIds;

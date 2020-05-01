@@ -2,7 +2,6 @@ package com.wetjens.gwt.server.rest;
 
 import com.wetjens.gwt.Action;
 import com.wetjens.gwt.GWTException;
-import com.wetjens.gwt.Location;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.PossibleMove;
 import com.wetjens.gwt.server.domain.Game;
@@ -75,7 +74,7 @@ public class GameResource {
                         .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, userId)))
                 .collect(Collectors.toSet());
 
-        Game game = Game.create(currentUser, invitedUsers, request.isBeginner());
+        Game game = Game.create(currentUser, request.getNumberOfPlayers(), invitedUsers, request.isBeginner());
 
         games.add(game);
 
@@ -97,9 +96,7 @@ public class GameResource {
         var userMap = new HashMap<User.Id, Optional<User>>();
 
         return games.findByUserId(currentUserId)
-                .map(game -> new GameView(game, game.getPlayers().stream()
-                        .flatMap(p -> userMap.computeIfAbsent(p.getUserId(), k -> users.findOptionallyById(k)).stream())
-                        .collect(Collectors.toMap(User::getId, Function.identity())), currentUserId))
+                .map(game -> new GameView(game, getUserMapById(game), currentUserId))
                 .collect(Collectors.toList());
     }
 
@@ -170,7 +167,8 @@ public class GameResource {
         try {
             Action action = request.toAction(game.getState());
 
-            game.getState().addEventListener(event -> logEntries.add(new LogEntry(game.getId(), event, playerUserMap)));
+            game.getState().addEventListener(event ->
+                    logEntries.add(new LogEntry(game.getId(), event, playerUserMap)));
 
             game.perform(action);
         } catch (GWTException e) {
@@ -332,7 +330,7 @@ public class GameResource {
     private void checkViewAllowed(Game game) {
         var currentUserId = currentUserId();
 
-        if (game.getPlayers().stream().noneMatch(player -> player.getUserId().equals(currentUserId))) {
+        if (game.getPlayers().stream().noneMatch(player -> currentUserId.equals(player.getUserId()))) {
             throw APIException.forbidden(APIError.NOT_PLAYER_IN_GAME);
         }
     }
@@ -362,12 +360,14 @@ public class GameResource {
 
     private Map<Player, User> getUserMapByColor(Game game) {
         return game.getPlayers().stream()
+                .filter(player -> player.getUserId() != null)
                 .collect(Collectors.toMap(com.wetjens.gwt.server.domain.Player::getColor, player -> users.findOptionallyById(player.getUserId())
                         .orElseThrow(() -> APIException.serverError(APIError.NO_SUCH_USER, player.getUserId().getId()))));
     }
 
     private Map<User.Id, User> getUserMapById(Game game) {
         return game.getPlayers().stream()
+                .filter(player -> player.getUserId() != null)
                 .flatMap(player -> users.findOptionallyById(player.getUserId()).stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }

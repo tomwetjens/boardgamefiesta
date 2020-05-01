@@ -26,23 +26,23 @@ public class GameView {
     boolean startable;
 
     Boolean turn;
-    UserView currentPlayer;
+    PlayerView currentPlayer;
 
     public GameView(Game game, Map<User.Id, User> userMap, User.Id currentUserId) {
         id = game.getId().getId();
         status = game.getStatus();
         owner = new UserView(game.getOwner(), userMap.get(game.getOwner()));
         player = game.getPlayers().stream()
-                .filter(player -> player.getUserId().equals(currentUserId))
+                .filter(player -> currentUserId.equals(player.getUserId()))
                 .findAny()
                 .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
                 .orElse(null);
         otherPlayers = game.getPlayers().stream()
-                .filter(player -> !player.getUserId().equals(currentUserId))
+                .filter(player -> !currentUserId.equals(player.getUserId()))
                 .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
                 .collect(Collectors.toSet());
         accepted = game.getPlayers().stream()
-                .filter(player -> player.getUserId().equals(currentUserId))
+                .filter(player -> currentUserId.equals(player.getUserId()))
                 .anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
         created = game.getCreated();
         started = game.getStarted();
@@ -56,7 +56,7 @@ public class GameView {
             turn = game.getState().getCurrentPlayer() == currentUserPlayer.getColor();
 
             Player currentPlayer = game.getCurrentPlayer();
-            this.currentPlayer = new UserView(currentPlayer.getUserId(), userMap.get(currentPlayer.getUserId()));
+            this.currentPlayer = new PlayerView(currentPlayer, userMap.get(currentPlayer.getUserId()));
         } else {
             turn = null;
             currentPlayer = null;

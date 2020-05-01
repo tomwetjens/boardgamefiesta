@@ -70,6 +70,7 @@ public class EventsEndpoint {
 
     private void notifyOtherPlayers(User.Id exclude, Game game, Event event) {
         game.getPlayers().stream()
+                .filter(player -> player.getType() == Player.Type.USER)
                 .map(Player::getUserId)
                 .filter(userId -> !userId.equals(exclude))
                 .forEach(userId -> notifyUser(userId, event));
