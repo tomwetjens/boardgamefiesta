@@ -21,10 +21,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -163,11 +165,6 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        List<LogEntry> logEntries = new LinkedList<>();
-
-        state.addEventListener(event ->
-                logEntries.add(new LogEntry(id, event)));
-
         runStateChange(() -> state.perform(action, RANDOM));
     }
 
@@ -190,7 +187,7 @@ public class Game {
         List<LogEntry> logEntries = new LinkedList<>();
 
         state.addEventListener(event ->
-                logEntries.add(new LogEntry(id, event)));
+                logEntries.add(new LogEntry(this, event)));
 
         runnable.run();
 
@@ -236,6 +233,8 @@ public class Game {
                 player.setScore(state.score(player.getColor()));
                 player.setWinner(winners.contains(player.getColor()));
             });
+
+            CDI.current().getBeanManager().fireEvent(new Ended());
         } else {
             expires = updated.plus(ACTION_TIMEOUT);
         }
@@ -329,6 +328,17 @@ public class Game {
                 .filter(player -> player.getColor() == state.getCurrentPlayer())
                 .findAny()
                 .orElseThrow(() -> APIException.serverError(APIError.NOT_PLAYER_IN_GAME));
+    }
+
+    public Optional<Player> getPlayerByColor(com.wetjens.gwt.Player color) {
+        return players.stream()
+                .filter(player -> player.getColor() == color)
+                .findAny();
+    }
+
+    public Map<Player.Id, Player> getPlayersAsMap() {
+        return players.stream()
+                .collect(Collectors.toMap(Player::getId, Function.identity()));
     }
 
     public enum Status {

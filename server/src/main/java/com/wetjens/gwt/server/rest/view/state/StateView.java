@@ -13,14 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Value
 public class StateView {
 
     RailroadTrackView railroadTrack;
     PlayerStateView player;
-    Map<Player, PlayerStateView> otherPlayers;
-    Map<Player, PlayerView> players;
+    List<PlayerStateView> otherPlayers;
     List<Player> playerOrder;
     ForesightsView foresights;
     TrailView trail;
@@ -34,41 +34,45 @@ public class StateView {
     boolean turn;
 
     public StateView(Game game, Player viewingPlayer, Map<Player, User> userMap) {
-        railroadTrack = new RailroadTrackView(game.getState().getRailroadTrack());
+        var state = game.getState();
 
-        player = game.getState().getPlayers().stream()
+        railroadTrack = new RailroadTrackView(state.getRailroadTrack());
+
+        player = state.getPlayers().stream()
                 .filter(p -> p == viewingPlayer)
-                .map(game.getState()::playerState)
+                .map(state::playerState)
                 .map(playerState -> new PlayerStateView(playerState, viewingPlayer, userMap.get(playerState.getPlayer())))
                 .findAny()
                 .orElse(null);
 
-        otherPlayers = game.getState().getPlayers().stream()
-                .filter(p -> p != viewingPlayer)
-                .collect(Collectors.toMap(Function.identity(), p -> new PlayerStateView(game.getState().playerState(p), viewingPlayer, userMap.get(p))));
+        // Other players in play order
+        var viewingPlayerIndex = state.getPlayers().indexOf(viewingPlayer);
+        var playerCount = state.getPlayers().size();
+        otherPlayers = IntStream.range(1, playerCount)
+                .map(i -> (viewingPlayerIndex + i) % playerCount)
+                .mapToObj(i -> state.getPlayers().get(i))
+                .map(p -> new PlayerStateView(state.playerState(p), viewingPlayer, userMap.get(p)))
+                .collect(Collectors.toList());
 
-        players = game.getState().getPlayers().stream()
-                .map(player -> new PlayerView(player, userMap.get(player)))
-                .collect(Collectors.toMap(PlayerView::getColor, Function.identity()));
-        playerOrder = game.getState().getPlayers();
+        playerOrder = state.getPlayers();
 
-        foresights = new ForesightsView(game.getState().getForesights());
+        foresights = new ForesightsView(state.getForesights());
 
-        trail = new TrailView(game.getState().getTrail());
+        trail = new TrailView(state.getTrail());
 
-        jobMarket = new JobMarketView(game.getState().getJobMarket());
+        jobMarket = new JobMarketView(state.getJobMarket());
 
-        cattleMarket = new CattleMarketView(game.getState().getCattleMarket());
+        cattleMarket = new CattleMarketView(state.getCattleMarket());
 
-        objectiveCards = game.getState().getObjectiveCards().getAvailable().stream()
+        objectiveCards = state.getObjectiveCards().getAvailable().stream()
                 .map(ObjectiveCardView::new)
                 .sorted()
                 .collect(Collectors.toList());
 
-        currentPlayer = new PlayerView(game.getState().getCurrentPlayer(), userMap.get(game.getState().getCurrentPlayer()));
+        currentPlayer = new PlayerView(state.getCurrentPlayer(), userMap.get(state.getCurrentPlayer()));
 
-        if (viewingPlayer == game.getState().getCurrentPlayer()) {
-            actions = game.getState().possibleActions().stream()
+        if (viewingPlayer == state.getCurrentPlayer()) {
+            actions = state.possibleActions().stream()
                     .map(ActionType::of)
                     .sorted(Comparator.comparing(Enum::name))
                     .collect(Collectors.toList());

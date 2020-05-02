@@ -2,7 +2,6 @@ package com.wetjens.gwt.server.domain;
 
 import com.wetjens.gwt.Action;
 import com.wetjens.gwt.GWTEvent;
-import com.wetjens.gwt.Player;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +24,8 @@ public class LogEntry {
     @NonNull
     Game.Id gameId;
 
-    User.Id userId;
+    @NonNull
+    Player.Id playerId;
 
     @NonNull
     Instant timestamp;
@@ -39,19 +39,18 @@ public class LogEntry {
     @NonNull
     List<Object> values;
 
-    public LogEntry(@NonNull Game.Id gameId, GWTEvent event) {
-
-        this.gameId = gameId;
-        // TODO Store userId
-        this.userId = null;
+    public LogEntry(@NonNull Game game, @NonNull GWTEvent event) {
+        this.gameId = game.getId();
+        this.playerId = game.getPlayerByColor(event.getPlayer()).map(Player::getId).orElse(null);
         this.timestamp = Instant.now();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = event.getType().name();
         this.values = event.getValues().stream()
                 .map(value -> {
                     if (value instanceof Player) {
-                        // TODO Map to userId if user player
-                        return ((Player) value).name();
+                        return game.getPlayerByColor((com.wetjens.gwt.Player) value)
+                                .map(Player::getId)
+                                .orElse(null);
                     } else if (value instanceof Action) {
                         return ActionType.of(((Action) value).getClass()).name();
                     } else if (value instanceof Enum<?>) {
@@ -62,9 +61,9 @@ public class LogEntry {
                 .collect(Collectors.toList());
     }
 
-    public LogEntry(@NonNull Game.Id gameId, @NonNull User.Id userId, Type type, List<Object> values) {
-        this.gameId = gameId;
-        this.userId = userId;
+    public LogEntry(@NonNull Game game, @NonNull User.Id userId, Type type, List<Object> values) {
+        this.gameId = game.getId();
+        this.playerId = game.getPlayerByUserId(userId).map(Player::getId).orElse(null);
         this.timestamp = Instant.now();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = type.name();

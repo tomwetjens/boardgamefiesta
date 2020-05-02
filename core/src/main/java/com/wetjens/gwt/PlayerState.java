@@ -140,6 +140,10 @@ public class PlayerState implements Serializable {
     }
 
     ImmediateActions gainWorker(Worker worker, Game game) {
+        if (workers.get(worker) == 6) {
+            throw new GWTException(GWTError.WORKERS_EXCEED_LIMIT);
+        }
+
         int count = workers.compute(worker, (k, v) -> v + 1);
 
         if (worker == Worker.COWBOY) {
@@ -470,8 +474,22 @@ public class PlayerState implements Serializable {
                 + scoreCattleCards()
                 + scoreObjectiveCards(game)
                 + scoreStationMasters()
+                + scoreWorkers()
+                + scoreHazards()
                 + (hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0)
                 + (jobMarketToken ? 2 : 0);
+    }
+
+    private int scoreHazards() {
+        return hazards.stream()
+                .mapToInt(Hazard::getPoints)
+                .sum();
+    }
+
+    private int scoreWorkers() {
+        return workers.values().stream()
+                .mapToInt(count -> count == 6 ? 8 : count == 5 ? 4 : 0)
+                .sum();
     }
 
     private boolean hasUnlocked(Unlockable unlockable) {
@@ -538,4 +556,5 @@ public class PlayerState implements Serializable {
                 .filter(unlockable -> balance >= unlockable.getCost())
                 .anyMatch(unlockable -> discColors.contains(unlockable.getDiscColor()));
     }
+
 }

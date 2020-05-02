@@ -13,6 +13,7 @@ public class GWTEvent {
 
     public enum Type {
         SKIP,
+        BEGIN_TURN,
         END_TURN,
         ACTION,
         PAY_FEE,

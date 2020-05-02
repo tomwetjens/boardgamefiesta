@@ -1,6 +1,7 @@
 package com.wetjens.gwt.server.domain;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import com.wetjens.gwt.server.rest.APIError;
 import com.wetjens.gwt.server.rest.APIException;
@@ -9,9 +10,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.Value;
 
 @Builder
 public class Player {
+
+    @Getter
+    @NonNull
+    private final Id id;
 
     @Getter
     @NonNull
@@ -48,6 +54,7 @@ public class Player {
         Instant created = Instant.now();
 
         return Player.builder()
+                .id(Id.generate())
                 .type(Type.USER)
                 .userId(userId)
                 .status(Status.ACCEPTED)
@@ -60,6 +67,7 @@ public class Player {
         Instant invited = Instant.now();
 
         return Player.builder()
+                .id(Id.generate())
                 .type(Type.USER)
                 .userId(userId)
                 .status(Status.INVITED)
@@ -72,6 +80,7 @@ public class Player {
         Instant created = Instant.now();
 
         return Player.builder()
+                .id(Id.generate())
                 .type(Type.COMPUTER)
                 .status(Status.ACCEPTED)
                 .created(created)
@@ -106,5 +115,14 @@ public class Player {
     public enum Type {
         USER,
         COMPUTER
+    }
+
+    @Value(staticConstructor = "of")
+    public static class Id {
+        String id;
+
+        private static Player.Id generate() {
+            return of(UUID.randomUUID().toString());
+        }
     }
 }

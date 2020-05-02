@@ -11,6 +11,7 @@ import com.wetjens.gwt.server.domain.LogEntry;
 import com.wetjens.gwt.server.domain.User;
 import com.wetjens.gwt.server.domain.Users;
 import com.wetjens.gwt.server.rest.view.GameView;
+import com.wetjens.gwt.server.rest.view.LogEntryView;
 import com.wetjens.gwt.server.rest.view.state.PossibleBuyView;
 import com.wetjens.gwt.server.rest.view.state.PossibleDeliveryView;
 import com.wetjens.gwt.server.rest.view.state.PossibleMoveView;
@@ -68,8 +69,6 @@ public class GameResource {
     public List<GameView> getGames() {
         var currentUserId = currentUserId();
 
-        var userMap = new HashMap<User.Id, Optional<User>>();
-
         return games.findByUserId(currentUserId)
                 .map(game -> new GameView(game, getUserMapById(game), currentUserId))
                 .collect(Collectors.toList());
@@ -92,9 +91,9 @@ public class GameResource {
         log.debug("saved after create");
 
         logEntries.addAll(Stream.concat(Stream.of(
-                new LogEntry(game.getId(), currentUser.getId(), LogEntry.Type.CREATE, Collections.emptyList())),
+                new LogEntry(game, currentUser.getId(), LogEntry.Type.CREATE, Collections.emptyList())),
                 invitedUsers.stream()
-                        .map(invitedUser -> new LogEntry(game.getId(), currentUser.getId(), LogEntry.Type.INVITE, List.of(invitedUser.getUsername()))))
+                        .map(invitedUser -> new LogEntry(game, currentUser.getId(), LogEntry.Type.INVITE, List.of(invitedUser.getUsername()))))
                 .collect(Collectors.toList()));
 
         var userMap = Stream.concat(Stream.of(currentUser), invitedUsers.stream())
@@ -125,7 +124,7 @@ public class GameResource {
         games.update(game);
         log.debug("saved after start");
 
-        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.START, Collections.emptyList()));
+        logEntries.add(new LogEntry(game, currentUserId(), LogEntry.Type.START, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -141,7 +140,7 @@ public class GameResource {
         games.update(game);
         log.debug("saved after accept");
 
-        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.ACCEPT, Collections.emptyList()));
+        logEntries.add(new LogEntry(game, currentUserId(), LogEntry.Type.ACCEPT, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -157,7 +156,7 @@ public class GameResource {
         games.update(game);
         log.debug("saved after reject");
 
-        logEntries.add(new LogEntry(game.getId(), currentUserId(), LogEntry.Type.REJECT, Collections.emptyList()));
+        logEntries.add(new LogEntry(game, currentUserId(), LogEntry.Type.REJECT, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -309,11 +308,12 @@ public class GameResource {
 
         checkViewAllowed(game);
 
-        Map<User.Id, User> userMap = getUserMapById(game);
+        var playerMap = game.getPlayersAsMap();
+        var userMap = getUserMapById(game);
 
         return logEntries.findSince(Game.Id.of(id), Instant.parse(since))
                 .limit(100)
-                .map(logEntry -> new LogEntryView(logEntry, userMap))
+                .map(logEntry -> new LogEntryView(logEntry, playerMap, userMap))
                 .collect(Collectors.toList());
     }
 

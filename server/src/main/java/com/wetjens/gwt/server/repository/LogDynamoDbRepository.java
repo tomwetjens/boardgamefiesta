@@ -3,7 +3,7 @@ package com.wetjens.gwt.server.repository;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.LogEntries;
 import com.wetjens.gwt.server.domain.LogEntry;
-import com.wetjens.gwt.server.domain.User;
+import com.wetjens.gwt.server.domain.Player;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
@@ -47,11 +48,12 @@ public class LogDynamoDbRepository implements LogEntries {
         expressionAttributeValues.put(":GameId", AttributeValue.builder().s(gameId.getId()).build());
         expressionAttributeValues.put(":Since", AttributeValue.builder().n(Long.toString(since.toEpochMilli())).build());
 
-        return dynamoDbClient.scanPaginator(ScanRequest.builder()
+        return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(tableName)
-                .filterExpression("GameId = :GameId AND #Timestamp > :Since")
+                .keyConditionExpression("GameId = :GameId AND #Timestamp > :Since")
                 .expressionAttributeNames(Collections.singletonMap("#Timestamp", "Timestamp"))
                 .expressionAttributeValues(expressionAttributeValues)
+                .scanIndexForward(false)
                 .build())
                 .items().stream()
                 .map(this::mapToLogEntry);
@@ -97,7 +99,7 @@ public class LogDynamoDbRepository implements LogEntries {
 
         item.put("GameId", AttributeValue.builder().s(entry.getGameId().getId()).build());
         item.put("Timestamp", AttributeValue.builder().n(Long.toString(timestamp)).build());
-        item.put("UserId", entry.getUserId() != null ? AttributeValue.builder().s(entry.getUserId().getId()).build() : null);
+        item.put("PlayerId", AttributeValue.builder().s(entry.getPlayerId().getId()).build());
         item.put("Expires", AttributeValue.builder().n(Long.toString(entry.getExpires().getEpochSecond())).build());
         item.put("Type", AttributeValue.builder().s(entry.getType()).build());
         item.put("Values", AttributeValue.builder().l(entry.getValues().stream()
@@ -115,7 +117,7 @@ public class LogDynamoDbRepository implements LogEntries {
                 .gameId(Game.Id.of(item.get("GameId").s()))
                 .timestamp(Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n())))
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
-                .userId(item.containsKey("UserId") ? User.Id.of(item.get("UserId").s()) : null)
+                .playerId(Player.Id.of(item.get("PlayerId").s()))
                 .type(item.get("Type").s())
                 .values(item.get("Values").l().stream()
                         .map(attributeValue -> attributeValue.n() != null ? Float.parseFloat(attributeValue.n()) : attributeValue.s())

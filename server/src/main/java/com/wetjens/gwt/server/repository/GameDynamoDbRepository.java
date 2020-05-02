@@ -244,6 +244,7 @@ public class GameDynamoDbRepository implements Games {
     private Player mapToPlayer(AttributeValue attributeValue) {
         Map<String, AttributeValue> map = attributeValue.m();
         return Player.builder()
+                .id(Player.Id.of(map.get("Id").s()))
                 .type(map.containsKey("Type") ? Player.Type.valueOf(map.get("Type").s()) : Player.Type.USER)
                 .userId(map.containsKey("UserId") ? User.Id.of(map.get("UserId").s()) : null)
                 .status(Player.Status.valueOf(map.get("Status").s()))
@@ -279,8 +280,9 @@ public class GameDynamoDbRepository implements Games {
 
     private AttributeValue mapFromPlayer(Player player) {
         var map = new HashMap<String, AttributeValue>();
+        map.put("Id", AttributeValue.builder().s(player.getId().getId()).build());
         map.put("Type", AttributeValue.builder().s(player.getType().name()).build());
-        map.put("UserId", player.getUserId() != null ? AttributeValue.builder().s(player.getUserId().getId()).build(): null);
+        map.put("UserId", player.getUserId() != null ? AttributeValue.builder().s(player.getUserId().getId()).build() : null);
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
         map.put("Color", player.getColor() != null ? AttributeValue.builder().s(player.getColor().name()).build() : null);
         map.put("Score", player.getScore() != null ? AttributeValue.builder().n(player.getScore().toString()).build() : null);

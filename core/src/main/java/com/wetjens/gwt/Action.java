@@ -389,7 +389,7 @@ public abstract class Action {
 
         @Override
         List<Object> toEventParams(Game game) {
-            return List.of(building.getName());
+            return List.of(building.getName(), location.getName());
         }
 
         private int craftsmenNeeded() {
@@ -761,6 +761,7 @@ public abstract class Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().payDollars(cost);
+            game.currentPlayerState().addHazard(hazard);
             game.getTrail().removeHazard(hazard);
             return ImmediateActions.none();
         }

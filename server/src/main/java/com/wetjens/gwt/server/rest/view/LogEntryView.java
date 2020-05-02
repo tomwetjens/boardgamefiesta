@@ -1,8 +1,8 @@
-package com.wetjens.gwt.server.rest;
+package com.wetjens.gwt.server.rest.view;
 
 import com.wetjens.gwt.server.domain.LogEntry;
+import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.User;
-import com.wetjens.gwt.server.rest.view.UserView;
 import lombok.Value;
 
 import java.time.Instant;
@@ -13,13 +13,14 @@ import java.util.Map;
 public class LogEntryView {
 
     Instant timestamp;
-    UserView user;
+    PlayerView player;
     String type;
     List<Object> values;
 
-    public LogEntryView(LogEntry logEntry, Map<User.Id, User> userMap) {
+    public LogEntryView(LogEntry logEntry, Map<Player.Id, Player> playerMap, Map<User.Id, User> userMap) {
         this.timestamp = logEntry.getTimestamp();
-        this.user = logEntry.getUserId() != null ? new UserView(logEntry.getUserId(), userMap.get(logEntry.getUserId())) : null;
+        var player = playerMap.get(logEntry.getPlayerId());
+        this.player = new PlayerView(player, player.getUserId() != null ? userMap.get(player.getUserId()) : null);
         this.type = logEntry.getType();
         this.values = logEntry.getValues();
     }

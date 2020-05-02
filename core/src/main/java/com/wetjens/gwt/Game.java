@@ -127,6 +127,8 @@ public class Game implements Serializable {
         this.objectiveCards = new ObjectiveCards(random);
 
         this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
+
+        fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
     }
 
     private void placeInitialTiles() {
@@ -238,6 +240,8 @@ public class Game implements Serializable {
             currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
 
             actionStack.push(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
+
+            fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
         }
     }
 
