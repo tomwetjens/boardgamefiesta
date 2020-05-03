@@ -1,13 +1,5 @@
 package com.wetjens.gwt;
 
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +7,14 @@ import lombok.Getter;
 import lombok.Singular;
 import lombok.ToString;
 import lombok.Value;
+
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // Not a @Value because each instance is unique
 @Getter
@@ -70,18 +70,21 @@ public class ObjectiveCard extends Card {
     }
 
     private static Counts counts(Game game, Player player) {
-        List<Teepee> teepees = game.playerState(player).getTeepees();
-        int greenTeepees = (int) teepees.stream().filter(teepee -> teepee == Teepee.GREEN).count();
+        var playerState = game.playerState(player);
+
+        var teepees = playerState.getTeepees();
+        var greenTeepees = (int) teepees.stream().filter(teepee -> teepee == Teepee.GREEN).count();
 
         return Counts.builder()
+                .count(Task.BUILDING, game.getTrail().numberOfBuildings(player))
                 .count(Task.GREEN_TEEPEE, greenTeepees)
                 .count(Task.BLUE_TEEPEE, teepees.size() - greenTeepees)
-                .count(Task.SAN_FRANCISCO, game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO))
+                .count(Task.HAZARD, playerState.getHazards().size())
                 .count(Task.STATION, game.getRailroadTrack().numberOfUpgradedStations(player))
-                .count(Task.BUILDING, game.getTrail().numberOfBuildings(player))
-                .count(Task.BREEDING_VALUE_3, game.playerState(player).numberOfCattleCards(3))
-                .count(Task.BREEDING_VALUE_4, game.playerState(player).numberOfCattleCards(4))
-                .count(Task.BREEDING_VALUE_5, game.playerState(player).numberOfCattleCards(5))
+                .count(Task.BREEDING_VALUE_3, playerState.numberOfCattleCards(3))
+                .count(Task.BREEDING_VALUE_4, playerState.numberOfCattleCards(4))
+                .count(Task.BREEDING_VALUE_5, playerState.numberOfCattleCards(5))
+                .count(Task.SAN_FRANCISCO, game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO))
                 .build();
     }
 
@@ -97,7 +100,7 @@ public class ObjectiveCard extends Card {
 
         Counts subtract(Task task) {
             Map<Task, Integer> result = new EnumMap<>(counts);
-            result.compute(task, (k, v) -> v - 1);
+            result.compute(task, (k, v) -> (v != null ? v : 0) - 1);
             return new Counts(result);
         }
 
