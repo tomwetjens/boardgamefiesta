@@ -13,7 +13,7 @@ import lombok.Value;
 @EqualsAndHashCode(callSuper = true)
 public class ObjectiveCardView extends CardView {
 
-    private static final Comparator<ObjectiveCardView> COMPARATOR = Comparator.comparing(ObjectiveCardView::getAction)
+    private static final Comparator<ObjectiveCardView> COMPARATOR = Comparator.nullsFirst(Comparator.comparing(ObjectiveCardView::getAction))
             .thenComparingInt(ObjectiveCardView::getPoints)
             .thenComparing(ObjectiveCardView::getTasks, new IterableComparator<>(Comparator.nullsLast(Comparator.naturalOrder())));
 
