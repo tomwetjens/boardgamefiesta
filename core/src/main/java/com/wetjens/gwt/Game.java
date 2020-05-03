@@ -242,6 +242,8 @@ public class Game implements Serializable {
             actionStack.push(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
 
             fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
+        } else {
+            fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());
         }
     }
 
