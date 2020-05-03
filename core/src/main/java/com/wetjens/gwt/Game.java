@@ -61,6 +61,8 @@ public class Game implements Serializable {
     @Getter
     private Player currentPlayer;
 
+    private boolean lastRound;
+
     ImmediateActions deliverToCity(City city) {
         return railroadTrack.deliverToCity(currentPlayer, city, this)
                 .andThen(placeDisc(city.getDiscColors()));
@@ -210,7 +212,8 @@ public class Game implements Serializable {
     }
 
     public boolean isEnded() {
-        return jobMarket.isClosed() && currentPlayerState().hasJobMarketToken() && actionStack.isEmpty();
+        // last round has been played and we're back at player that has the token
+        return lastRound && currentPlayerState().hasJobMarketToken();
     }
 
     public void skip(@NonNull Random random) {
@@ -234,11 +237,18 @@ public class Game implements Serializable {
 
         fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
+        currentPlayerState().drawUpToHandLimit(random);
+
+        if (currentPlayerState().hasJobMarketToken()) {
+            // current player is ending the game, every other player can have one more turn
+            fireEvent(currentPlayer, GWTEvent.Type.EVERY_OTHER_PLAYER_HAS_1_TURN, Collections.emptyList());
+            lastRound = true;
+        }
+
+        // next player
+        currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
+
         if (!isEnded()) {
-            currentPlayerState().drawUpToHandLimit(random);
-
-            currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
-
             actionStack.push(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
 
             fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
@@ -282,6 +292,19 @@ public class Game implements Serializable {
         Location from = trail.getCurrentLocation(player)
                 .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION, player));
         return trail.possibleMoves(from, to, playerState(player).getStepLimit(players.size()), players.size());
+    }
+
+    public Set<Location> reachableLocations(Player player) {
+        if (isEnded()) {
+            return Collections.emptySet();
+        }
+        Location from = trail.getCurrentLocation(player)
+                .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION, player));
+        return from.reachableLocations(1, playerState(player).getStepLimit(players.size()));
+    }
+
+    public Set<RailroadTrack.Space> reachableSpaces(Player player) {
+        return null;
     }
 
     public int score(Player player) {

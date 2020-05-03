@@ -522,7 +522,6 @@ public abstract class Action {
                     if (jobMarket.isClosed()) {
                         game.currentPlayerState().gainJobMarketToken();
                         game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.GAINS_JOB_MARKET_TOKEN, Collections.emptyList());
-                        game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.EVERY_OTHER_PLAYER_HAS_1_TURN, Collections.emptyList());
                     }
                 }
             } else if (tile.getHazard() != null) {
