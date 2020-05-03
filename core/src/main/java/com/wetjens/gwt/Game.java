@@ -210,7 +210,7 @@ public class Game implements Serializable {
     }
 
     public boolean isEnded() {
-        return jobMarket.isClosed() && currentPlayerState().hasJobMarketToken();
+        return jobMarket.isClosed() && currentPlayerState().hasJobMarketToken() && actionStack.isEmpty();
     }
 
     public void skip(@NonNull Random random) {
