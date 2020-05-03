@@ -6,14 +6,16 @@ import java.util.List;
 import com.wetjens.gwt.ObjectiveCard;
 import com.wetjens.gwt.server.domain.ActionType;
 import com.wetjens.gwt.server.rest.view.IterableComparator;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
 public class ObjectiveCardView extends CardView {
 
-    private static final Comparator<ObjectiveCardView> COMPARATOR = Comparator.nullsFirst(Comparator.comparing(ObjectiveCardView::getAction))
+    private static final Comparator<ObjectiveCardView> COMPARATOR = Comparator.comparing(ObjectiveCardView::getAction, Comparator.nullsFirst(Comparator.naturalOrder()))
             .thenComparingInt(ObjectiveCardView::getPoints)
             .thenComparing(ObjectiveCardView::getTasks, new IterableComparator<>(Comparator.nullsLast(Comparator.naturalOrder())));
 
