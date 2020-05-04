@@ -454,6 +454,10 @@ public class PlayerState implements Serializable {
     }
 
     int numberOfTeepeePairs() {
+        if (teepees.size() < 2) {
+            return 0;
+        }
+
         int blueTeepees = (int) teepees.stream()
                 .filter(teepee -> teepee == Teepee.BLUE)
                 .count();
