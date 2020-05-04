@@ -57,7 +57,7 @@ class PlayerStateTest {
         @Test
         void discardAllCards() {
             HashSet<Card> hand = new HashSet<>(playerState.getHand());
-            playerState.discardAllCards();
+            playerState.discardHand();
 
             assertThat(playerState.getHand()).isEmpty();
             assertThat(playerState.getDiscardPile()).containsAnyElementsOf(hand);

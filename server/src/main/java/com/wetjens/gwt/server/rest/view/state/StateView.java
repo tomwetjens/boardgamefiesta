@@ -41,7 +41,7 @@ public class StateView {
         player = state.getPlayers().stream()
                 .filter(p -> p == viewingPlayer)
                 .map(state::playerState)
-                .map(playerState -> new PlayerStateView(playerState, viewingPlayer, userMap.get(playerState.getPlayer())))
+                .map(playerState -> new PlayerStateView(state, playerState, viewingPlayer, userMap.get(playerState.getPlayer())))
                 .findAny()
                 .orElse(null);
 
@@ -51,7 +51,7 @@ public class StateView {
         otherPlayers = IntStream.range(1, playerCount)
                 .map(i -> (viewingPlayerIndex + i) % playerCount)
                 .mapToObj(i -> state.getPlayers().get(i))
-                .map(p -> new PlayerStateView(state.playerState(p), viewingPlayer, userMap.get(p)))
+                .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer, userMap.get(p)))
                 .collect(Collectors.toList());
 
         playerOrder = state.getPlayers();

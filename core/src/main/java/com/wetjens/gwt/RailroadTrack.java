@@ -215,6 +215,18 @@ public class RailroadTrack implements Serializable {
         int steps;
     }
 
+    public Set<Space> reachableSpacesForward(@NonNull Space from, int atLeast, int atMost) {
+        return reachableSpaces(from, from, atLeast, atMost,0, Space::getNext).stream()
+                .map(ReachableSpace::getSpace)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<Space> reachableSpacesBackwards(@NonNull Space from, int atLeast, int atMost) {
+        return reachableSpaces(from, from, atLeast, atMost,0, Space::getPrevious).stream()
+                .map(ReachableSpace::getSpace)
+                .collect(Collectors.toSet());
+    }
+
     private Set<ReachableSpace> reachableSpaces(@NonNull Space from, @NonNull Space current, int atLeast, int atMost, int steps, Function<Space, Set<Space>> direction) {
         Set<ReachableSpace> reachable = new HashSet<>();
 

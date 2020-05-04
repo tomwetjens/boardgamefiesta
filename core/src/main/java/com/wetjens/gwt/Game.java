@@ -294,7 +294,7 @@ public class Game implements Serializable {
         return trail.possibleMoves(from, to, playerState(player).getStepLimit(players.size()), players.size());
     }
 
-    public Set<Location> reachableLocations(Player player) {
+    public Set<Location> reachableLocations(Player player, int atMost) {
         if (isEnded()) {
             return Collections.emptySet();
         }
@@ -303,8 +303,12 @@ public class Game implements Serializable {
         return from.reachableLocations(1, playerState(player).getStepLimit(players.size()));
     }
 
-    public Set<RailroadTrack.Space> reachableSpaces(Player player) {
-        return null;
+    public Set<RailroadTrack.Space> reachableSpacesForward(Player player, int atLeast, int atMost) {
+        return railroadTrack.reachableSpacesForward(railroadTrack.currentSpace(player), atLeast, atMost);
+    }
+
+    public Set<RailroadTrack.Space> reachableSpacesBackwards(Player player, int atLeast, int atMost) {
+        return railroadTrack.reachableSpacesBackwards(railroadTrack.currentSpace(player), atLeast, atMost);
     }
 
     public int score(Player player) {

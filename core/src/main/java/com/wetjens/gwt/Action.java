@@ -549,7 +549,7 @@ public abstract class Action {
             }
 
             game.currentPlayerState().gainDollars(payout);
-            game.currentPlayerState().discardAllCards();
+            game.currentPlayerState().discardHand();
 
             ImmediateActions immediateActions = game.deliverToCity(city);
 

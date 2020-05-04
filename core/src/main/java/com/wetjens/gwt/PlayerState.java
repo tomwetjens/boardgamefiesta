@@ -123,7 +123,7 @@ public class PlayerState implements Serializable {
         return Collections.unmodifiableSet(cattleCards);
     }
 
-    void discardAllCards() {
+    void discardHand() {
         discardPile.addAll(0, hand);
         hand.clear();
     }
@@ -270,7 +270,7 @@ public class PlayerState implements Serializable {
         }
     }
 
-    int permanentCertificates() {
+    public int permanentCertificates() {
         return (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS) ? 1 : 0)
                 + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_HAZARDS) ? 1 : 0)
                 + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_TEEPEE_PAIRS) ? 1 : 0);

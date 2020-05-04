@@ -7,9 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.wetjens.gwt.Building;
-import com.wetjens.gwt.Card;
-import com.wetjens.gwt.CattleType;
-import com.wetjens.gwt.ObjectiveCard;
+import com.wetjens.gwt.Game;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.PlayerBuilding;
 import com.wetjens.gwt.PlayerState;
@@ -29,9 +27,11 @@ public class PlayerStateView {
     int cowboys;
     int craftsmen;
     int engineers;
+    int tempCertificates;
     int certificates;
 
     List<CardView> hand;
+    Integer handValue;
     List<CardView> discardPile;
     Integer drawStackSize;
 
@@ -42,30 +42,31 @@ public class PlayerStateView {
     List<Teepee> teepees;
     List<ObjectiveCardView> objectives;
 
-    PlayerStateView(@NonNull PlayerState playerState, @NonNull Player viewingPlayer, User user) {
+    PlayerStateView(@NonNull Game game, @NonNull PlayerState playerState, @NonNull Player viewingPlayer, User user) {
         player = new PlayerView(playerState.getPlayer(), user);
 
         balance = playerState.getBalance();
         cowboys = playerState.getNumberOfCowboys();
         craftsmen = playerState.getNumberOfCraftsmen();
         engineers = playerState.getNumberOfEngineers();
-        certificates = playerState.getTempCertificates();
+        tempCertificates = playerState.getTempCertificates();
+        certificates = playerState.getTempCertificates() + playerState.permanentCertificates();
+
+        discardPile = playerState.getDiscardPile().stream()
+                .map(CardView::of)
+                .collect(Collectors.toList());
+
+        drawStackSize = playerState.getDrawStackSize();
 
         if (viewingPlayer == playerState.getPlayer()) {
             hand = playerState.getHand().stream()
                     .map(CardView::of)
                     .sorted()
                     .collect(Collectors.toList());
-
-            discardPile = playerState.getDiscardPile().stream()
-                    .map(CardView::of)
-                    .collect(Collectors.toList());
-
-            drawStackSize = playerState.getDrawStackSize();
+            handValue = playerState.handValue();
         } else {
             hand = null;
-            discardPile = null;
-            drawStackSize = null;
+            handValue = null;
         }
 
         unlocked = playerState.getUnlocked();
