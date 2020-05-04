@@ -463,7 +463,7 @@ public class PlayerState implements Serializable {
                 .count();
         int greenTeepees = teepees.size() - blueTeepees;
 
-        return Math.max(blueTeepees, greenTeepees) / Math.min(blueTeepees, greenTeepees);
+        return blueTeepees > 0 && greenTeepees > 0 ? Math.max(blueTeepees, greenTeepees) / Math.min(blueTeepees, greenTeepees) : 0;
     }
 
     int numberOfObjectiveCards() {
