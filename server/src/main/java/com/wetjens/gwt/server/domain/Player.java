@@ -44,7 +44,7 @@ public class Player {
 
     @Getter
     @Setter(value = AccessLevel.PACKAGE)
-    private Integer score;
+    private Score score;
 
     @Getter
     @Setter(value = AccessLevel.PACKAGE)

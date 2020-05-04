@@ -3,6 +3,7 @@ package com.wetjens.gwt.server.repository;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.Player;
+import com.wetjens.gwt.server.domain.Score;
 import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;
 import software.amazon.awssdk.core.SdkBytes;
@@ -248,12 +249,18 @@ public class GameDynamoDbRepository implements Games {
                 .type(map.containsKey("Type") ? Player.Type.valueOf(map.get("Type").s()) : Player.Type.USER)
                 .userId(map.containsKey("UserId") ? User.Id.of(map.get("UserId").s()) : null)
                 .status(Player.Status.valueOf(map.get("Status").s()))
-                .color(map.get("Color") != null ? com.wetjens.gwt.Player.valueOf(map.get("Color").s()) : null)
-                .score(map.get("Score") != null ? Integer.valueOf(map.get("Score").n()) : null)
-                .winner(map.get("Winner") != null ? map.get("Winner").bool() : null)
+                .color(map.containsKey("Color") ? com.wetjens.gwt.Player.valueOf(map.get("Color").s()) : null)
+                .score(map.containsKey("Score") ? mapToScore(map.get("Score")) : null)
+                .winner(map.containsKey("Winner") ? map.get("Winner").bool() : null)
                 .created(Instant.ofEpochSecond(Long.parseLong(map.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(map.get("Updated").n())))
                 .build();
+    }
+
+    private Score mapToScore(AttributeValue attributeValue) {
+        Map<String, AttributeValue> map = attributeValue.m();
+        return new Score(map.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> Integer.valueOf(entry.getValue().n()))));
     }
 
     private AttributeValue mapFromState(com.wetjens.gwt.Game state) {
@@ -285,11 +292,18 @@ public class GameDynamoDbRepository implements Games {
         map.put("UserId", player.getUserId() != null ? AttributeValue.builder().s(player.getUserId().getId()).build() : null);
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
         map.put("Color", player.getColor() != null ? AttributeValue.builder().s(player.getColor().name()).build() : null);
-        map.put("Score", player.getScore() != null ? AttributeValue.builder().n(player.getScore().toString()).build() : null);
+        map.put("Score", player.getScore() != null ? mapFromScore(player.getScore()) : null);
         map.put("Winner", player.getWinner() != null ? AttributeValue.builder().bool(player.getWinner()).build() : null);
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(player.getUpdated().getEpochSecond())).build());
         return AttributeValue.builder().m(map).build();
+    }
+
+    private AttributeValue mapFromScore(Score score) {
+        return AttributeValue.builder().m(score.getCategories().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> AttributeValue.builder()
+                        .n(entry.getValue().toString())
+                        .build()))).build();
     }
 
     private Map<String, AttributeValue> key(Game.Id id) {

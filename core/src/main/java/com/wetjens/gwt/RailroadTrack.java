@@ -343,8 +343,9 @@ public class RailroadTrack implements Serializable {
                 .filter(Space::hasSignal);
     }
 
-    int score(Player player) {
-        return scoreDeliveries(player) + scoreStations(player);
+    Score score(Player player) {
+        return new Score(Map.of(Score.Category.CITIES, scoreDeliveries(player),
+                Score.Category.STATIONS, scoreStations(player)));
     }
 
     private int scoreStations(Player player) {

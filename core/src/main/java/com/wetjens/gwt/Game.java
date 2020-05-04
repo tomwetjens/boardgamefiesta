@@ -61,35 +61,8 @@ public class Game implements Serializable {
     @Getter
     private Player currentPlayer;
 
-    private boolean lastRound;
-
-    ImmediateActions deliverToCity(City city) {
-        return railroadTrack.deliverToCity(currentPlayer, city, this)
-                .andThen(placeDisc(city.getDiscColors()));
-    }
-
-    ImmediateActions placeDisc(Collection<DiscColor> discColors) {
-        if (currentPlayerState().canUnlock(discColors)) {
-            return ImmediateActions.of(PossibleAction.mandatory(discColors.contains(DiscColor.BLACK) ? Action.UnlockBlackOrWhite.class : Action.UnlockWhite.class));
-        } else {
-            // If player MUST remove WHITE disc, but player only has BLACK discs left,
-            // then by exception the player may remove a BLACK disc
-            if (currentPlayerState().canUnlock(Collections.singleton(DiscColor.BLACK))) {
-                fireEvent(currentPlayer, GWTEvent.Type.MAY_REMOVE_BLACK_DISC_INSTEAD_OF_WHITE, Collections.emptyList());
-                return ImmediateActions.of(PossibleAction.mandatory(Action.UnlockBlackOrWhite.class));
-            } else {
-                // If player MUST remove a disc, but has no more discs to remove from player board,
-                // then player MUST remove the disc from one of his stations
-                if (railroadTrack.getStations().stream().anyMatch(station -> station.getPlayers().contains(currentPlayer))) {
-                    fireEvent(currentPlayer, GWTEvent.Type.MUST_REMOVE_DISC_FROM_STATION, Collections.emptyList());
-                    return ImmediateActions.of(PossibleAction.mandatory(Action.DowngradeStation.class));
-                } else {
-                    // EXCEPTIONAL CASE: If player only has discs on cities, then he cannot remove a disc anymore
-                    return ImmediateActions.none();
-                }
-            }
-        }
-    }
+    @Getter
+    private boolean ended;
 
     public Game(@NonNull Set<Player> players, boolean beginner, Random random) {
         if (players.size() < 2) {
@@ -211,11 +184,6 @@ public class Game implements Serializable {
         }
     }
 
-    public boolean isEnded() {
-        // last round has been played and we're back at player that has the token
-        return lastRound && currentPlayerState().hasJobMarketToken();
-    }
-
     public void skip(@NonNull Random random) {
         if (isEnded()) {
             throw new GWTException(GWTError.GAME_ENDED);
@@ -242,17 +210,17 @@ public class Game implements Serializable {
         if (currentPlayerState().hasJobMarketToken()) {
             // current player is ending the game, every other player can have one more turn
             fireEvent(currentPlayer, GWTEvent.Type.EVERY_OTHER_PLAYER_HAS_1_TURN, Collections.emptyList());
-            lastRound = true;
         }
 
         // next player
         currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
 
-        if (!isEnded()) {
+        if (!currentPlayerState().hasJobMarketToken()) {
             actionStack.push(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
 
             fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
         } else {
+            ended = true;
             fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());
         }
     }
@@ -311,8 +279,8 @@ public class Game implements Serializable {
         return railroadTrack.reachableSpacesBackwards(railroadTrack.currentSpace(player), atLeast, atMost);
     }
 
-    public int score(Player player) {
-        return playerState(player).score(this) + trail.score(player) + railroadTrack.score(player);
+    public Score score(Player player) {
+        return playerState(player).score(this).add(trail.score(player)).add(railroadTrack.score(player));
     }
 
     public void serialize(OutputStream outputStream) {
@@ -334,14 +302,43 @@ public class Game implements Serializable {
     }
 
     public Set<Player> winners() {
-        Map<Player, Integer> scores = players.stream()
+        Map<Player, Score> scores = players.stream()
                 .collect(Collectors.toMap(Function.identity(), this::score));
 
-        int maxScore = scores.values().stream().max(Integer::compare).orElse(0);
+        int maxScore = scores.values().stream().map(Score::getTotal).max(Integer::compare).orElse(0);
 
         return scores.entrySet().stream()
-                .filter(entry -> entry.getValue() == maxScore)
+                .filter(entry -> entry.getValue().getTotal() == maxScore)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
+
+    ImmediateActions deliverToCity(City city) {
+        return railroadTrack.deliverToCity(currentPlayer, city, this)
+                .andThen(placeDisc(city.getDiscColors()));
+    }
+
+    ImmediateActions placeDisc(Collection<DiscColor> discColors) {
+        if (currentPlayerState().canUnlock(discColors)) {
+            return ImmediateActions.of(PossibleAction.mandatory(discColors.contains(DiscColor.BLACK) ? Action.UnlockBlackOrWhite.class : Action.UnlockWhite.class));
+        } else {
+            // If player MUST remove WHITE disc, but player only has BLACK discs left,
+            // then by exception the player may remove a BLACK disc
+            if (currentPlayerState().canUnlock(Collections.singleton(DiscColor.BLACK))) {
+                fireEvent(currentPlayer, GWTEvent.Type.MAY_REMOVE_BLACK_DISC_INSTEAD_OF_WHITE, Collections.emptyList());
+                return ImmediateActions.of(PossibleAction.mandatory(Action.UnlockBlackOrWhite.class));
+            } else {
+                // If player MUST remove a disc, but has no more discs to remove from player board,
+                // then player MUST remove the disc from one of his stations
+                if (railroadTrack.getStations().stream().anyMatch(station -> station.getPlayers().contains(currentPlayer))) {
+                    fireEvent(currentPlayer, GWTEvent.Type.MUST_REMOVE_DISC_FROM_STATION, Collections.emptyList());
+                    return ImmediateActions.of(PossibleAction.mandatory(Action.DowngradeStation.class));
+                } else {
+                    // EXCEPTIONAL CASE: If player only has discs on cities, then he cannot remove a disc anymore
+                    return ImmediateActions.none();
+                }
+            }
+        }
+    }
+
 }

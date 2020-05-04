@@ -12,7 +12,7 @@ public class PlayerView {
     UserView user;
     Player.Status status;
     com.wetjens.gwt.Player color;
-    Integer score;
+    ScoreView score;
     Boolean winner;
 
     PlayerView(@NonNull Player player, User user) {
@@ -20,7 +20,7 @@ public class PlayerView {
         status = player.getStatus();
         this.user = player.getType() == Player.Type.USER ? new UserView(player.getUserId(), user) : null;
         color = player.getColor();
-        score = player.getScore();
+        score = player.getScore() != null ? new ScoreView(player.getScore()) : null;
         winner = player.getWinner();
     }
 

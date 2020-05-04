@@ -249,10 +249,10 @@ public class Trail implements Serializable {
                 .collect(Collectors.toSet());
     }
 
-    int score(Player player) {
-        return getBuildings(player).stream()
+    Score score(Player player) {
+        return new Score(Map.of(Score.Category.BUILDINGS, getBuildings(player).stream()
                 .mapToInt(PlayerBuilding::getPoints)
-                .sum();
+                .sum()));
     }
 
     public Map<Player, Location> getPlayerLocations() {

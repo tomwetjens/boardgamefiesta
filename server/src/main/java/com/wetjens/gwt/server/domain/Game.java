@@ -230,7 +230,8 @@ public class Game {
 
             Set<com.wetjens.gwt.Player> winners = state.winners();
             players.forEach(player -> {
-                player.setScore(state.score(player.getColor()));
+                player.setScore(new Score(state.score(player.getColor()).getCategories().entrySet().stream()
+                        .collect(Collectors.toMap(entry -> entry.getKey().toString(), Map.Entry::getValue))));
                 player.setWinner(winners.contains(player.getColor()));
             });
 

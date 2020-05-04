@@ -1,5 +1,12 @@
 package com.wetjens.gwt;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Singular;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,13 +22,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Singular;
 
 @Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -469,15 +469,15 @@ public class PlayerState implements Serializable {
                 .count();
     }
 
-    int score(Game game) {
-        return balance / 5
-                + scoreCattleCards()
-                + scoreObjectiveCards(game)
-                + scoreStationMasters()
-                + scoreWorkers()
-                + scoreHazards()
-                + (hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0)
-                + (jobMarketToken ? 2 : 0);
+    Score score(Game game) {
+        return new Score(Map.of(
+                Score.Category.CATTLE_CARDS, scoreCattleCards(),
+                Score.Category.OBJECTIVE_CARDS, scoreObjectiveCards(game),
+                Score.Category.STATION_MASTERS, scoreStationMasters(),
+                Score.Category.WORKERS, scoreWorkers(),
+                Score.Category.HAZARDS, scoreHazards(),
+                Score.Category.EXTRA_STEP_POINTS, hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0,
+                Score.Category.JOB_MARKET_TOKEN, jobMarketToken ? 2 : 0));
     }
 
     private int scoreHazards() {
