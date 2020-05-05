@@ -1,8 +1,8 @@
 package com.wetjens.gwt;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 public class Automa {
@@ -32,31 +32,29 @@ public class Automa {
         } else if (possibleActions.contains(Action.ChooseForesights.class)) {
             // TODO Just pick any tile now
             game.perform(new Action.ChooseForesights(List.of(0, 0, 0)), random);
-        }else if(possibleActions.contains(Action.DeliverToCity.class)) {
+        } else if (possibleActions.contains(Action.DeliverToCity.class)) {
             // TODO Always KC for now (stupid)
             game.perform(new Action.DeliverToCity(City.KANSAS_CITY, 0), random);
         } else if (possibleActions.contains(Action.UnlockWhite.class)) {
             // TODO Just pick any now
-            var unlockable = game.currentPlayerState().getUnlocked().entrySet().stream()
-                    .filter(entry -> entry.getKey().getDiscColor() == DiscColor.WHITE)
-                    .filter(entry -> entry.getValue() < entry.getKey().getCount())
-                    .map(Map.Entry::getKey)
+            var unlock = Arrays.stream(Unlockable.values())
+                    .filter(unlockable -> unlockable.getDiscColor() == DiscColor.WHITE)
+                    .filter(unlockable -> game.currentPlayerState().canUnlock(unlockable))
                     .findAny()
                     .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
-            game.perform(new Action.UnlockWhite(unlockable), random);
+            game.perform(new Action.UnlockWhite(unlock), random);
         } else if (possibleActions.contains(Action.UnlockBlackOrWhite.class)) {
             // TODO Just pick any now
-            var unlockable = game.currentPlayerState().getUnlocked().entrySet().stream()
-                    .filter(entry -> entry.getValue() < entry.getKey().getCount())
-                    .map(Map.Entry::getKey)
+            var unlock = Arrays.stream(Unlockable.values())
+                    .filter(unlockable -> game.currentPlayerState().canUnlock(unlockable))
                     .findAny()
                     .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
-            game.perform(new Action.UnlockWhite(unlockable), random);
+            game.perform(new Action.UnlockWhite(unlock), random);
         } else if (possibleActions.contains(Action.TakeObjectiveCard.class)) {
             // TODO Just pick any now
             var objectiveCard = game.getObjectiveCards().getAvailable().iterator().next();
             game.perform(new Action.TakeObjectiveCard(objectiveCard), random);
-        }  else {
+        } else {
             // TODO For now just stupidly end turn
             game.endTurn(random);
         }

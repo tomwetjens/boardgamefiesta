@@ -2,6 +2,7 @@ package com.wetjens.gwt.server.rest.view.state;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.wetjens.gwt.CattleMarket;
 import lombok.Value;

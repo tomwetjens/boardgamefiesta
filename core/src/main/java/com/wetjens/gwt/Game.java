@@ -325,12 +325,12 @@ public class Game implements Serializable {
     }
 
     ImmediateActions placeDisc(Collection<DiscColor> discColors) {
-        if (currentPlayerState().canUnlock(discColors)) {
+        if (currentPlayerState().canRemoveDisc(discColors)) {
             return ImmediateActions.of(PossibleAction.mandatory(discColors.contains(DiscColor.BLACK) ? Action.UnlockBlackOrWhite.class : Action.UnlockWhite.class));
         } else {
             // If player MUST remove WHITE disc, but player only has BLACK discs left,
             // then by exception the player may remove a BLACK disc
-            if (currentPlayerState().canUnlock(Collections.singleton(DiscColor.BLACK))) {
+            if (currentPlayerState().canRemoveDisc(Collections.singleton(DiscColor.BLACK))) {
                 fireEvent(currentPlayer, GWTEvent.Type.MAY_REMOVE_BLACK_DISC_INSTEAD_OF_WHITE, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.mandatory(Action.UnlockBlackOrWhite.class));
             } else {

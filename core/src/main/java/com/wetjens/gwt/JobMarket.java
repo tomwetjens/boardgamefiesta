@@ -68,23 +68,32 @@ public final class JobMarket implements Serializable {
         return currentRowIndex >= rows.size();
     }
 
-    void takeWorker(Worker worker) {
-        cheapestRow(worker).workers.remove(worker);
+    void takeWorker(int rowIndex, Worker worker) {
+        if (rowIndex >= currentRowIndex) {
+            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker, rowIndex);
+        }
+
+        var row = rows.get(rowIndex);
+
+        if (!row.workers.contains(worker)) {
+            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker, rowIndex);
+        }
+
+        rows.get(rowIndex).workers.remove(worker);
     }
 
-    public int cost(Worker worker) {
-        return cheapestRow(worker).getCost();
-    }
+    public int cost(int rowIndex, Worker worker) {
+        if (rowIndex >= currentRowIndex) {
+            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker, rowIndex);
+        }
 
-    private Stream<Row> availableRows() {
-        return rows.stream().limit(currentRowIndex);
-    }
+        var row = rows.get(rowIndex);
 
-    private Row cheapestRow(Worker worker) {
-        return availableRows()
-                .filter(row -> row.workers.contains(worker))
-                .min(Comparator.comparingInt(Row::getCost))
-                .orElseThrow(() -> new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker));
+        if (!row.workers.contains(worker)) {
+            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker, rowIndex);
+        }
+
+        return row.getCost();
     }
 
     public final class Row implements Serializable {

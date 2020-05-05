@@ -247,20 +247,21 @@ public abstract class Action {
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class HireWorker extends Action {
 
+        int rowIndex;
         @NonNull Worker worker;
         int modifier;
 
-        public HireWorker(Worker worker) {
-            this(worker, 0);
+        public HireWorker(int rowIndex, Worker worker) {
+            this(rowIndex, worker, 0);
         }
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            int cost = game.getJobMarket().cost(worker) + modifier;
+            int cost = game.getJobMarket().cost(rowIndex, worker) + modifier;
 
             game.currentPlayerState().payDollars(cost);
 
-            game.getJobMarket().takeWorker(worker);
+            game.getJobMarket().takeWorker(rowIndex, worker);
 
             return game.currentPlayerState().gainWorker(worker, game);
         }
@@ -271,10 +272,10 @@ public abstract class Action {
         }
     }
 
-    public static final class HireSecondWorker extends HireWorker {
+    public static final class HireWorkerPlus2 extends HireWorker {
 
-        public HireSecondWorker(Worker worker) {
-            super(worker, 2);
+        public HireWorkerPlus2(int rowIndex, Worker worker) {
+            super(rowIndex, worker, 2);
         }
     }
 
@@ -305,10 +306,17 @@ public abstract class Action {
         }
     }
 
-    public static final class HireCheapWorker extends HireWorker {
+    public static final class HireWorkerMinus2 extends HireWorker {
 
-        public HireCheapWorker(Worker worker) {
-            super(worker, -1);
+        public HireWorkerMinus2(int rowIndex, Worker worker) {
+            super(rowIndex, worker, -2);
+        }
+    }
+
+    public static final class HireWorkerMinus1 extends HireWorker {
+
+        public HireWorkerMinus1(int rowIndex, Worker worker) {
+            super(rowIndex, worker, -1);
         }
     }
 
@@ -387,7 +395,7 @@ public abstract class Action {
             return existingBuildingToReplace()
                     // If replacing an existing building, only the difference is needed
                     .filter(existingBuilding -> {
-                        if (existingBuilding.getCraftsmen() > building.getCraftsmen()) {
+                        if (existingBuilding.getCraftsmen() >= building.getCraftsmen()) {
                             throw new GWTException(GWTError.REPLACEMENT_BUILDING_MUST_BE_HIGHER);
                         }
                         return true;
@@ -507,6 +515,8 @@ public abstract class Action {
                     boolean fillUpCattleMarket = jobMarket.addWorker(tile.getWorker());
 
                     if (fillUpCattleMarket) {
+                        game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.FILL_UP_CATTLE_MARKET, Collections.emptyList());
+
                         game.getCattleMarket().fillUp();
                     }
 

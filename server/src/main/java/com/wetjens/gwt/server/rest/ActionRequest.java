@@ -114,12 +114,14 @@ public class ActionRequest {
                 return new Action.Gain2Dollars();
             case GAIN_4_DOLLARS:
                 return new Action.Gain4Dollars();
-            case HIRE_CHEAP_WORKER:
-                return new Action.HireCheapWorker(Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)));
-            case HIRE_SECOND_WORKER:
-                return new Action.HireSecondWorker(Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)));
+            case HIRE_WORKER_MINUS_1:
+                return new Action.HireWorkerMinus1(jsonObject.getInt(JsonProperties.ROW), Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)));
+            case HIRE_WORKER_MINUS_2:
+                return new Action.HireWorkerMinus2(jsonObject.getInt(JsonProperties.ROW), Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)));
+            case HIRE_WORKER_PLUS_2:
+                return new Action.HireWorkerPlus2(jsonObject.getInt(JsonProperties.ROW), Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)));
             case HIRE_WORKER:
-                return new Action.HireWorker(Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)));
+                return new Action.HireWorker(jsonObject.getInt(JsonProperties.ROW), Worker.valueOf(jsonObject.getString(JsonProperties.WORKER)));
             case MAX_CERTIFICATES:
                 return new Action.MaxCertificates();
             case MOVE:
@@ -362,5 +364,6 @@ public class ActionRequest {
         private static final String NUMBER = "number";
         private static final String TURNOUT = "turnout";
         private static final String STEPS = "steps";
+        private static final String ROW = "row";
     }
 }

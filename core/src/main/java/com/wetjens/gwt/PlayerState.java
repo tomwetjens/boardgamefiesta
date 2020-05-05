@@ -168,7 +168,7 @@ public class PlayerState implements Serializable {
                 return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain2Dollars.class));
             } else if (count == 4) {
                 game.fireEvent(player, GWTEvent.Type.MAY_HIRE_CHEAP_WORKER, Collections.emptyList());
-                return ImmediateActions.of(PossibleAction.optional(Action.HireCheapWorker.class));
+                return ImmediateActions.of(PossibleAction.optional(Action.HireWorkerMinus2.class));
             } else if (count == 5) {
                 game.fireEvent(player, GWTEvent.Type.MAY_DISCARD_1_JERSEY_TO_GAIN_2_CERTIFICATES, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.Discard1JerseyToGain2Certificates.class));
@@ -500,7 +500,7 @@ public class PlayerState implements Serializable {
         return unlocked.getOrDefault(unlockable, 0) > 0;
     }
 
-    private boolean hasAllUnlocked(Unlockable unlockable) {
+    public boolean hasAllUnlocked(Unlockable unlockable) {
         return unlocked.getOrDefault(unlockable, 0) == unlockable.getCount();
     }
 
@@ -554,11 +554,15 @@ public class PlayerState implements Serializable {
                 new Card.CattleCard(CattleType.GUERNSEY, 0)));
     }
 
-    boolean canUnlock(Collection<DiscColor> discColors) {
+    public boolean canRemoveDisc(Collection<DiscColor> discColors) {
         return Arrays.stream(Unlockable.values())
-                .filter(unlockable -> unlocked.getOrDefault(unlockable, 0) < unlockable.getCount())
-                .filter(unlockable -> balance >= unlockable.getCost())
+                .filter(this::canUnlock)
                 .anyMatch(unlockable -> discColors.contains(unlockable.getDiscColor()));
+    }
+
+    public boolean canUnlock(Unlockable unlockable) {
+        return unlocked.getOrDefault(unlockable, 0) < unlockable.getCount()
+                && balance >= unlockable.getCost();
     }
 
 }

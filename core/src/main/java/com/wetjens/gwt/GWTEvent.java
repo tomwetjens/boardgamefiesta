@@ -32,6 +32,7 @@ public class GWTEvent {
         GAINS_JOB_MARKET_TOKEN,
         EVERY_OTHER_PLAYER_HAS_1_TURN,
         ENDS_GAME,
+        FILL_UP_CATTLE_MARKET,
         MAY_DISCARD_1_JERSEY_TO_GAIN_4_DOLLARS
     }
 }

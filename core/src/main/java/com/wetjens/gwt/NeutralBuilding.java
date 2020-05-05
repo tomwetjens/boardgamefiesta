@@ -18,7 +18,7 @@ public abstract class NeutralBuilding extends Building {
 
         @Override
         public PossibleAction getPossibleAction(Game game) {
-            return PossibleAction.any(Action.Discard1Guernsey.class, Action.HireWorker.class, Action.HireSecondWorker.class);
+            return PossibleAction.any(Action.Discard1Guernsey.class, Action.HireWorker.class, Action.HireWorkerPlus2.class);
         }
     }
 

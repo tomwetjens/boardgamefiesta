@@ -4,11 +4,16 @@ import java.util.Comparator;
 
 import com.wetjens.gwt.Card;
 import com.wetjens.gwt.CattleType;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
 
 @Value
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode(callSuper = true)
 public class CattleCardView extends CardView {
 

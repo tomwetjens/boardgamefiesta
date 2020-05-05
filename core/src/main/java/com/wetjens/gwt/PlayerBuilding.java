@@ -136,7 +136,7 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(Game game) {
-            return PossibleAction.any(Action.HireCheapWorker.class, Action.MoveEngineForward.class);
+            return PossibleAction.any(Action.HireWorkerMinus1.class, Action.MoveEngineForward.class);
         }
     }
 
