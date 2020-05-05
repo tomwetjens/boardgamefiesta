@@ -99,4 +99,7 @@ public final class ObjectiveCards implements Serializable {
         );
     }
 
+    public boolean isEmpty() {
+        return available.isEmpty();
+    }
 }

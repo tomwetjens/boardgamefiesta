@@ -130,9 +130,9 @@ public class Game implements Serializable {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
-        if (action.canPlayAnyTime()) {
-            if (!actionStack.isEmpty() && actionStack.peek().isImmediate()) {
-                throw new GWTException(GWTError.IMMEDIATE_ACTION_MUST_BE_PERFORMED_FIRST);
+        if (action instanceof Action.PlayObjectiveCard) {
+            if (!canPlayObjectiveCard()) {
+                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
             fireEvent(action);
@@ -177,7 +177,7 @@ public class Game implements Serializable {
     }
 
     private void endTurnIfNoMoreActions(@NonNull Random random) {
-        if (actionStack.isEmpty() && !currentPlayerState().canPlayObjectiveCard()) {
+        if (actionStack.isEmpty() && !canPlayObjectiveCard()) {
             // Can only automatically end turn when no actions remaining,
             // and player cannot (optionally) play an objective card
             endTurn(random);
@@ -244,13 +244,19 @@ public class Game implements Serializable {
 
         Set<Class<? extends Action>> possibleActions = actionStack.getPossibleActions();
 
-        if ((actionStack.isEmpty() || !actionStack.peek().isImmediate()) && currentPlayerState().canPlayObjectiveCard()) {
+        if (canPlayObjectiveCard()) {
             possibleActions = new HashSet<>(possibleActions);
             possibleActions.add(Action.PlayObjectiveCard.class);
             return Collections.unmodifiableSet(possibleActions);
         }
 
         return possibleActions;
+    }
+
+    private boolean canPlayObjectiveCard() {
+        return currentPlayerState().hasObjectiveCardInHand()
+                && (actionStack.isEmpty() /* = after phase B */
+                || (actionStack.size() == 1 && actionStack.canPerform(Action.Move.class))) /* before phase A */;
     }
 
     public Set<PossibleMove> possibleMoves(Player player, Location to) {

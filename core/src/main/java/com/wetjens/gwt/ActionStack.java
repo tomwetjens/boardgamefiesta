@@ -74,4 +74,8 @@ class ActionStack implements Serializable {
         actions.peek().skip();
         actions.poll();
     }
+
+    public int size() {
+        return actions.size();
+    }
 }

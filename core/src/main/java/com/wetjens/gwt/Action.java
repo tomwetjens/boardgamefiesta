@@ -27,15 +27,6 @@ public abstract class Action {
         return Collections.emptyList();
     }
 
-    /**
-     * Indicates whether this action can be played at any time before, between or after other actions in a players turn.
-     *
-     * @return <code>true</code> if action can be played at any time, <code>false</code> otherwise.
-     */
-    boolean canPlayAnyTime() {
-        return false;
-    }
-
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static final class BuyCattle extends Action {
@@ -783,11 +774,6 @@ public abstract class Action {
         public ImmediateActions perform(Game game, Random random) {
             return game.currentPlayerState().playObjectiveCard(objectiveCard);
         }
-
-        @Override
-        public boolean canPlayAnyTime() {
-            return true;
-        }
     }
 
     public static final class Discard1BlackAngusToGain2Dollars extends Action {
@@ -854,7 +840,7 @@ public abstract class Action {
         private @NonNull List<Location> steps;
         private int atLeast;
         private int atMost;
-        private boolean fees;
+        private boolean payFeesAndActivate;
 
         public Move(List<Location> steps) {
             this(steps, 1, Integer.MAX_VALUE, true);
@@ -884,14 +870,14 @@ public abstract class Action {
             game.getTrail().getCurrentLocation(player).ifPresent(from -> {
                 checkDirectAndConsecutiveSteps(from, steps);
 
-                if (fees) {
+                if (payFeesAndActivate) {
                     payFees(game);
                 }
             });
 
             game.getTrail().movePlayer(player, to);
 
-            return to.activate(game, player);
+            return payFeesAndActivate ? to.activate(game) : ImmediateActions.none();
         }
 
         @Override

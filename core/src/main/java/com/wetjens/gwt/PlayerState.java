@@ -442,7 +442,7 @@ public class PlayerState implements Serializable {
         return drawStack.size();
     }
 
-    boolean canPlayObjectiveCard() {
+    boolean hasObjectiveCardInHand() {
         return hand.stream().anyMatch(card -> card instanceof ObjectiveCard);
     }
 

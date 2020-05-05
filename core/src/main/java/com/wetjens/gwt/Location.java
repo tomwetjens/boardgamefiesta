@@ -31,7 +31,7 @@ public abstract class Location implements Serializable {
         return Collections.unmodifiableSet(next);
     }
 
-    ImmediateActions activate(Game game, Player player) {
+    ImmediateActions activate(Game game) {
         return ImmediateActions.none();
     }
 
@@ -106,12 +106,33 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        ImmediateActions activate(Game game, Player player) {
+        ImmediateActions activate(Game game) {
             if (building != null) {
-                if (riskAction != null) {
-                    return ImmediateActions.of(PossibleAction.any(PossibleAction.choice(building.getPossibleAction(game), Action.SingleAuxiliaryAction.class), riskAction));
+                if (building instanceof NeutralBuilding || ((PlayerBuilding)building).getPlayer() == game.getCurrentPlayer()) {
+                    var buildingAction = building.getPossibleAction(game);
+
+                    if (riskAction != null) {
+                        // There is an optional risk action
+
+                        if (buildingAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class)) {
+                            // Leave out the SingleAuxiliaryAction, because it is useless when you can choose SingleOrDoubleAuxiliaryAction
+                            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction))));
+                        } else {
+                            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction), Action.SingleAuxiliaryAction.class)));
+                        }
+                    } else {
+                        // No risk action
+
+                        if (buildingAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class)) {
+                            // Leave out the SingleAuxiliaryAction, because it is useless when you can choose SingleOrDoubleAuxiliaryAction
+                            return ImmediateActions.of(buildingAction);
+                        } else {
+                            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(buildingAction, Action.SingleAuxiliaryAction.class)));
+                        }
+                    }
                 } else {
-                    return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(building.getPossibleAction(game), Action.SingleAuxiliaryAction.class)));
+                    // Other player's building, only allowed to use aux action
+                    return ImmediateActions.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
                 }
             }
             return ImmediateActions.none();
@@ -186,7 +207,7 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        ImmediateActions activate(Game game, Player player) {
+        ImmediateActions activate(Game game) {
             if (hazard != null) {
                 return ImmediateActions.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }
@@ -235,7 +256,7 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        ImmediateActions activate(Game game, Player player) {
+        ImmediateActions activate(Game game) {
             return ImmediateActions.of(PossibleAction.mandatory(Action.ChooseForesights.class));
         }
 
@@ -259,7 +280,7 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        public ImmediateActions activate(Game game, Player player) {
+        public ImmediateActions activate(Game game) {
             if (teepee != null) {
                 return ImmediateActions.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }
