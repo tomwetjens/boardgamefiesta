@@ -30,7 +30,7 @@ class TrailTest {
     void startToA() {
         Location a = trail.getLocation("A");
 
-        assertThat(trail.possibleMoves(trail.getStart(), a, 3, Player.BLUE, 4)).containsOnly(
+        assertThat(trail.possibleMoves(trail.getStart(), a, Player.BLUE, 0, 3, 4)).containsOnly(
                 new PossibleMove(trail.getStart(), a, Collections.singletonList(a), 0, Collections.emptyMap()));
     }
 
@@ -38,14 +38,14 @@ class TrailTest {
     void backwards() {
         Location a = trail.getLocation("A");
 
-        assertThat(trail.possibleMoves(a, trail.getStart(), 3, Player.BLUE, 4)).isEmpty();
+        assertThat(trail.possibleMoves(a, trail.getStart(), Player.BLUE, 0, 3, 4)).isEmpty();
     }
 
     @Test
     void fromToEqual() {
         Location a = trail.getLocation("A");
 
-        assertThat(trail.possibleMoves(a, a, 6, Player.BLUE, 4)).isEmpty();
+        assertThat(trail.possibleMoves(a, a, Player.BLUE, 0, 6, 4)).isEmpty();
     }
 
     @Test
@@ -53,7 +53,7 @@ class TrailTest {
         Location a = trail.getLocation("A");
         Location b = trail.getLocation("B");
 
-        assertThat(trail.possibleMoves(a, b, 6, Player.RED, 4)).containsExactlyInAnyOrder(
+        assertThat(trail.possibleMoves(a, b, Player.RED, 20, 6, 4)).containsExactlyInAnyOrder(
                 new PossibleMove(a, b, asList(trail.getLocation("A-1"), trail.getLocation("A-2"), b), 1, Collections.singletonMap(Player.BLUE, 1)),
                 new PossibleMove(a, b, asList(trail.getLocation("FLOOD-1"), trail.getLocation("FLOOD-2"), b), 2, Collections.emptyMap()));
     }
@@ -68,7 +68,7 @@ class TrailTest {
         Location from = trail.getLocation("F");
         Location to = trail.getKansasCity();
 
-        assertThat(trail.possibleMoves(from, to, 4, Player.BLUE, 4)).containsExactlyInAnyOrder(
+        assertThat(trail.possibleMoves(from, to, Player.BLUE, 20, 4, 4)).containsExactlyInAnyOrder(
                 new PossibleMove(from, to, asList(trail.getLocation("F-1"), trail.getLocation("G"), trail.getLocation("G-1"), to), 2, Map.of(Player.RED, 2)),
                 new PossibleMove(from, to, asList(trail.getLocation("F-1"), trail.getLocation("G"), trail.getLocation("G-2"), to), 2, Map.of(Player.WHITE, 2)),
                 new PossibleMove(from, to, asList(trail.getLocation("F-2"), trail.getLocation("G"), trail.getLocation("G-1"), to), 4, Map.of(Player.RED, 2, Player.YELLOW, 2)),

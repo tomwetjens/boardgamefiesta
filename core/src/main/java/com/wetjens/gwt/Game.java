@@ -263,9 +263,13 @@ public class Game implements Serializable {
         if (isEnded()) {
             return Collections.emptySet();
         }
+
         Location from = trail.getCurrentLocation(player)
                 .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION, player));
-        return trail.possibleMoves(from, to, playerState(player).getStepLimit(players.size()), player, players.size());
+
+        var playerState = playerState(player);
+
+        return trail.possibleMoves(from, to, player, playerState.getBalance(), playerState.getStepLimit(players.size()), players.size());
     }
 
     public Set<Location> reachableLocations(Player player, int atMost) {

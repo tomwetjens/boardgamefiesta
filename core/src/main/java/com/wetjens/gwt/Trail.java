@@ -1,5 +1,8 @@
 package com.wetjens.gwt;
 
+import lombok.Getter;
+import lombok.NonNull;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
@@ -14,9 +17,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import lombok.Getter;
-import lombok.NonNull;
 
 public class Trail implements Serializable {
 
@@ -192,7 +192,7 @@ public class Trail implements Serializable {
                 .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION, reward));
     }
 
-    Set<PossibleMove> possibleMoves(Location from, Location to, int stepLimit, Player currentPlayer, int playerCount) {
+    Set<PossibleMove> possibleMoves(Location from, Location to, Player player, int balance, int stepLimit, int playerCount) {
         if (from.isEmpty()) {
             throw new GWTException(GWTError.LOCATION_EMPTY, from.getName());
         }
@@ -203,7 +203,7 @@ public class Trail implements Serializable {
 
         return reachableLocations(from, to, stepLimit)
                 .filter(steps -> steps.get(steps.size() - 1) == to)
-                .map(steps -> new PossibleMove(from, to, steps, currentPlayer, playerCount))
+                .map(steps -> new PossibleMove(from, to, steps, player, balance, playerCount))
                 .collect(Collectors.toSet());
     }
 
