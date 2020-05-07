@@ -921,12 +921,15 @@ public abstract class Action {
                     location.getHand().getFee(game.getPlayers().size()));
 
             if (amount > 0) {
-                currentPlayerState.payDollars(amount);
+                feeRecipient(location)
+                        .ifPresentOrElse(recipient -> {
+                            if (recipient != game.getCurrentPlayer()) {
+                                currentPlayerState.payDollars(amount);
+                                game.playerState(recipient).gainDollars(amount);
 
-                feeRecipient(location).ifPresentOrElse(recipient -> {
-                    game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount, recipient));
-                    game.playerState(recipient).gainDollars(amount);
-                }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount)));
+                                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount, recipient));
+                            }
+                        }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount)));
             }
         }
 

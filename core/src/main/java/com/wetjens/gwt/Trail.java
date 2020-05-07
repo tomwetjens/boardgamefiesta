@@ -192,7 +192,7 @@ public class Trail implements Serializable {
                 .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION, reward));
     }
 
-    Set<PossibleMove> possibleMoves(Location from, Location to, int stepLimit, int playerCount) {
+    Set<PossibleMove> possibleMoves(Location from, Location to, int stepLimit, Player currentPlayer, int playerCount) {
         if (from.isEmpty()) {
             throw new GWTException(GWTError.LOCATION_EMPTY, from.getName());
         }
@@ -203,7 +203,7 @@ public class Trail implements Serializable {
 
         return reachableLocations(from, to, stepLimit)
                 .filter(steps -> steps.get(steps.size() - 1) == to)
-                .map(steps -> new PossibleMove(from, to, steps, playerCount))
+                .map(steps -> new PossibleMove(from, to, steps, currentPlayer, playerCount))
                 .collect(Collectors.toSet());
     }
 

@@ -17,11 +17,16 @@ public class PossibleMove {
     int cost;
     Map<Player, Integer> playerFees;
 
-    PossibleMove(Location from, Location to, List<Location> steps, int playerCount) {
+    PossibleMove(Location from, Location to, List<Location> steps, Player currentPlayer, int playerCount) {
         this.from = from;
         this.to = to;
         this.steps = steps;
         this.cost = steps.stream()
+                .filter(location -> !(location instanceof Location.BuildingLocation) || ((Location.BuildingLocation) location).getBuilding()
+                        .filter(building -> building instanceof PlayerBuilding)
+                        .map(building -> (PlayerBuilding) building)
+                        .map(playerBuilding -> playerBuilding.getPlayer() != currentPlayer)
+                        .orElse(false))
                 .mapToInt(location -> location.getHand().getFee(playerCount))
                 .sum();
         this.playerFees = steps.stream()
@@ -30,6 +35,7 @@ public class PossibleMove {
                 .flatMap(buildingLocation -> buildingLocation.getBuilding().stream())
                 .filter(building -> building instanceof PlayerBuilding)
                 .map(building -> (PlayerBuilding) building)
+                .filter(playerBuilding -> playerBuilding.getPlayer() != currentPlayer)
                 .filter(playerBuilding -> playerBuilding.getHand() != Hand.NONE)
                 .collect(Collectors.groupingBy(PlayerBuilding::getPlayer))
                 .entrySet().stream()
