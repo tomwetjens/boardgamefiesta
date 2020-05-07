@@ -577,7 +577,7 @@ public abstract class Action {
 
         @Override
         List<Object> toEventParams(Game game) {
-            return List.of(city, calculatePayout(game));
+            return List.of(city, certificates, calculatePayout(game));
         }
     }
 
