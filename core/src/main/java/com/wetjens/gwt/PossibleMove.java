@@ -50,6 +50,7 @@ public class PossibleMove {
 
                     return new PlayerFee(playerBuilding.getPlayer(), fee);
                 })
+                .filter(playerFee -> playerFee.getFee() > 0)
                 .collect(Collectors.groupingBy(PlayerFee::getPlayer)).entrySet()
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream().mapToInt(PlayerFee::getFee).sum()));
