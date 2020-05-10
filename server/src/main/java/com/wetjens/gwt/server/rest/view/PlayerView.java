@@ -1,5 +1,6 @@
 package com.wetjens.gwt.server.rest.view;
 
+import com.wetjens.gwt.PlayerColor;
 import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;
@@ -13,6 +14,7 @@ public class PlayerView {
     Player.Status status;
     ScoreView score;
     Boolean winner;
+    PlayerColor color;
 
     PlayerView(@NonNull Player player, User user) {
         type = player.getType();
@@ -20,6 +22,7 @@ public class PlayerView {
         this.user = player.getType() == Player.Type.USER ? new UserView(player.getUserId(), user) : null;
         score = player.getScore() != null ? new ScoreView(player.getScore()) : null;
         winner = player.getWinner();
+        color = player.getColor();
     }
 
 }

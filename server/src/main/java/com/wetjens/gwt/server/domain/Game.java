@@ -152,10 +152,10 @@ public class Game {
         var randomColors = new LinkedList<>(Arrays.asList(PlayerColor.values()));
         Collections.shuffle(randomColors, RANDOM);
 
+        players.forEach(player -> player.setColor(randomColors.poll()));
+
         state = Lazy.of(new com.wetjens.gwt.Game(players.stream()
-                .map(Player::getId)
-                .map(Player.Id::getId)
-                .map(name -> new com.wetjens.gwt.Player(name, randomColors.poll()))
+                .map(player -> new com.wetjens.gwt.Player(player.getId().getId(), player.getColor()))
                 .collect(Collectors.toSet()), beginner, RANDOM));
 
         afterStateChange();

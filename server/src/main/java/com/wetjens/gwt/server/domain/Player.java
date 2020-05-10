@@ -3,6 +3,7 @@ package com.wetjens.gwt.server.domain;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.wetjens.gwt.PlayerColor;
 import com.wetjens.gwt.server.rest.APIError;
 import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
@@ -37,6 +38,10 @@ public class Player {
     @Getter
     @NonNull
     private Instant updated;
+
+    @Getter
+    @Setter(value = AccessLevel.PACKAGE)
+    private PlayerColor color;
 
     @Getter
     @Setter(value = AccessLevel.PACKAGE)

@@ -1,5 +1,6 @@
 package com.wetjens.gwt.server.repository;
 
+import com.wetjens.gwt.PlayerColor;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.Lazy;
@@ -212,7 +213,7 @@ public class GameDynamoDbRepository implements Games {
                 .key(key(id))
                 .consistentRead(true)
                 .attributesToGet("Id", "Status", "Beginner", "Created", "Updated", "Started", "Ended", "Expires", "OwnerUserId", "Players")
-                        .build());
+                .build());
 
         if (!response.hasItem()) {
             return Optional.empty();
@@ -227,7 +228,7 @@ public class GameDynamoDbRepository implements Games {
     }
 
     private Map<String, AttributeValue> mapLookupItem(Game game, Player player) {
-        var map = new HashMap<String, AttributeValue>();
+        var map = new HashMap<>(keyLookup(game.getId(), player.getUserId()));
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
         map.put("Expires", AttributeValue.builder().n(Long.toString(game.getExpires().getEpochSecond())).build());
         return map;
@@ -296,6 +297,7 @@ public class GameDynamoDbRepository implements Games {
                 .type(map.containsKey("Type") ? Player.Type.valueOf(map.get("Type").s()) : Player.Type.USER)
                 .userId(map.containsKey("UserId") ? User.Id.of(map.get("UserId").s()) : null)
                 .status(Player.Status.valueOf(map.get("Status").s()))
+                .color(map.containsKey("Color") ? PlayerColor.valueOf(map.get("Color").s()) : null)
                 .score(map.containsKey("Score") ? mapToScore(map.get("Score")) : null)
                 .winner(map.containsKey("Winner") ? map.get("Winner").bool() : null)
                 .created(Instant.ofEpochSecond(Long.parseLong(map.get("Created").n())))
@@ -333,6 +335,7 @@ public class GameDynamoDbRepository implements Games {
         map.put("Type", AttributeValue.builder().s(player.getType().name()).build());
         map.put("UserId", player.getUserId() != null ? AttributeValue.builder().s(player.getUserId().getId()).build() : null);
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
+        map.put("Color", player.getColor() != null ? AttributeValue.builder().s(player.getColor().name()).build() : null);
         map.put("Score", player.getScore() != null ? mapFromScore(player.getScore()) : null);
         map.put("Winner", player.getWinner() != null ? AttributeValue.builder().bool(player.getWinner()).build() : null);
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
