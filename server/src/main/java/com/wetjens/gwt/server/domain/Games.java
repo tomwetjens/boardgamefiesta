@@ -4,6 +4,10 @@ import java.util.stream.Stream;
 
 public interface Games {
 
+    static Games instance() {
+        return DomainService.instance(Games.class);
+    }
+
     Game findById(Game.Id id);
 
     void add(Game game);

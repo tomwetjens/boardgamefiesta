@@ -3,17 +3,15 @@ package com.wetjens.gwt.server.rest.view.state;
 import com.wetjens.gwt.Location;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.PossibleMove;
-import com.wetjens.gwt.server.domain.User;
-import com.wetjens.gwt.server.rest.view.UserView;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Value
-@EqualsAndHashCode(of={"from", "to", "cost", "playerFees"}) // consider routes with exactly the same costs and fees to be equal, ignoring the actual steps
+// consider routes with exactly the same costs and fees to be equal, ignoring the actual steps
+@EqualsAndHashCode(of = {"from", "to", "cost", "playerFees"})
 public class PossibleMoveView {
 
     String from;
@@ -22,7 +20,7 @@ public class PossibleMoveView {
     List<String> steps;
     List<PlayerFeeView> playerFees;
 
-    public PossibleMoveView(PossibleMove possibleMove, Map<Player, User> userMap) {
+    public PossibleMoveView(PossibleMove possibleMove) {
         this.from = possibleMove.getFrom().getName();
         this.to = possibleMove.getTo().getName();
         this.cost = possibleMove.getCost();
@@ -30,7 +28,7 @@ public class PossibleMoveView {
                 .map(Location::getName)
                 .collect(Collectors.toList());
         this.playerFees = possibleMove.getPlayerFees().entrySet().stream()
-                .map(entry -> new PlayerFeeView(new PlayerView(entry.getKey(), userMap.get(entry.getKey())), entry.getValue()))
+                .map(entry -> new PlayerFeeView(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 
@@ -38,5 +36,10 @@ public class PossibleMoveView {
     public static class PlayerFeeView {
         PlayerView player;
         int fee;
+
+        PlayerFeeView(Player player, int fee) {
+            this.player = new PlayerView(player);
+            this.fee = fee;
+        }
     }
 }

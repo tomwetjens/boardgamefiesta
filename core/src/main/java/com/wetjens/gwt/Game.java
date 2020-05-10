@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -64,7 +66,7 @@ public class Game implements Serializable {
     @Getter
     private boolean ended;
 
-    public Game(@NonNull Set<Player> players, boolean beginner, Random random) {
+    public Game(@NonNull Set<Player> players, boolean beginner, @NonNull Random random) {
         if (players.size() < 2) {
             throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
         }
@@ -90,7 +92,7 @@ public class Game implements Serializable {
 
         this.currentPlayer = this.players.get(0);
 
-        this.railroadTrack = new RailroadTrack(this.players, random);
+        this.railroadTrack = new RailroadTrack(players, random);
 
         this.kansasCitySupply = new KansasCitySupply(random);
         this.trail = new Trail(this.players, beginner, random);
@@ -160,12 +162,16 @@ public class Game implements Serializable {
         endTurnIfNoMoreActions(random);
     }
 
-    public void addEventListener(GWTEventListener eventLogger) {
+    public void addEventListener(GWTEventListener eventListener) {
         if (eventListeners == null) {
             // Could be null after deserialization
             eventListeners = new HashSet<>();
         }
-        eventListeners.add(eventLogger);
+        eventListeners.add(eventListener);
+    }
+
+    public void removeEventListener(GWTEventListener eventListener) {
+        eventListeners.remove(eventListener);
     }
 
     void fireEvent(Player player, GWTEvent.Type type, List<Object> values) {
@@ -321,6 +327,13 @@ public class Game implements Serializable {
                 .filter(entry -> entry.getValue().getTotal() == maxScore)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
+    }
+
+    public Player getPlayerByName(String name) {
+        return players.stream()
+                .filter(player -> player.getName().equals(name))
+                .findAny()
+                .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_PLAYER, name));
     }
 
     ImmediateActions deliverToCity(City city) {

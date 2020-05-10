@@ -127,12 +127,17 @@ public abstract class Action {
     @EqualsAndHashCode(callSuper = false)
     public static final class TakeObjectiveCard extends Action {
 
-        @NonNull ObjectiveCard objectiveCard;
+        // null means draw from stack
+        ObjectiveCard objectiveCard;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            game.getObjectiveCards().remove(objectiveCard);
-            game.currentPlayerState().gainCard(objectiveCard);
+            if (objectiveCard != null) {
+                game.getObjectiveCards().remove(objectiveCard);
+                game.currentPlayerState().gainCard(objectiveCard);
+            } else {
+
+            }
             return ImmediateActions.none();
         }
     }

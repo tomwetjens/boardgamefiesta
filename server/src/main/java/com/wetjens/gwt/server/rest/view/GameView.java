@@ -18,48 +18,53 @@ public class GameView {
     Instant created;
     Instant started;
     Instant ended;
-    Instant expires;
     UserView owner;
-    PlayerView player;
-    Set<PlayerView> otherPlayers;
+    String player;
+    Set<String> otherPlayers;
+    Map<String, PlayerView> players;
     boolean accepted;
     boolean startable;
 
     Boolean turn;
-    PlayerView currentPlayer;
+    String currentPlayer;
 
     public GameView(Game game, Map<User.Id, User> userMap, User.Id currentUserId) {
         id = game.getId().getId();
         status = game.getStatus();
         owner = new UserView(game.getOwner(), userMap.get(game.getOwner()));
+
         player = game.getPlayers().stream()
                 .filter(player -> currentUserId.equals(player.getUserId()))
                 .findAny()
-                .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
+                .map(Player::getId)
+                .map(Player.Id::getId)
                 .orElse(null);
+
         otherPlayers = game.getPlayers().stream()
                 .filter(player -> !currentUserId.equals(player.getUserId()))
-                .map(player -> new PlayerView(player, userMap.get(player.getUserId())))
+                .map(Player::getId)
+                .map(Player.Id::getId)
                 .collect(Collectors.toSet());
+
+        players = game.getPlayers().stream()
+                .collect(Collectors.toMap(player -> player.getId().getId(), player -> new PlayerView(player, userMap.get(player.getUserId()))));
+
         accepted = game.getPlayers().stream()
                 .filter(player -> currentUserId.equals(player.getUserId()))
                 .anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
         created = game.getCreated();
         started = game.getStarted();
         ended = game.getEnded();
-        expires = game.getExpires();
         startable = game.canStart() && currentUserId.equals(game.getOwner());
 
-        if (game.getState() != null) {
-            Player currentUserPlayer = game.getPlayerByUserId(currentUserId).orElseThrow(() -> new IllegalArgumentException("Not a player in game"));
+        if (game.getStatus() == Game.Status.STARTED) {
+            var currentPlayer = game.getCurrentPlayer();
 
-            turn = game.getState().getCurrentPlayer() == currentUserPlayer.getColor();
-
-            Player currentPlayer = game.getCurrentPlayer();
-            this.currentPlayer = new PlayerView(currentPlayer, userMap.get(currentPlayer.getUserId()));
+            this.turn = currentUserId.equals(currentPlayer.getUserId());
+            this.currentPlayer = currentPlayer.getId().getId();
         } else {
-            turn = null;
-            currentPlayer = null;
+            this.turn = null;
+            this.currentPlayer = null;
         }
     }
 }

@@ -54,7 +54,7 @@ public class RailroadTrack implements Serializable {
 
     private final Map<City, List<Player>> cities;
 
-    RailroadTrack(@NonNull Collection<Player> players, @NonNull Random random) {
+    RailroadTrack(@NonNull Set<Player> players, @NonNull Random random) {
         this.stations = createStations(random);
         this.cities = createEmptyCities();
 
@@ -234,7 +234,7 @@ public class RailroadTrack implements Serializable {
         boolean possible = available && atLeast <= 1;
 
         if (possible) {
-            reachable.add(new ReachableSpace(current, steps));
+            reachable.add(new ReachableSpace(current, steps + 1));
         }
 
         if (!available) {

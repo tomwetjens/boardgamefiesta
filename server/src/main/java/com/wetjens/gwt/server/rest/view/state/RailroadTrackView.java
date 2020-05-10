@@ -2,6 +2,7 @@ package com.wetjens.gwt.server.rest.view.state;
 
 import com.wetjens.gwt.City;
 import com.wetjens.gwt.Player;
+import com.wetjens.gwt.PlayerColor;
 import com.wetjens.gwt.RailroadTrack;
 import com.wetjens.gwt.Station;
 import com.wetjens.gwt.StationMaster;
@@ -11,23 +12,25 @@ import lombok.Value;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Value
 public class RailroadTrackView {
 
-    Map<Player, SpaceView> players;
+    Map<PlayerColor, SpaceView> players;
     List<StationView> stations;
-    Map<City, List<Player>> cities;
+    Map<City, List<PlayerColor>> cities;
 
     RailroadTrackView(RailroadTrack railroadTrack) {
         players = railroadTrack.getPlayers().stream()
-                .collect(Collectors.toMap(Function.identity(), player -> new SpaceView(railroadTrack, railroadTrack.currentSpace(player))));
+                .collect(Collectors.toMap(Player::getColor, player -> new SpaceView(railroadTrack, railroadTrack.currentSpace(player))));
 
         stations = railroadTrack.getStations().stream().map(StationView::new).collect(Collectors.toList());
 
-        cities = railroadTrack.getCities();
+        cities = railroadTrack.getCities().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
+                        .map(Player::getColor)
+                        .collect(Collectors.toList())));
     }
 
     @Value
@@ -56,12 +59,12 @@ public class RailroadTrackView {
 
         Worker worker;
         StationMaster stationMaster;
-        Set<Player> players;
+        Set<PlayerColor> players;
 
         StationView(Station station) {
             worker = station.getWorker().orElse(null);
             stationMaster = station.getStationMaster().orElse(null);
-            players = station.getPlayers();
+            players = station.getPlayers().stream().map(Player::getColor).collect(Collectors.toSet());
         }
     }
 }

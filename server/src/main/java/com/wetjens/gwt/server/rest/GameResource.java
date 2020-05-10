@@ -1,13 +1,10 @@
 package com.wetjens.gwt.server.rest;
 
-import com.wetjens.gwt.Action;
 import com.wetjens.gwt.GWTException;
-import com.wetjens.gwt.Player;
 import com.wetjens.gwt.PossibleMove;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
-import com.wetjens.gwt.server.domain.LogEntries;
-import com.wetjens.gwt.server.domain.LogEntry;
+import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.User;
 import com.wetjens.gwt.server.domain.Users;
 import com.wetjens.gwt.server.rest.view.GameView;
@@ -24,7 +21,6 @@ import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
@@ -37,15 +33,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Path("/games")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -56,9 +48,6 @@ public class GameResource {
 
     @Inject
     private Games games;
-
-    @Inject
-    private LogEntries logEntries;
 
     @Inject
     private Users users;
@@ -89,17 +78,8 @@ public class GameResource {
         Game game = Game.create(currentUser, request.getNumberOfPlayers(), invitedUsers, request.isBeginner());
 
         games.add(game);
-        log.debug("saved after create");
 
-        logEntries.addAll(Stream.concat(Stream.of(
-                new LogEntry(game, currentUser.getId(), LogEntry.Type.CREATE, Collections.emptyList())),
-                invitedUsers.stream()
-                        .map(invitedUser -> new LogEntry(game, currentUser.getId(), LogEntry.Type.INVITE, List.of(invitedUser.getUsername()))))
-                .collect(Collectors.toList()));
-
-        var userMap = Stream.concat(Stream.of(currentUser), invitedUsers.stream())
-                .collect(Collectors.toMap(User::getId, Function.identity()));
-        return new GameView(game, userMap, currentUser.getId());
+        return new GameView(game, getUserMapById(game), currentUser.getId());
     }
 
     @GET
@@ -123,9 +103,6 @@ public class GameResource {
         game.start();
 
         games.update(game);
-        log.debug("saved after start");
-
-        logEntries.add(new LogEntry(game, currentUserId(), LogEntry.Type.START, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -139,9 +116,6 @@ public class GameResource {
         game.acceptInvite(currentUserId());
 
         games.update(game);
-        log.debug("saved after accept");
-
-        logEntries.add(new LogEntry(game, currentUserId(), LogEntry.Type.ACCEPT, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -155,9 +129,6 @@ public class GameResource {
         game.rejectInvite(currentUserId());
 
         games.update(game);
-        log.debug("saved after reject");
-
-        logEntries.add(new LogEntry(game, currentUserId(), LogEntry.Type.REJECT, Collections.emptyList()));
 
         return new GameView(game, getUserMapById(game), currentUserId());
     }
@@ -170,20 +141,13 @@ public class GameResource {
 
         var performingPlayer = checkTurn(game);
 
-        Map<Player, User> playerUserMap = getUserMapByColor(game);
-
-        try {
-            Action action = request.toAction(game.getState());
-
-            game.perform(action);
-        } catch (GWTException e) {
-            throw new APIException(e.getError(), e.getParams());
-        }
+        var state = game.getState().get();
+        game.perform(request.toAction(state));
 
         games.update(game);
-        log.debug("saved after perform");
 
-        return new StateView(game, performingPlayer, playerUserMap);
+        // TODO Delegate to interface
+        return new StateView(state, state.getPlayerByName(performingPlayer.getId().getId()));
     }
 
     @POST
@@ -194,16 +158,12 @@ public class GameResource {
 
         var performingPlayer = checkTurn(game);
 
-        try {
-            game.skip();
-        } catch (GWTException e) {
-            throw new APIException(e.getError(), e.getParams());
-        }
+        game.skip();
 
         games.update(game);
-        log.debug("saved after skip");
 
-        return new StateView(game, performingPlayer, getUserMapByColor(game));
+        // TODO Delegate to interface
+        return new StateView(game.getState().get(), game.getState().get().getPlayerByName(performingPlayer.getId().getId()));
     }
 
     @POST
@@ -214,16 +174,13 @@ public class GameResource {
 
         var performingPlayer = checkTurn(game);
 
-        try {
-            game.endTurn();
-        } catch (GWTException e) {
-            throw new APIException(e.getError(), e.getParams());
-        }
+        game.endTurn();
 
         games.update(game);
-        log.debug("saved after endTurn");
 
-        return new StateView(game, performingPlayer, getUserMapByColor(game));
+        // TODO Delegate to interface
+        var state = game.getState().get();
+        return new StateView(state, state.getPlayerByName(performingPlayer.getId().getId()));
     }
 
     @GET
@@ -231,15 +188,17 @@ public class GameResource {
     public StateView getState(@PathParam("id") String id) {
         var game = games.findById(Game.Id.of(id));
 
+        checkViewAllowed(game);
+
         if (game.getState() == null) {
             throw new NotFoundException();
         }
 
-        checkViewAllowed(game);
-
         var viewingPlayer = determinePlayer(game);
 
-        return new StateView(game, viewingPlayer, getUserMapByColor(game));
+        // TODO Delegate to interface
+        var state = game.getState().get();
+        return new StateView(state, state.getPlayerByName(viewingPlayer.getId().getId()));
     }
 
     @GET
@@ -253,9 +212,11 @@ public class GameResource {
 
         var viewingPlayer = checkTurn(game);
 
-        var playerState = game.getState().playerState(viewingPlayer);
+        var state = game.getState().get();
+        var playerState = state.playerState(state.getPlayerByName(viewingPlayer.getId().getId()));
 
-        return playerState.possibleDeliveries(game.getState().getRailroadTrack()).stream()
+        // TODO Include all possible deliveries in the state view whenever it is relevant
+        return playerState.possibleDeliveries(state.getRailroadTrack()).stream()
                 .map(PossibleDeliveryView::new)
                 .collect(Collectors.toSet());
     }
@@ -271,9 +232,10 @@ public class GameResource {
 
         var viewingPlayer = checkTurn(game);
 
-        var playerState = game.getState().playerState(viewingPlayer);
-
-        return game.getState().getCattleMarket().possibleBuys(playerState.getNumberOfCowboys(), playerState.getBalance()).stream()
+        // TODO Include all possible buys in the state view whenever it is relevant
+        var state = game.getState().get();
+        var playerState = state.playerState(state.getPlayerByName(viewingPlayer.getId().getId()));
+        return state.getCattleMarket().possibleBuys(playerState.getNumberOfCowboys(), playerState.getBalance()).stream()
                 .map(PossibleBuyView::new)
                 .collect(Collectors.toSet());
     }
@@ -287,18 +249,19 @@ public class GameResource {
             throw new NotFoundException();
         }
 
-        var to = game.getState().getTrail().getLocation(toName);
+        var state = game.getState().get();
+        var to = state.getTrail().getLocation(toName);
 
+        // TODO Include all possible moves in the state view whenever it is relevant
         Set<PossibleMove> possibleMoves;
         try {
-            possibleMoves = game.getState().possibleMoves(game.getState().getCurrentPlayer(), to);
+            possibleMoves = state.possibleMoves(state.getCurrentPlayer(), to);
         } catch (GWTException e) {
             throw new APIException(e.getError(), e.getParams());
         }
 
-        Map<Player, User> userMapByColor = getUserMapByColor(game);
         return possibleMoves.stream()
-                .map(possibleMove -> new PossibleMoveView(possibleMove, userMapByColor))
+                .map(PossibleMoveView::new)
                 .collect(Collectors.toSet());
     }
 
@@ -309,12 +272,10 @@ public class GameResource {
 
         checkViewAllowed(game);
 
-        var playerMap = game.getPlayersAsMap();
         var userMap = getUserMapById(game);
 
-        return logEntries.findSince(Game.Id.of(id), Instant.parse(since))
-                .limit(100)
-                .map(logEntry -> new LogEntryView(logEntry, playerMap, userMap))
+        return game.getLog().since(Instant.parse(since))
+                .map(logEntry -> new LogEntryView(game, logEntry, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -328,7 +289,6 @@ public class GameResource {
         var currentUserId = currentUserId();
 
         return game.getPlayerByUserId(currentUserId)
-                .map(com.wetjens.gwt.server.domain.Player::getColor)
                 .orElseThrow(() -> APIException.forbidden(APIError.NOT_PLAYER_IN_GAME));
     }
 
@@ -354,19 +314,13 @@ public class GameResource {
 
     private Player checkTurn(Game game) {
         var performingPlayer = determinePlayer(game);
+        var currentPlayer = game.getCurrentPlayer();
 
-        if (game.getState().getCurrentPlayer() != performingPlayer) {
+        if (!currentPlayer.equals(performingPlayer)) {
             throw APIException.forbidden(APIError.NOT_YOUR_TURN);
         }
 
         return performingPlayer;
-    }
-
-    private Map<Player, User> getUserMapByColor(Game game) {
-        return game.getPlayers().stream()
-                .filter(player -> player.getUserId() != null)
-                .collect(Collectors.toMap(com.wetjens.gwt.server.domain.Player::getColor, player -> users.findOptionallyById(player.getUserId())
-                        .orElseThrow(() -> APIException.serverError(APIError.NO_SUCH_USER, player.getUserId().getId()))));
     }
 
     private Map<User.Id, User> getUserMapById(Game game) {

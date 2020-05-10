@@ -1,11 +1,5 @@
 package com.wetjens.gwt.server.rest.view.state;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.wetjens.gwt.Building;
 import com.wetjens.gwt.Game;
 import com.wetjens.gwt.Player;
@@ -14,9 +8,14 @@ import com.wetjens.gwt.PlayerState;
 import com.wetjens.gwt.StationMaster;
 import com.wetjens.gwt.Teepee;
 import com.wetjens.gwt.Unlockable;
-import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;
 import lombok.Value;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Value
 public class PlayerStateView {
@@ -30,6 +29,8 @@ public class PlayerStateView {
     int tempCertificates;
     int certificates;
 
+    ScoreView score;
+
     List<CardView> hand;
     Integer handValue;
     List<CardView> discardPile;
@@ -42,8 +43,8 @@ public class PlayerStateView {
     List<Teepee> teepees;
     List<ObjectiveCardView> objectives;
 
-    PlayerStateView(@NonNull Game game, @NonNull PlayerState playerState, @NonNull Player viewingPlayer, User user) {
-        player = new PlayerView(playerState.getPlayer(), user);
+    PlayerStateView(@NonNull Game game, @NonNull PlayerState playerState, @NonNull Player viewingPlayer) {
+        player = new PlayerView(playerState.getPlayer());
 
         balance = playerState.getBalance();
         cowboys = playerState.getNumberOfCowboys();
@@ -86,5 +87,11 @@ public class PlayerStateView {
                 .map(ObjectiveCardView::new)
                 .sorted()
                 .collect(Collectors.toList());
+
+        if (game.isEnded()) {
+            this.score = new ScoreView(game.score(playerState.getPlayer()), game.winners().contains(playerState.getPlayer()));
+        } else {
+            this.score = null;
+        }
     }
 }

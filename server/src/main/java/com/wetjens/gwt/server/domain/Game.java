@@ -2,6 +2,9 @@ package com.wetjens.gwt.server.domain;
 
 import com.wetjens.gwt.Action;
 import com.wetjens.gwt.Automa;
+import com.wetjens.gwt.GWTEventListener;
+import com.wetjens.gwt.GWTException;
+import com.wetjens.gwt.PlayerColor;
 import com.wetjens.gwt.server.rest.APIError;
 import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
@@ -13,7 +16,6 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.enterprise.inject.spi.CDI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -26,7 +28,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -49,28 +50,31 @@ public class Game {
 
     @Getter
     @NonNull
-    private User.Id owner;
+    private final Instant created;
 
     @NonNull
     private final Set<Player> players;
+
+    @Getter
+    private final Log log;
+
+    @Getter
+    private final boolean beginner;
 
     @Getter
     @NonNull
     private Status status;
 
     @Getter
-    private boolean beginner;
+    @NonNull
+    private User.Id owner;
 
     @Getter
-    private com.wetjens.gwt.Game state;
+    private Lazy<com.wetjens.gwt.Game> state;
 
     @Getter
     @NonNull
     private Instant expires;
-
-    @Getter
-    @NonNull
-    private Instant created;
 
     @Getter
     private Instant updated;
@@ -81,7 +85,7 @@ public class Game {
     @Getter
     private Instant ended;
 
-    public static Game create(@NonNull User owner, int numberOfPlayers, @NonNull Set<User> inviteUsers, boolean beginner) {
+    public static Game create(@NonNull User creator, int numberOfPlayers, @NonNull Set<User> inviteUsers, boolean beginner) {
         int minNumberOfPlayers = 2;
         int maxNumberOfPlayers = 4;
 
@@ -93,7 +97,7 @@ public class Game {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        if (inviteUsers.contains(owner)) {
+        if (inviteUsers.contains(creator)) {
             throw APIException.badRequest(APIError.CANNOT_INVITE_YOURSELF);
         }
 
@@ -101,12 +105,12 @@ public class Game {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        Games games = CDI.current().select(Games.class).get();
-        if (games.countByUserId(owner.getId()) >= 3) {
-            throw APIException.forbidden(APIError.REACHED_MAX_GAMES);
+        Games games = Games.instance();
+        if (games.countByUserId(creator.getId()) >= 1) {
+            throw APIException.forbidden(APIError.EXCEEDS_MAX_REALTIME_GAMES);
         }
 
-        var player = Player.accepted(owner.getId());
+        var player = Player.accepted(creator.getId());
         var invitedPlayers = inviteUsers.stream().map(user -> Player.invite(user.getId()));
         var computerPlayers = IntStream.range(0, numberOfPlayers - inviteUsers.size() - 1).mapToObj(i -> Player.computer());
 
@@ -118,18 +122,22 @@ public class Game {
                 .created(created)
                 .updated(created)
                 .expires(created.plus(START_TIMEOUT))
-                .owner(owner.getId())
+                .owner(creator.getId())
                 .players(Stream.concat(Stream.concat(Stream.of(player), invitedPlayers), computerPlayers)
                         .collect(Collectors.toSet()))
+                .log(new Log())
                 .build();
 
-        CDI.current().getBeanManager().fireEvent(game.new Created());
+        game.log.add(new LogEntry(game, creator.getId(), LogEntry.Type.CREATE, Collections.emptyList()));
+        inviteUsers.forEach(invitedUser -> game.log.add(new LogEntry(game, creator.getId(), LogEntry.Type.INVITE, List.of(invitedUser.getUsername()))));
+
+        game.new Created().fire();
 
         for (User user : inviteUsers) {
-            CDI.current().getBeanManager().fireEvent(game.new Invited(user.getId()));
+            game.new Invited(user.getId()).fire();
         }
 
-        game.afterRespond();
+        game.afterRespondToInvitation();
 
         return game;
     }
@@ -141,23 +149,25 @@ public class Game {
 
         players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
 
-        assignColors();
+        var randomColors = new LinkedList<>(Arrays.asList(PlayerColor.values()));
+        Collections.shuffle(randomColors, RANDOM);
 
-        // TODO Pass player ids
-        state = new com.wetjens.gwt.Game(players.stream().map(Player::getColor).collect(Collectors.toSet()), beginner, RANDOM);
+        state = Lazy.of(new com.wetjens.gwt.Game(players.stream()
+                .map(Player::getId)
+                .map(Player.Id::getId)
+                .map(name -> new com.wetjens.gwt.Player(name, randomColors.poll()))
+                .collect(Collectors.toSet()), beginner, RANDOM));
+
         afterStateChange();
 
         status = Status.STARTED;
         started = Instant.now();
         updated = started;
         expires = started.plus(ACTION_TIMEOUT);
-    }
 
-    private void assignColors() {
-        var randomColors = new LinkedList<>(Arrays.asList(com.wetjens.gwt.Player.values()));
-        Collections.shuffle(randomColors, RANDOM);
+        log.add(new LogEntry(this, owner, LogEntry.Type.START, Collections.emptyList()));
 
-        players.forEach(player -> player.setColor(randomColors.poll()));
+        new Started().fire();
     }
 
     public void perform(Action action) {
@@ -165,7 +175,11 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        runStateChange(() -> state.perform(action, RANDOM));
+        try {
+            runStateChange(() -> state.get().perform(action, RANDOM));
+        } catch (GWTException e) {
+            throw new APIException(e.getError(), e.getParams());
+        }
     }
 
     public void executeAutoma() {
@@ -178,26 +192,16 @@ public class Game {
             throw new IllegalStateException("Current player is not computer");
         }
 
-        runStateChange(() -> {
-            new Automa().execute(state, RANDOM);
-        });
+        runStateChange(() -> new Automa().execute(state.get(), RANDOM));
     }
 
     private void runStateChange(Runnable runnable) {
-        List<LogEntry> logEntries = new LinkedList<>();
-
-        state.addEventListener(event ->
-                logEntries.add(new LogEntry(this, event)));
+        GWTEventListener eventListener = event -> log.add(new LogEntry(this, event));
+        state.get().addEventListener(eventListener);
 
         runnable.run();
 
-        if (!logEntries.isEmpty()) {
-            try {
-                CDI.current().select(LogEntries.class).get().addAll(logEntries);
-            } catch (RuntimeException e) {
-                log.error("Error saving log entries", e);
-            }
-        }
+        state.get().removeEventListener(eventListener);
 
         afterStateChange();
     }
@@ -207,7 +211,11 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        runStateChange(() -> state.skip(RANDOM));
+        try {
+            runStateChange(() -> state.get().skip(RANDOM));
+        } catch (GWTException e) {
+            throw new APIException(e.getError(), e.getParams());
+        }
     }
 
     public void endTurn() {
@@ -215,27 +223,34 @@ public class Game {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
 
-        runStateChange(() -> state.endTurn(RANDOM));
+        try {
+            runStateChange(() -> state.get().endTurn(RANDOM));
+        } catch (GWTException e) {
+            throw new APIException(e.getError(), e.getParams());
+        }
     }
 
     private void afterStateChange() {
         updated = Instant.now();
 
-        CDI.current().getBeanManager().fireEvent(new StateChanged());
+        new StateChanged().fire();
 
-        if (state.isEnded()) {
+        if (state.get().isEnded()) {
             status = Status.ENDED;
             ended = updated;
             expires = ended.plus(RETENTION_AFTER_ENDED);
 
-            Set<com.wetjens.gwt.Player> winners = state.winners();
+            Set<com.wetjens.gwt.Player> winners = state.get().winners();
             players.forEach(player -> {
-                player.setScore(new Score(state.score(player.getColor()).getCategories().entrySet().stream()
+                var playerInState = state.get().getPlayerByName(player.getId().getId());
+
+                player.setScore(new Score(state.get().score(playerInState).getCategories().entrySet().stream()
                         .collect(Collectors.toMap(entry -> entry.getKey().toString(), Map.Entry::getValue))));
-                player.setWinner(winners.contains(player.getColor()));
+
+                player.setWinner(winners.contains(playerInState));
             });
 
-            CDI.current().getBeanManager().fireEvent(new Ended());
+            new Ended().fire();
         } else {
             expires = updated.plus(ACTION_TIMEOUT);
         }
@@ -255,12 +270,14 @@ public class Game {
 
         updated = Instant.now();
 
-        CDI.current().getBeanManager().fireEvent(new Accepted(userId));
+        log.add(new LogEntry(this, userId, LogEntry.Type.ACCEPT, Collections.emptyList()));
 
-        afterRespond();
+        new Accepted(userId).fire();
+
+        afterRespondToInvitation();
     }
 
-    private void afterRespond() {
+    private void afterRespondToInvitation() {
         if (allPlayersResponded()) {
             if (numberOfPlayersAccepted() >= 2) {
                 // If enough players have accepted, automatically start
@@ -301,9 +318,11 @@ public class Game {
 
         updated = Instant.now();
 
-        CDI.current().getBeanManager().fireEvent(new Rejected(userId));
+        log.add(new LogEntry(this, userId, LogEntry.Type.REJECT, Collections.emptyList()));
 
-        afterRespond();
+        new Rejected(userId).fire();
+
+        afterRespondToInvitation();
     }
 
     public Set<Player> getPlayers() {
@@ -322,30 +341,22 @@ public class Game {
 
     public Player getCurrentPlayer() {
         if (state == null) {
-            throw APIException.serverError(APIError.GAME_NOT_STARTED_YET);
+            throw APIException.badRequest(APIError.GAME_NOT_STARTED_YET);
         }
+        return getPlayerById(Player.Id.of(state.get().getCurrentPlayer().getName()));
+    }
 
+    public Player getPlayerById(Player.Id playerId) {
         return players.stream()
-                .filter(player -> player.getColor() == state.getCurrentPlayer())
+                .filter(player -> player.getId().equals(playerId))
                 .findAny()
                 .orElseThrow(() -> APIException.serverError(APIError.NOT_PLAYER_IN_GAME));
-    }
-
-    public Optional<Player> getPlayerByColor(com.wetjens.gwt.Player color) {
-        return players.stream()
-                .filter(player -> player.getColor() == color)
-                .findAny();
-    }
-
-    public Map<Player.Id, Player> getPlayersAsMap() {
-        return players.stream()
-                .collect(Collectors.toMap(Player::getId, Function.identity()));
     }
 
     public enum Status {
         NEW,
         STARTED,
-        ENDED;
+        ENDED
     }
 
     @Value(staticConstructor = "of")
@@ -358,40 +369,40 @@ public class Game {
     }
 
     @Value
-    public final class Invited {
+    public class Invited implements DomainEvent {
         Game game = Game.this;
         User.Id userId;
     }
 
     @Value
-    public final class Accepted {
+    public class Accepted implements DomainEvent {
         Game game = Game.this;
         User.Id userId;
     }
 
     @Value
-    public final class Rejected {
+    public class Rejected implements DomainEvent {
         Game game = Game.this;
         User.Id userId;
     }
 
     @Value
-    public final class Started {
+    public class Started implements DomainEvent {
         Game game = Game.this;
     }
 
     @Value
-    public final class Ended {
+    public class Ended implements DomainEvent {
         Game game = Game.this;
     }
 
     @Value
-    public final class StateChanged {
+    public class StateChanged implements DomainEvent {
         Game game = Game.this;
     }
 
     @Value
-    private final class Created {
+    private class Created implements DomainEvent {
         Game game = Game.this;
     }
 }

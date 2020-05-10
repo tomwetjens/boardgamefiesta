@@ -40,10 +40,6 @@ public class Player {
 
     @Getter
     @Setter(value = AccessLevel.PACKAGE)
-    private com.wetjens.gwt.Player color;
-
-    @Getter
-    @Setter(value = AccessLevel.PACKAGE)
     private Score score;
 
     @Getter

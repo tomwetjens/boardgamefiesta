@@ -1,5 +1,8 @@
 package com.wetjens.gwt;
 
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -8,9 +11,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Random;
 
-import org.junit.jupiter.api.*;
-
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class GameTest {
 
@@ -27,15 +28,18 @@ class GameTest {
             PlayerBuilding.Building10A.class
     };
 
+    private Player playerA = new Player("Player A", PlayerColor.WHITE);
+    private Player playerB = new Player("Player B", PlayerColor.YELLOW);
+
     @Nested
     class Create {
 
         @Test
         void beginner() {
-            Game game = new Game(new LinkedHashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            Game game = new Game(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
-            assertThat(game.getPlayers()).containsExactly(Player.BLUE, Player.RED);
-            assertThat(game.getCurrentPlayer()).isEqualByComparingTo(Player.BLUE);
+            assertThat(game.getPlayers()).containsExactly(playerA, playerB);
+            assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
 
             // Neutral buildings should not be randomized
             assertThat(((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get()).isInstanceOf(NeutralBuilding.A.class);
@@ -54,10 +58,10 @@ class GameTest {
 
         @Test
         void randomized() {
-            Game game = new Game(new LinkedHashSet<>(Arrays.asList(Player.BLUE, Player.RED)), false, new Random(0));
+            Game game = new Game(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), false, new Random(0));
 
-            assertThat(game.getPlayers()).containsExactly(Player.BLUE, Player.RED);
-            assertThat(game.getCurrentPlayer()).isEqualByComparingTo(Player.BLUE);
+            assertThat(game.getPlayers()).containsExactly(playerA, playerB);
+            assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
 
             // Neutral buildings should be randomized
@@ -90,8 +94,8 @@ class GameTest {
     class Serialize {
 
         @Test
-        void serialize() throws Exception {
-            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+        void serialize() {
+            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             game.serialize(byteArrayOutputStream);
@@ -124,21 +128,21 @@ class GameTest {
 
         @Test
         void needWhite() {
-            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             assertThat(game.placeDisc(Collections.singletonList(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
         }
 
         @Test
         void needBlackOrWhite() {
-            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             assertThat(game.placeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
         }
 
         @Test
         void needWhiteButCanOnlyUnlockBlack() {
-            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             assertThat(game.placeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
 
@@ -161,7 +165,7 @@ class GameTest {
 
         @Test
         void cannotUnlockButStationsUpgraded() {
-            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 
@@ -191,7 +195,7 @@ class GameTest {
 
         @Test
         void cannotUnlockNoStationsUpgraded() {
-            Game game = new Game(new HashSet<>(Arrays.asList(Player.BLUE, Player.RED)), true, new Random(0));
+            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 

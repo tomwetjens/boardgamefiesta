@@ -70,7 +70,6 @@ public class EventsEndpoint {
     }
 
     void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Game.StateChanged stateChanged) {
-        log.debug("stateChanged: gameId={} currentPlayer={}", stateChanged.getGame().getId(), stateChanged.getGame().getState().getCurrentPlayer());
         notifyOtherPlayers(null, stateChanged.getGame(), new Event(EventType.STATE_CHANGED, stateChanged.getGame().getId().getId(), null));
     }
 

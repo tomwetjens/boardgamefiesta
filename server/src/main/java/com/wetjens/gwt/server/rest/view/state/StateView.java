@@ -1,17 +1,13 @@
 package com.wetjens.gwt.server.rest.view.state;
 
+import com.wetjens.gwt.Game;
 import com.wetjens.gwt.Player;
 import com.wetjens.gwt.server.domain.ActionType;
-import com.wetjens.gwt.server.domain.Game;
-import com.wetjens.gwt.server.domain.User;
 import lombok.Value;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -21,27 +17,22 @@ public class StateView {
     RailroadTrackView railroadTrack;
     PlayerStateView player;
     List<PlayerStateView> otherPlayers;
-    List<Player> playerOrder;
     ForesightsView foresights;
     TrailView trail;
     JobMarketView jobMarket;
     CattleMarketView cattleMarket;
     List<ObjectiveCardView> objectiveCards;
-
     PlayerView currentPlayer;
     List<ActionType> actions;
-    Instant expires;
     boolean turn;
 
-    public StateView(Game game, Player viewingPlayer, Map<Player, User> userMap) {
-        var state = game.getState();
-
+    public StateView(Game state, Player viewingPlayer) {
         railroadTrack = new RailroadTrackView(state.getRailroadTrack());
 
         player = state.getPlayers().stream()
                 .filter(p -> p == viewingPlayer)
                 .map(state::playerState)
-                .map(playerState -> new PlayerStateView(state, playerState, viewingPlayer, userMap.get(playerState.getPlayer())))
+                .map(playerState -> new PlayerStateView(state, playerState, viewingPlayer))
                 .findAny()
                 .orElse(null);
 
@@ -51,10 +42,8 @@ public class StateView {
         otherPlayers = IntStream.range(1, playerCount)
                 .map(i -> (viewingPlayerIndex + i) % playerCount)
                 .mapToObj(i -> state.getPlayers().get(i))
-                .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer, userMap.get(p)))
+                .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer))
                 .collect(Collectors.toList());
-
-        playerOrder = state.getPlayers();
 
         foresights = new ForesightsView(state.getForesights());
 
@@ -69,7 +58,7 @@ public class StateView {
                 .sorted()
                 .collect(Collectors.toList());
 
-        currentPlayer = new PlayerView(state.getCurrentPlayer(), userMap.get(state.getCurrentPlayer()));
+        currentPlayer = new PlayerView(state.getCurrentPlayer());
 
         if (viewingPlayer == state.getCurrentPlayer()) {
             actions = state.possibleActions().stream()
@@ -81,8 +70,6 @@ public class StateView {
             actions = Collections.emptyList();
             turn = false;
         }
-
-        expires = game.getExpires();
     }
 
 }

@@ -17,7 +17,7 @@ class PlayerStateTest {
 
     private ObjectiveCard startingObjectiveCard = new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0);
 
-    private Player player = Player.WHITE;
+    private Player player = new Player("A", PlayerColor.WHITE);
 
     @Nested
     class Create {

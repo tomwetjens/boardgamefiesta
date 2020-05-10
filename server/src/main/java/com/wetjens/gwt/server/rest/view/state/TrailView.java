@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import com.wetjens.gwt.Location;
 import com.wetjens.gwt.Player;
+import com.wetjens.gwt.PlayerColor;
 import com.wetjens.gwt.Teepee;
 import com.wetjens.gwt.Trail;
 import lombok.Value;
@@ -13,11 +14,11 @@ import lombok.Value;
 @Value
 public class TrailView {
 
-    private Map<String, LocationView> locations;
-    private LocationView start;
-    private LocationView kansasCity;
-    private Map<String, LocationView> teepeeLocations;
-    private final Map<Player, String> playerLocations;
+    Map<String, LocationView> locations;
+    LocationView start;
+    LocationView kansasCity;
+    Map<String, LocationView> teepeeLocations;
+    Map<PlayerColor, String> playerLocations;
 
     TrailView(Trail trail) {
         start = new LocationView(trail.getStart());
@@ -26,7 +27,7 @@ public class TrailView {
         // Separate property for teepee locations, because not all locations are on the trail
         teepeeLocations = trail.getTeepeeLocations().stream().collect(Collectors.toMap(Location::getName, LocationView::new));
         playerLocations = trail.getPlayerLocations().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getName()));
+                .collect(Collectors.toMap(entry -> entry.getKey().getColor(), entry -> entry.getValue().getName()));
     }
 
     @Value

@@ -11,7 +11,6 @@ public class PlayerView {
     Player.Type type;
     UserView user;
     Player.Status status;
-    com.wetjens.gwt.Player color;
     ScoreView score;
     Boolean winner;
 
@@ -19,7 +18,6 @@ public class PlayerView {
         type = player.getType();
         status = player.getStatus();
         this.user = player.getType() == Player.Type.USER ? new UserView(player.getUserId(), user) : null;
-        color = player.getColor();
         score = player.getScore() != null ? new ScoreView(player.getScore()) : null;
         winner = player.getWinner();
     }
