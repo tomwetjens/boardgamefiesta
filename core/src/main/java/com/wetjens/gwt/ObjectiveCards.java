@@ -54,6 +54,10 @@ public final class ObjectiveCards implements Serializable {
         return Collections.unmodifiableSet(available);
     }
 
+    public int getDrawStackSize() {
+        return drawStack.size();
+    }
+
     private void fill() {
         while (available.size() < 4 && !drawStack.isEmpty()) {
             available.add(drawStack.poll());
@@ -101,5 +105,12 @@ public final class ObjectiveCards implements Serializable {
 
     public boolean isEmpty() {
         return available.isEmpty();
+    }
+
+    public ObjectiveCard draw() {
+        if (drawStack.isEmpty()) {
+            throw new GWTException(GWTError.OBJECTIVE_CARD_NOT_AVAILABLE);
+        }
+        return drawStack.poll();
     }
 }

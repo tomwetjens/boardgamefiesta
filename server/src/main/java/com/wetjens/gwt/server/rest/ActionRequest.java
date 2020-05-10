@@ -63,7 +63,9 @@ public class ActionRequest {
             case DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND:
                 return new Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)));
             case ADD_1_OBJECTIVE_CARD_TO_HAND:
-                return new Action.Add1ObjectiveCardToHand(findObjectiveCard(game, jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)));
+                return jsonObject.containsKey(JsonProperties.OBJECTIVE_CARD)
+                        ? new Action.Add1ObjectiveCardToHand(findObjectiveCard(game, jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)))
+                        : new Action.Add1ObjectiveCardToHand();
             case DISCARD_1_CATTLE_CARD_TO_GAIN_1_CERTIFICATE:
                 return new Action.Discard1CattleCardToGain1Certificate(CattleType.valueOf(jsonObject.getString(JsonProperties.CATTLE_TYPE)));
             case DISCARD_1_DUTCH_BELT_TO_GAIN_2_DOLLARS:
@@ -187,7 +189,9 @@ public class ActionRequest {
             case SINGLE_OR_DOUBLE_AUXILIARY_ACTION:
                 return new Action.SingleOrDoubleAuxiliaryAction();
             case TAKE_OBJECTIVE_CARD:
-                return new Action.TakeObjectiveCard(findObjectiveCard(game, jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)));
+                return jsonObject.containsKey(JsonProperties.OBJECTIVE_CARD)
+                        ? new Action.TakeObjectiveCard(findObjectiveCard(game, jsonObject.getJsonObject(JsonProperties.OBJECTIVE_CARD)))
+                        : new Action.TakeObjectiveCard();
             case TRADE_WITH_INDIANS:
                 return new Action.TradeWithIndians(jsonObject.getInt(JsonProperties.REWARD));
             case UPGRADE_ANY_STATION_BEHIND_ENGINE:

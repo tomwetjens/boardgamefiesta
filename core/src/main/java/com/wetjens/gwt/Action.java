@@ -130,13 +130,21 @@ public abstract class Action {
         // null means draw from stack
         ObjectiveCard objectiveCard;
 
+        public TakeObjectiveCard() {
+            this.objectiveCard = null;
+        }
+
+        public TakeObjectiveCard(@NonNull ObjectiveCard objectiveCard) {
+            this.objectiveCard = objectiveCard;
+        }
+
         @Override
         public ImmediateActions perform(Game game, Random random) {
             if (objectiveCard != null) {
                 game.getObjectiveCards().remove(objectiveCard);
                 game.currentPlayerState().gainCard(objectiveCard);
             } else {
-
+                game.currentPlayerState().gainCard(game.getObjectiveCards().draw());
             }
             return ImmediateActions.none();
         }
@@ -1271,13 +1279,25 @@ public abstract class Action {
     @EqualsAndHashCode(callSuper = false)
     public static class Add1ObjectiveCardToHand extends Action {
 
-        @NonNull ObjectiveCard objectiveCard;
+        // null means draw from stack
+        ObjectiveCard objectiveCard;
+
+        public Add1ObjectiveCardToHand() {
+            this.objectiveCard = null;
+        }
+
+        public Add1ObjectiveCardToHand(@NonNull ObjectiveCard objectiveCard) {
+            this.objectiveCard = objectiveCard;
+        }
 
         @Override
         ImmediateActions perform(Game game, Random random) {
-            game.getObjectiveCards().remove(objectiveCard);
-            game.currentPlayerState().addCardToHand(objectiveCard);
-
+            if (objectiveCard != null) {
+                game.getObjectiveCards().remove(objectiveCard);
+                game.currentPlayerState().addCardToHand(objectiveCard);
+            } else {
+                game.currentPlayerState().addCardToHand(game.getObjectiveCards().draw());
+            }
             return ImmediateActions.none();
         }
     }

@@ -134,6 +134,10 @@ public final class CattleMarket implements Serializable {
         return cost(new ArrayList<>(market), cattleCards, numberOfCowboys, preference);
     }
 
+    public int getDrawStackSize() {
+        return drawStack.size();
+    }
+
     @Value
     public static final class Cost {
         int dollars;

@@ -21,7 +21,7 @@ public class StateView {
     TrailView trail;
     JobMarketView jobMarket;
     CattleMarketView cattleMarket;
-    List<ObjectiveCardView> objectiveCards;
+    ObjectiveCardsView objectiveCards;
     PlayerView currentPlayer;
     List<ActionType> actions;
     boolean turn;
@@ -53,10 +53,7 @@ public class StateView {
 
         cattleMarket = new CattleMarketView(state.getCattleMarket());
 
-        objectiveCards = state.getObjectiveCards().getAvailable().stream()
-                .map(ObjectiveCardView::new)
-                .sorted()
-                .collect(Collectors.toList());
+        objectiveCards = new ObjectiveCardsView(state.getObjectiveCards());
 
         currentPlayer = new PlayerView(state.getCurrentPlayer());
 

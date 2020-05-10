@@ -72,7 +72,6 @@ public class GameDynamoDbRepository implements Games {
                 .expressionAttributeValues(Collections.singletonMap(":UserId", AttributeValue.builder()
                         .s("User-" + userId.getId())
                         .build()))
-                .attributesToGet("Id")
                 .build());
 
         return response.items().stream()

@@ -11,11 +11,13 @@ import lombok.Value;
 public class CattleMarketView {
 
     List<CattleCardView> cards;
+    int drawStackSize;
 
     CattleMarketView(CattleMarket cattleMarket) {
         cards = cattleMarket.getMarket().stream()
                 .map(CattleCardView::new)
                 .sorted()
                 .collect(Collectors.toList());
+        drawStackSize = cattleMarket.getDrawStackSize();
     }
 }
