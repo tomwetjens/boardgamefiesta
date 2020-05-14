@@ -61,6 +61,7 @@ public class TableResource {
         var currentUserId = currentUserId();
 
         return tables.findByUserId(currentUserId)
+                .filter(table -> table.getStatus() != Table.Status.ABANDONED)
                 .map(table -> new TableView(table, getUserMapById(table), currentUserId))
                 .collect(Collectors.toList());
     }
