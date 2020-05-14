@@ -4,7 +4,7 @@ import com.wetjens.gwt.Action;
 import com.wetjens.gwt.Game;
 import com.wetjens.gwt.ObjectiveCard;
 import com.wetjens.gwt.PlayerState;
-import com.wetjens.gwt.server.domain.ActionType;
+import com.wetjens.gwt.view.ActionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

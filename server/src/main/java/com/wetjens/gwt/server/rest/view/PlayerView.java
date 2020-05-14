@@ -1,6 +1,6 @@
 package com.wetjens.gwt.server.rest.view;
 
-import com.wetjens.gwt.PlayerColor;
+import com.wetjens.gwt.api.PlayerColor;
 import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;

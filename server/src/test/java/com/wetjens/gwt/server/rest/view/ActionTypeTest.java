@@ -1,7 +1,7 @@
 package com.wetjens.gwt.server.rest.view;
 
 import com.wetjens.gwt.Action;
-import com.wetjens.gwt.server.domain.ActionType;
+import com.wetjens.gwt.view.ActionType;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;

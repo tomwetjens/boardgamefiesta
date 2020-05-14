@@ -3,13 +3,14 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
-        <artifactId>gwt</artifactId>
-        <groupId>com.wetjens.gwt</groupId>
+        <artifactId>parent</artifactId>
+        <groupId>com.wetjens</groupId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>com.wetjens.gwt</groupId>
     <artifactId>server</artifactId>
 
     <properties>
@@ -73,7 +74,13 @@
     <dependencies>
         <dependency>
             <groupId>com.wetjens.gwt</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wetjens.gwt</groupId>
+            <artifactId>gwt</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>

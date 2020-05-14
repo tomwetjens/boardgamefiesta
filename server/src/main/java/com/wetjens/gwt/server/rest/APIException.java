@@ -4,13 +4,13 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.wetjens.gwt.GWTError;
+import com.wetjens.gwt.api.InGameException;
 import lombok.Value;
 
 public class APIException extends WebApplicationException {
 
-    public APIException(GWTError gwtError, Object... params) {
-        this(Response.Status.BAD_REQUEST, gwtError.name(), params);
+    public APIException(InGameException cause) {
+        this(Response.Status.BAD_REQUEST, cause.getError(), cause.getParams());
     }
 
     public static APIException badRequest(APIError e, Object... params) {

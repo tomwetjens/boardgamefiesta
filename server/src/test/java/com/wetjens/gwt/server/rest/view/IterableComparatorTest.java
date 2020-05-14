@@ -3,10 +3,10 @@ package com.wetjens.gwt.server.rest.view;
 import java.util.Comparator;
 import java.util.List;
 
+import com.wetjens.gwt.view.IterableComparator;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 class IterableComparatorTest {
 

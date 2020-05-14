@@ -1,8 +1,11 @@
 package com.wetjens.gwt.server.repository;
 
-import com.wetjens.gwt.PlayerColor;
+import com.wetjens.gwt.api.Implementation;
+import com.wetjens.gwt.api.PlayerColor;
+import com.wetjens.gwt.api.State;
 import com.wetjens.gwt.server.domain.Game;
 import com.wetjens.gwt.server.domain.Games;
+import com.wetjens.gwt.server.domain.Implementations;
 import com.wetjens.gwt.server.domain.Lazy;
 import com.wetjens.gwt.server.domain.LogEntry;
 import com.wetjens.gwt.server.domain.Player;
@@ -46,13 +49,16 @@ public class GameDynamoDbRepository implements Games {
 
     private static final String USER_ID_ID_INDEX = "UserId-Id-index";
 
+    private final Implementations implementations;
     private final DynamoDbClient dynamoDbClient;
     private final String gameTableName;
     private final String logTableName;
 
     @Inject
-    public GameDynamoDbRepository(@NonNull DynamoDbClient dynamoDbClient,
+    public GameDynamoDbRepository(@NonNull Implementations implementations,
+                                  @NonNull DynamoDbClient dynamoDbClient,
                                   @NonNull DynamoDbConfiguration config) {
+        this.implementations = implementations;
         this.dynamoDbClient = dynamoDbClient;
         this.gameTableName = GAME_TABLE_NAME + config.getTableSuffix().orElse("");
         this.logTableName = LOG_TABLE_NAME + config.getTableSuffix().orElse("");
@@ -243,8 +249,12 @@ public class GameDynamoDbRepository implements Games {
 
     private Map<String, AttributeValue> createAttributeValues(Game game) {
         var map = new HashMap<String, AttributeValue>();
+        map.put("Implementation", AttributeValue.builder().s(game.getImplementation().getName()).build());
+        map.put("Type", AttributeValue.builder().s(game.getType().name()).build());
         map.put("Status", AttributeValue.builder().s(game.getStatus().name()).build());
-        map.put("Beginner", AttributeValue.builder().bool(game.isBeginner()).build());
+        map.put("Options", AttributeValue.builder().m(game.getOptions().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> AttributeValue.builder().s(entry.getValue()).build())))
+                .build());
         map.put("Created", AttributeValue.builder().n(Long.toString(game.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(game.getUpdated().getEpochSecond())).build());
         map.put("Started", game.getStarted() != null ? AttributeValue.builder().n(Long.toString(game.getStarted().getEpochSecond())).build() : null);
@@ -261,10 +271,15 @@ public class GameDynamoDbRepository implements Games {
     private Game mapToGame(Map<String, AttributeValue> item) {
         var id = Game.Id.of(item.get("Id").s());
 
+        var implementation = implementations.get(item.get("Implementation").s());
+
         return Game.builder()
                 .id(id)
+                .type(Game.Type.valueOf(item.get("Type").s()))
+                .implementation(implementation)
                 .status(Game.Status.valueOf(item.get("Status").s()))
-                .beginner(item.get("Beginner").bool())
+                .options(item.get("Options").m().entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().s())))
                 .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
                 .started(item.get("Started") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Started").n())) : null)
@@ -274,20 +289,25 @@ public class GameDynamoDbRepository implements Games {
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
                         .collect(Collectors.toSet()))
-                .state(Lazy.defer(() -> getState(id)))
+                .state(Lazy.defer(() -> getState(implementation, id)))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
     }
 
-    private com.wetjens.gwt.Game getState(Game.Id id) {
+    private State getState(Implementation implementation, Game.Id id) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(gameTableName)
                 .key(key(id))
                 .consistentRead(true)
-                .attributesToGet("State")
+                .attributesToGet("State", "Implementation")
                 .build());
 
-        return mapToState(response.item().get("State"));
+        var attributeValue = response.item().get("State");
+
+        if (attributeValue != null) {
+            return implementation.deserialize(attributeValue.b().asInputStream());
+        }
+        return null;
     }
 
     private Player mapToPlayer(AttributeValue attributeValue) {
@@ -302,6 +322,7 @@ public class GameDynamoDbRepository implements Games {
                 .winner(map.containsKey("Winner") ? map.get("Winner").bool() : null)
                 .created(Instant.ofEpochSecond(Long.parseLong(map.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(map.get("Updated").n())))
+                .mustRespondBefore(Instant.ofEpochSecond(Long.parseLong(map.get("MustRespondBefore").n())))
                 .build();
     }
 
@@ -311,7 +332,7 @@ public class GameDynamoDbRepository implements Games {
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> Integer.valueOf(entry.getValue().n()))));
     }
 
-    private AttributeValue mapFromState(com.wetjens.gwt.Game state) {
+    private AttributeValue mapFromState(State state) {
         try (var byteArrayOutputStream = new ByteArrayOutputStream()) {
             state.serialize(byteArrayOutputStream);
 
@@ -319,14 +340,6 @@ public class GameDynamoDbRepository implements Games {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private com.wetjens.gwt.Game mapToState(AttributeValue attributeValue) {
-        if (attributeValue == null) {
-            return null;
-        }
-
-        return com.wetjens.gwt.Game.deserialize(attributeValue.b().asInputStream());
     }
 
     private AttributeValue mapFromPlayer(Player player) {
@@ -340,6 +353,7 @@ public class GameDynamoDbRepository implements Games {
         map.put("Winner", player.getWinner() != null ? AttributeValue.builder().bool(player.getWinner()).build() : null);
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(player.getUpdated().getEpochSecond())).build());
+        map.put("MustRespondBefore", AttributeValue.builder().n(Long.toString(player.getMustRespondBefore().getEpochSecond())).build());
         return AttributeValue.builder().m(map).build();
     }
 
@@ -393,11 +407,9 @@ public class GameDynamoDbRepository implements Games {
         item.put("Timestamp", AttributeValue.builder().n(Long.toString(logEntry.getTimestamp().toEpochMilli())).build());
         item.put("PlayerId", AttributeValue.builder().s(logEntry.getPlayerId().getId()).build());
         item.put("Expires", AttributeValue.builder().n(Long.toString(logEntry.getExpires().getEpochSecond())).build());
-        item.put("Type", AttributeValue.builder().s(logEntry.getType()).build());
-        item.put("Values", AttributeValue.builder().l(logEntry.getValues().stream()
-                .map(value -> value instanceof Number
-                        ? AttributeValue.builder().n(value.toString()).build()
-                        : AttributeValue.builder().s(value.toString()).build())
+        item.put("Type", AttributeValue.builder().s(logEntry.getType().name()).build());
+        item.put("Parameters", AttributeValue.builder().l(logEntry.getParameters().stream()
+                .map(params -> AttributeValue.builder().s(params).build())
                 .collect(Collectors.toList()))
                 .build());
 
@@ -409,9 +421,9 @@ public class GameDynamoDbRepository implements Games {
                 .timestamp(Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n())))
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
                 .playerId(Player.Id.of(item.get("PlayerId").s()))
-                .type(item.get("Type").s())
-                .values(item.get("Values").l().stream()
-                        .map(attributeValue -> attributeValue.n() != null ? Float.parseFloat(attributeValue.n()) : attributeValue.s())
+                .type(LogEntry.Type.valueOf(item.get("Type").s()))
+                .parameters(item.get("Parameters").l().stream()
+                        .map(AttributeValue::s)
                         .collect(Collectors.toList()))
                 .build();
     }

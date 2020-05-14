@@ -1,9 +1,6 @@
 package com.wetjens.gwt.server.domain;
 
-import java.time.Instant;
-import java.util.UUID;
-
-import com.wetjens.gwt.PlayerColor;
+import com.wetjens.gwt.api.PlayerColor;
 import com.wetjens.gwt.server.rest.APIError;
 import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
@@ -13,8 +10,15 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.Value;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
 @Builder
 public class Player {
+
+    private static final Duration ACTION_TIMEOUT = Duration.of(3, ChronoUnit.MINUTES);
 
     @Getter
     @NonNull
@@ -42,6 +46,9 @@ public class Player {
     @Getter
     @Setter(value = AccessLevel.PACKAGE)
     private PlayerColor color;
+
+    @Getter
+    private Instant mustRespondBefore;
 
     @Getter
     @Setter(value = AccessLevel.PACKAGE)
@@ -107,10 +114,65 @@ public class Player {
         updated = Instant.now();
     }
 
+    void assignColor(PlayerColor color) {
+        this.color = color;
+        updated = Instant.now();
+    }
+
+    void leave() {
+        if (status != Status.ACCEPTED && status != Status.PROPOSED_TO_LEAVE && status != Status.AGREED_TO_LEAVE) {
+            throw APIException.badRequest(APIError.NOT_ACCEPTED);
+        }
+
+        status = Status.LEFT;
+        updated = Instant.now();
+    }
+
+    void proposeToLeave() {
+        if (status != Status.ACCEPTED) {
+            throw APIException.badRequest(APIError.NOT_ACCEPTED);
+        }
+
+        status = Status.PROPOSED_TO_LEAVE;
+        updated = Instant.now();
+    }
+
+    public void agreeToLeave() {
+        if (status != Status.ACCEPTED) {
+            throw APIException.badRequest(APIError.NOT_ACCEPTED);
+        }
+
+        status = Status.AGREED_TO_LEAVE;
+        updated = Instant.now();
+    }
+
+    public boolean hasAccepted() {
+        return status == Status.ACCEPTED || status == Status.PROPOSED_TO_LEAVE || status == Status.AGREED_TO_LEAVE;
+    }
+
+    public boolean hasResponded() {
+        return status != Status.INVITED;
+    }
+
+    public boolean hasAgreedToLeave() {
+        return status == Status.PROPOSED_TO_LEAVE || status == Status.AGREED_TO_LEAVE;
+    }
+
+    public void beginTurn() {
+        mustRespondBefore = Instant.now().plus(ACTION_TIMEOUT);
+    }
+
+    public void endTurn() {
+
+    }
+
     public enum Status {
         INVITED,
         ACCEPTED,
-        REJECTED;
+        REJECTED,
+        LEFT,
+        PROPOSED_TO_LEAVE,
+        AGREED_TO_LEAVE
     }
 
     public enum Type {

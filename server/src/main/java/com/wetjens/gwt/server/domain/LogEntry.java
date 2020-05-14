@@ -1,7 +1,7 @@
 package com.wetjens.gwt.server.domain;
 
-import com.wetjens.gwt.Action;
-import com.wetjens.gwt.GWTEvent;
+import com.wetjens.gwt.api.Action;
+import com.wetjens.gwt.api.InGameEvent;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +11,7 @@ import lombok.Value;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,36 +34,39 @@ public class LogEntry {
     Instant expires;
 
     @NonNull
-    String type;
+    Type type;
 
     @NonNull
-    List<Object> values;
+    List<String> parameters;
 
-    LogEntry(@NonNull Game game, @NonNull GWTEvent event) {
-        this.playerId = game.getPlayerById(Player.Id.of(event.getPlayer().getName())).getId();
+    LogEntry(@NonNull InGameEvent event) {
+        this.playerId = Player.Id.of(event.getPlayer().getName());
         this.timestamp = generateTimestamp();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
-        this.type = event.getType().name();
-        this.values = event.getValues().stream()
-                .map(value -> {
-                    if (value instanceof com.wetjens.gwt.Player) {
-                        return game.getPlayerById(Player.Id.of(((com.wetjens.gwt.Player) value).getName())).getId();
-                    } else if (value instanceof Action) {
-                        return ActionType.of(((Action) value).getClass()).name();
-                    } else if (value instanceof Enum<?>) {
-                        return value.toString();
+        this.type = Type.IN_GAME_EVENT;
+        this.parameters = event.getParameters().stream()
+                .map(param -> {
+                    if (param instanceof com.wetjens.gwt.api.Player) {
+                        return "Player:" + ((com.wetjens.gwt.api.Player) param).getName();
+                    } else if (param instanceof Action) {
+                        return "Action:" + param.getClass();
                     }
-                    return value;
+                    return param.toString();
                 })
                 .collect(Collectors.toList());
     }
 
-    LogEntry(@NonNull Game game, @NonNull User.Id userId, Type type, List<Object> values) {
-        this.playerId = game.getPlayerByUserId(userId).map(Player::getId).orElse(null);
+
+    LogEntry(@NonNull Player player, @NonNull Type type) {
+        this(player, type, Collections.emptyList());
+    }
+
+    LogEntry(@NonNull Player player, @NonNull Type type, @NonNull List<Object> parameters) {
+        this.playerId = player.getId();
         this.timestamp = generateTimestamp();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
-        this.type = type.name();
-        this.values = values;
+        this.type = type;
+        this.parameters = parameters.stream().map(Object::toString).collect(Collectors.toList());
     }
 
     private static Instant generateTimestamp() {
@@ -88,6 +92,9 @@ public class LogEntry {
         REJECT,
         START,
         INVITE,
-        CREATE
+        PROPOSED_TO_LEAVE,
+        AGREED_TO_LEAVE,
+        CREATE,
+        IN_GAME_EVENT
     }
 }
