@@ -1,7 +1,7 @@
 package com.wetjens.gwt.server.sqs;
 
 import com.wetjens.gwt.server.domain.AutomaScheduler;
-import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -73,8 +73,8 @@ public class AutomaOperatorSqsQueue {
     }
 
     //    @Override
-    public void requestAutomatedAction(Game game) {
-        ComputerActionRequest request = new ComputerActionRequest(game.getId().getId());
+    public void requestAutomatedAction(Table table) {
+        ComputerActionRequest request = new ComputerActionRequest(table.getId().getId());
 
         log.debug("Sending request to SQS queue for game: {}", request);
 

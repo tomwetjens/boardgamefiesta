@@ -1,7 +1,7 @@
 package com.wetjens.gwt.server.websockets;
 
-import com.wetjens.gwt.server.domain.Game;
-import com.wetjens.gwt.server.domain.Games;
+import com.wetjens.gwt.server.domain.Table;
+import com.wetjens.gwt.server.domain.Tables;
 import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;
@@ -30,11 +30,11 @@ public class EventsEndpoint {
 
     private static final Map<User.Id, Session> SESSIONS = new ConcurrentHashMap<>();
 
-    private final Games games;
+    private final Tables tables;
 
     @Inject
-    public EventsEndpoint(@NonNull Games games) {
-        this.games = games;
+    public EventsEndpoint(@NonNull Tables tables) {
+        this.tables = tables;
     }
 
     @OnOpen
@@ -53,33 +53,33 @@ public class EventsEndpoint {
         SESSIONS.remove(currentUserId(session));
     }
 
-    void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Game.Accepted accepted) {
-        notifyOtherPlayers(accepted.getUserId(), accepted.getGame(), new Event(EventType.ACCEPTED, accepted.getGame().getId().getId(), accepted.getUserId().getId()));
+    void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted accepted) {
+        notifyOtherPlayers(accepted.getUserId(), accepted.getTable(), new Event(EventType.ACCEPTED, accepted.getTable().getId().getId(), accepted.getUserId().getId()));
     }
 
-    void rejected(@Observes(during = TransactionPhase.AFTER_SUCCESS) Game.Rejected rejected) {
-        notifyOtherPlayers(rejected.getUserId(), rejected.getGame(), new Event(EventType.REJECTED, rejected.getGame().getId().getId(), rejected.getUserId().getId()));
+    void rejected(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Rejected rejected) {
+        notifyOtherPlayers(rejected.getUserId(), rejected.getTable(), new Event(EventType.REJECTED, rejected.getTable().getId().getId(), rejected.getUserId().getId()));
     }
 
-    void started(@Observes(during = TransactionPhase.AFTER_SUCCESS) Game.Started started) {
-        notifyOtherPlayers(null, started.getGame(), new Event(EventType.STARTED, started.getGame().getId().getId(), null));
+    void started(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Started started) {
+        notifyOtherPlayers(null, started.getTable(), new Event(EventType.STARTED, started.getTable().getId().getId(), null));
     }
 
-    void ended(@Observes(during = TransactionPhase.AFTER_SUCCESS) Game.Ended ended) {
-        notifyOtherPlayers(null, ended.getGame(), new Event(EventType.ENDED, ended.getGame().getId().getId(), null));
+    void ended(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended ended) {
+        notifyOtherPlayers(null, ended.getTable(), new Event(EventType.ENDED, ended.getTable().getId().getId(), null));
     }
 
-    void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Game.StateChanged stateChanged) {
-        notifyOtherPlayers(null, stateChanged.getGame(), new Event(EventType.STATE_CHANGED, stateChanged.getGame().getId().getId(), null));
+    void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.StateChanged stateChanged) {
+        notifyOtherPlayers(null, stateChanged.getTable(), new Event(EventType.STATE_CHANGED, stateChanged.getTable().getId().getId(), null));
     }
 
-    void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Game.Invited invited) {
-        notifyUser(invited.getUserId(), new Event(EventType.INVITED, invited.getGame().getId().getId(), null));
-        notifyOtherPlayers(invited.getUserId(), invited.getGame(), new Event(EventType.INVITED, invited.getGame().getId().getId(), invited.getUserId().getId()));
+    void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited invited) {
+        notifyUser(invited.getUserId(), new Event(EventType.INVITED, invited.getTable().getId().getId(), null));
+        notifyOtherPlayers(invited.getUserId(), invited.getTable(), new Event(EventType.INVITED, invited.getTable().getId().getId(), invited.getUserId().getId()));
     }
 
-    private void notifyOtherPlayers(User.Id currentUserId, Game game, Event event) {
-        game.getPlayers().stream()
+    private void notifyOtherPlayers(User.Id currentUserId, Table table, Event event) {
+        table.getPlayers().stream()
                 .filter(player -> player.getType() == Player.Type.USER)
                 .map(Player::getUserId)
                 .filter(userId -> !userId.equals(currentUserId))

@@ -2,11 +2,10 @@ package com.wetjens.gwt.server.domain;
 
 import com.wetjens.gwt.api.Action;
 import com.wetjens.gwt.api.EventListener;
-import com.wetjens.gwt.api.Implementation;
+import com.wetjens.gwt.api.Game;
 import com.wetjens.gwt.api.InGameException;
+import com.wetjens.gwt.api.Options;
 import com.wetjens.gwt.api.State;
-import com.wetjens.gwt.server.rest.APIError;
-import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,7 +30,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @ToString(doNotUseGetters = true)
-public class Game {
+public class Table {
 
     private static final Duration START_TIMEOUT = Duration.of(2, ChronoUnit.DAYS);
     private static final Duration ACTION_TIMEOUT = Duration.of(1, ChronoUnit.DAYS);
@@ -51,11 +50,11 @@ public class Game {
 
     @Getter
     @NonNull
-    private Implementation implementation;
+    private final Game game;
 
     @Getter
     @NonNull
-    private Map<String, String> options;
+    private Options options;
 
     @Getter
     @NonNull
@@ -92,20 +91,20 @@ public class Game {
     @Getter
     private Instant ended;
 
-    public static Game create(@NonNull Implementation implementation,
-                              @NonNull User owner,
-                              @NonNull Set<User> inviteUsers,
-                              @NonNull Map<String, String> options) {
+    public static Table create(@NonNull Game game,
+                               @NonNull User owner,
+                               @NonNull Set<User> inviteUsers,
+                               @NonNull Options options) {
         if (inviteUsers.contains(owner)) {
             throw APIException.badRequest(APIError.CANNOT_INVITE_YOURSELF);
         }
 
-        if (inviteUsers.size() > implementation.getMaxNumberOfPlayers() - 1) {
+        if (inviteUsers.size() > game.getMaxNumberOfPlayers() - 1) {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        Games games = Games.instance();
-        if (games.countByUserId(owner.getId()) >= 1) {
+        Tables tables = Tables.instance();
+        if (tables.countByUserId(owner.getId()) >= 1) {
             throw APIException.forbidden(APIError.EXCEEDS_MAX_REALTIME_GAMES);
         }
 
@@ -113,9 +112,9 @@ public class Game {
         var invitedPlayers = inviteUsers.stream().map(user -> Player.invite(user.getId()));
 
         var created = Instant.now();
-        Game game = Game.builder()
+        Table table = Table.builder()
                 .id(Id.generate())
-                .implementation(implementation)
+                .game(game)
                 .type(Type.REALTIME)
                 .status(Status.NEW)
                 .options(options)
@@ -127,18 +126,18 @@ public class Game {
                 .log(new Log())
                 .build();
 
-        game.log.add(new LogEntry(player, LogEntry.Type.CREATE, Collections.emptyList()));
-        inviteUsers.forEach(invitedUser -> game.log.add(new LogEntry(player, LogEntry.Type.INVITE, List.of(invitedUser.getUsername()))));
+        table.log.add(new LogEntry(player, LogEntry.Type.CREATE, Collections.emptyList()));
+        inviteUsers.forEach(invitedUser -> table.log.add(new LogEntry(player, LogEntry.Type.INVITE, List.of(invitedUser.getUsername()))));
 
-        game.new Created().fire();
+        table.new Created().fire();
 
         for (User user : inviteUsers) {
-            game.new Invited(user.getId()).fire();
+            table.new Invited(user.getId()).fire();
         }
 
-        game.afterRespondToInvitation();
+        table.afterRespondToInvitation();
 
-        return game;
+        return table;
     }
 
     public void start() {
@@ -148,16 +147,16 @@ public class Game {
 
         players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
 
-        if (players.size() < implementation.getMinNumberOfPlayers()) {
+        if (players.size() < game.getMinNumberOfPlayers()) {
             throw APIException.badRequest(APIError.MIN_PLAYERS);
         }
 
-        var randomColors = new LinkedList<>(implementation.getAvailableColors());
+        var randomColors = new LinkedList<>(game.getAvailableColors());
         Collections.shuffle(randomColors, RANDOM);
 
         players.forEach(player -> player.setColor(randomColors.poll()));
 
-        state = Lazy.of(implementation.start(players.stream()
+        state = Lazy.of(game.start(players.stream()
                 .map(player -> new com.wetjens.gwt.api.Player(player.getId().getId(), player.getColor()))
                 .collect(Collectors.toSet()), options, RANDOM));
 
@@ -197,7 +196,7 @@ public class Game {
             throw new IllegalStateException("Current player is not computer");
         }
 
-        runStateChange(() -> implementation.executeAutoma(state.get(), RANDOM));
+        runStateChange(() -> game.executeAutoma(state.get(), RANDOM));
     }
 
     private void runStateChange(Runnable runnable) {
@@ -467,7 +466,7 @@ public class Game {
         return players.stream()
                 .filter(player -> player.getId().equals(playerId))
                 .findAny()
-                .orElseThrow(() -> APIException.serverError(APIError.NOT_PLAYER_IN_GAME));
+                .orElseThrow(() -> APIException.internalError(APIError.NOT_PLAYER_IN_GAME));
     }
 
     public enum Status {
@@ -487,63 +486,63 @@ public class Game {
 
     @Value
     public class Invited implements DomainEvent {
-        Game game = Game.this;
+        Table table = Table.this;
         User.Id userId;
     }
 
     @Value
     public class Accepted implements DomainEvent {
-        Game game = Game.this;
+        Table table = Table.this;
         User.Id userId;
     }
 
     @Value
     public class Rejected implements DomainEvent {
-        Game game = Game.this;
+        Table table = Table.this;
         User.Id userId;
     }
 
     @Value
     public class Started implements DomainEvent {
-        Game game = Game.this;
+        Table table = Table.this;
     }
 
     @Value
     public class Ended implements DomainEvent {
-        Game game = Game.this;
+        Table table = Table.this;
     }
 
     @Value
     public class StateChanged implements DomainEvent {
-        Game game = Game.this;
+        Table table = Table.this;
     }
 
     @Value
     private class Created implements DomainEvent {
-        Game game = Game.this;
+        Table table = Table.this;
     }
 
     @Value
     private static class ChangedOwner implements DomainEvent {
-        @NonNull Game.Id gameId;
+        @NonNull Table.Id gameId;
         @NonNull User.Id userId;
     }
 
     @Value
     private static class Left implements DomainEvent {
-        @NonNull Game.Id gameId;
+        @NonNull Table.Id gameId;
         @NonNull User.Id userId;
     }
 
     @Value
     private static class ProposedToLeave implements DomainEvent {
-        @NonNull Game.Id gameId;
+        @NonNull Table.Id gameId;
         @NonNull User.Id userId;
     }
 
     @Value
     private static class AgreedToLeave implements DomainEvent {
-        @NonNull Game.Id gameId;
+        @NonNull Table.Id gameId;
         @NonNull User.Id userId;
     }
 
@@ -553,6 +552,6 @@ public class Game {
 
     @Value
     private class Abandoned implements DomainEvent {
-        @NonNull Game.Id gameId;
+        @NonNull Table.Id gameId;
     }
 }

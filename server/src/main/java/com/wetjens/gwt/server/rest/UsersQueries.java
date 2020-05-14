@@ -1,5 +1,7 @@
 package com.wetjens.gwt.server.rest;
 
+import com.wetjens.gwt.server.domain.APIError;
+import com.wetjens.gwt.server.domain.APIException;
 import com.wetjens.gwt.server.domain.User;
 import com.wetjens.gwt.server.domain.Users;
 import com.wetjens.gwt.server.rest.view.UserView;

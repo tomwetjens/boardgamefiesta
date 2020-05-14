@@ -1,11 +1,12 @@
 package com.wetjens.gwt.server.repository;
 
-import com.wetjens.gwt.api.Implementation;
+import com.wetjens.gwt.api.Game;
+import com.wetjens.gwt.api.Options;
 import com.wetjens.gwt.api.PlayerColor;
 import com.wetjens.gwt.api.State;
-import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.Table;
+import com.wetjens.gwt.server.domain.Tables;
 import com.wetjens.gwt.server.domain.Games;
-import com.wetjens.gwt.server.domain.Implementations;
 import com.wetjens.gwt.server.domain.Lazy;
 import com.wetjens.gwt.server.domain.LogEntry;
 import com.wetjens.gwt.server.domain.Player;
@@ -42,38 +43,38 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ApplicationScoped
-public class GameDynamoDbRepository implements Games {
+public class TableDynamoDbRepository implements Tables {
 
-    private static final String GAME_TABLE_NAME = "gwt-games";
+    private static final String TABLE_NAME = "gwt-games";
     private static final String LOG_TABLE_NAME = "gwt-log";
 
     private static final String USER_ID_ID_INDEX = "UserId-Id-index";
 
-    private final Implementations implementations;
+    private final Games games;
     private final DynamoDbClient dynamoDbClient;
-    private final String gameTableName;
+    private final String tableName;
     private final String logTableName;
 
     @Inject
-    public GameDynamoDbRepository(@NonNull Implementations implementations,
-                                  @NonNull DynamoDbClient dynamoDbClient,
-                                  @NonNull DynamoDbConfiguration config) {
-        this.implementations = implementations;
+    public TableDynamoDbRepository(@NonNull Games games,
+                                   @NonNull DynamoDbClient dynamoDbClient,
+                                   @NonNull DynamoDbConfiguration config) {
+        this.games = games;
         this.dynamoDbClient = dynamoDbClient;
-        this.gameTableName = GAME_TABLE_NAME + config.getTableSuffix().orElse("");
+        this.tableName = TABLE_NAME + config.getTableSuffix().orElse("");
         this.logTableName = LOG_TABLE_NAME + config.getTableSuffix().orElse("");
     }
 
     @Override
-    public Game findById(Game.Id id) {
+    public Table findById(Table.Id id) {
         return findOptionallyById(id)
                 .orElseThrow(NotFoundException::new);
     }
 
     @Override
-    public Stream<Game> findByUserId(User.Id userId) {
+    public Stream<Table> findByUserId(User.Id userId) {
         var response = dynamoDbClient.query(QueryRequest.builder()
-                .tableName(gameTableName)
+                .tableName(tableName)
                 .indexName(USER_ID_ID_INDEX)
                 .keyConditionExpression("UserId = :UserId")
                 .expressionAttributeValues(Collections.singletonMap(":UserId", AttributeValue.builder()
@@ -82,13 +83,13 @@ public class GameDynamoDbRepository implements Games {
                 .build());
 
         return response.items().stream()
-                .flatMap(item -> findOptionallyById(Game.Id.of(item.get("Id").s())).stream());
+                .flatMap(item -> findOptionallyById(Table.Id.of(item.get("Id").s())).stream());
     }
 
     @Override
     public int countByUserId(User.Id userId) {
         var response = dynamoDbClient.query(QueryRequest.builder()
-                .tableName(gameTableName)
+                .tableName(tableName)
                 .indexName(USER_ID_ID_INDEX)
                 .keyConditionExpression("UserId = :UserId")
                 .expressionAttributeValues(Collections.singletonMap(":UserId", AttributeValue.builder()
@@ -101,20 +102,20 @@ public class GameDynamoDbRepository implements Games {
     }
 
     @Override
-    public void add(Game game) {
-        var item = mapFromGame(game);
+    public void add(Table table) {
+        var item = mapFromTable(table);
 
         dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
                 .requestItems(Map.of(
-                        gameTableName, Stream.concat(
+                        tableName, Stream.concat(
                                 Stream.of(WriteRequest.builder().putRequest(
                                         PutRequest.builder()
                                                 .item(item)
                                                 .build())
                                         .build()),
-                                game.getPlayers().stream()
+                                table.getPlayers().stream()
                                         .filter(player -> player.getType() == Player.Type.USER)
-                                        .map(player -> mapLookupItem(game, player))
+                                        .map(player -> mapLookupItem(table, player))
                                         .map(lookupItem -> WriteRequest.builder()
                                                 .putRequest(PutRequest.builder()
                                                         .item(lookupItem)
@@ -123,11 +124,11 @@ public class GameDynamoDbRepository implements Games {
                                 .collect(Collectors.toList())))
                 .build());
 
-        addLogEntries(game);
+        addLogEntries(table);
     }
 
-    private void addLogEntries(Game game) {
-        var log = game.getLog();
+    private void addLogEntries(Table table) {
+        var log = table.getLog();
 
         var logEntries = log instanceof LazyLog
                 ? ((LazyLog) log).pending()
@@ -136,7 +137,7 @@ public class GameDynamoDbRepository implements Games {
         dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
                 .requestItems(Map.of(
                         logTableName, logEntries
-                                .map(logEntry -> mapFromLogEntry(game.getId(), logEntry))
+                                .map(logEntry -> mapFromLogEntry(table.getId(), logEntry))
                                 .map(logItem -> WriteRequest.builder()
                                         .putRequest(PutRequest.builder()
                                                 .item(logItem)
@@ -147,32 +148,32 @@ public class GameDynamoDbRepository implements Games {
     }
 
     @Override
-    public void update(Game game) {
+    public void update(Table table) {
         dynamoDbClient.updateItem(UpdateItemRequest.builder()
-                .tableName(gameTableName)
-                .key(key(game.getId()))
-                .attributeUpdates(mapFromGameUpdate(game))
+                .tableName(tableName)
+                .key(key(table.getId()))
+                .attributeUpdates(mapFromTableUpdate(table))
                 .build());
 
-        addLogEntries(game);
+        addLogEntries(table);
 
-        updateLookupItems(game);
+        updateLookupItems(table);
     }
 
-    private void updateLookupItems(Game game) {
+    private void updateLookupItems(Table table) {
         var response = dynamoDbClient.query(QueryRequest.builder()
-                .tableName(gameTableName)
+                .tableName(tableName)
                 .keyConditionExpression("Id = :Id")
                 .expressionAttributeValues(Collections.singletonMap(":Id", AttributeValue.builder()
-                        .s(game.getId().getId())
+                        .s(table.getId().getId())
                         .build()))
                 .build());
 
         var lookupItemsBySortKey = response.items().stream()
-                .filter(item -> !item.get("UserId").s().equals("Game-" + game.getId().getId())) // Filter out the main item
+                .filter(item -> !item.get("UserId").s().equals("Game-" + table.getId().getId())) // Filter out the main item
                 .collect(Collectors.toMap(item -> item.get("UserId").s(), Function.identity()));
 
-        var playersBySortKey = game.getPlayers().stream()
+        var playersBySortKey = table.getPlayers().stream()
                 .filter(player -> player.getType() == Player.Type.USER)
                 .collect(Collectors.toMap(player -> "User-" + player.getUserId().getId(), Function.identity()));
 
@@ -182,12 +183,12 @@ public class GameDynamoDbRepository implements Games {
                 .collect(Collectors.toList());
         var lookupItemsToAdd = playersBySortKey.entrySet().stream()
                 .filter(entry -> !lookupItemsBySortKey.containsKey(entry.getKey()))
-                .map(entry -> mapLookupItem(game, entry.getValue()))
+                .map(entry -> mapLookupItem(table, entry.getValue()))
                 .collect(Collectors.toList());
 
         if (!lookupItemsToAdd.isEmpty() || !lookupItemsToDelete.isEmpty()) {
             dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
-                    .requestItems(Map.of(gameTableName, Stream.concat(
+                    .requestItems(Map.of(tableName, Stream.concat(
                             lookupItemsToDelete.stream().map(item -> WriteRequest.builder()
                                     .deleteRequest(DeleteRequest.builder()
                                             .key(item.entrySet().stream()
@@ -207,79 +208,106 @@ public class GameDynamoDbRepository implements Games {
         playersBySortKey.entrySet().stream()
                 .filter(entry -> lookupItemsBySortKey.containsKey(entry.getKey()))
                 .forEach(entry -> dynamoDbClient.updateItem(UpdateItemRequest.builder()
-                        .tableName(gameTableName)
-                        .key(keyLookup(game.getId(), entry.getValue().getUserId()))
-                        .attributeUpdates(mapLookupItemUpdate(game, entry.getValue()))
+                        .tableName(tableName)
+                        .key(keyLookup(table.getId(), entry.getValue().getUserId()))
+                        .attributeUpdates(mapLookupItemUpdate(table, entry.getValue()))
                         .build()));
     }
 
-    private Optional<Game> findOptionallyById(Game.Id id) {
+    private Optional<Table> findOptionallyById(Table.Id id) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
-                .tableName(gameTableName)
+                .tableName(tableName)
                 .key(key(id))
                 .consistentRead(true)
-                .attributesToGet("Id", "Status", "Beginner", "Created", "Updated", "Started", "Ended", "Expires", "OwnerUserId", "Players")
+                .attributesToGet("Id",
+                        "Type",
+                        "Game",
+                        "Status",
+                        "Options",
+                        "Created",
+                        "Updated",
+                        "Started",
+                        "Ended",
+                        "Expires",
+                        "OwnerUserId",
+                        "Players")
                 .build());
 
         if (!response.hasItem()) {
             return Optional.empty();
         }
-        return Optional.of(mapToGame(response.item()));
+        return Optional.of(mapToTable(response.item()));
     }
 
-    private Map<String, AttributeValue> mapFromGame(Game game) {
-        var map = createAttributeValues(game);
-        map.putAll(key(game.getId()));
+    private Map<String, AttributeValue> mapFromTable(Table table) {
+        var map = createAttributeValues(table);
+        map.putAll(key(table.getId()));
         return map;
     }
 
-    private Map<String, AttributeValue> mapLookupItem(Game game, Player player) {
-        var map = new HashMap<>(keyLookup(game.getId(), player.getUserId()));
+    private Map<String, AttributeValue> mapLookupItem(Table table, Player player) {
+        var map = new HashMap<>(keyLookup(table.getId(), player.getUserId()));
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
-        map.put("Expires", AttributeValue.builder().n(Long.toString(game.getExpires().getEpochSecond())).build());
+        map.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
         return map;
     }
 
-    private Map<String, AttributeValueUpdate> mapLookupItemUpdate(Game game, Player player) {
+    private Map<String, AttributeValueUpdate> mapLookupItemUpdate(Table table, Player player) {
         var map = new HashMap<String, AttributeValueUpdate>();
         map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(player.getStatus().name()).build()).build());
-        map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(game.getExpires().getEpochSecond())).build()).build());
+        map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
         return map;
     }
 
-    private Map<String, AttributeValue> createAttributeValues(Game game) {
+    private Map<String, AttributeValue> createAttributeValues(Table table) {
         var map = new HashMap<String, AttributeValue>();
-        map.put("Implementation", AttributeValue.builder().s(game.getImplementation().getName()).build());
-        map.put("Type", AttributeValue.builder().s(game.getType().name()).build());
-        map.put("Status", AttributeValue.builder().s(game.getStatus().name()).build());
-        map.put("Options", AttributeValue.builder().m(game.getOptions().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> AttributeValue.builder().s(entry.getValue()).build())))
+        map.put("Game", AttributeValue.builder().s(table.getGame().getId()).build());
+        map.put("Type", AttributeValue.builder().s(table.getType().name()).build());
+        map.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
+        map.put("Options", AttributeValue.builder().m(table.getOptions().asMap().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+                    if (entry.getValue() instanceof Boolean) {
+                        return AttributeValue.builder().bool((Boolean) entry.getValue()).build();
+                    } else if (entry.getValue() instanceof Number) {
+                        return AttributeValue.builder().n(entry.getValue().toString()).build();
+                    } else {
+                        return AttributeValue.builder().s(entry.getValue().toString()).build();
+                    }
+                })))
                 .build());
-        map.put("Created", AttributeValue.builder().n(Long.toString(game.getCreated().getEpochSecond())).build());
-        map.put("Updated", AttributeValue.builder().n(Long.toString(game.getUpdated().getEpochSecond())).build());
-        map.put("Started", game.getStarted() != null ? AttributeValue.builder().n(Long.toString(game.getStarted().getEpochSecond())).build() : null);
-        map.put("Ended", game.getEnded() != null ? AttributeValue.builder().n(Long.toString(game.getEnded().getEpochSecond())).build() : null);
-        map.put("Expires", AttributeValue.builder().n(Long.toString(game.getExpires().getEpochSecond())).build());
-        map.put("OwnerUserId", AttributeValue.builder().s(game.getOwner().getId()).build());
-        map.put("Players", AttributeValue.builder().l(game.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
-        if (game.getState() != null) {
-            map.put("State", mapFromState(game.getState().get()));
+        map.put("Created", AttributeValue.builder().n(Long.toString(table.getCreated().getEpochSecond())).build());
+        map.put("Updated", AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build());
+        map.put("Started", table.getStarted() != null ? AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build() : null);
+        map.put("Ended", table.getEnded() != null ? AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build() : null);
+        map.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+        map.put("OwnerUserId", AttributeValue.builder().s(table.getOwner().getId()).build());
+        map.put("Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
+        if (table.getState() != null) {
+            map.put("State", mapFromState(table.getState().get()));
         }
         return map;
     }
 
-    private Game mapToGame(Map<String, AttributeValue> item) {
-        var id = Game.Id.of(item.get("Id").s());
+    private Table mapToTable(Map<String, AttributeValue> item) {
+        var id = Table.Id.of(item.get("Id").s());
 
-        var implementation = implementations.get(item.get("Implementation").s());
+        var Game = games.get(item.get("Game").s());
 
-        return Game.builder()
+        return Table.builder()
                 .id(id)
-                .type(Game.Type.valueOf(item.get("Type").s()))
-                .implementation(implementation)
-                .status(Game.Status.valueOf(item.get("Status").s()))
-                .options(item.get("Options").m().entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().s())))
+                .type(Table.Type.valueOf(item.get("Type").s()))
+                .game(Game)
+                .status(Table.Status.valueOf(item.get("Status").s()))
+                .options(new Options(item.get("Options").m().entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+                            if (entry.getValue().bool() != null) {
+                                return entry.getValue().bool();
+                            } else if (entry.getValue().n() != null) {
+                                return Float.parseFloat(entry.getValue().n());
+                            } else {
+                                return entry.getValue().s();
+                            }
+                        }))))
                 .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
                 .started(item.get("Started") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Started").n())) : null)
@@ -289,23 +317,23 @@ public class GameDynamoDbRepository implements Games {
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
                         .collect(Collectors.toSet()))
-                .state(Lazy.defer(() -> getState(implementation, id)))
+                .state(Lazy.defer(() -> getState(Game, id)))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
     }
 
-    private State getState(Implementation implementation, Game.Id id) {
+    private State getState(Game game, Table.Id id) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
-                .tableName(gameTableName)
+                .tableName(tableName)
                 .key(key(id))
                 .consistentRead(true)
-                .attributesToGet("State", "Implementation")
+                .attributesToGet("State", "Game")
                 .build());
 
         var attributeValue = response.item().get("State");
 
         if (attributeValue != null) {
-            return implementation.deserialize(attributeValue.b().asInputStream());
+            return game.deserialize(attributeValue.b().asInputStream());
         }
         return null;
     }
@@ -322,7 +350,7 @@ public class GameDynamoDbRepository implements Games {
                 .winner(map.containsKey("Winner") ? map.get("Winner").bool() : null)
                 .created(Instant.ofEpochSecond(Long.parseLong(map.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(map.get("Updated").n())))
-                .mustRespondBefore(Instant.ofEpochSecond(Long.parseLong(map.get("MustRespondBefore").n())))
+                .mustRespondBefore(map.containsKey("MustRespondBefore") ? Instant.ofEpochSecond(Long.parseLong(map.get("MustRespondBefore").n())) : null)
                 .build();
     }
 
@@ -353,7 +381,7 @@ public class GameDynamoDbRepository implements Games {
         map.put("Winner", player.getWinner() != null ? AttributeValue.builder().bool(player.getWinner()).build() : null);
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(player.getUpdated().getEpochSecond())).build());
-        map.put("MustRespondBefore", AttributeValue.builder().n(Long.toString(player.getMustRespondBefore().getEpochSecond())).build());
+        map.put("MustRespondBefore", player.getMustRespondBefore() != null ? AttributeValue.builder().n(Long.toString(player.getMustRespondBefore().getEpochSecond())).build() : null);
         return AttributeValue.builder().m(map).build();
     }
 
@@ -364,43 +392,43 @@ public class GameDynamoDbRepository implements Games {
                         .build()))).build();
     }
 
-    private Map<String, AttributeValue> key(Game.Id id) {
+    private Map<String, AttributeValue> key(Table.Id id) {
         var key = new HashMap<String, AttributeValue>();
         key.put("Id", AttributeValue.builder().s(id.getId()).build());
         key.put("UserId", AttributeValue.builder().s("Game-" + id.getId()).build());
         return key;
     }
 
-    private Map<String, AttributeValue> keyLookup(Game.Id gameId, User.Id userId) {
+    private Map<String, AttributeValue> keyLookup(Table.Id gameId, User.Id userId) {
         var key = new HashMap<String, AttributeValue>();
         key.put("Id", AttributeValue.builder().s(gameId.getId()).build());
         key.put("UserId", AttributeValue.builder().s("User-" + userId.getId()).build());
         return key;
     }
 
-    private Map<String, AttributeValueUpdate> mapFromGameUpdate(Game game) {
+    private Map<String, AttributeValueUpdate> mapFromTableUpdate(Table table) {
         var map = new HashMap<String, AttributeValueUpdate>();
 
-        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(game.getStatus().name()).build()).build());
-        map.put("Updated", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(game.getUpdated().getEpochSecond())).build()).build());
-        if (game.getStarted() != null) {
-            map.put("Started", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(game.getStarted().getEpochSecond())).build()).build());
+        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getStatus().name()).build()).build());
+        map.put("Updated", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build()).build());
+        if (table.getStarted() != null) {
+            map.put("Started", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build()).build());
         }
-        if (game.getEnded() != null) {
-            map.put("Ended", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(game.getEnded().getEpochSecond())).build()).build());
+        if (table.getEnded() != null) {
+            map.put("Ended", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build()).build());
         }
-        map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(game.getExpires().getEpochSecond())).build()).build());
-        map.put("OwnerUserId", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(game.getOwner().getId()).build()).build());
-        map.put("Players", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().l(game.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build()).build());
+        map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
+        map.put("OwnerUserId", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getOwner().getId()).build()).build());
+        map.put("Players", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build()).build());
 
-        if (game.getState().isResolved()) {
-            map.put("State", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromState(game.getState().get())).build());
+        if (table.getState().isResolved()) {
+            map.put("State", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromState(table.getState().get())).build());
         }
 
         return map;
     }
 
-    private Map<String, AttributeValue> mapFromLogEntry(Game.Id gameId, LogEntry logEntry) {
+    private Map<String, AttributeValue> mapFromLogEntry(Table.Id gameId, LogEntry logEntry) {
         var item = new HashMap<String, AttributeValue>();
 
         item.put("GameId", AttributeValue.builder().s(gameId.getId()).build());
@@ -428,7 +456,7 @@ public class GameDynamoDbRepository implements Games {
                 .build();
     }
 
-    private Stream<LogEntry> findLogEntries(Game.Id gameId, Instant since) {
+    private Stream<LogEntry> findLogEntries(Table.Id gameId, Instant since) {
         var expressionAttributeValues = new HashMap<String, AttributeValue>();
         expressionAttributeValues.put(":GameId", AttributeValue.builder().s(gameId.getId()).build());
         expressionAttributeValues.put(":Since", AttributeValue.builder().n(Long.toString(since.toEpochMilli())).build());

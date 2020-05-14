@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest;
+package com.wetjens.gwt.server.domain;
 
 public enum APIError {
     NO_SUCH_USER,

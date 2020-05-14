@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.spi.CDI;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -17,9 +16,9 @@ public class AutomaScheduler {
     // TODO Make thread pool configurable
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(10);
 
-    void schedule(Game game) {
+    void schedule(Table table) {
         // TODO Send to external queue so it is persisted and can be picked by any worker
-        var request = new Request(game);
+        var request = new Request(table);
 
         // Submit to executor, so CDI event is processed async
         executorService.schedule(() -> {
@@ -33,7 +32,7 @@ public class AutomaScheduler {
 
     @Value
     public class Request {
-        Game game;
+        Table table;
     }
 
 }

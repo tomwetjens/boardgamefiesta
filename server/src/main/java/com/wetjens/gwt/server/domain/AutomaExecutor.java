@@ -13,30 +13,30 @@ import javax.transaction.Transactional;
 @Transactional
 class AutomaExecutor {
 
-    private final Games games;
+    private final Tables tables;
 
     @Inject
-    AutomaExecutor(@NonNull Games games) {
-        this.games = games;
+    AutomaExecutor(@NonNull Tables tables) {
+        this.tables = tables;
     }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void execute(@Observes AutomaScheduler.Request request) {
         try {
-            var game = request.getGame();
+            var table = request.getTable();
 
-            if (game.getStatus() != Game.Status.STARTED) {
+            if (table.getStatus() != Table.Status.STARTED) {
                 return;
             }
 
-            var currentPlayer = game.getCurrentPlayer();
+            var currentPlayer = table.getCurrentPlayer();
             if (currentPlayer.getType() != Player.Type.COMPUTER) {
                 return;
             }
 
-            game.executeAutoma();
+            table.executeAutoma();
 
-            games.update(game);
+            tables.update(table);
             log.debug("saved after automa");
         } catch (RuntimeException e) {
             log.error("Error executing request", e);

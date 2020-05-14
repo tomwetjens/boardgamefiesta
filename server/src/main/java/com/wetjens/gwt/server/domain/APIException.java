@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest;
+package com.wetjens.gwt.server.domain;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -21,7 +21,7 @@ public class APIException extends WebApplicationException {
         return new APIException(Response.Status.FORBIDDEN, e.name(), params);
     }
 
-    public static APIException serverError(APIError e, Object... params) {
+    public static APIException internalError(APIError e, Object... params) {
         return new APIException(Response.Status.INTERNAL_SERVER_ERROR, e.name(), params);
     }
 

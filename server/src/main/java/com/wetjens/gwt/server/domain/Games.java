@@ -1,20 +1,35 @@
 package com.wetjens.gwt.server.domain;
 
+import com.wetjens.gwt.api.Game;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public interface Games {
+@ApplicationScoped
+public class Games {
 
-    static Games instance() {
-        return DomainService.instance(Games.class);
+    private final Map<String, Game> map;
+
+    @Inject
+    public Games(Instance<Game> instance) {
+        map = instance.stream()
+                .collect(Collectors.toMap(Game::getId, Function.identity()));
     }
 
-    Game findById(Game.Id id);
+    public Game get(String name) {
+        var implementation = map.get(name);
+        if (implementation == null) {
+            throw new IllegalArgumentException("Unknown implementation: " + name);
+        }
+        return implementation;
+    }
 
-    void add(Game game);
-
-    void update(Game game);
-
-    Stream<Game> findByUserId(User.Id id);
-
-    int countByUserId(User.Id id);
+    public Stream<Game> findAll() {
+        return map.values().stream();
+    }
 }

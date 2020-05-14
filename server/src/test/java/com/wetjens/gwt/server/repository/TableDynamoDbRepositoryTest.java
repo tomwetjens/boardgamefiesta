@@ -1,6 +1,6 @@
 package com.wetjens.gwt.server.repository;
 
-import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.Table;
 import com.wetjens.gwt.server.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -18,18 +18,18 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @Disabled
-class GameDynamoDbRepositoryTest {
+class TableDynamoDbRepositoryTest {
 
     @Mock
     DynamoDbConfiguration config;
 
-    GameDynamoDbRepository gameDynamodbRepository;
+    TableDynamoDbRepository tableDynamodbRepository;
 
     @BeforeEach
     void setUp() {
         when(config.getTableSuffix()).thenReturn(Optional.of("-test"));
 
-        gameDynamodbRepository = new GameDynamoDbRepository(DynamoDbClient.create(), config);
+        tableDynamodbRepository = new TableDynamoDbRepository(DynamoDbClient.create(), config);
     }
 
     @Test
@@ -39,13 +39,13 @@ class GameDynamoDbRepositoryTest {
         User sharon = mock(User.class);
         when(sharon.getId()).thenReturn(User.Id.of("34efb2e1-8ef6-47e3-a1d1-3f986d2d7c1d"));
 
-        Game game = Game.create(tom, 2, Collections.singleton(sharon), true);
-        game.acceptInvite(sharon.getId());
-        game.start();
+        Table table = Table.create(tom, 2, Collections.singleton(sharon), true);
+        table.acceptInvite(sharon.getId());
+        table.start();
 
-        gameDynamodbRepository.add(game);
+        tableDynamodbRepository.add(table);
 
-        gameDynamodbRepository.findById(game.getId());
+        tableDynamodbRepository.findById(table.getId());
     }
 
 }

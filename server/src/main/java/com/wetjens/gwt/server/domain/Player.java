@@ -1,8 +1,6 @@
 package com.wetjens.gwt.server.domain;
 
 import com.wetjens.gwt.api.PlayerColor;
-import com.wetjens.gwt.server.rest.APIError;
-import com.wetjens.gwt.server.rest.APIException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;

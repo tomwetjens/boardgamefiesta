@@ -1,8 +1,7 @@
 package com.wetjens.gwt.server.rest;
 
 import com.wetjens.gwt.api.Action;
-import com.wetjens.gwt.api.State;
-import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.Table;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -26,8 +25,8 @@ public class ActionRequest {
         }
     }
 
-    Action toAction(Game game) {
-        return game.getImplementation().toAction(jsonObject, game.getState().get());
+    Action toAction(Table table) {
+        return table.getGame().toAction(jsonObject, table.getState().get());
     }
 
 }

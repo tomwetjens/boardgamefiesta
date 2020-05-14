@@ -1,24 +1,26 @@
 package com.wetjens.gwt;
 
 import com.wetjens.gwt.api.Action;
-import com.wetjens.gwt.api.Implementation;
+import com.wetjens.gwt.api.Game;
+import com.wetjens.gwt.api.Options;
 import com.wetjens.gwt.api.Player;
 import com.wetjens.gwt.api.PlayerColor;
 import com.wetjens.gwt.api.State;
 import com.wetjens.gwt.view.ActionType;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.json.JsonObject;
 import java.io.InputStream;
 import java.util.EnumSet;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-public class GWT implements Implementation {
+@ApplicationScoped
+public class GWT implements Game {
 
     @Override
-    public String getName() {
-        return "GWT";
+    public String getId() {
+        return "gwt";
     }
 
     @Override
@@ -37,20 +39,20 @@ public class GWT implements Implementation {
     }
 
     @Override
-    public State start(Set<Player> players, Map<String, String> options, Random random) {
-        return new Game(players, options.getOrDefault("beginner", "false").equals("true"), random);
+    public State start(Set<Player> players, Options options, Random random) {
+        return new com.wetjens.gwt.Game(players, options.getBoolean("beginner", false), random);
     }
 
     @Override
     public void executeAutoma(State state, Random random) {
-        new Automa().execute((Game) state, random);
+        new Automa().execute((com.wetjens.gwt.Game) state, random);
     }
 
     @Override
     public Action toAction(JsonObject jsonObject, State state) {
         ActionType type = ActionType.valueOf(jsonObject.getString("type"));
 
-        return type.toAction(jsonObject, (Game) state);
+        return type.toAction(jsonObject, (com.wetjens.gwt.Game) state);
     }
 
     @Override
@@ -65,6 +67,6 @@ public class GWT implements Implementation {
 
     @Override
     public State deserialize(InputStream inputStream) {
-        return Game.deserialize(inputStream);
+        return com.wetjens.gwt.Game.deserialize(inputStream);
     }
 }

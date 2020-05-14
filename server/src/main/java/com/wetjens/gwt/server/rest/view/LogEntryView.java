@@ -1,7 +1,7 @@
 package com.wetjens.gwt.server.rest.view;
 
 import com.wetjens.gwt.api.Action;
-import com.wetjens.gwt.server.domain.Game;
+import com.wetjens.gwt.server.domain.Table;
 import com.wetjens.gwt.server.domain.LogEntry;
 import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;
@@ -22,7 +22,7 @@ public class LogEntryView {
     PlayerView player;
 
     @SuppressWarnings("unchecked")
-    public LogEntryView(@NonNull Game game, @NonNull LogEntry logEntry, @NonNull Map<User.Id, User> userMap) {
+    public LogEntryView(@NonNull Table table, @NonNull LogEntry logEntry, @NonNull Map<User.Id, User> userMap) {
         this.timestamp = logEntry.getTimestamp();
         this.type = logEntry.getType();
         this.parameters = logEntry.getParameters().stream()
@@ -31,7 +31,7 @@ public class LogEntryView {
                         return parameter.split(":")[1];
                     } else if (parameter.startsWith("Action:")) {
                         try {
-                            return game.getImplementation().toView((Class<? extends Action>) Class.forName(parameter.split(":")[1]));
+                            return table.getGame().toView((Class<? extends Action>) Class.forName(parameter.split(":")[1]));
                         } catch (ClassNotFoundException e) {
                             return parameter;
                         }
@@ -40,7 +40,7 @@ public class LogEntryView {
                 })
                 .collect(Collectors.toList());
 
-        var player = game.getPlayerById(logEntry.getPlayerId());
+        var player = table.getPlayerById(logEntry.getPlayerId());
         this.player = new PlayerView(player, player.getUserId() != null ? userMap.get(player.getUserId()) : null);
     }
 

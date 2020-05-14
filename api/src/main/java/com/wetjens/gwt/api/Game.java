@@ -2,11 +2,10 @@ package com.wetjens.gwt.api;
 
 import javax.json.JsonObject;
 import java.io.InputStream;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-public interface Implementation {
+public interface Game {
 
     Set<PlayerColor> getAvailableColors();
 
@@ -14,7 +13,7 @@ public interface Implementation {
 
     int getMaxNumberOfPlayers();
 
-    State start(Set<Player> players, Map<String, String> options, Random random);
+    State start(Set<Player> players, Options options, Random random);
 
     void executeAutoma(State state, Random random);
 
@@ -24,7 +23,7 @@ public interface Implementation {
 
     String toView(Class<? extends Action> action);
 
-    String getName();
+    String getId();
 
     State deserialize(InputStream inputStream);
 }

@@ -18,6 +18,12 @@
             <groupId>com.wetjens.gwt</groupId>
             <artifactId>api</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <version>2.0.2</version>
+        </dependency>
     </dependencies>
 
 </project>
