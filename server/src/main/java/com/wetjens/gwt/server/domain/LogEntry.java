@@ -1,12 +1,7 @@
 package com.wetjens.gwt.server.domain;
 
-import com.wetjens.gwt.api.Action;
 import com.wetjens.gwt.api.InGameEvent;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -14,6 +9,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Builder
 @Value
@@ -28,6 +24,9 @@ public class LogEntry {
     Player.Id playerId;
 
     @NonNull
+    User.Id userId;
+
+    @NonNull
     Instant timestamp;
 
     @NonNull
@@ -39,20 +38,13 @@ public class LogEntry {
     @NonNull
     List<String> parameters;
 
-    LogEntry(@NonNull InGameEvent event) {
+    LogEntry(@NonNull Table table, @NonNull InGameEvent event) {
         this.playerId = Player.Id.of(event.getPlayer().getName());
+        this.userId = table.getPlayerById(this.playerId).map(Player::getUserId).orElse(null);
         this.timestamp = generateTimestamp();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = Type.IN_GAME_EVENT;
-        this.parameters = event.getParameters().stream()
-                .map(param -> {
-                    if (param instanceof com.wetjens.gwt.api.Player) {
-                        return "Player:" + ((com.wetjens.gwt.api.Player) param).getName();
-                    } else if (param instanceof Action) {
-                        return "Action:" + param.getClass();
-                    }
-                    return param.toString();
-                })
+        this.parameters = Stream.concat(Stream.of(event.getType()), event.getParameters().stream())
                 .collect(Collectors.toList());
     }
 
@@ -63,6 +55,7 @@ public class LogEntry {
 
     LogEntry(@NonNull Player player, @NonNull Type type, @NonNull List<Object> parameters) {
         this.playerId = player.getId();
+        this.userId = player.getUserId();
         this.timestamp = generateTimestamp();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = type;
@@ -95,6 +88,7 @@ public class LogEntry {
         PROPOSED_TO_LEAVE,
         AGREED_TO_LEAVE,
         CREATE,
+        UNINVITE,
         IN_GAME_EVENT
     }
 }

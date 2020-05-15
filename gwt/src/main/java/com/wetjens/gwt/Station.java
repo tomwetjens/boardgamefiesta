@@ -67,7 +67,7 @@ public class Station implements Serializable {
         ImmediateActions placeDiscActions = game.placeDisc(discColors);
 
         if (stationMaster != null) {
-            game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.MAY_APPOINT_STATION_MASTER, List.of(stationMaster));
+            game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.MAY_APPOINT_STATION_MASTER, List.of(stationMaster.name()));
             return placeDiscActions.andThen(PossibleAction.optional(Action.AppointStationMaster.class));
         }
         return placeDiscActions;

@@ -1,5 +1,7 @@
 package com.wetjens.gwt;
 
+import com.wetjens.gwt.api.Player;
+import com.wetjens.gwt.api.PlayerColor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

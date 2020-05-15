@@ -16,5 +16,5 @@ public interface Tables {
 
     Stream<Table> findByUserId(User.Id id);
 
-    int countByUserId(User.Id id);
+    int countActiveRealtimeByUserId(User.Id id);
 }

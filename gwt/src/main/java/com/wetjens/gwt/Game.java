@@ -4,26 +4,12 @@ import com.wetjens.gwt.api.EventListener;
 import com.wetjens.gwt.api.Player;
 import com.wetjens.gwt.api.Score;
 import com.wetjens.gwt.api.State;
+import com.wetjens.gwt.view.ActionType;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.io.UncheckedIOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -183,12 +169,13 @@ public class Game implements State, Serializable {
         eventListeners.remove(eventListener);
     }
 
-    void fireEvent(Player player, GWTEvent.Type type, List<Object> values) {
+    void fireEvent(Player player, GWTEvent.Type type, List<String> values) {
         eventListeners.forEach(eventLogger -> eventLogger.event(new GWTEvent(player, type, values)));
     }
 
     private void fireEvent(Action action) {
-        fireEvent(currentPlayer, GWTEvent.Type.ACTION, Stream.concat(Stream.of(action), action.toEventParams(this).stream()).collect(Collectors.toList()));
+        fireEvent(currentPlayer, GWTEvent.Type.ACTION, Stream.concat(Stream.of(ActionType.of(action.getClass()).name()),
+                action.toEventParams(this).stream()).collect(Collectors.toList()));
     }
 
     private void endTurnIfNoMoreActions(@NonNull Random random) {
@@ -275,6 +262,17 @@ public class Game implements State, Serializable {
         return currentPlayerState().hasObjectiveCardInHand()
                 && (actionStack.isEmpty() /* = after phase B */
                 || (actionStack.size() == 1 && actionStack.canPerform(Action.Move.class))) /* before phase A */;
+    }
+
+    public Set<PossibleMove> possibleMoves(@NonNull Player player, int atMost) {
+        var playerState = playerState(player);
+        var stepLimit = playerState.getStepLimit(players.size());
+
+        if (atMost > stepLimit) {
+            throw new IllegalArgumentException("Can move at most " + stepLimit);
+        }
+
+        return trail.possibleMoves(player, playerState.getBalance(), atMost, players.size());
     }
 
     public Set<PossibleMove> possibleMoves(Player player, Location to) {

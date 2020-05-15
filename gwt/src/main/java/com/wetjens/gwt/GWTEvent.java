@@ -11,9 +11,9 @@ public class GWTEvent implements InGameEvent {
 
     Player player;
     String type;
-    List<Object> parameters;
+    List<String> parameters;
 
-    GWTEvent(Player player, Type type, List<Object> parameters) {
+    GWTEvent(Player player, Type type, List<String> parameters) {
         this.player = player;
         this.type = type.name();
         this.parameters = parameters;

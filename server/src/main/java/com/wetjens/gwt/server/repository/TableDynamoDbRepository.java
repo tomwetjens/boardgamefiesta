@@ -4,28 +4,11 @@ import com.wetjens.gwt.api.Game;
 import com.wetjens.gwt.api.Options;
 import com.wetjens.gwt.api.PlayerColor;
 import com.wetjens.gwt.api.State;
-import com.wetjens.gwt.server.domain.Table;
-import com.wetjens.gwt.server.domain.Tables;
-import com.wetjens.gwt.server.domain.Games;
-import com.wetjens.gwt.server.domain.Lazy;
-import com.wetjens.gwt.server.domain.LogEntry;
-import com.wetjens.gwt.server.domain.Player;
-import com.wetjens.gwt.server.domain.Score;
-import com.wetjens.gwt.server.domain.User;
+import com.wetjens.gwt.server.domain.*;
 import lombok.NonNull;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
-import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.DeleteRequest;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.PutRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.Select;
-import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -34,10 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -87,14 +67,19 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public int countByUserId(User.Id userId) {
+    public int countActiveRealtimeByUserId(User.Id userId) {
         var response = dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
                 .indexName(USER_ID_ID_INDEX)
                 .keyConditionExpression("UserId = :UserId")
-                .expressionAttributeValues(Collections.singletonMap(":UserId", AttributeValue.builder()
-                        .s("User-" + userId.getId())
-                        .build()))
+                .filterExpression("#Type = :Type AND #Status <> :NotStatus")
+                .expressionAttributeNames(Map.of(
+                        "#Type", "Type",
+                        "#Status", "Status"))
+                .expressionAttributeValues(Map.of(
+                        ":UserId", AttributeValue.builder().s("User-" + userId.getId()).build(),
+                        ":Type", AttributeValue.builder().s(Table.Type.REALTIME.name()).build(),
+                        ":NotStatus", AttributeValue.builder().s(Table.Status.ABANDONED.name()).build()))
                 .select(Select.COUNT)
                 .build());
 
@@ -134,17 +119,21 @@ public class TableDynamoDbRepository implements Tables {
                 ? ((LazyLog) log).pending()
                 : log.stream();
 
-        dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
-                .requestItems(Map.of(
-                        logTableName, logEntries
-                                .map(logEntry -> mapFromLogEntry(table.getId(), logEntry))
-                                .map(logItem -> WriteRequest.builder()
-                                        .putRequest(PutRequest.builder()
-                                                .item(logItem)
-                                                .build())
-                                        .build())
-                                .collect(Collectors.toList())))
-                .build());
+        List<WriteRequest> writeRequests = logEntries
+                .map(logEntry -> mapFromLogEntry(table.getId(), logEntry))
+                .map(logItem -> WriteRequest.builder()
+                        .putRequest(PutRequest.builder()
+                                .item(logItem)
+                                .build())
+                        .build())
+                .collect(Collectors.toList());
+
+        if (!writeRequests.isEmpty()) {
+            dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
+                    .requestItems(Map.of(
+                            logTableName, writeRequests))
+                    .build());
+        }
     }
 
     @Override
@@ -433,11 +422,12 @@ public class TableDynamoDbRepository implements Tables {
 
         item.put("GameId", AttributeValue.builder().s(gameId.getId()).build());
         item.put("Timestamp", AttributeValue.builder().n(Long.toString(logEntry.getTimestamp().toEpochMilli())).build());
-        item.put("PlayerId", AttributeValue.builder().s(logEntry.getPlayerId().getId()).build());
+        item.put("UserId", logEntry.getUserId() != null ? AttributeValue.builder().s(logEntry.getUserId().getId()).build() : null);
+        item.put("PlayerId", logEntry.getPlayerId() != null ? AttributeValue.builder().s(logEntry.getPlayerId().getId()).build() : null);
         item.put("Expires", AttributeValue.builder().n(Long.toString(logEntry.getExpires().getEpochSecond())).build());
         item.put("Type", AttributeValue.builder().s(logEntry.getType().name()).build());
         item.put("Parameters", AttributeValue.builder().l(logEntry.getParameters().stream()
-                .map(params -> AttributeValue.builder().s(params).build())
+                .map(param -> AttributeValue.builder().s(param).build())
                 .collect(Collectors.toList()))
                 .build());
 
@@ -448,7 +438,8 @@ public class TableDynamoDbRepository implements Tables {
         return LogEntry.builder()
                 .timestamp(Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n())))
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
-                .playerId(Player.Id.of(item.get("PlayerId").s()))
+                .playerId(item.containsKey("PlayerId") ? Player.Id.of(item.get("PlayerId").s()) : null)
+                .userId(item.containsKey("UserId") ? User.Id.of(item.get("UserId").s()) : null)
                 .type(LogEntry.Type.valueOf(item.get("Type").s()))
                 .parameters(item.get("Parameters").l().stream()
                         .map(AttributeValue::s)

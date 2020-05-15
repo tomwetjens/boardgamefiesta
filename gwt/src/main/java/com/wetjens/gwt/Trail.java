@@ -6,17 +6,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -194,6 +184,39 @@ public class Trail implements Serializable {
                 .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION, reward));
     }
 
+    Set<PossibleMove> possibleMoves(Player player, int balance, int stepLimit, int playerCount) {
+        if (stepLimit <= 0) {
+            return Collections.emptySet();
+        }
+
+        return getCurrentLocation(player)
+                .map(from -> reachableLocations(from, stepLimit)
+                        .map(steps -> new PossibleMove(steps, player, balance, playerCount)))
+                .orElseGet(() -> getLocations().stream()
+                        .filter(location -> location != start)
+                        .filter(location -> !location.isEmpty())
+                        .map(location -> new PossibleMove(List.of(location), player, balance, playerCount)))
+                .collect(Collectors.toSet());
+    }
+
+    private Stream<List<Location>> reachableLocations(Location from, int stepLimit) {
+        if (stepLimit <= 0) {
+            return Stream.empty();
+        }
+
+        return from.getNext().stream()
+                .flatMap(next -> {
+                    if (next.isEmpty()) {
+                        // Empty, so does not count towards step limit
+                        return reachableLocations(next, stepLimit);
+                    } else {
+                        // Not empty, so counts as a step towards the step limit
+                        return Stream.concat(Stream.of(List.of(next)), reachableLocations(next, stepLimit - 1)
+                                .map(steps -> Stream.concat(Stream.of(next), steps.stream()).collect(Collectors.toList())));
+                    }
+                });
+    }
+
     Set<PossibleMove> possibleMoves(Location from, Location to, Player player, int balance, int stepLimit, int playerCount) {
         if (from.isEmpty()) {
             throw new GWTException(GWTError.LOCATION_EMPTY, from.getName());
@@ -205,7 +228,7 @@ public class Trail implements Serializable {
 
         return reachableLocations(from, to, stepLimit)
                 .filter(steps -> steps.get(steps.size() - 1) == to)
-                .map(steps -> new PossibleMove(from, to, steps, player, balance, playerCount))
+                .map(steps -> new PossibleMove(steps, player, balance, playerCount))
                 .collect(Collectors.toSet());
     }
 

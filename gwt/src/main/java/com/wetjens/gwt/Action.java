@@ -1,20 +1,10 @@
 package com.wetjens.gwt;
 
 import com.wetjens.gwt.api.Player;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 import lombok.experimental.NonFinal;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -24,7 +14,7 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
 
     abstract ImmediateActions perform(@NonNull Game game, @NonNull Random random);
 
-    List<Object> toEventParams(Game game) {
+    List<String> toEventParams(Game game) {
         return Collections.emptyList();
     }
 
@@ -63,9 +53,10 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return Stream.concat(Stream.of(calculateCost(game)), cattleCards.stream()
-                    .map(Card.CattleCard::getType))
+        List<String> toEventParams(Game game) {
+            return Stream.concat(Stream.of(Integer.toString(calculateCost(game))), cattleCards.stream()
+                    .map(Card.CattleCard::getType)
+                    .map(CattleType::name))
                     .collect(Collectors.toList());
         }
 
@@ -214,8 +205,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(reward);
+        List<String> toEventParams(Game game) {
+            return List.of(Integer.toString(reward));
         }
     }
 
@@ -239,8 +230,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(getHazard().getType(), getHazard().getPoints());
+        List<String> toEventParams(Game game) {
+            return List.of(getHazard().getType().name(), Integer.toString(getHazard().getPoints()));
         }
     }
 
@@ -281,8 +272,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(worker);
+        List<String> toEventParams(Game game) {
+            return List.of(worker.name());
         }
     }
 
@@ -401,7 +392,7 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
+        List<String> toEventParams(Game game) {
             return List.of(building.getName(), location.getName());
         }
 
@@ -473,10 +464,10 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
+        List<String> toEventParams(Game game) {
             return getStation(game).getStationMaster()
-                    .map(stationMaster -> List.of(worker, (Object) stationMaster))
-                    .orElseGet(() -> List.of(worker));
+                    .map(stationMaster -> List.of(worker.name(), stationMaster.name()))
+                    .orElseGet(() -> List.of(worker.name()));
         }
 
         private Station getStation(Game game) {
@@ -514,10 +505,12 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
+        List<String> toEventParams(Game game) {
             return IntStream.range(0, 3)
                     .mapToObj(columnIndex -> game.getForesights().choices(columnIndex).get(choices.get(columnIndex)))
-                    .map(tile -> tile.getTeepee() != null ? tile.getTeepee() : tile.getWorker() != null ? tile.getWorker() : tile.getHazard().getType())
+                    .map(tile -> tile.getTeepee() != null
+                            ? tile.getTeepee().name() : tile.getWorker() != null
+                            ? tile.getWorker().name() : tile.getHazard().getType().name())
                     .collect(Collectors.toList());
         }
 
@@ -590,8 +583,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(city, certificates, calculatePayout(game));
+        List<String> toEventParams(Game game) {
+            return List.of(city.name(), Integer.toString(certificates), Integer.toString(calculatePayout(game)));
         }
     }
 
@@ -611,8 +604,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(unlock);
+        List<String> toEventParams(Game game) {
+            return List.of(unlock.name());
         }
     }
 
@@ -629,8 +622,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(unlock);
+        List<String> toEventParams(Game game) {
+            return List.of(unlock.name());
         }
     }
 
@@ -756,8 +749,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(type);
+        List<String> toEventParams(Game game) {
+            return List.of(type.name());
         }
     }
 
@@ -783,8 +776,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(hazard.getType(), hazard.getPoints(), cost);
+        List<String> toEventParams(Game game) {
+            return List.of(hazard.getType().name(), Integer.toString(hazard.getPoints()), Integer.toString(cost));
         }
     }
 
@@ -905,7 +898,7 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
+        List<String> toEventParams(Game game) {
             Location to = steps.get(steps.size() - 1);
             // TODO Include name of building, hazard or teepee in the params
             return List.of(to.getName());
@@ -941,9 +934,9 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
                                 currentPlayerState.payDollars(amount);
                                 game.playerState(recipient).gainDollars(amount);
 
-                                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount, recipient));
+                                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(Integer.toString(amount), recipient.getName()));
                             }
-                        }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(amount)));
+                        }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(Integer.toString(amount))));
             }
         }
 
@@ -1053,8 +1046,8 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
         }
 
         @Override
-        List<Object> toEventParams(Game game) {
-            return List.of(city);
+        List<String> toEventParams(Game game) {
+            return List.of(city.name());
         }
     }
 

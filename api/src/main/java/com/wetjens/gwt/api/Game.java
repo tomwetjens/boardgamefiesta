@@ -26,4 +26,5 @@ public interface Game {
     String getId();
 
     State deserialize(InputStream inputStream);
+
 }

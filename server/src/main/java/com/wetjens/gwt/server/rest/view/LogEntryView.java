@@ -1,8 +1,8 @@
 package com.wetjens.gwt.server.rest.view;
 
 import com.wetjens.gwt.api.Action;
-import com.wetjens.gwt.server.domain.Table;
 import com.wetjens.gwt.server.domain.LogEntry;
+import com.wetjens.gwt.server.domain.Table;
 import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;
 import lombok.Value;
@@ -19,6 +19,7 @@ public class LogEntryView {
     LogEntry.Type type;
     List<String> parameters;
 
+    UserView user;
     PlayerView player;
 
     @SuppressWarnings("unchecked")
@@ -40,8 +41,11 @@ public class LogEntryView {
                 })
                 .collect(Collectors.toList());
 
-        var player = table.getPlayerById(logEntry.getPlayerId());
-        this.player = new PlayerView(player, player.getUserId() != null ? userMap.get(player.getUserId()) : null);
+
+        this.player = table.getPlayerByUserId(logEntry.getUserId())
+                .map(player -> new PlayerView(player, player.getUserId() != null ? userMap.get(player.getUserId()) : null))
+                .orElse(null);
+        this.user = new UserView(logEntry.getUserId(), userMap.get(logEntry.getUserId()), null);
     }
 
 }

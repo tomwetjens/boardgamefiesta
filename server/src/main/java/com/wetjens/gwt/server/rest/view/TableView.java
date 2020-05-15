@@ -36,7 +36,7 @@ public class TableView {
         game = table.getGame().getId();
         type = table.getType();
         status = table.getStatus();
-        owner = new UserView(table.getOwner(), userMap.get(table.getOwner()));
+        owner = new UserView(table.getOwner(), userMap.get(table.getOwner()), currentUserId);
         options = table.getOptions().asMap();
 
         player = table.getPlayers().stream()

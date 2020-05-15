@@ -19,7 +19,7 @@ public class PlayerView {
     PlayerView(@NonNull Player player, User user) {
         type = player.getType();
         status = player.getStatus();
-        this.user = player.getType() == Player.Type.USER ? new UserView(player.getUserId(), user) : null;
+        this.user = player.getType() == Player.Type.USER ? new UserView(player.getUserId(), user, null) : null;
         score = player.getScore() != null ? new ScoreView(player.getScore()) : null;
         winner = player.getWinner();
         color = player.getColor();

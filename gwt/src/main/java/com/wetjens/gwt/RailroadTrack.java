@@ -296,7 +296,7 @@ public class RailroadTrack implements Serializable {
             case COLORADO_SPRINGS:
             case ALBUQUERQUE:
                 if (hasMadeDelivery(player, City.SANTA_FE) && !game.getObjectiveCards().isEmpty()) {
-                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.SANTA_FE, city));
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.SANTA_FE.name(), city.name()));
                     return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
@@ -304,25 +304,25 @@ public class RailroadTrack implements Serializable {
                 ImmediateActions immediateActions = ImmediateActions.none();
 
                 if (hasMadeDelivery(player, City.COLORADO_SPRINGS) && !game.getObjectiveCards().isEmpty()) {
-                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.COLORADO_SPRINGS, city));
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.COLORADO_SPRINGS.name(), city.name()));
                     immediateActions = ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
 
                 if (hasMadeDelivery(player, City.ALBUQUERQUE) && game.getObjectiveCards().getAvailable().size() > 1) {
-                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city, City.ALBUQUERQUE));
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city.name(), City.ALBUQUERQUE.name()));
                     immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
 
                 return immediateActions;
             case TOPEKA:
                 if (hasMadeDelivery(player, City.WICHITA) && !game.getObjectiveCards().isEmpty()) {
-                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city, City.WICHITA));
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city.name(), City.WICHITA.name()));
                     return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
             case WICHITA:
                 if (hasMadeDelivery(player, City.TOPEKA) && !game.getObjectiveCards().isEmpty()) {
-                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.TOPEKA, city));
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.TOPEKA.name(), city.name()));
                     return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;

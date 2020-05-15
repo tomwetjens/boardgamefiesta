@@ -1,29 +1,13 @@
 package com.wetjens.gwt.server.domain;
 
-import com.wetjens.gwt.api.Action;
 import com.wetjens.gwt.api.EventListener;
-import com.wetjens.gwt.api.Game;
-import com.wetjens.gwt.api.InGameException;
-import com.wetjens.gwt.api.Options;
-import com.wetjens.gwt.api.State;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
+import com.wetjens.gwt.api.*;
+import lombok.*;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -103,13 +87,11 @@ public class Table {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        Tables tables = Tables.instance();
-        if (tables.countByUserId(owner.getId()) >= 1) {
+        if (Tables.instance().countActiveRealtimeByUserId(owner.getId()) >= 1) {
             throw APIException.forbidden(APIError.EXCEEDS_MAX_REALTIME_GAMES);
         }
 
         var player = Player.accepted(owner.getId());
-        var invitedPlayers = inviteUsers.stream().map(user -> Player.invite(user.getId()));
 
         var created = Instant.now();
         Table table = Table.builder()
@@ -122,20 +104,15 @@ public class Table {
                 .updated(created)
                 .expires(created.plus(START_TIMEOUT))
                 .owner(owner.getId())
-                .players(Stream.concat(Stream.of(player), invitedPlayers).collect(Collectors.toSet()))
+                .players(Collections.singleton(player))
                 .log(new Log())
                 .build();
 
-        table.log.add(new LogEntry(player, LogEntry.Type.CREATE, Collections.emptyList()));
-        inviteUsers.forEach(invitedUser -> table.log.add(new LogEntry(player, LogEntry.Type.INVITE, List.of(invitedUser.getUsername()))));
+        table.log.add(new LogEntry(player, LogEntry.Type.CREATE));
 
         table.new Created().fire();
 
-        for (User user : inviteUsers) {
-            table.new Invited(user.getId()).fire();
-        }
-
-        table.afterRespondToInvitation();
+        inviteUsers.forEach(table::invite);
 
         return table;
     }
@@ -167,7 +144,7 @@ public class Table {
         updated = started;
         expires = started.plus(ACTION_TIMEOUT);
 
-        log.add(new LogEntry(getPlayerByUserId(owner), LogEntry.Type.START, Collections.emptyList()));
+        log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.START));
 
         new Started().fire();
 
@@ -202,7 +179,7 @@ public class Table {
     private void runStateChange(Runnable runnable) {
         var state = this.state.get();
 
-        EventListener eventListener = event -> log.add(new LogEntry(event));
+        EventListener eventListener = event -> log.add(new LogEntry(this, event));
         state.addEventListener(eventListener);
 
         var currentPlayer = getCurrentPlayer();
@@ -269,7 +246,10 @@ public class Table {
                     .ifPresentOrElse(this::changeOwner, this::abandon);
         }
 
-        getPlayerByUserId(userId).leave();
+        var player = getPlayerByUserId(userId)
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
+
+        player.leave();
 
         new Left(id, userId).fire();
 
@@ -298,7 +278,8 @@ public class Table {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
 
-        var player = getPlayerByUserId(userId);
+        var player = getPlayerByUserId(userId)
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
 
         player.proposeToLeave();
 
@@ -312,7 +293,8 @@ public class Table {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
 
-        var agreeingPlayer = getPlayerByUserId(userId);
+        var agreeingPlayer = getPlayerByUserId(userId)
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
 
         agreeingPlayer.agreeToLeave();
 
@@ -375,7 +357,7 @@ public class Table {
 
         updated = Instant.now();
 
-        log.add(new LogEntry(player, LogEntry.Type.ACCEPT, Collections.emptyList()));
+        log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
 
         new Accepted(userId).fire();
 
@@ -433,7 +415,7 @@ public class Table {
 
         updated = Instant.now();
 
-        log.add(new LogEntry(player, LogEntry.Type.REJECT, Collections.emptyList()));
+        log.add(new LogEntry(player, LogEntry.Type.REJECT));
 
         new Rejected(userId).fire();
 
@@ -448,31 +430,67 @@ public class Table {
         return status == Status.NEW && playersThatAccepted().count() >= MIN_NUMBER_OF_PLAYERS;
     }
 
-    public Player getPlayerByUserId(User.Id userId) {
+    public Optional<Player> getPlayerByUserId(User.Id userId) {
         return players.stream()
                 .filter(player -> userId.equals(player.getUserId()))
-                .findAny()
-                .orElseThrow(() -> APIException.forbidden(APIError.NOT_PLAYER_IN_GAME));
+                .findAny();
     }
 
     public Player getCurrentPlayer() {
         if (state == null) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
-        return getPlayerById(Player.Id.of(state.get().getCurrentPlayer().getName()));
+        return getPlayerById(Player.Id.of(state.get().getCurrentPlayer().getName()))
+                .orElseThrow(() -> APIException.internalError(APIError.NOT_PLAYER_IN_GAME));
     }
 
-    public Player getPlayerById(Player.Id playerId) {
+    public Optional<Player> getPlayerById(Player.Id playerId) {
         return players.stream()
                 .filter(player -> player.getId().equals(playerId))
-                .findAny()
-                .orElseThrow(() -> APIException.internalError(APIError.NOT_PLAYER_IN_GAME));
+                .findAny();
+    }
+
+    public void invite(User user) {
+        if (status != Status.NEW) {
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
+        }
+
+        if (players.size() == game.getMaxNumberOfPlayers()) {
+            throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
+        }
+
+        if (players.stream().anyMatch(player -> user.getId().equals(player.getUserId()))) {
+            throw APIException.badRequest(APIError.ALREADY_INVITED);
+        }
+
+        var player = Player.invite(user.getId());
+        players.add(player);
+
+        log.add(new LogEntry(player, LogEntry.Type.INVITE, List.of(user.getUsername())));
+
+        new Invited(user.getId()).fire();
+    }
+
+    public void uninvite(User user) {
+        if (status != Status.NEW) {
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
+        }
+
+        var player = getPlayerByUserId(user.getId())
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
+
+        players.remove(player);
+
+        log.add(new LogEntry(player, LogEntry.Type.UNINVITE, List.of(user.getUsername())));
+
+        new Uninvited(user.getId()).fire();
     }
 
     public enum Status {
         NEW,
         STARTED,
-        ABANDONED, ENDED
+        ABANDONED,
+        ENDED
     }
 
     @Value(staticConstructor = "of")
@@ -486,6 +504,12 @@ public class Table {
 
     @Value
     public class Invited implements DomainEvent {
+        Table table = Table.this;
+        User.Id userId;
+    }
+
+    @Value
+    public class Uninvited implements DomainEvent {
         Table table = Table.this;
         User.Id userId;
     }

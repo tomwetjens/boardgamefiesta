@@ -5,5 +5,7 @@ import java.util.List;
 public interface InGameEvent {
     Player getPlayer();
 
-    List<Object> getParameters();
+    String getType();
+
+    List<String> getParameters();
 }

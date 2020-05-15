@@ -2,11 +2,9 @@ package com.wetjens.gwt;
 
 import com.wetjens.gwt.api.Action;
 import com.wetjens.gwt.api.Game;
-import com.wetjens.gwt.api.Options;
-import com.wetjens.gwt.api.Player;
-import com.wetjens.gwt.api.PlayerColor;
-import com.wetjens.gwt.api.State;
+import com.wetjens.gwt.api.*;
 import com.wetjens.gwt.view.ActionType;
+import com.wetjens.gwt.view.StateView;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.JsonObject;
@@ -57,7 +55,7 @@ public class GWT implements Game {
 
     @Override
     public Object toView(State state, Player viewer) {
-        return null;
+        return new StateView((com.wetjens.gwt.Game) state, viewer);
     }
 
     @Override

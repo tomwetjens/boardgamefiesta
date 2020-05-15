@@ -11,18 +11,16 @@ import java.util.stream.Collectors;
 
 @Value
 // consider routes with exactly the same costs and fees to be equal, ignoring the actual steps
-@EqualsAndHashCode(of = {"from", "to", "cost", "playerFees"})
+@EqualsAndHashCode(of = {"to", "cost", "playerFees"})
 public class PossibleMoveView {
 
-    String from;
     String to;
     int cost;
     List<String> steps;
     List<PlayerFeeView> playerFees;
 
     public PossibleMoveView(PossibleMove possibleMove) {
-        this.from = possibleMove.getFrom().getName();
-        this.to = possibleMove.getTo().getName();
+        this.to = possibleMove.getSteps().get(possibleMove.getSteps().size() - 1).getName();
         this.cost = possibleMove.getCost();
         this.steps = possibleMove.getSteps().stream()
                 .map(Location::getName)

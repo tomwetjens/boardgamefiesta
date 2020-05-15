@@ -35,13 +35,13 @@ public class UsersQueries {
     public List<UserView> searchUsers(@QueryParam("username") String username, @QueryParam("email") String email) {
         if (email != null && !"".equals(email)) {
             return users.findByEmail(username)
-                    .map(user -> new UserView(user.getId(), user))
+                    .map(user -> new UserView(user.getId(), user, currentUserId()))
                     .map(Collections::singletonList)
                     .orElse(Collections.emptyList());
         } else if (username != null && username.length() >= MIN_USERNAME_LENGTH) {
             return users.findByUsernameStartsWith(username)
                     .limit(MAX_SEARCH_RESULTS)
-                    .map(user -> new UserView(user.getId(), user))
+                    .map(user -> new UserView(user.getId(), user, currentUserId()))
                     .collect(Collectors.toList());
         } else {
             throw APIException.badRequest(APIError.MUST_SPECIFY_USERNAME_OR_EMAIL);
@@ -52,7 +52,14 @@ public class UsersQueries {
     @Path("/{id}")
     public UserView get(@PathParam("id") String id) {
         var user = users.findById(User.Id.of(id));
-        return new UserView(user.getId(), user);
+        return new UserView(user.getId(), user, currentUserId());
+    }
+
+    private User.Id currentUserId() {
+        if (securityContext.getUserPrincipal() == null) {
+            throw new NotAuthorizedException("");
+        }
+        return User.Id.of(securityContext.getUserPrincipal().getName());
     }
 
 }

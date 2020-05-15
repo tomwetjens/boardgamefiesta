@@ -1,14 +1,7 @@
 package com.wetjens.gwt.server.rest;
 
 import com.wetjens.gwt.api.Options;
-import com.wetjens.gwt.server.domain.APIError;
-import com.wetjens.gwt.server.domain.APIException;
-import com.wetjens.gwt.server.domain.Games;
-import com.wetjens.gwt.server.domain.Player;
-import com.wetjens.gwt.server.domain.Table;
-import com.wetjens.gwt.server.domain.Tables;
-import com.wetjens.gwt.server.domain.User;
-import com.wetjens.gwt.server.domain.Users;
+import com.wetjens.gwt.server.domain.*;
 import com.wetjens.gwt.server.rest.view.LogEntryView;
 import com.wetjens.gwt.server.rest.view.TableView;
 import lombok.extern.slf4j.Slf4j;
@@ -18,15 +11,7 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
@@ -229,6 +214,30 @@ public class TableResource {
         tables.update(table);
     }
 
+    @POST
+    @Path("/{id}/invite")
+    @Transactional
+    public void invite(@PathParam("id") String id, @NotNull @Valid InviteRequest request) {
+        var table = tables.findById(Table.Id.of(id));
+
+        table.invite(users.findOptionallyById(User.Id.of(request.getUserId()))
+                .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, request.getUserId())));
+
+        tables.update(table);
+    }
+
+    @POST
+    @Path("/{id}/uninvite")
+    @Transactional
+    public void uninvite(@PathParam("id") String id, @NotNull @Valid UninviteRequest request) {
+        var table = tables.findById(Table.Id.of(id));
+
+        table.uninvite(users.findOptionallyById(User.Id.of(request.getUserId()))
+                .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, request.getUserId())));
+
+        tables.update(table);
+    }
+
     @GET
     @Path("/{id}/state")
     public Object getState(@PathParam("id") String id) {
@@ -270,7 +279,8 @@ public class TableResource {
     private Player determinePlayer(Table table) {
         var currentUserId = currentUserId();
 
-        return table.getPlayerByUserId(currentUserId);
+        return table.getPlayerByUserId(currentUserId)
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
     }
 
     private void checkViewAllowed(Table table) {
