@@ -87,7 +87,10 @@ public class Table {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        if (Tables.instance().countActiveRealtimeByUserId(owner.getId()) >= 1) {
+        if (Tables.instance().findByUserId(owner.getId())
+                .filter(table -> table.getType() == Type.REALTIME)
+                .filter(table -> table.getStatus() == Status.NEW || table.getStatus() == Status.STARTED)
+                .count() >= 1) {
             throw APIException.forbidden(APIError.EXCEEDS_MAX_REALTIME_GAMES);
         }
 
@@ -548,25 +551,25 @@ public class Table {
 
     @Value
     private static class ChangedOwner implements DomainEvent {
-        @NonNull Table.Id gameId;
+        @NonNull Table.Id tableId;
         @NonNull User.Id userId;
     }
 
     @Value
-    private static class Left implements DomainEvent {
-        @NonNull Table.Id gameId;
+    public static class Left implements DomainEvent {
+        @NonNull Table.Id tableId;
         @NonNull User.Id userId;
     }
 
     @Value
-    private static class ProposedToLeave implements DomainEvent {
-        @NonNull Table.Id gameId;
+    public static class ProposedToLeave implements DomainEvent {
+        @NonNull Table.Id tableId;
         @NonNull User.Id userId;
     }
 
     @Value
-    private static class AgreedToLeave implements DomainEvent {
-        @NonNull Table.Id gameId;
+    public static class AgreedToLeave implements DomainEvent {
+        @NonNull Table.Id tableId;
         @NonNull User.Id userId;
     }
 
@@ -575,7 +578,7 @@ public class Table {
     }
 
     @Value
-    private class Abandoned implements DomainEvent {
-        @NonNull Table.Id gameId;
+    public class Abandoned implements DomainEvent {
+        @NonNull Table.Id tableId;
     }
 }

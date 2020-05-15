@@ -1,8 +1,8 @@
 package com.wetjens.gwt.server.websockets;
 
+import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.Table;
 import com.wetjens.gwt.server.domain.Tables;
-import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.User;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +76,32 @@ public class EventsEndpoint {
     void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited invited) {
         notifyUser(invited.getUserId(), new Event(EventType.INVITED, invited.getTable().getId().getId(), null));
         notifyOtherPlayers(invited.getUserId(), invited.getTable(), new Event(EventType.INVITED, invited.getTable().getId().getId(), invited.getUserId().getId()));
+    }
+
+    void uninvited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Uninvited event) {
+        notifyUser(event.getUserId(), new Event(EventType.UNINVITED, event.getTable().getId().getId(), null));
+        notifyOtherPlayers(event.getUserId(), event.getTable(), new Event(EventType.UNINVITED, event.getTable().getId().getId(), event.getUserId().getId()));
+    }
+
+    void left(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Left event) {
+        var table = tables.findById(event.getTableId());
+        notifyUser(event.getUserId(), new Event(EventType.LEFT, event.getTableId().getId(), null));
+        notifyOtherPlayers(event.getUserId(), table, new Event(EventType.LEFT, event.getTableId().getId(), event.getUserId().getId()));
+    }
+
+    void abandoned(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Abandoned event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(EventType.ABANDONED, event.getTableId().getId(), null));
+    }
+
+    void proposedToLeave(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ProposedToLeave event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(EventType.PROPOSED_TO_LEAVE, event.getTableId().getId(), null));
+    }
+
+    void agreedToLeave(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.AgreedToLeave event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(EventType.AGREED_TO_LEAVE, event.getTableId().getId(), null));
     }
 
     private void notifyOtherPlayers(User.Id currentUserId, Table table, Event event) {

@@ -67,26 +67,6 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public int countActiveRealtimeByUserId(User.Id userId) {
-        var response = dynamoDbClient.query(QueryRequest.builder()
-                .tableName(tableName)
-                .indexName(USER_ID_ID_INDEX)
-                .keyConditionExpression("UserId = :UserId")
-                .filterExpression("#Type = :Type AND #Status <> :NotStatus")
-                .expressionAttributeNames(Map.of(
-                        "#Type", "Type",
-                        "#Status", "Status"))
-                .expressionAttributeValues(Map.of(
-                        ":UserId", AttributeValue.builder().s("User-" + userId.getId()).build(),
-                        ":Type", AttributeValue.builder().s(Table.Type.REALTIME.name()).build(),
-                        ":NotStatus", AttributeValue.builder().s(Table.Status.ABANDONED.name()).build()))
-                .select(Select.COUNT)
-                .build());
-
-        return response.count();
-    }
-
-    @Override
     public void add(Table table) {
         var item = mapFromTable(table);
 

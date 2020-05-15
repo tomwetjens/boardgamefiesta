@@ -6,5 +6,10 @@ public enum EventType {
     INVITED,
     ACCEPTED,
     REJECTED,
-    STATE_CHANGED;
+    STATE_CHANGED,
+    UNINVITED,
+    LEFT,
+    PROPOSED_TO_LEAVE,
+    AGREED_TO_LEAVE,
+    ABANDONED
 }
