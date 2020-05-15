@@ -126,7 +126,7 @@ public enum ActionType {
         throw new IllegalArgumentException("No enum constant for action: " + action);
     }
 
-    public Action toAction(JsonObject jsonObject, Game game) {
+    public static Action toAction(JsonObject jsonObject, Game game) {
         var type = ActionType.valueOf(jsonObject.getString("type"));
 
         switch (type) {

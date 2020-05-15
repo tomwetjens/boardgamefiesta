@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.view;
 
 import java.util.Comparator;
 import java.util.List;

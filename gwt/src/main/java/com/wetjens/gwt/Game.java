@@ -319,7 +319,7 @@ public class Game implements State, Serializable {
         }
     }
 
-    public static State deserialize(InputStream inputStream) {
+    public static Game deserialize(InputStream inputStream) {
         try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
             return (Game) objectInputStream.readObject();
         } catch (ClassNotFoundException e) {

@@ -48,9 +48,7 @@ public class GWT implements Game {
 
     @Override
     public Action toAction(JsonObject jsonObject, State state) {
-        ActionType type = ActionType.valueOf(jsonObject.getString("type"));
-
-        return type.toAction(jsonObject, (com.wetjens.gwt.Game) state);
+        return ActionType.toAction(jsonObject, (com.wetjens.gwt.Game) state);
     }
 
     @Override

@@ -1,5 +1,8 @@
 package com.wetjens.gwt.server.repository;
 
+import com.wetjens.gwt.api.Game;
+import com.wetjens.gwt.api.Options;
+import com.wetjens.gwt.server.domain.Games;
 import com.wetjens.gwt.server.domain.Table;
 import com.wetjens.gwt.server.domain.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +24,12 @@ import static org.mockito.Mockito.when;
 class TableDynamoDbRepositoryTest {
 
     @Mock
+    Games games;
+
+    @Mock
+    Game game;
+
+    @Mock
     DynamoDbConfiguration config;
 
     TableDynamoDbRepository tableDynamodbRepository;
@@ -29,7 +38,7 @@ class TableDynamoDbRepositoryTest {
     void setUp() {
         when(config.getTableSuffix()).thenReturn(Optional.of("-test"));
 
-        tableDynamodbRepository = new TableDynamoDbRepository(DynamoDbClient.create(), config);
+        tableDynamodbRepository = new TableDynamoDbRepository(games, DynamoDbClient.create(), config);
     }
 
     @Test
@@ -39,7 +48,7 @@ class TableDynamoDbRepositoryTest {
         User sharon = mock(User.class);
         when(sharon.getId()).thenReturn(User.Id.of("34efb2e1-8ef6-47e3-a1d1-3f986d2d7c1d"));
 
-        Table table = Table.create(tom, 2, Collections.singleton(sharon), true);
+        Table table = Table.create(game, tom, Collections.singleton(sharon), new Options(Collections.emptyMap()));
         table.acceptInvite(sharon.getId());
         table.start();
 

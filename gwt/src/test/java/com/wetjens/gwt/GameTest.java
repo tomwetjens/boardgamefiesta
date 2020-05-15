@@ -1,5 +1,7 @@
 package com.wetjens.gwt;
 
+import com.wetjens.gwt.api.Player;
+import com.wetjens.gwt.api.PlayerColor;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -95,12 +97,12 @@ class GameTest {
 
         @Test
         void serialize() {
-            State state = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game state = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             state.serialize(byteArrayOutputStream);
 
-            State deserialized = Game.deserialize(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+            Game deserialized = Game.deserialize(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
         }
     }
 
