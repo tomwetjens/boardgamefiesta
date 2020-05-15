@@ -31,6 +31,7 @@ public class StateView {
     Set<PossibleMoveView> possibleMoves;
     Set<PossibleBuyView> possibleBuys;
     Set<PossibleDeliveryView> possibleDeliveries;
+    Set<RailroadTrackView.SpaceView> possibleSpaces;
 
     public StateView(Game state, Player viewingPlayer) {
         railroadTrack = new RailroadTrackView(state.getRailroadTrack());
@@ -92,9 +93,46 @@ public class StateView {
             if (actions.contains(ActionType.DELIVER_TO_CITY)) {
                 possibleDeliveries = getPossibleDeliveries(state, viewingPlayer);
             }
+
+            if (actions.contains(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS) ||
+                    actions.contains(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD)) {
+                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 1, 1);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS)) {
+                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 1, 2);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS)) {
+                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 1, Integer.MAX_VALUE);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, state.playerState(viewingPlayer).getNumberOfEngineers());
+            } else if (actions.contains(ActionType.MOVE_ENGINE_1_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 1);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_2_OR_3_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 2, 3);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_2_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 2);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_3_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 3);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_4_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 4);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_5_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 5);
+            } else if (actions.contains(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, state.getTrail().buildingsInWoods(viewingPlayer));
+            }
         } else {
             actions = Collections.emptyList();
         }
+    }
+
+    private Set<RailroadTrackView.SpaceView> getPossibleSpacesForward(Game state, Player player, int atLeast, int atMost) {
+        return state.getRailroadTrack().reachableSpacesForward(state.getRailroadTrack().currentSpace(player), atLeast, atMost).stream()
+                .map(space -> new RailroadTrackView.SpaceView(state.getRailroadTrack(), space))
+                .collect(Collectors.toSet());
+    }
+
+    private Set<RailroadTrackView.SpaceView> getPossibleSpacesBackwards(Game state, Player player, int atLeast, int atMost) {
+        return state.getRailroadTrack().reachableSpacesBackwards(state.getRailroadTrack().currentSpace(player), atLeast, atMost).stream()
+                .map(space -> new RailroadTrackView.SpaceView(state.getRailroadTrack(), space))
+                .collect(Collectors.toSet());
     }
 
     private Set<PossibleDeliveryView> getPossibleDeliveries(Game game, Player player) {
