@@ -89,6 +89,6 @@ public class LogEntry {
         AGREED_TO_LEAVE,
         CREATE,
         UNINVITE,
-        IN_GAME_EVENT
+        LEFT, IN_GAME_EVENT
     }
 }

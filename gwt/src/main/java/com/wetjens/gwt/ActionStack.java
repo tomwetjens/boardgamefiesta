@@ -78,4 +78,8 @@ class ActionStack implements Serializable {
     public int size() {
         return actions.size();
     }
+
+    void clear() {
+        actions.clear();
+    }
 }

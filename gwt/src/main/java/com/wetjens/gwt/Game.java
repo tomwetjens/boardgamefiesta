@@ -211,6 +211,10 @@ public class Game implements State, Serializable {
 
         currentPlayerState().drawUpToHandLimit(random);
 
+        afterEndTurn();
+    }
+
+    private void afterEndTurn() {
         if (currentPlayerState().hasJobMarketToken()) {
             // current player is ending the game, every other player can have one more turn
             fireEvent(currentPlayer, GWTEvent.Type.EVERY_OTHER_PLAYER_HAS_1_TURN, Collections.emptyList());
@@ -350,6 +354,20 @@ public class Game implements State, Serializable {
     @Override
     public int getMaxNumberOfPlayers() {
         return players.size();
+    }
+
+    @Override
+    public void leave(Player player) {
+        if (currentPlayer == player) {
+            actionStack.clear();
+
+            afterEndTurn();
+        }
+
+        players.remove(player);
+
+        jobMarket.adjustRowLimit(players.size());
+        // TODO Adjust cattle market?
     }
 
     ImmediateActions deliverToCity(City city) {

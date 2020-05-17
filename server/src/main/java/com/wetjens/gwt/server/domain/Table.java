@@ -240,26 +240,39 @@ public class Table {
             throw APIException.badRequest(APIError.GAME_ABANDONED);
         }
 
+        var player = getPlayerByUserId(userId)
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
+
+
         if (owner.equals(userId)) {
             // if owner wants to leave, have to appoint a new owner
             otherHumanPlayers(userId)
-                    .filter(player -> player.getStatus() == Player.Status.ACCEPTED)
+                    .filter(Player::hasAccepted)
                     .findAny()
                     .map(Player::getUserId)
                     .ifPresentOrElse(this::changeOwner, this::abandon);
         }
 
-        var player = getPlayerByUserId(userId)
-                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
-
         player.leave();
 
+        players.remove(player);
         new Left(id, userId).fire();
+
+        log.add(new LogEntry(player, LogEntry.Type.LEFT));
+
+        updated = Instant.now();
 
         if (status == Status.STARTED) {
             // TODO How to continue the game if player leaves
+            if (players.size() > game.getMinNumberOfPlayers()) {
+                // Game is still able to continue with one less player
+                runStateChange(() -> state.get().leave(state.get().getPlayerByName(player.getId().getId())));
+            } else {
+                // Game cannot be continued without player
+                abandon();
+            }
 
-            // TODO Deduct karma points
+            // TODO Deduct karma points if playing with humans
         }
     }
 
@@ -301,9 +314,9 @@ public class Table {
 
         agreeingPlayer.agreeToLeave();
 
-        log.add(new LogEntry(agreeingPlayer, LogEntry.Type.AGREED_TO_LEAVE));
-
         new AgreedToLeave(id, userId).fire();
+
+        log.add(new LogEntry(agreeingPlayer, LogEntry.Type.AGREED_TO_LEAVE));
 
         updated = Instant.now();
 
@@ -357,12 +370,11 @@ public class Table {
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_INVITED));
 
         player.accept();
-
-        updated = Instant.now();
+        new Accepted(userId).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
 
-        new Accepted(userId).fire();
+        updated = Instant.now();
 
         afterRespondToInvitation();
     }
@@ -416,11 +428,12 @@ public class Table {
 
         player.reject();
 
-        updated = Instant.now();
+        players.remove(player);
+        new Rejected(userId).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.REJECT));
 
-        new Rejected(userId).fire();
+        updated = Instant.now();
 
         afterRespondToInvitation();
     }

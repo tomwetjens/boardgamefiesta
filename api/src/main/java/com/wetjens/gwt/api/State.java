@@ -37,4 +37,6 @@ public interface State {
     default Player getPlayerByName(@NonNull String name) {
         return getPlayers().stream().filter(player -> name.equals(player.getName())).findAny().orElseThrow();
     }
+
+    void leave(Player player);
 }

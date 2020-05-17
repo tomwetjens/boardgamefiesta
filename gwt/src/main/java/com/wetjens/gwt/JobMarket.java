@@ -15,16 +15,16 @@ public final class JobMarket implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Getter
-    private final int rowLimit;
+    private final List<Row> rows;
 
     @Getter
-    private final List<Row> rows;
+    private int rowLimit;
 
     @Getter
     private int currentRowIndex;
 
     JobMarket(int playerCount) {
-        this.rowLimit = playerCount;
+        adjustRowLimit(playerCount);
 
         this.rows = Arrays.asList(
                 new Row(6),
@@ -41,6 +41,10 @@ public final class JobMarket implements Serializable {
                 new Row(4));
 
         this.currentRowIndex = 0;
+    }
+
+    void adjustRowLimit(int playerCount) {
+        this.rowLimit = playerCount;
     }
 
     /**
