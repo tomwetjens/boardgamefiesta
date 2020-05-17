@@ -43,7 +43,7 @@ public class UserDynamoDbRepository implements Users {
                 .tableName(tableName)
                 .indexName(USERNAME_INDEX)
                 .filterExpression("begins_with(Username, :Username)")
-                .expressionAttributeValues(Collections.singletonMap(":Username", AttributeValue.builder().s(username).build()))
+                .expressionAttributeValues(Collections.singletonMap(":Username", AttributeValue.builder().s(username.toLowerCase()).build()))
                 .build())
                 .items().stream()
                 .map(this::mapToUser);
@@ -55,7 +55,7 @@ public class UserDynamoDbRepository implements Users {
                 .tableName(tableName)
                 .indexName(EMAIL_INDEX)
                 .keyConditionExpression("Email = :Email")
-                .expressionAttributeValues(Collections.singletonMap(":Email", AttributeValue.builder().s(email).build()))
+                .expressionAttributeValues(Collections.singletonMap(":Email", AttributeValue.builder().s(email.toLowerCase()).build()))
                 .build());
 
         if (!response.hasItems() || response.count() == 0) {
@@ -87,12 +87,12 @@ public class UserDynamoDbRepository implements Users {
 
         updates.put("Username", AttributeValueUpdate.builder()
                 .action(AttributeAction.PUT)
-                .value(AttributeValue.builder().s(user.getUsername()).build())
+                .value(AttributeValue.builder().s(user.getUsername().toLowerCase()).build())
                 .build());
 
         updates.put("Email", AttributeValueUpdate.builder()
                 .action(AttributeAction.PUT)
-                .value(AttributeValue.builder().s(user.getEmail()).build())
+                .value(AttributeValue.builder().s(user.getEmail().toLowerCase()).build())
                 .build());
 
         updates.put("Created", AttributeValueUpdate.builder()

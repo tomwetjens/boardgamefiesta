@@ -117,6 +117,14 @@ public class StateView {
                 possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 5);
             } else if (actions.contains(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS)) {
                 possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, state.getTrail().buildingsInWoods(viewingPlayer));
+            } else if (actions.contains(ActionType.PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE)) {
+                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 1, 1);
+            } else if (actions.contains(ActionType.PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES)) {
+                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 2, 2);
+            } else if (actions.contains(ActionType.PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 1);
+            } else if (actions.contains(ActionType.PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD)) {
+                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 2, 2);
             }
         } else {
             actions = Collections.emptyList();

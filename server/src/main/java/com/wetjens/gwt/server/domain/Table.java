@@ -19,6 +19,7 @@ public class Table {
     private static final Duration START_TIMEOUT = Duration.of(2, ChronoUnit.DAYS);
     private static final Duration ACTION_TIMEOUT = Duration.of(1, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(2, ChronoUnit.DAYS);
+    private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.HOURS);
 
     private static final Random RANDOM = new Random();
     private static final int MIN_NUMBER_OF_PLAYERS = 2;
@@ -403,7 +404,7 @@ public class Table {
     private void abandon() {
         status = Status.ABANDONED;
         updated = Instant.now();
-        expires = Instant.now();
+        expires = Instant.now().plus(RETENTION_AFTER_ABANDONED);
 
         new Abandoned(id).fire();
     }

@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class UsersQueries {
 
     private static final int MIN_USERNAME_LENGTH = 3;
+    private static final int MIN_EMAIL_LENGTH = 6;
     private static final int MAX_SEARCH_RESULTS = 5;
 
     @Inject
@@ -32,14 +33,14 @@ public class UsersQueries {
     private SecurityContext securityContext;
 
     @GET
-    public List<UserView> searchUsers(@QueryParam("username") String username, @QueryParam("email") String email) {
-        if (email != null && !"".equals(email)) {
-            return users.findByEmail(username)
+    public List<UserView> searchUsers(@QueryParam("q") String q) {
+        if (q != null && q.contains("@") && q.length() >= MIN_EMAIL_LENGTH) {
+            return users.findByEmail(q)
                     .map(user -> new UserView(user.getId(), user, currentUserId()))
                     .map(Collections::singletonList)
                     .orElse(Collections.emptyList());
-        } else if (username != null && username.length() >= MIN_USERNAME_LENGTH) {
-            return users.findByUsernameStartsWith(username)
+        } else if (q != null && q.length() >= MIN_USERNAME_LENGTH) {
+            return users.findByUsernameStartsWith(q)
                     .limit(MAX_SEARCH_RESULTS)
                     .map(user -> new UserView(user.getId(), user, currentUserId()))
                     .collect(Collectors.toList());
