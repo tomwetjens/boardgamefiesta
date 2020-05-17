@@ -13,11 +13,13 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class PossibleMove {
 
+    Location from;
     List<Location> steps;
     int cost;
     Map<Player, Integer> playerFees;
 
-    PossibleMove(List<Location> steps, Player player, int balance, int playerCount) {
+    PossibleMove(Location from, List<Location> steps, Player player, int balance, int playerCount) {
+        this.from = from;
         this.steps = steps;
         this.cost = Math.min(balance, steps.stream()
                 .filter(location -> !(location instanceof Location.BuildingLocation) || ((Location.BuildingLocation) location).getBuilding()

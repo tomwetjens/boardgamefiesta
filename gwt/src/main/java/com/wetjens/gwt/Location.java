@@ -4,11 +4,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,7 +35,7 @@ public abstract class Location implements Serializable {
         return Hand.NONE;
     }
 
-    abstract boolean isEmpty();
+    public abstract boolean isEmpty();
 
     @Override
     public String toString() {
@@ -67,6 +63,15 @@ public abstract class Location implements Serializable {
                 .collect(Collectors.toSet());
     }
 
+    public Stream<List<Location>> routes(Location to) {
+        if (next.contains(to)) {
+            return Stream.of(List.of(to));
+        }
+
+        return next.stream().flatMap(location -> location.routes(to)
+                .map(route -> Stream.concat(Stream.of(location), route.stream()).collect(Collectors.toList())));
+    }
+
     public static final class Start extends Location {
 
         private static final long serialVersionUID = 1L;
@@ -76,7 +81,7 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        boolean isEmpty() {
+        public boolean isEmpty() {
             return false;
         }
     }
@@ -108,7 +113,7 @@ public abstract class Location implements Serializable {
         @Override
         ImmediateActions activate(Game game) {
             if (building != null) {
-                if (building instanceof NeutralBuilding || ((PlayerBuilding)building).getPlayer() == game.getCurrentPlayer()) {
+                if (building instanceof NeutralBuilding || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer()) {
                     var buildingAction = building.getPossibleAction(game);
 
                     if (riskAction != null) {
@@ -147,7 +152,7 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        boolean isEmpty() {
+        public boolean isEmpty() {
             return building == null;
         }
 
@@ -223,7 +228,7 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        boolean isEmpty() {
+        public boolean isEmpty() {
             return hazard == null;
         }
 
@@ -261,7 +266,7 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        boolean isEmpty() {
+        public boolean isEmpty() {
             return false;
         }
     }
@@ -288,7 +293,7 @@ public abstract class Location implements Serializable {
         }
 
         @Override
-        boolean isEmpty() {
+        public boolean isEmpty() {
             return teepee == null;
         }
 

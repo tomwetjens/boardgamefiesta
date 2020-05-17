@@ -191,11 +191,11 @@ public class Trail implements Serializable {
 
         return getCurrentLocation(player)
                 .map(from -> reachableLocations(from, stepLimit)
-                        .map(steps -> new PossibleMove(steps, player, balance, playerCount)))
+                        .map(steps -> new PossibleMove(from, steps, player, balance, playerCount)))
                 .orElseGet(() -> getLocations().stream()
                         .filter(location -> location != start)
                         .filter(location -> !location.isEmpty())
-                        .map(location -> new PossibleMove(List.of(location), player, balance, playerCount)))
+                        .map(location -> new PossibleMove(null, List.of(location), player, balance, playerCount)))
                 .collect(Collectors.toSet());
     }
 
@@ -228,7 +228,7 @@ public class Trail implements Serializable {
 
         return reachableLocations(from, to, stepLimit)
                 .filter(steps -> steps.get(steps.size() - 1) == to)
-                .map(steps -> new PossibleMove(steps, player, balance, playerCount))
+                .map(steps -> new PossibleMove(from, steps, player, balance, playerCount))
                 .collect(Collectors.toSet());
     }
 
