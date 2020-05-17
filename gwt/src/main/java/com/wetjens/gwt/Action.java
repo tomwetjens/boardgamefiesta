@@ -854,18 +854,17 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class Move extends Action {
 
-        private @NonNull List<Location> steps;
-        private int atLeast;
-        private int atMost;
-        private boolean payFeesAndActivate;
+        @NonNull List<Location> steps;
+        int atMost;
+        boolean payFeesAndActivate;
 
         public Move(List<Location> steps) {
-            this(steps, 1, Integer.MAX_VALUE, true);
+            this(steps, Integer.MAX_VALUE, true);
         }
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            if (atLeast < 0 || steps.isEmpty()) {
+            if (steps.isEmpty()) {
                 throw new GWTException(GWTError.MUST_MOVE_AT_LEAST_STEPS, 1);
             }
 
@@ -874,10 +873,6 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
             int stepLimit = currentPlayerState.getStepLimit(game.getPlayers().size());
             if (steps.size() > Math.min(atMost, stepLimit)) {
                 throw new GWTException(GWTError.STEPS_EXCEED_LIMIT, stepLimit);
-            }
-
-            if (steps.size() < atLeast) {
-                throw new GWTException(GWTError.MUST_MOVE_AT_LEAST_STEPS, atLeast);
             }
 
             Player player = game.getCurrentPlayer();
@@ -931,12 +926,18 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
                 feeRecipient(location)
                         .ifPresentOrElse(recipient -> {
                             if (recipient != game.getCurrentPlayer()) {
+                                // Pay to other player
                                 currentPlayerState.payDollars(amount);
                                 game.playerState(recipient).gainDollars(amount);
 
                                 game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(Integer.toString(amount), recipient.getName()));
                             }
-                        }, () -> game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(Integer.toString(amount))));
+                        }, () -> {
+                            // Pay to bank
+                            currentPlayerState.payDollars(amount);
+
+                            game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(Integer.toString(amount)));
+                        });
             }
         }
 
@@ -954,35 +955,35 @@ public abstract class Action implements com.wetjens.gwt.api.Action {
     public static final class Move1Forward extends Move {
 
         public Move1Forward(List<Location> steps) {
-            super(steps, 1, 1, true);
+            super(steps, 1, true);
         }
     }
 
     public static final class Move2Forward extends Move {
 
         public Move2Forward(List<Location> steps) {
-            super(steps, 1, 2, true);
+            super(steps, 2, true);
         }
     }
 
     public static final class Move3Forward extends Move {
 
         public Move3Forward(List<Location> steps) {
-            super(steps, 1, 3, true);
+            super(steps, 3, true);
         }
     }
 
     public static final class Move3ForwardWithoutFees extends Move {
 
         public Move3ForwardWithoutFees(List<Location> steps) {
-            super(steps, 1, 3, false);
+            super(steps, 3, false);
         }
     }
 
     public static final class Move4Forward extends Move {
 
         public Move4Forward(List<Location> steps) {
-            super(steps, 1, 4, true);
+            super(steps, 4, true);
         }
     }
 

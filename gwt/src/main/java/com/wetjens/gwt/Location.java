@@ -82,7 +82,7 @@ public abstract class Location implements Serializable {
     }
 
     @Getter
-    public static final class BuildingLocation extends Location {
+    public static class BuildingLocation extends Location {
 
         private static final long serialVersionUID = 1L;
 

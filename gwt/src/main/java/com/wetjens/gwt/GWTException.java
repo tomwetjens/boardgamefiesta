@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.ToString;
 
 @Getter
-@ToString
 public class GWTException extends InGameException {
 
     public GWTException(GWTError error, Object... params) {
