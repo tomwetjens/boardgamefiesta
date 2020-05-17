@@ -6,17 +6,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
-import static com.wetjens.gwt.RailroadTrack.MAX_CERTIFICATES;
-import static com.wetjens.gwt.RailroadTrack.MAX_HAND_VALUE;
-import static com.wetjens.gwt.RailroadTrack.MIN_HAND_VALUE;
+import static com.wetjens.gwt.RailroadTrack.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -272,6 +264,90 @@ class RailroadTrackTest {
             var possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MIN_HAND_VALUE, MAX_CERTIFICATES);
 
             assertThat(possibleDeliveries).contains(new RailroadTrack.PossibleDelivery(City.COLORADO_SPRINGS, 1, 2));
+        }
+    }
+
+    @Nested
+    class ReachableSpacesForward {
+
+        @Test
+        void turnOutAndNormalJumpOverOtherPlayer() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(3), 0, 6);
+            railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(4), 0, 6);
+
+            assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getSpace(3), 1, 2)).containsExactlyInAnyOrder(
+                    railroadTrack.getTurnouts().get(0),
+                    railroadTrack.getSpace(5),
+                    railroadTrack.getSpace(6));
+        }
+    }
+
+    @Nested
+    class SignalsPassed {
+
+        @Test
+        void atTurnoutBetween4And5() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(0), 0, Integer.MAX_VALUE);
+
+            assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(2);
+        }
+
+        @Test
+        void atTurnoutBetween7And8() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(1), 0, Integer.MAX_VALUE);
+
+            assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(4);
+        }
+
+        @Test
+        void atTurnoutBetween10And11() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(2), 0, Integer.MAX_VALUE);
+
+            assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(6);
+        }
+
+        @Test
+        void atTurnoutBetween13And14() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(3), 0, Integer.MAX_VALUE);
+
+            assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(8);
+        }
+
+        @Test
+        void atTurnoutBetween16And17() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(4), 0, Integer.MAX_VALUE);
+
+            assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(10);
+        }
+
+        @Test
+        void at16() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(16), 0, Integer.MAX_VALUE);
+
+            assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(9);
+        }
+
+        @Test
+        void at17() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(17), 0, Integer.MAX_VALUE);
+
+            assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(10);
+        }
+
+        @Test
+        void at18() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(18), 0, Integer.MAX_VALUE);
+
+            assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(11);
         }
     }
 }

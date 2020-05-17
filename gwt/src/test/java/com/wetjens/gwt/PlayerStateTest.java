@@ -124,6 +124,16 @@ class PlayerStateTest {
 
             assertThat(playerState.getHand()).hasSize(4);
         }
+
+        @Test
+        void gainCard() {
+            Card.CattleCard card = new Card.CattleCard(CattleType.TEXAS_LONGHORN, 6);
+
+            playerState.gainCard(card);
+
+            assertThat(playerState.getHand()).doesNotContain(card);
+            assertThat(playerState.getDiscardPile().get(0)).isSameAs(card);
+        }
     }
 
     @Nested

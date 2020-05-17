@@ -38,7 +38,7 @@ public class RailroadTrack implements Serializable {
     private static final int MAX_SPACE = 39;
 
     private static final List<Integer> TURNOUTS = Arrays.asList(4, 7, 10, 13, 16, 21, 25, 29, 33);
-    private static final List<Integer> SIGNALS = Arrays.asList(4, 5, 6, 8, 10, 11, 12, 14, 16, 17, 18);
+    private static final List<Integer> SIGNALS = Arrays.asList(3, 4, 5, 7, 9, 10, 11, 13, 15, 16, 17);
 
     static final int MAX_HAND_VALUE = 28;
     static final int MIN_HAND_VALUE = 5;
@@ -157,8 +157,8 @@ public class RailroadTrack implements Serializable {
             throw new IllegalArgumentException("Must move at least 0..6, but was: " + atLeast);
         }
 
-        if (atMost < 0 || atMost > 6) {
-            throw new IllegalArgumentException("Must move at most 0..6, but was: " + atMost);
+        if (atMost < 1) {
+            throw new IllegalArgumentException("Must be able to move >=1");
         }
 
         if (to != start && playerAt(to).isPresent()) {
@@ -340,7 +340,8 @@ public class RailroadTrack implements Serializable {
     }
 
     private Stream<Space> spacesWithSignalsUpUntil(Space current) {
-        return Stream.concat(Stream.of(current), current.getPrevious().stream().flatMap(this::spacesWithSignalsUpUntil))
+        return current.getPrevious().stream()
+                .flatMap(previous -> Stream.concat(Stream.of(previous), spacesWithSignalsUpUntil(previous)))
                 .distinct()
                 .filter(Space::hasSignal);
     }
@@ -435,8 +436,12 @@ public class RailroadTrack implements Serializable {
 
         public abstract String getName();
 
+        @Override
+        public String toString() {
+            return getName();
+        }
+
         @Getter
-        @ToString
         public static class NumberedSpace extends Space {
 
             private static final long serialVersionUID = 1L;
@@ -469,7 +474,6 @@ public class RailroadTrack implements Serializable {
             }
         }
 
-        @ToString
         public static final class TurnoutSpace extends Space {
 
             private static final long serialVersionUID = 1L;
