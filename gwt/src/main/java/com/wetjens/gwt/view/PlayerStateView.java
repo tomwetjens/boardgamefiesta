@@ -11,10 +11,7 @@ import com.wetjens.gwt.api.Player;
 import lombok.NonNull;
 import lombok.Value;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Value
@@ -35,6 +32,7 @@ public class PlayerStateView {
     Integer handValue;
     List<CardView> discardPile;
     Integer drawStackSize;
+    Integer handSize;
 
     Map<Unlockable, Integer> unlocked;
     List<String> buildings;
@@ -56,8 +54,10 @@ public class PlayerStateView {
         discardPile = playerState.getDiscardPile().stream()
                 .map(CardView::of)
                 .collect(Collectors.toList());
+        Collections.reverse(discardPile);
 
         drawStackSize = playerState.getDrawStackSize();
+        handSize = playerState.getHand().size();
 
         if (viewingPlayer == playerState.getPlayer()) {
             hand = playerState.getHand().stream()
