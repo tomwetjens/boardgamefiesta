@@ -57,11 +57,6 @@ public class GWT implements Game {
     }
 
     @Override
-    public String toView(Class<? extends Action> action) {
-        return ActionType.of((Class<? extends com.wetjens.gwt.Action>) action).name();
-    }
-
-    @Override
     public State deserialize(InputStream inputStream) {
         return com.wetjens.gwt.Game.deserialize(inputStream);
     }

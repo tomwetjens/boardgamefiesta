@@ -21,8 +21,6 @@ public interface Game {
 
     Object toView(State state, Player viewer);
 
-    String toView(Class<? extends Action> action);
-
     String getId();
 
     State deserialize(InputStream inputStream);

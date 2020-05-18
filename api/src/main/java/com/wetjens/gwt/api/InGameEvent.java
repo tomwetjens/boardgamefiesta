@@ -7,5 +7,11 @@ public interface InGameEvent {
 
     String getType();
 
+    /**
+     *
+     * <p>Special case: if it equals a {@link Player#getName()}, it will be considered a reference to a player within the game.</p>
+     *
+     * @return
+     */
     List<String> getParameters();
 }
