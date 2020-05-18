@@ -227,13 +227,24 @@ public class TableResource {
     }
 
     @POST
-    @Path("/{id}/uninvite")
+    @Path("/{id}/add-computer")
     @Transactional
-    public void uninvite(@PathParam("id") String id, @NotNull @Valid UninviteRequest request) {
+    public void addComputer(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
-        table.uninvite(users.findOptionallyById(User.Id.of(request.getUserId()))
-                .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, request.getUserId())));
+        table.addComputer();
+
+        tables.update(table);
+    }
+
+    @POST
+    @Path("/{id}/players/{playerId}/kick")
+    @Transactional
+    public void kick(@PathParam("id") String id, @PathParam("playerId") String playerId) {
+        var table = tables.findById(Table.Id.of(id));
+
+        table.kick(table.getPlayerById(Player.Id.of(playerId))
+                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME)));
 
         tables.update(table);
     }

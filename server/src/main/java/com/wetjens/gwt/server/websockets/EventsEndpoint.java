@@ -78,7 +78,7 @@ public class EventsEndpoint {
         notifyOtherPlayers(invited.getUserId(), invited.getTable(), new Event(EventType.INVITED, invited.getTable().getId().getId(), invited.getUserId().getId()));
     }
 
-    void uninvited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Uninvited event) {
+    void uninvited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
         notifyUser(event.getUserId(), new Event(EventType.UNINVITED, event.getTable().getId().getId(), null));
         notifyOtherPlayers(event.getUserId(), event.getTable(), new Event(EventType.UNINVITED, event.getTable().getId().getId(), event.getUserId().getId()));
     }

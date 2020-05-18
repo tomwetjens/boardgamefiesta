@@ -488,19 +488,39 @@ public class Table {
         new Invited(user.getId()).fire();
     }
 
-    public void uninvite(User user) {
+    public void kick(Player player) {
+        if (status != Status.NEW) {
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
+        }
+        // TODO With enough time passed, or votes, a player can be removed after the game has started
+
+        if (!players.remove(player)) {
+            throw APIException.badRequest(APIError.NOT_PLAYER_IN_GAME);
+        }
+
+        if (player.getType() == Player.Type.USER) {
+            log.add(new LogEntry(player, LogEntry.Type.KICK, List.of(player.getUserId().getId())));
+
+            new Kicked(player.getUserId()).fire();
+        }
+    }
+
+    public void addComputer() {
         if (status != Status.NEW) {
             throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
-        var player = getPlayerByUserId(user.getId())
-                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
+        if (players.size() == game.getMaxNumberOfPlayers()) {
+            throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
+        }
 
-        players.remove(player);
+        if (!game.hasAutoma()) {
+            throw APIException.badRequest(APIError.NOT_SUPPORTED);
+        }
 
-        log.add(new LogEntry(player, LogEntry.Type.UNINVITE, List.of(user.getUsername())));
+        players.add(Player.computer());
 
-        new Uninvited(user.getId()).fire();
+        new ComputerAdded(id);
     }
 
     public enum Status {
@@ -526,7 +546,7 @@ public class Table {
     }
 
     @Value
-    public class Uninvited implements DomainEvent {
+    public class Kicked implements DomainEvent {
         Table table = Table.this;
         User.Id userId;
     }
@@ -593,6 +613,11 @@ public class Table {
 
     @Value
     public class Abandoned implements DomainEvent {
+        @NonNull Table.Id tableId;
+    }
+
+    @Value
+    public class ComputerAdded implements DomainEvent {
         @NonNull Table.Id tableId;
     }
 }

@@ -88,7 +88,7 @@ public class LogEntry {
         PROPOSED_TO_LEAVE,
         AGREED_TO_LEAVE,
         CREATE,
-        UNINVITE,
+        KICK,
         LEFT, IN_GAME_EVENT
     }
 }

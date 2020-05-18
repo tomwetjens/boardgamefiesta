@@ -9,6 +9,7 @@ import lombok.Value;
 @Value
 public class PlayerView {
 
+    String id;
     Player.Type type;
     UserView user;
     Player.Status status;
@@ -17,6 +18,7 @@ public class PlayerView {
     PlayerColor color;
 
     PlayerView(@NonNull Player player, User user) {
+        id = player.getId().getId();
         type = player.getType();
         status = player.getStatus();
         this.user = player.getType() == Player.Type.USER ? new UserView(player.getUserId(), user, null) : null;

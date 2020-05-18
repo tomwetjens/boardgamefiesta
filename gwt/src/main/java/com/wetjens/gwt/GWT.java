@@ -60,4 +60,9 @@ public class GWT implements Game {
     public State deserialize(InputStream inputStream) {
         return com.wetjens.gwt.Game.deserialize(inputStream);
     }
+
+    @Override
+    public boolean hasAutoma() {
+        return true;
+    }
 }

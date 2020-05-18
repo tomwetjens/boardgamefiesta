@@ -25,4 +25,5 @@ public interface Game {
 
     State deserialize(InputStream inputStream);
 
+    boolean hasAutoma();
 }
