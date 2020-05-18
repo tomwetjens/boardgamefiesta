@@ -1,11 +1,7 @@
 package com.wetjens.gwt;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.*;
 
 class ActionStack implements Serializable {
 
@@ -71,8 +67,13 @@ class ActionStack implements Serializable {
             throw new GWTException(GWTError.NO_ACTIONS);
         }
 
-        actions.peek().skip();
-        actions.poll();
+        var possibleAction = actions.peek();
+
+        possibleAction.skip();
+
+        if (possibleAction.isFinal()) {
+            actions.poll();
+        }
     }
 
     public int size() {

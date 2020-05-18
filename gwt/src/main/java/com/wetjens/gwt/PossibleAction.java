@@ -1,13 +1,10 @@
 package com.wetjens.gwt;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -196,11 +193,13 @@ abstract class PossibleAction implements Serializable {
         }
     }
 
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
     private static final class Any extends PossibleAction {
 
         private static final long serialVersionUID = 1L;
 
         private final List<PossibleAction> actions;
+        private PossibleAction current;
 
         private Any(List<PossibleAction> actions) {
             this.actions = actions;
@@ -208,18 +207,36 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         void perform(Class<? extends Action> action) {
-            PossibleAction element = check(action);
+            PossibleAction element;
+
+            if (current != null) {
+                if (!current.canPerform(action)) {
+                    throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
+                }
+                element = current;
+            } else {
+                element = check(action);
+            }
 
             element.perform(action);
 
             if (element.isFinal()) {
                 actions.remove(element);
+                current = null;
+            } else {
+                current = element;
             }
         }
 
         @Override
         void skip() {
-            actions.clear();
+            if (current != null) {
+                current.skip();
+                actions.remove(current);
+                current = null;
+            } else {
+                actions.clear();
+            }
         }
 
         private PossibleAction check(Class<? extends Action> action) {
@@ -236,35 +253,33 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            // If a child is immediate, then only its actions can be performed now
-            return actions.stream()
-                    .filter(PossibleAction::isImmediate)
-                    .findAny() // At most one child can be immediate
-                    .map(immediate -> immediate.canPerform(action))
-                    .orElseGet(() -> actions.stream() // Else just return if any can be performed
-                            .anyMatch(possibleAction -> possibleAction.canPerform(action)));
+            if (current != null) {
+                return current.canPerform(action);
+            } else {
+                return actions.stream() // Else just return if any can be performed
+                        .anyMatch(possibleAction -> possibleAction.canPerform(action));
+            }
         }
 
         @Override
         boolean isImmediate() {
-            return actions.stream().anyMatch(PossibleAction::isImmediate);
+            return current != null && current.isImmediate();
         }
 
         @Override
         Set<Class<? extends Action>> getPossibleActions() {
-            // If a child is immediate, then only its actions are possible now
-            return actions.stream()
-                    .filter(PossibleAction::isImmediate)
-                    .findAny() // At most one child can be immediate
-                    .map(PossibleAction::getPossibleActions)
-                    .orElseGet(() -> actions.stream() // Else just return the aggregated actions
-                            .flatMap(action -> action.getPossibleActions().stream())
-                            .collect(Collectors.toUnmodifiableSet()));
+            if (current != null) {
+                return current.getPossibleActions();
+            } else {
+                return actions.stream()
+                        .flatMap(action -> action.getPossibleActions().stream())
+                        .collect(Collectors.toUnmodifiableSet());
+            }
         }
 
         @Override
         public PossibleAction clone() {
-            return new Any(actions.stream().map(PossibleAction::clone).collect(Collectors.toList()));
+            return new Any(actions.stream().map(PossibleAction::clone).collect(Collectors.toList()), current);
         }
     }
 

@@ -1,10 +1,18 @@
 package com.wetjens.gwt;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.junit.jupiter.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.assertj.core.api.Assertions.*;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PossibleActionTest {
@@ -334,6 +342,98 @@ class PossibleActionTest {
             possibleAction.perform(A.class);
 
             assertThatThrownBy(() -> possibleAction.perform(A.class)).isInstanceOf(GWTException.class).hasMessage(GWTError.CANNOT_PERFORM_ACTION.toString());
+        }
+    }
+
+    @Nested
+    class Any {
+
+        @Mock
+        PossibleAction a;
+
+        @Mock
+        PossibleAction b;
+
+        @Test
+        void shouldSkipOnlyCurrent() {
+// TODO
+        }
+
+        @Test
+        void shouldSkipAllIfNoCurrent() {
+// TODO
+        }
+
+        @Test
+        void shouldFinalizeCurrentBeforePerformingOthers() {
+            when(a.canPerform(A.class)).thenReturn(true);
+            when(a.isFinal()).thenReturn(false);
+            when(a.getPossibleActions()).thenReturn(Set.of(A.class));
+
+            when(b.canPerform(B.class)).thenReturn(true);
+            when(b.isFinal()).thenReturn(false);
+            when(b.getPossibleActions()).thenReturn(Set.of(B.class));
+
+            var possibleAction = PossibleAction.any(Stream.of(a, b));
+
+            assertThat(possibleAction.getPossibleActions()).containsExactlyInAnyOrder(A.class, B.class);
+            assertThat(possibleAction.canPerform(A.class)).isTrue();
+            assertThat(possibleAction.canPerform(B.class)).isTrue();
+            assertThat(possibleAction.isFinal()).isFalse();
+
+            possibleAction.perform(A.class);
+
+            assertThat(possibleAction.getPossibleActions()).containsExactly(A.class);
+            assertThat(possibleAction.canPerform(A.class)).isTrue();
+            assertThat(possibleAction.canPerform(B.class)).isFalse();
+            assertThat(possibleAction.isFinal()).isFalse();
+
+            possibleAction.skip();
+
+            assertThat(possibleAction.getPossibleActions()).containsExactly(B.class);
+            assertThat(possibleAction.canPerform(A.class)).isFalse();
+            assertThat(possibleAction.canPerform(B.class)).isTrue();
+            assertThat(possibleAction.isFinal()).isFalse();
+
+            possibleAction.perform(B.class);
+
+            assertThat(possibleAction.getPossibleActions()).containsExactly(B.class);
+            assertThat(possibleAction.canPerform(A.class)).isFalse();
+            assertThat(possibleAction.canPerform(B.class)).isTrue();
+            assertThat(possibleAction.isFinal()).isFalse();
+
+            possibleAction.skip();
+
+            assertThat(possibleAction.getPossibleActions()).isEmpty();
+            assertThat(possibleAction.canPerform(A.class)).isFalse();
+            assertThat(possibleAction.canPerform(B.class)).isFalse();
+            assertThat(possibleAction.isFinal()).isTrue();
+        }
+
+        @Test
+        void shouldBecomeImmediateIfCurrentBecomesImmediate() {
+            when(a.canPerform(A.class)).thenReturn(true);
+            when(a.isFinal()).thenReturn(false);
+            when(a.getPossibleActions()).thenReturn(Set.of(A.class));
+
+            when(b.getPossibleActions()).thenReturn(Set.of(B.class));
+
+            var possibleAction = PossibleAction.any(Stream.of(a, b));
+
+            assertThat(possibleAction.isImmediate()).isFalse();
+
+            possibleAction.perform(A.class);
+
+            when(a.isImmediate()).thenReturn(true);
+
+            assertThat(possibleAction.isImmediate()).isTrue();
+            assertThat(possibleAction.getPossibleActions()).containsExactly(A.class);
+
+            when(a.isFinal()).thenReturn(true);
+            possibleAction.perform(A.class);
+
+            assertThat(possibleAction.isImmediate()).isFalse();
+            assertThat(possibleAction.getPossibleActions()).containsExactly(B.class);
         }
     }
 
