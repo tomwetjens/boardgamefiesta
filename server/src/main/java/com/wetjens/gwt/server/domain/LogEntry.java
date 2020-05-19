@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,7 +24,6 @@ public class LogEntry {
     @NonNull
     Player.Id playerId;
 
-    @NonNull
     User.Id userId;
 
     @NonNull
@@ -60,6 +60,10 @@ public class LogEntry {
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = type;
         this.parameters = parameters.stream().map(Object::toString).collect(Collectors.toList());
+    }
+
+    public Optional<User.Id> getUserId() {
+        return Optional.ofNullable(userId);
     }
 
     private static Instant generateTimestamp() {

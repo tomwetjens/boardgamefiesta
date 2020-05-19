@@ -28,18 +28,18 @@ public class PossibleMoveView {
         this.steps = possibleMove.getSteps().stream()
                 .map(Location::getName)
                 .collect(Collectors.toList());
-        this.route = calculateRoute(possibleMove.getFrom(), possibleMove.getSteps());
+        this.route = calculateRoute(possibleMove);
         this.playerFees = possibleMove.getPlayerFees().entrySet().stream()
                 .map(entry -> new PlayerFeeView(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 
-    private List<String> calculateRoute(Location from, List<Location> steps) {
+    private List<String> calculateRoute(PossibleMove possibleMove) {
         var result = new LinkedList<Location>();
 
-        Location current = from;
-        for (Location step : steps) {
-            if (!current.getNext().contains(step)) {
+        Location current = possibleMove.getFrom().orElse(null);
+        for (Location step : possibleMove.getSteps()) {
+            if (current != null && !current.getNext().contains(step)) {
                 // Fill in gap between
                 result.addAll(current.routes(step)
                         // Only consider routes that fill in the empty gap

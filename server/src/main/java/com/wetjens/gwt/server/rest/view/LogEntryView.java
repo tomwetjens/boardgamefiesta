@@ -24,10 +24,10 @@ public class LogEntryView {
         this.timestamp = logEntry.getTimestamp();
         this.type = logEntry.getType();
         this.parameters = logEntry.getParameters();
-        this.player = table.getPlayerByUserId(logEntry.getUserId())
+        this.player = table.getPlayerById(logEntry.getPlayerId())
                 .map(player -> new PlayerView(player, player.getUserId() != null ? userMap.get(player.getUserId()) : null))
                 .orElse(null);
-        this.user = new UserView(logEntry.getUserId(), userMap.get(logEntry.getUserId()), null);
+        this.user = logEntry.getUserId().map(userId -> new UserView(userId, userMap.get(userId), null)).orElse(null);
     }
 
 }

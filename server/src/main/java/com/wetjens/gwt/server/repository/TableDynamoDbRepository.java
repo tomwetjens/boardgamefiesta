@@ -402,8 +402,8 @@ public class TableDynamoDbRepository implements Tables {
 
         item.put("GameId", AttributeValue.builder().s(gameId.getId()).build());
         item.put("Timestamp", AttributeValue.builder().n(Long.toString(logEntry.getTimestamp().toEpochMilli())).build());
-        item.put("UserId", logEntry.getUserId() != null ? AttributeValue.builder().s(logEntry.getUserId().getId()).build() : null);
-        item.put("PlayerId", logEntry.getPlayerId() != null ? AttributeValue.builder().s(logEntry.getPlayerId().getId()).build() : null);
+        item.put("UserId", logEntry.getUserId().map(userId -> AttributeValue.builder().s(userId.getId()).build()).orElse(null));
+        item.put("PlayerId", AttributeValue.builder().s(logEntry.getPlayerId().getId()).build());
         item.put("Expires", AttributeValue.builder().n(Long.toString(logEntry.getExpires().getEpochSecond())).build());
         item.put("Type", AttributeValue.builder().s(logEntry.getType().name()).build());
         item.put("Parameters", AttributeValue.builder().l(logEntry.getParameters().stream()

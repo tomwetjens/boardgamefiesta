@@ -1,16 +1,20 @@
 package com.wetjens.gwt;
 
 import com.wetjens.gwt.api.Player;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.Value;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Value
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PossibleMove {
 
     Location from;
@@ -18,10 +22,18 @@ public class PossibleMove {
     int cost;
     Map<Player, Integer> playerFees;
 
-    PossibleMove(Location from, List<Location> steps, Player player, int balance, int playerCount) {
-        this.from = from;
-        this.steps = steps;
-        this.cost = Math.min(balance, steps.stream()
+    static PossibleMove fromTo(@NonNull Location from, @NonNull List<Location> steps, @NonNull Player player, int balance, int playerCount) {
+        return new PossibleMove(from, steps,
+                calculateCost(steps, player, balance, playerCount),
+                calculatePlayerFees(steps, player, balance, playerCount));
+    }
+
+    static PossibleMove firstMove(@NonNull Location to) {
+        return new PossibleMove(null, Collections.singletonList(to), 0, Collections.emptyMap());
+    }
+
+    private static int calculateCost(@NonNull List<Location> steps, @NonNull Player player, int balance, int playerCount) {
+        return Math.min(balance, steps.stream()
                 .filter(location -> !(location instanceof Location.BuildingLocation) || ((Location.BuildingLocation) location).getBuilding()
                         .filter(building -> building instanceof PlayerBuilding)
                         .map(building -> (PlayerBuilding) building)
@@ -29,10 +41,9 @@ public class PossibleMove {
                         .orElse(false))
                 .mapToInt(location -> location.getHand().getFee(playerCount))
                 .sum());
-        this.playerFees = calculatePlayerFees(steps, player, balance, playerCount);
     }
 
-    private Map<Player, Integer> calculatePlayerFees(List<Location> steps, Player player, int balance, int playerCount) {
+    private static Map<Player, Integer> calculatePlayerFees(List<Location> steps, Player player, int balance, int playerCount) {
         var remainingBalance = new AtomicInteger(balance);
         return steps.stream()
                 .filter(location -> location instanceof Location.BuildingLocation)
@@ -55,8 +66,12 @@ public class PossibleMove {
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream().mapToInt(PlayerFee::getFee).sum()));
     }
 
+    public Optional<Location> getFrom() {
+        return Optional.ofNullable(from);
+    }
+
     @Value
-    private class PlayerFee {
+    private static class PlayerFee {
         Player player;
         int fee;
     }
