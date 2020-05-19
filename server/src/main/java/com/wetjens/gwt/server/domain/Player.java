@@ -1,22 +1,18 @@
 package com.wetjens.gwt.server.domain;
 
 import com.wetjens.gwt.api.PlayerColor;
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.Value;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 
 @Builder
 public class Player {
-
-    private static final Duration ACTION_TIMEOUT = Duration.of(3, ChronoUnit.MINUTES);
 
     @Getter
     @NonNull
@@ -26,8 +22,11 @@ public class Player {
     @NonNull
     private final Type type;
 
-    @Getter
     private final User.Id userId;
+
+    @Getter
+    @NonNull
+    private final Instant created;
 
     @Getter
     @NonNull
@@ -35,25 +34,15 @@ public class Player {
 
     @Getter
     @NonNull
-    private Instant created;
-
-    @Getter
-    @NonNull
     private Instant updated;
 
     @Getter
-    @Setter(value = AccessLevel.PACKAGE)
     private PlayerColor color;
 
-    @Getter
-    private Instant mustRespondBefore;
+    private Instant turnLimit;
 
-    @Getter
-    @Setter(value = AccessLevel.PACKAGE)
-    private Score score;
+    private Integer score;
 
-    @Getter
-    @Setter(value = AccessLevel.PACKAGE)
     private Boolean winner;
 
     static Player accepted(User.Id userId) {
@@ -114,6 +103,14 @@ public class Player {
 
     void assignColor(PlayerColor color) {
         this.color = color;
+
+        updated = Instant.now();
+    }
+
+    void assignScore(int score, boolean winner) {
+        this.score = score;
+        this.winner = winner;
+
         updated = Instant.now();
     }
 
@@ -156,12 +153,28 @@ public class Player {
         return status == Status.PROPOSED_TO_LEAVE || status == Status.AGREED_TO_LEAVE;
     }
 
-    public void beginTurn() {
-        mustRespondBefore = Instant.now().plus(ACTION_TIMEOUT);
+    public void beginTurn(Duration timeLimit) {
+        this.turnLimit = Instant.now().plus(timeLimit);
     }
 
     public void endTurn() {
 
+    }
+
+    public Optional<User.Id> getUserId() {
+        return Optional.ofNullable(userId);
+    }
+
+    public Optional<Integer> getScore() {
+        return Optional.ofNullable(score);
+    }
+
+    public Optional<Boolean> getWinner() {
+        return Optional.ofNullable(winner);
+    }
+
+    public Optional<Instant> getTurnLimit() {
+        return Optional.ofNullable(turnLimit);
     }
 
     public enum Status {

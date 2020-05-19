@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.sqs;
+package com.wetjens.gwt.server.automa;
 
 import io.quarkus.arc.config.ConfigProperties;
 import lombok.Data;

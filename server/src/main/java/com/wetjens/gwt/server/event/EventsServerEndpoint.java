@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.websockets;
+package com.wetjens.gwt.server.event;
 
 import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.Table;
@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @ApplicationScoped
 @ServerEndpoint("/events")
 @Slf4j
-public class EventsEndpoint {
+public class EventsServerEndpoint {
 
     private static final Jsonb JSONB = JsonbBuilder.create();
 
@@ -33,7 +33,7 @@ public class EventsEndpoint {
     private final Tables tables;
 
     @Inject
-    public EventsEndpoint(@NonNull Tables tables) {
+    public EventsServerEndpoint(@NonNull Tables tables) {
         this.tables = tables;
     }
 
@@ -53,61 +53,68 @@ public class EventsEndpoint {
         SESSIONS.remove(currentUserId(session));
     }
 
-    void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted accepted) {
-        notifyOtherPlayers(accepted.getUserId(), accepted.getTable(), new Event(EventType.ACCEPTED, accepted.getTable().getId().getId(), accepted.getUserId().getId()));
+    void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.ACCEPTED, table.getId().getId(), event.getUserId().getId()));
     }
 
-    void rejected(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Rejected rejected) {
-        notifyOtherPlayers(rejected.getUserId(), rejected.getTable(), new Event(EventType.REJECTED, rejected.getTable().getId().getId(), rejected.getUserId().getId()));
+    void rejected(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Rejected event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.REJECTED, table.getId().getId(), event.getUserId().getId()));
     }
 
-    void started(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Started started) {
-        notifyOtherPlayers(null, started.getTable(), new Event(EventType.STARTED, started.getTable().getId().getId(), null));
+    void started(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Started event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(Event.EventType.STARTED, table.getId().getId(), null));
     }
 
-    void ended(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended ended) {
-        notifyOtherPlayers(null, ended.getTable(), new Event(EventType.ENDED, ended.getTable().getId().getId(), null));
+    void ended(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(Event.EventType.ENDED, table.getId().getId(), null));
     }
 
-    void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.StateChanged stateChanged) {
-        notifyOtherPlayers(null, stateChanged.getTable(), new Event(EventType.STATE_CHANGED, stateChanged.getTable().getId().getId(), null));
+    void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.StateChanged event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(Event.EventType.STATE_CHANGED, table.getId().getId(), null));
     }
 
-    void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited invited) {
-        notifyUser(invited.getUserId(), new Event(EventType.INVITED, invited.getTable().getId().getId(), null));
-        notifyOtherPlayers(invited.getUserId(), invited.getTable(), new Event(EventType.INVITED, invited.getTable().getId().getId(), invited.getUserId().getId()));
+    void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited event) {
+        var table = tables.findById(event.getTableId());
+        notifyUser(event.getUserId(), new Event(Event.EventType.INVITED, table.getId().getId(), null));
+        notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.INVITED, table.getId().getId(), event.getUserId().getId()));
     }
 
     void uninvited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
-        notifyUser(event.getUserId(), new Event(EventType.UNINVITED, event.getTable().getId().getId(), null));
-        notifyOtherPlayers(event.getUserId(), event.getTable(), new Event(EventType.UNINVITED, event.getTable().getId().getId(), event.getUserId().getId()));
+        var table = tables.findById(event.getTableId());
+        notifyUser(event.getUserId(), new Event(Event.EventType.UNINVITED, table.getId().getId(), null));
+        notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.UNINVITED, table.getId().getId(), event.getUserId().getId()));
     }
 
     void left(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Left event) {
         var table = tables.findById(event.getTableId());
-        notifyUser(event.getUserId(), new Event(EventType.LEFT, event.getTableId().getId(), null));
-        notifyOtherPlayers(event.getUserId(), table, new Event(EventType.LEFT, event.getTableId().getId(), event.getUserId().getId()));
+        notifyUser(event.getUserId(), new Event(Event.EventType.LEFT, event.getTableId().getId(), null));
+        notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.LEFT, event.getTableId().getId(), event.getUserId().getId()));
     }
 
     void abandoned(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Abandoned event) {
         var table = tables.findById(event.getTableId());
-        notifyOtherPlayers(null, table, new Event(EventType.ABANDONED, event.getTableId().getId(), null));
+        notifyOtherPlayers(null, table, new Event(Event.EventType.ABANDONED, event.getTableId().getId(), null));
     }
 
     void proposedToLeave(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ProposedToLeave event) {
         var table = tables.findById(event.getTableId());
-        notifyOtherPlayers(null, table, new Event(EventType.PROPOSED_TO_LEAVE, event.getTableId().getId(), null));
+        notifyOtherPlayers(null, table, new Event(Event.EventType.PROPOSED_TO_LEAVE, event.getTableId().getId(), null));
     }
 
     void agreedToLeave(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.AgreedToLeave event) {
         var table = tables.findById(event.getTableId());
-        notifyOtherPlayers(null, table, new Event(EventType.AGREED_TO_LEAVE, event.getTableId().getId(), null));
+        notifyOtherPlayers(null, table, new Event(Event.EventType.AGREED_TO_LEAVE, event.getTableId().getId(), null));
     }
 
     private void notifyOtherPlayers(User.Id currentUserId, Table table, Event event) {
         table.getPlayers().stream()
                 .filter(player -> player.getType() == Player.Type.USER)
-                .map(Player::getUserId)
+                .flatMap(player -> player.getUserId().stream())
                 .filter(userId -> !userId.equals(currentUserId))
                 .forEach(userId -> notifyUser(userId, event));
     }

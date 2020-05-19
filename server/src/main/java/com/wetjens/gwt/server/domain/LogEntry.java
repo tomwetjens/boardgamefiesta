@@ -40,7 +40,7 @@ public class LogEntry {
 
     LogEntry(@NonNull Table table, @NonNull InGameEvent event) {
         this.playerId = Player.Id.of(event.getPlayer().getName());
-        this.userId = table.getPlayerById(this.playerId).map(Player::getUserId).orElse(null);
+        this.userId = table.getPlayerById(this.playerId).flatMap(Player::getUserId).orElse(null);
         this.timestamp = generateTimestamp();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = Type.IN_GAME_EVENT;
@@ -55,7 +55,7 @@ public class LogEntry {
 
     LogEntry(@NonNull Player player, @NonNull Type type, @NonNull List<Object> parameters) {
         this.playerId = player.getId();
-        this.userId = player.getUserId();
+        this.userId = player.getUserId().orElse(null);
         this.timestamp = generateTimestamp();
         this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = type;

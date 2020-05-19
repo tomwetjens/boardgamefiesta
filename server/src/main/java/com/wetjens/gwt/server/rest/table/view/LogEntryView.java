@@ -26,7 +26,7 @@ public class LogEntryView {
         this.type = logEntry.getType();
         this.parameters = logEntry.getParameters();
         this.player = table.getPlayerById(logEntry.getPlayerId())
-                .map(player -> new PlayerView(player, player.getUserId() != null ? userMap.get(player.getUserId()) : null))
+                .map(player -> new PlayerView(player, userMap))
                 .orElse(null);
         this.user = logEntry.getUserId().map(userId -> new UserView(userId, userMap.get(userId), null)).orElse(null);
     }

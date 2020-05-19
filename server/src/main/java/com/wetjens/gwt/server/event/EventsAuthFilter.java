@@ -1,9 +1,7 @@
-package com.wetjens.gwt.server.websockets;
+package com.wetjens.gwt.server.event;
 
 import io.quarkus.oidc.IdTokenCredential;
-import io.quarkus.oidc.runtime.ContextAwareTokenCredential;
 import io.quarkus.oidc.runtime.OidcIdentityProvider;
-import io.quarkus.security.credential.TokenCredential;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.TokenAuthenticationRequest;
 import lombok.extern.slf4j.Slf4j;

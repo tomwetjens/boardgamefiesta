@@ -9,12 +9,16 @@ import com.wetjens.gwt.view.StateView;
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.JsonObject;
 import java.io.InputStream;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.Random;
 import java.util.Set;
 
 @ApplicationScoped
 public class GWT implements Game {
+
+    private static final Duration DEFAULT_TIME_LIMIT = Duration.of(3, ChronoUnit.MINUTES);
 
     @Override
     public String getId() {
@@ -64,5 +68,10 @@ public class GWT implements Game {
     @Override
     public boolean hasAutoma() {
         return true;
+    }
+
+    @Override
+    public Duration getTimeLimit(Options options) {
+        return DEFAULT_TIME_LIMIT;
     }
 }

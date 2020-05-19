@@ -20,7 +20,7 @@ public interface State {
 
     List<Player> getPlayers();
 
-    Score score(Player player);
+    int score(Player player);
 
     void serialize(OutputStream outputStream);
 

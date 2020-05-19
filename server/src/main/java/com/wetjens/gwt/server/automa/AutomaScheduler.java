@@ -1,5 +1,7 @@
-package com.wetjens.gwt.server.domain;
+package com.wetjens.gwt.server.automa;
 
+import com.wetjens.gwt.server.domain.DomainService;
+import com.wetjens.gwt.server.domain.Table;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped
 @Slf4j
-public class AutomaScheduler {
+class AutomaScheduler implements DomainService {
 
     // TODO Make thread pool configurable
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(10);
@@ -31,7 +33,7 @@ public class AutomaScheduler {
     }
 
     @Value
-    public class Request {
+    static class Request {
         Table table;
     }
 

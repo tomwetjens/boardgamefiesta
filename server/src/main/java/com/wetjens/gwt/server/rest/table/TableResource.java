@@ -289,7 +289,7 @@ public class TableResource {
     private void checkViewAllowed(Table table) {
         var currentUserId = currentUserId();
 
-        if (table.getPlayers().stream().noneMatch(player -> currentUserId.equals(player.getUserId()))) {
+        if (table.getPlayers().stream().noneMatch(player -> currentUserId.equals(player.getUserId().orElse(null)))) {
             throw APIException.forbidden(APIError.NOT_PLAYER_IN_GAME);
         }
     }
@@ -317,8 +317,7 @@ public class TableResource {
 
     private Map<User.Id, User> getUserMapById(Table table) {
         return table.getPlayers().stream()
-                .filter(player -> player.getUserId() != null)
-                .flatMap(player -> users.findOptionallyById(player.getUserId()).stream())
+                .flatMap(player -> player.getUserId().flatMap(users::findOptionallyById).stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 }

@@ -10,12 +10,10 @@ public class ScoreView {
 
     Map<String, Integer> categories;
     int total;
-    boolean winner;
 
-    ScoreView(Score score, boolean winner) {
+    ScoreView(Score score) {
         this.categories = score.getCategories();
         this.total = score.getTotal();
-        this.winner = winner;
     }
 
 }

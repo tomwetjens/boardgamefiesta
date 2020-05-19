@@ -1,5 +1,8 @@
-package com.wetjens.gwt.server.domain;
+package com.wetjens.gwt.server.automa;
 
+import com.wetjens.gwt.server.domain.Player;
+import com.wetjens.gwt.server.domain.Table;
+import com.wetjens.gwt.server.domain.Tables;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +24,7 @@ class AutomaExecutor {
     }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    public void execute(@Observes AutomaScheduler.Request request) {
+    void execute(@Observes AutomaScheduler.Request request) {
         try {
             var table = request.getTable();
 
@@ -29,15 +32,13 @@ class AutomaExecutor {
                 return;
             }
 
-            var currentPlayer = table.getCurrentPlayer();
-            if (currentPlayer.getType() != Player.Type.COMPUTER) {
+            if (table.getCurrentPlayer().getType() != Player.Type.COMPUTER) {
                 return;
             }
 
             table.executeAutoma();
 
             tables.update(table);
-            log.debug("saved after automa");
         } catch (RuntimeException e) {
             log.error("Error executing request", e);
             throw e;

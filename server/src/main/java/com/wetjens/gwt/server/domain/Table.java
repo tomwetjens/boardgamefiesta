@@ -114,7 +114,7 @@ public class Table {
 
         table.log.add(new LogEntry(player, LogEntry.Type.CREATE));
 
-        table.new Created().fire();
+        new Created(table.getId()).fire();
 
         inviteUsers.forEach(table::invite);
 
@@ -135,7 +135,7 @@ public class Table {
         var randomColors = new LinkedList<>(game.getAvailableColors());
         Collections.shuffle(randomColors, RANDOM);
 
-        players.forEach(player -> player.setColor(randomColors.poll()));
+        players.forEach(player -> player.assignColor(randomColors.poll()));
 
         state = Lazy.of(game.start(players.stream()
                 .map(player -> new com.wetjens.gwt.api.Player(player.getId().getId(), player.getColor()))
@@ -150,9 +150,9 @@ public class Table {
 
         log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.START));
 
-        new Started().fire();
+        new Started(id).fire();
 
-        getCurrentPlayer().beginTurn();
+        getCurrentPlayer().beginTurn(game.getTimeLimit(options));
     }
 
     public void perform(Action action) {
@@ -197,10 +197,15 @@ public class Table {
         if (!state.isEnded()) {
             var newCurrentPlayer = getCurrentPlayer();
 
-            if (newCurrentPlayer != null) {
+            if (newCurrentPlayer != currentPlayer) {
                 currentPlayer.endTurn();
-                newCurrentPlayer.beginTurn();
+
+                if (newCurrentPlayer != null) {
+                    newCurrentPlayer.beginTurn(game.getTimeLimit(options));
+                }
             }
+        } else {
+            currentPlayer.endTurn();
         }
     }
 
@@ -249,7 +254,7 @@ public class Table {
             otherHumanPlayers(userId)
                     .filter(Player::hasAccepted)
                     .findAny()
-                    .map(Player::getUserId)
+                    .flatMap(Player::getUserId)
                     .ifPresentOrElse(this::changeOwner, this::abandon);
         }
 
@@ -279,7 +284,7 @@ public class Table {
     private Stream<Player> otherHumanPlayers(User.Id userId) {
         return players.stream()
                 .filter(player -> player.getType() == Player.Type.USER)
-                .filter(player -> !player.getUserId().equals(userId));
+                .filter(player -> !player.getUserId().orElseThrow().equals(userId));
     }
 
     private void changeOwner(User.Id userId) {
@@ -309,20 +314,20 @@ public class Table {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
 
-        var agreeingPlayer = getPlayerByUserId(userId)
+        var player = getPlayerByUserId(userId)
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
 
-        agreeingPlayer.agreeToLeave();
+        player.agreeToLeave();
 
         new AgreedToLeave(id, userId).fire();
 
-        log.add(new LogEntry(agreeingPlayer, LogEntry.Type.AGREED_TO_LEAVE));
+        log.add(new LogEntry(player, LogEntry.Type.AGREED_TO_LEAVE));
 
         updated = Instant.now();
 
         var allOtherPlayersAgreedToLeave = players.stream()
-                .filter(player -> !userId.equals(player.getUserId()))
                 .filter(otherPlayer -> otherPlayer.getType() == Player.Type.USER)
+                .filter(otherPlayer -> !userId.equals(otherPlayer.getUserId().orElseThrow()))
                 .allMatch(Player::hasAgreedToLeave);
 
         if (allOtherPlayersAgreedToLeave) {
@@ -333,27 +338,25 @@ public class Table {
     private void afterStateChange() {
         updated = Instant.now();
 
-        new StateChanged().fire();
+        new StateChanged(id).fire();
 
         if (state.get().isEnded()) {
             status = Status.ENDED;
             ended = updated;
             expires = ended.plus(RETENTION_AFTER_ENDED);
 
-            Set<com.wetjens.gwt.api.Player> winners = state.get().winners();
-            players.forEach(player -> {
-                var playerInState = state.get().getPlayers().stream()
-                        .filter(p -> p.getName().equals(player.getId().getId()))
-                        .findAny()
-                        .orElseThrow();
+            var winners = state.get().winners();
 
-                player.setScore(new Score(state.get().score(playerInState).getCategories().entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
+            for (Player player : players) {
+                var playerInState = state.get().getPlayerByName(player.getId().getId());
 
-                player.setWinner(winners.contains(playerInState));
-            });
+                var score = state.get().score(playerInState);
+                var winner = winners.contains(playerInState);
 
-            new Ended().fire();
+                player.assignScore(score, winner);
+            }
+
+            new Ended(id).fire();
         } else {
             expires = updated.plus(ACTION_TIMEOUT);
         }
@@ -365,12 +368,12 @@ public class Table {
         }
 
         var player = players.stream()
-                .filter(p -> userId.equals(p.getUserId()))
+                .filter(p -> userId.equals(p.getUserId().orElse(null)))
                 .findAny()
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_INVITED));
 
         player.accept();
-        new Accepted(userId).fire();
+        new Accepted(id, userId).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
 
@@ -418,14 +421,14 @@ public class Table {
         }
 
         var player = players.stream()
-                .filter(p -> userId.equals(p.getUserId()))
+                .filter(p -> userId.equals(p.getUserId().orElse(null)))
                 .findAny()
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_INVITED));
 
         player.reject();
 
         players.remove(player);
-        new Rejected(userId).fire();
+        new Rejected(id, userId).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.REJECT));
 
@@ -444,7 +447,7 @@ public class Table {
 
     public Optional<Player> getPlayerByUserId(User.Id userId) {
         return players.stream()
-                .filter(player -> userId.equals(player.getUserId()))
+                .filter(player -> userId.equals(player.getUserId().orElse(null)))
                 .findAny();
     }
 
@@ -471,7 +474,7 @@ public class Table {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        if (players.stream().anyMatch(player -> user.getId().equals(player.getUserId()))) {
+        if (players.stream().anyMatch(player -> user.getId().equals(player.getUserId().orElse(null)))) {
             throw APIException.badRequest(APIError.ALREADY_INVITED);
         }
 
@@ -480,7 +483,7 @@ public class Table {
 
         log.add(new LogEntry(player, LogEntry.Type.INVITE, List.of(user.getUsername())));
 
-        new Invited(user.getId()).fire();
+        new Invited(id, user.getId()).fire();
     }
 
     public void kick(Player player) {
@@ -494,9 +497,11 @@ public class Table {
         }
 
         if (player.getType() == Player.Type.USER) {
-            log.add(new LogEntry(player, LogEntry.Type.KICK, List.of(player.getUserId().getId())));
+            var userId = player.getUserId().orElseThrow();
 
-            new Kicked(player.getUserId()).fire();
+            log.add(new LogEntry(player, LogEntry.Type.KICK, List.of(userId.getId())));
+
+            new Kicked(this.id, userId).fire();
         }
     }
 
@@ -539,47 +544,47 @@ public class Table {
     }
 
     @Value
-    public class Invited implements DomainEvent {
-        Table table = Table.this;
+    public static class Invited implements DomainEvent {
+        Table.Id tableId;
         User.Id userId;
     }
 
     @Value
-    public class Kicked implements DomainEvent {
-        Table table = Table.this;
+    public static class Kicked implements DomainEvent {
+        Table.Id tableId;
         User.Id userId;
     }
 
     @Value
-    public class Accepted implements DomainEvent {
-        Table table = Table.this;
+    public static class Accepted implements DomainEvent {
+        Table.Id tableId;
         User.Id userId;
     }
 
     @Value
-    public class Rejected implements DomainEvent {
-        Table table = Table.this;
+    public static class Rejected implements DomainEvent {
+        Table.Id tableId;
         User.Id userId;
     }
 
     @Value
-    public class Started implements DomainEvent {
-        Table table = Table.this;
+    public static class Started implements DomainEvent {
+        Table.Id tableId;
     }
 
     @Value
-    public class Ended implements DomainEvent {
-        Table table = Table.this;
+    public static class Ended implements DomainEvent {
+        Table.Id tableId;
     }
 
     @Value
-    public class StateChanged implements DomainEvent {
-        Table table = Table.this;
+    public static class StateChanged implements DomainEvent {
+        Table.Id tableId;
     }
 
     @Value
-    private class Created implements DomainEvent {
-        Table table = Table.this;
+    public static class Created implements DomainEvent {
+        Table.Id tableId;
     }
 
     @Value

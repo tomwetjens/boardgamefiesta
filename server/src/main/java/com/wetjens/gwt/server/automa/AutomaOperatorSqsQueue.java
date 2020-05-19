@@ -1,17 +1,13 @@
-package com.wetjens.gwt.server.sqs;
+package com.wetjens.gwt.server.automa;
 
-import com.wetjens.gwt.server.domain.AutomaScheduler;
 import com.wetjens.gwt.server.domain.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
@@ -43,15 +39,19 @@ public class AutomaOperatorSqsQueue {
 
     private final SqsClient sqsClient;
     private final SqsConfiguration sqsConfiguration;
+    private final AutomaExecutor automaExecutor;
     private final ExecutorService executorService;
 
     private Future<?> consumer;
     private boolean stopping;
 
     @Inject
-    public AutomaOperatorSqsQueue(SqsClient sqsClient, SqsConfiguration sqsConfiguration) {
+    public AutomaOperatorSqsQueue(@NonNull SqsClient sqsClient,
+                                  @NonNull SqsConfiguration sqsConfiguration,
+                                  @NonNull AutomaExecutor automaExecutor) {
         this.sqsClient = sqsClient;
         this.sqsConfiguration = sqsConfiguration;
+        this.automaExecutor = automaExecutor;
 
         this.executorService = Executors.newSingleThreadExecutor();
     }

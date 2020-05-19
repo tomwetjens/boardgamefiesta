@@ -41,23 +41,23 @@ public class TableView {
         options = table.getOptions().asMap();
 
         player = table.getPlayers().stream()
-                .filter(player -> currentUserId.equals(player.getUserId()))
+                .filter(player -> currentUserId.equals(player.getUserId().orElse(null)))
                 .findAny()
                 .map(Player::getId)
                 .map(Player.Id::getId)
                 .orElse(null);
 
         otherPlayers = table.getPlayers().stream()
-                .filter(player -> !currentUserId.equals(player.getUserId()))
+                .filter(player -> !currentUserId.equals(player.getUserId().orElse(null)))
                 .map(Player::getId)
                 .map(Player.Id::getId)
                 .collect(Collectors.toSet());
 
         players = table.getPlayers().stream()
-                .collect(Collectors.toMap(player -> player.getId().getId(), player -> new PlayerView(player, userMap.get(player.getUserId()))));
+                .collect(Collectors.toMap(player -> player.getId().getId(), player -> new PlayerView(player, userMap)));
 
         accepted = table.getPlayers().stream()
-                .filter(player -> currentUserId.equals(player.getUserId()))
+                .filter(player -> currentUserId.equals(player.getUserId().orElse(null)))
                 .anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
         created = table.getCreated();
         started = table.getStarted();
@@ -67,7 +67,7 @@ public class TableView {
         if (table.getStatus() == Table.Status.STARTED) {
             var currentPlayer = table.getCurrentPlayer();
 
-            this.turn = currentUserId.equals(currentPlayer.getUserId());
+            this.turn = currentUserId.equals(currentPlayer.getUserId().orElse(null));
             this.currentPlayer = currentPlayer.getId().getId();
         } else {
             this.turn = null;

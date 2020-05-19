@@ -144,7 +144,7 @@ public class TableDynamoDbRepository implements Tables {
 
         var playersBySortKey = table.getPlayers().stream()
                 .filter(player -> player.getType() == Player.Type.USER)
-                .collect(Collectors.toMap(player -> "User-" + player.getUserId().getId(), Function.identity()));
+                .collect(Collectors.toMap(player -> "User-" + player.getUserId().orElseThrow().getId(), Function.identity()));
 
         var lookupItemsToDelete = lookupItemsBySortKey.entrySet().stream()
                 .filter(item -> !playersBySortKey.containsKey(item.getKey()))
@@ -178,7 +178,7 @@ public class TableDynamoDbRepository implements Tables {
                 .filter(entry -> lookupItemsBySortKey.containsKey(entry.getKey()))
                 .forEach(entry -> dynamoDbClient.updateItem(UpdateItemRequest.builder()
                         .tableName(tableName)
-                        .key(keyLookup(table.getId(), entry.getValue().getUserId()))
+                        .key(keyLookup(table.getId(), entry.getValue().getUserId().orElseThrow()))
                         .attributeUpdates(mapLookupItemUpdate(table, entry.getValue()))
                         .build()));
     }
@@ -215,7 +215,7 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     private Map<String, AttributeValue> mapLookupItem(Table table, Player player) {
-        var map = new HashMap<>(keyLookup(table.getId(), player.getUserId()));
+        var map = new HashMap<>(keyLookup(table.getId(), player.getUserId().orElseThrow()));
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
         map.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
         return map;
@@ -315,18 +315,12 @@ public class TableDynamoDbRepository implements Tables {
                 .userId(map.containsKey("UserId") ? User.Id.of(map.get("UserId").s()) : null)
                 .status(Player.Status.valueOf(map.get("Status").s()))
                 .color(map.containsKey("Color") ? PlayerColor.valueOf(map.get("Color").s()) : null)
-                .score(map.containsKey("Score") ? mapToScore(map.get("Score")) : null)
+                .score(map.containsKey("Score") ? Integer.parseInt(map.get("Score").n()) : null)
                 .winner(map.containsKey("Winner") ? map.get("Winner").bool() : null)
                 .created(Instant.ofEpochSecond(Long.parseLong(map.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(map.get("Updated").n())))
-                .mustRespondBefore(map.containsKey("MustRespondBefore") ? Instant.ofEpochSecond(Long.parseLong(map.get("MustRespondBefore").n())) : null)
+                .turnLimit(map.containsKey("TurnLimit") ? Instant.ofEpochSecond(Long.parseLong(map.get("TurnLimit").n())) : null)
                 .build();
-    }
-
-    private Score mapToScore(AttributeValue attributeValue) {
-        Map<String, AttributeValue> map = attributeValue.m();
-        return new Score(map.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> Integer.valueOf(entry.getValue().n()))));
     }
 
     private AttributeValue mapFromState(State state) {
@@ -343,22 +337,15 @@ public class TableDynamoDbRepository implements Tables {
         var map = new HashMap<String, AttributeValue>();
         map.put("Id", AttributeValue.builder().s(player.getId().getId()).build());
         map.put("Type", AttributeValue.builder().s(player.getType().name()).build());
-        map.put("UserId", player.getUserId() != null ? AttributeValue.builder().s(player.getUserId().getId()).build() : null);
+        map.put("UserId", player.getUserId().map(userId -> AttributeValue.builder().s(userId.getId()).build()).orElse(null));
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
         map.put("Color", player.getColor() != null ? AttributeValue.builder().s(player.getColor().name()).build() : null);
-        map.put("Score", player.getScore() != null ? mapFromScore(player.getScore()) : null);
-        map.put("Winner", player.getWinner() != null ? AttributeValue.builder().bool(player.getWinner()).build() : null);
+        map.put("Score", player.getScore().map(score -> AttributeValue.builder().n(Integer.toString(score)).build()).orElse(null));
+        map.put("Winner", player.getWinner().map(winner -> AttributeValue.builder().bool(winner).build()).orElse(null));
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(player.getUpdated().getEpochSecond())).build());
-        map.put("MustRespondBefore", player.getMustRespondBefore() != null ? AttributeValue.builder().n(Long.toString(player.getMustRespondBefore().getEpochSecond())).build() : null);
+        map.put("TurnLimit", player.getTurnLimit().map(turnLimit -> AttributeValue.builder().n(Long.toString(turnLimit.getEpochSecond())).build()).orElse(null));
         return AttributeValue.builder().m(map).build();
-    }
-
-    private AttributeValue mapFromScore(Score score) {
-        return AttributeValue.builder().m(score.getCategories().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> AttributeValue.builder()
-                        .n(entry.getValue().toString())
-                        .build()))).build();
     }
 
     private Map<String, AttributeValue> key(Table.Id id) {

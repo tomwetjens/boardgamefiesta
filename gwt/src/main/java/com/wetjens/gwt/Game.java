@@ -292,26 +292,13 @@ public class Game implements State, Serializable {
         return trail.possibleMoves(from, to, player, playerState.getBalance(), playerState.getStepLimit(players.size()), players.size());
     }
 
-    public Set<Location> reachableLocations(Player player, int atMost) {
-        if (isEnded()) {
-            return Collections.emptySet();
-        }
-        Location from = trail.getCurrentLocation(player)
-                .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION, player));
-        return from.reachableLocations(1, playerState(player).getStepLimit(players.size()));
-    }
-
-    public Set<RailroadTrack.Space> reachableSpacesForward(Player player, int atLeast, int atMost) {
-        return railroadTrack.reachableSpacesForward(railroadTrack.currentSpace(player), atLeast, atMost);
-    }
-
-    public Set<RailroadTrack.Space> reachableSpacesBackwards(Player player, int atLeast, int atMost) {
-        return railroadTrack.reachableSpacesBackwards(railroadTrack.currentSpace(player), atLeast, atMost);
+    public Score scoreDetails(Player player) {
+        return playerState(player).score(this).add(trail.score(player)).add(railroadTrack.score(player));
     }
 
     @Override
-    public Score score(Player player) {
-        return playerState(player).score(this).add(trail.score(player)).add(railroadTrack.score(player));
+    public int score(Player player) {
+        return scoreDetails(player).getTotal();
     }
 
     @Override
@@ -335,13 +322,13 @@ public class Game implements State, Serializable {
 
     @Override
     public Set<Player> winners() {
-        Map<Player, Score> scores = players.stream()
+        Map<Player, Integer> scores = players.stream()
                 .collect(Collectors.toMap(Function.identity(), this::score));
 
-        int maxScore = scores.values().stream().map(Score::getTotal).max(Integer::compare).orElse(0);
+        int maxScore = scores.values().stream().max(Integer::compare).orElse(0);
 
         return scores.entrySet().stream()
-                .filter(entry -> entry.getValue().getTotal() == maxScore)
+                .filter(entry -> entry.getValue().equals(maxScore))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }

@@ -27,6 +27,7 @@ public class PlayerStateView {
     int certificates;
 
     ScoreView score;
+    Boolean winner;
 
     List<CardView> hand;
     Integer handValue;
@@ -89,9 +90,11 @@ public class PlayerStateView {
                 .collect(Collectors.toList());
 
         if (state.isEnded()) {
-            this.score = new ScoreView(state.score(playerState.getPlayer()), state.winners().contains(playerState.getPlayer()));
+            this.score = new ScoreView(state.scoreDetails(playerState.getPlayer()));
+            this.winner = state.winners().contains(playerState.getPlayer());
         } else {
             this.score = null;
+            this.winner = null;
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.sqs;
+package com.wetjens.gwt.server.automa;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 

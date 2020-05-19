@@ -2,6 +2,7 @@ package com.wetjens.gwt.api;
 
 import javax.json.JsonObject;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
 
@@ -26,4 +27,6 @@ public interface Game {
     State deserialize(InputStream inputStream);
 
     boolean hasAutoma();
+
+    Duration getTimeLimit(Options options);
 }
