@@ -1,0 +1,40 @@
+package com.tomsboardgames.gwt;
+
+import java.io.Serializable;
+import java.util.List;
+
+public final class Foresights implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final int NUM_COLUMNS = 3;
+    private static final int NUM_ROWS = 2;
+
+    private final KansasCitySupply kansasCitySupply;
+    private final KansasCitySupply.Tile[][] spaces;
+
+    Foresights(KansasCitySupply kansasCitySupply) {
+        this.kansasCitySupply = kansasCitySupply;
+
+        spaces = new KansasCitySupply.Tile[NUM_COLUMNS][NUM_ROWS];
+
+        for (int columnIndex = 0 ; columnIndex < NUM_COLUMNS; columnIndex++) {
+            for (int rowIndex = 0 ; rowIndex < NUM_ROWS; rowIndex++) {
+                spaces[columnIndex][rowIndex] = kansasCitySupply.draw(columnIndex);
+            }
+        }
+    }
+
+    KansasCitySupply.Tile take(int columnIndex, int rowIndex) {
+        KansasCitySupply.Tile tile = spaces[columnIndex][rowIndex];
+
+        KansasCitySupply.Tile replacement = kansasCitySupply.draw(columnIndex);
+        spaces[columnIndex][rowIndex] = replacement;
+
+        return tile;
+    }
+
+    public List<KansasCitySupply.Tile> choices(int columnIndex) {
+        return List.of(spaces[columnIndex]);
+    }
+}
