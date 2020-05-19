@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Value
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class PossibleMove {
 
     Location from;
