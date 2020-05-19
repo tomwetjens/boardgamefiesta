@@ -155,10 +155,12 @@ public class Player {
 
     public void beginTurn(Duration timeLimit) {
         this.turnLimit = Instant.now().plus(timeLimit);
+        this.updated = Instant.now();
     }
 
     public void endTurn() {
-
+        this.turnLimit = null;
+        this.updated = Instant.now();
     }
 
     public Optional<User.Id> getUserId() {
