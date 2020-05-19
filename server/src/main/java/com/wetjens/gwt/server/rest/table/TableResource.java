@@ -1,9 +1,12 @@
-package com.wetjens.gwt.server.rest;
+package com.wetjens.gwt.server.rest.table;
 
 import com.wetjens.gwt.api.Options;
 import com.wetjens.gwt.server.domain.*;
-import com.wetjens.gwt.server.rest.view.LogEntryView;
-import com.wetjens.gwt.server.rest.view.TableView;
+import com.wetjens.gwt.server.rest.table.command.ActionRequest;
+import com.wetjens.gwt.server.rest.table.command.CreateTableRequest;
+import com.wetjens.gwt.server.rest.table.command.InviteRequest;
+import com.wetjens.gwt.server.rest.table.view.LogEntryView;
+import com.wetjens.gwt.server.rest.table.view.TableView;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -27,19 +30,20 @@ import java.util.stream.Collectors;
 @Produces(MediaType.APPLICATION_JSON)
 @RolesAllowed("user")
 @Slf4j
+@Transactional
 public class TableResource {
 
     @Inject
-    private Games games;
+    Games games;
 
     @Inject
-    private Tables tables;
+    Tables tables;
 
     @Inject
-    private Users users;
+    Users users;
 
     @Context
-    private SecurityContext securityContext;
+    SecurityContext securityContext;
 
     @GET
     public List<TableView> getTables() {
@@ -53,7 +57,6 @@ public class TableResource {
 
     @POST
     @Path("/create")
-    @Transactional
     public TableView create(@NotNull @Valid CreateTableRequest request) {
         var currentUser = currentUser();
 
@@ -124,55 +127,42 @@ public class TableResource {
 
     @POST
     @Path("/{id}/perform")
-    @Transactional
-    public Object perform(@PathParam("id") String id, ActionRequest request) {
+    public void perform(@PathParam("id") String id, ActionRequest request) {
         var table = tables.findById(Table.Id.of(id));
 
-        var performingPlayer = checkTurn(table);
+        checkTurn(table);
 
         table.perform(request.toAction(table));
 
         tables.update(table);
-
-        var state = table.getState().get();
-        return table.getGame().toView(state, state.getPlayerByName(performingPlayer.getId().getId()));
     }
 
     @POST
     @Path("/{id}/skip")
-    @Transactional
-    public Object skip(@PathParam("id") String id) {
+    public void skip(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
-        var performingPlayer = checkTurn(table);
+        checkTurn(table);
 
         table.skip();
 
         tables.update(table);
-
-        var state = table.getState().get();
-        return table.getGame().toView(state, state.getPlayerByName(performingPlayer.getId().getId()));
     }
 
     @POST
     @Path("/{id}/end-turn")
-    @Transactional
-    public Object endTurn(@PathParam("id") String id) {
+    public void endTurn(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
-        var performingPlayer = checkTurn(table);
+        checkTurn(table);
 
         table.endTurn();
 
         tables.update(table);
-
-        var state = table.getState().get();
-        return table.getGame().toView(state, state.getPlayerByName(performingPlayer.getId().getId()));
     }
 
     @POST
     @Path("/{id}/propose-to-leave")
-    @Transactional
     public void proposeToLeave(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
@@ -183,7 +173,6 @@ public class TableResource {
 
     @POST
     @Path("/{id}/agree-to-leave")
-    @Transactional
     public void agreeToLeave(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
@@ -194,7 +183,6 @@ public class TableResource {
 
     @POST
     @Path("/{id}/leave")
-    @Transactional
     public void leave(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
@@ -205,20 +193,22 @@ public class TableResource {
 
     @POST
     @Path("/{id}/abandon")
-    @Transactional
     public void abandon(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
-        table.abandon(currentUserId());
+        checkOwner(table);
+
+        table.abandon();
 
         tables.update(table);
     }
 
     @POST
     @Path("/{id}/invite")
-    @Transactional
     public void invite(@PathParam("id") String id, @NotNull @Valid InviteRequest request) {
         var table = tables.findById(Table.Id.of(id));
+
+        checkOwner(table);
 
         table.invite(users.findOptionallyById(User.Id.of(request.getUserId()))
                 .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, request.getUserId())));
@@ -228,9 +218,10 @@ public class TableResource {
 
     @POST
     @Path("/{id}/add-computer")
-    @Transactional
     public void addComputer(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
+
+        checkOwner(table);
 
         table.addComputer();
 
@@ -239,9 +230,10 @@ public class TableResource {
 
     @POST
     @Path("/{id}/players/{playerId}/kick")
-    @Transactional
     public void kick(@PathParam("id") String id, @PathParam("playerId") String playerId) {
         var table = tables.findById(Table.Id.of(id));
+
+        checkOwner(table);
 
         table.kick(table.getPlayerById(Player.Id.of(playerId))
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME)));
@@ -314,15 +306,13 @@ public class TableResource {
                 .orElseThrow(() -> APIException.internalError(APIError.NO_SUCH_USER));
     }
 
-    private Player checkTurn(Table table) {
+    private void checkTurn(Table table) {
         var performingPlayer = determinePlayer(table);
         var currentPlayer = table.getCurrentPlayer();
 
         if (!currentPlayer.equals(performingPlayer)) {
             throw APIException.forbidden(APIError.NOT_YOUR_TURN);
         }
-
-        return performingPlayer;
     }
 
     private Map<User.Id, User> getUserMapById(Table table) {

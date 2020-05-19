@@ -232,7 +232,7 @@ public class Table {
         player.endTurn();
     }
 
-    public void leave(User.Id userId) {
+    public void leave(@NonNull User.Id userId) {
         if (status == Status.ENDED) {
             throw APIException.badRequest(APIError.GAME_ALREADY_ENDED);
         }
@@ -243,7 +243,6 @@ public class Table {
 
         var player = getPlayerByUserId(userId)
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
-
 
         if (owner.equals(userId)) {
             // if owner wants to leave, have to appoint a new owner
@@ -290,7 +289,7 @@ public class Table {
         new ChangedOwner(id, userId).fire();
     }
 
-    public void proposeToLeave(User.Id userId) {
+    public void proposeToLeave(@NonNull User.Id userId) {
         if (status != Status.STARTED) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
@@ -305,7 +304,7 @@ public class Table {
         new ProposedToLeave(id, userId).fire();
     }
 
-    public void agreeToLeave(User.Id userId) {
+    public void agreeToLeave(@NonNull User.Id userId) {
         if (status != Status.STARTED) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
@@ -349,7 +348,7 @@ public class Table {
                         .orElseThrow();
 
                 player.setScore(new Score(state.get().score(playerInState).getCategories().entrySet().stream()
-                        .collect(Collectors.toMap(entry -> entry.getKey().toString(), Map.Entry::getValue))));
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
 
                 player.setWinner(winners.contains(playerInState));
             });
@@ -389,19 +388,15 @@ public class Table {
         }
     }
 
-    public void abandon(User.Id userId) {
-        if (!owner.equals(userId)) {
-            throw APIException.forbidden(APIError.MUST_BE_OWNER);
+    public void abandon() {
+        if (status != Status.NEW && status != Status.STARTED) {
+            throw APIException.badRequest(APIError.CANNOT_ABANDON);
         }
 
-        if (otherHumanPlayers(userId).count() > 1) {
+        if (status != Status.STARTED && otherHumanPlayers(owner).count() > 1) {
             throw APIException.forbidden(APIError.CANNOT_ABANDON);
         }
 
-        abandon();
-    }
-
-    private void abandon() {
         status = Status.ABANDONED;
         updated = Instant.now();
         expires = Instant.now().plus(RETENTION_AFTER_ABANDONED);
@@ -530,6 +525,10 @@ public class Table {
         ENDED
     }
 
+    public enum Type {
+        REALTIME
+    }
+
     @Value(staticConstructor = "of")
     public static class Id {
         String id;
@@ -607,17 +606,13 @@ public class Table {
         @NonNull User.Id userId;
     }
 
-    public enum Type {
-        REALTIME
-    }
-
     @Value
-    public class Abandoned implements DomainEvent {
+    public static class Abandoned implements DomainEvent {
         @NonNull Table.Id tableId;
     }
 
     @Value
-    public class ComputerAdded implements DomainEvent {
+    public static class ComputerAdded implements DomainEvent {
         @NonNull Table.Id tableId;
     }
 }

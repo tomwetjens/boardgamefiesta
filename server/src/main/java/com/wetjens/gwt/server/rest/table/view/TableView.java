@@ -1,8 +1,9 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.table.view;
 
 import com.wetjens.gwt.server.domain.Player;
 import com.wetjens.gwt.server.domain.Table;
 import com.wetjens.gwt.server.domain.User;
+import com.wetjens.gwt.server.rest.user.view.UserView;
 import lombok.Value;
 
 import java.time.Instant;

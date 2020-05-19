@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.user.view;
 
 import com.wetjens.gwt.server.domain.User;
 import lombok.AccessLevel;

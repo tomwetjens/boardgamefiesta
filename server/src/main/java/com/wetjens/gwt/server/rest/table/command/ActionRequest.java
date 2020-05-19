@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest;
+package com.wetjens.gwt.server.rest.table.command;
 
 import com.wetjens.gwt.api.Action;
 import com.wetjens.gwt.server.domain.Table;
@@ -25,7 +25,7 @@ public class ActionRequest {
         }
     }
 
-    Action toAction(Table table) {
+    public Action toAction(Table table) {
         return table.getGame().toAction(jsonObject, table.getState().get());
     }
 

@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.table.view;
 
 import com.wetjens.gwt.server.domain.Score;
 import lombok.Value;

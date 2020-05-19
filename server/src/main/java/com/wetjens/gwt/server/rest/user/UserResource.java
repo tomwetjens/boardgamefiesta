@@ -1,10 +1,10 @@
-package com.wetjens.gwt.server.rest;
+package com.wetjens.gwt.server.rest.user;
 
 import com.wetjens.gwt.server.domain.APIError;
 import com.wetjens.gwt.server.domain.APIException;
 import com.wetjens.gwt.server.domain.User;
 import com.wetjens.gwt.server.domain.Users;
-import com.wetjens.gwt.server.rest.view.UserView;
+import com.wetjens.gwt.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @RolesAllowed("user")
-public class UsersQueries {
+public class UserResource {
 
     private static final int MIN_USERNAME_LENGTH = 3;
     private static final int MIN_EMAIL_LENGTH = 6;

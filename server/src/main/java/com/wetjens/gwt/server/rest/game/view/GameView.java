@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest.view;
+package com.wetjens.gwt.server.rest.game.view;
 
 import com.wetjens.gwt.api.Game;
 import lombok.Value;

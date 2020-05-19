@@ -1,7 +1,7 @@
-package com.wetjens.gwt.server.rest;
+package com.wetjens.gwt.server.rest.game;
 
 import com.wetjens.gwt.server.domain.Games;
-import com.wetjens.gwt.server.rest.view.GameView;
+import com.wetjens.gwt.server.rest.game.view.GameView;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Produces(MediaType.APPLICATION_JSON)
 @RolesAllowed("user")
 @Slf4j
-public class GameQueries {
+public class GameResource {
 
     @Inject
     private Games games;

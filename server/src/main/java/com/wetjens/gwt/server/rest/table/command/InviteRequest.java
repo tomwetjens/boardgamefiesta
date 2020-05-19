@@ -1,4 +1,4 @@
-package com.wetjens.gwt.server.rest;
+package com.wetjens.gwt.server.rest.table.command;
 
 import lombok.Data;
 
