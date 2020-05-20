@@ -1,4 +1,4 @@
-package com.tomsboardgames.cognito;
+package com.tomsboardgames.server.cognito;
 
 import com.tomsboardgames.server.domain.APIError;
 import com.tomsboardgames.server.domain.APIException;

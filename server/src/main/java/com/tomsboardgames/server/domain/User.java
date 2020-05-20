@@ -105,14 +105,23 @@ public class User {
         updated = Instant.now();
     }
 
+    public void changeEmail(String email) {
+        this.email = email;
+        this.updated = Instant.now();
+
+        new EmailChanged(id, email).fire();
+    }
+
     public void confirmEmail(String email) {
         this.email = email;
-        updated = Instant.now();
+        this.updated = Instant.now();
+
+        new EmailConfirmed(id, email).fire();
     }
 
     public void changeLanguage(String language) {
         this.language = language;
-        updated = Instant.now();
+        this.updated = Instant.now();
     }
 
     public URI getAvatarUrl() {
@@ -143,5 +152,17 @@ public class User {
         } catch (NoSuchAlgorithmException e) {
             return null;
         }
+    }
+
+    @Value
+    public static class EmailChanged implements DomainEvent {
+        User.Id userId;
+        String email;
+    }
+
+    @Value
+    public static class EmailConfirmed implements DomainEvent {
+        User.Id userId;
+        String email;
     }
 }
