@@ -10,7 +10,6 @@ import java.util.Optional;
 @Data
 public class DynamoDbConfiguration {
 
-    @ConfigProperty
     private Optional<String> tableSuffix;
 
 }

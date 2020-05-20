@@ -11,6 +11,8 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -19,6 +21,13 @@ public class User {
     private static final Duration RETENTION_AFTER_LAST_SEEN = Duration.of(365, ChronoUnit.DAYS);
 
     public static final String DEFAULT_LANGUAGE = "en";
+
+    private static final Set<String> FORBIDDEN_WORDS = Set.of(
+            // TODO Add forbidden words
+    );
+    private static final int MIN_USERNAME_LENGTH = 3;
+    private static final int MAX_USER_NAME_LENGTH = 20;
+    private static final Pattern USERNAME_VALID_CHARS = Pattern.compile("[A-Za-z0-9_\\-]+");
 
     @Getter
     private final Id id;
@@ -57,6 +66,21 @@ public class User {
                 .email(email)
                 .language(DEFAULT_LANGUAGE)
                 .build();
+    }
+
+    public static void validateUsername(String username) {
+        if (username.length() < MIN_USERNAME_LENGTH) {
+            throw APIException.badRequest(APIError.USERNAME_TOO_SHORT);
+        }
+        if (username.length() > MAX_USER_NAME_LENGTH) {
+            throw APIException.badRequest(APIError.USERNAME_TOO_LONG);
+        }
+        if (!USERNAME_VALID_CHARS.matcher(username).matches()) {
+            throw APIException.badRequest(APIError.USERNAME_INVALID_CHARS);
+        }
+        if (FORBIDDEN_WORDS.stream().anyMatch(forbiddenWord -> username.toLowerCase().contains(forbiddenWord.toLowerCase()))) {
+            throw APIException.badRequest(APIError.USERNAME_FORBIDDEN);
+        }
     }
 
     public void changeUsername(String username) {
