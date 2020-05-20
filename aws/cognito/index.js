@@ -13,19 +13,21 @@ exports.handler = (event, context, callback) => {
         res.setEncoding('utf8');
         res.on('data', chunk => body += chunk);
         res.on('end', () => {
+            // If we know it's JSON, parse it
+            if (res.headers['content-type'] === 'application/json') {
+                body = JSON.parse(body);
+            }
+
             if (res.statusCode >= 400) {
-                console.error('Server returned error:', res.statusCode, body);
-                callback(body, event);
+                console.error('Error response:', res.statusCode, body);
+                callback(body.message || body || res.statusCode, event);
                 return;
             }
 
-            console.log('Successfully processed HTTPS response');
-            // If we know it's JSON, parse it
-            if (res.headers['content-type'] === 'application/json') {
-                event.response = JSON.parse(body);
-            }
+            console.log('Success response:', res.statusCode, body);
 
             // Return to Amazon Cognito
+            event.response = body;
             callback(null, event);
         });
     });

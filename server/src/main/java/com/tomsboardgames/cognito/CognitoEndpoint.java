@@ -25,6 +25,8 @@ import javax.ws.rs.core.MediaType;
 @Slf4j
 public class CognitoEndpoint {
 
+    private static final String DEFAULT_GROUP = "user";
+
     private final Users users;
     private final CognitoIdentityProviderClient cognitoIdentityProviderClient;
 
@@ -41,23 +43,13 @@ public class CognitoEndpoint {
     public PreSignUpResponse preSignUp(@NotNull @Valid PreSignUpEvent event) {
         try {
             log.info("Pre Sign-up trigger: {}", event);
-
             var username = event.getUserName();
             var email = event.getRequest().getUserAttributes().get("email");
 
-            log.info("Validating username: {}", username);
-            User.validateUsername(username);
-
-            log.info("Checking if e-mail address already in use: {}", email);
-            users.findByEmail(email).ifPresent(user -> {
-                log.info("E-mail address already in use: {}", email);
-                throw APIException.badRequest(APIError.EMAIL_ALREADY_IN_USE);
-            });
+            User.validateBeforeCreate(username, email);
 
             var response = new PreSignUpResponse();
-
             log.info("Returning from Pre Sign-up trigger: {}", response);
-
             return response;
         } catch (APIException e) {
             // Do not wrap API exceptions
@@ -75,11 +67,11 @@ public class CognitoEndpoint {
         try {
             log.info("Post Confirmation trigger: {}", event);
 
-            log.info("Adding user '{}' to group '{}' in user pool: {}", event.getUserName(), "users", event.getUserPoolId());
+            log.info("Adding user '{}' to group '{}' in user pool: {}", event.getUserName(), DEFAULT_GROUP, event.getUserPoolId());
             cognitoIdentityProviderClient.adminAddUserToGroup(AdminAddUserToGroupRequest.builder()
                     .userPoolId(event.getUserPoolId())
                     .username(event.getUserName())
-                    .groupName("users")
+                    .groupName(DEFAULT_GROUP)
                     .build());
         } catch (APIException e) {
             // Do not wrap API exceptions

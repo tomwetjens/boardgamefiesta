@@ -1,5 +1,6 @@
 package com.tomsboardgames.server.domain;
 
+import com.tomsboardgames.ResourceLoader;
 import lombok.*;
 import org.apache.commons.codec.binary.Hex;
 
@@ -11,7 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Set;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Builder
@@ -22,24 +23,25 @@ public class User {
 
     public static final String DEFAULT_LANGUAGE = "en";
 
-    private static final Set<String> FORBIDDEN_WORDS = Set.of(
-            // TODO Add forbidden words
-    );
+    private static final List<String> BAD_WORDS = ResourceLoader.readLines(User.class.getResource("/bad_words.txt"));
+    private static final List<String> FORBIDDEN_USERNAMES = ResourceLoader.readLines(User.class.getResource("/reserved_usernames.txt"));
+    private static final List<String> BAD_USERNAME_WORDS = ResourceLoader.readLines(User.class.getResource("/bad_username_words.txt"));
+
     private static final int MIN_USERNAME_LENGTH = 3;
     private static final int MAX_USER_NAME_LENGTH = 20;
-    private static final Pattern USERNAME_VALID_CHARS = Pattern.compile("[A-Za-z0-9_\\-]+");
+    private static final Pattern USERNAME_VALIDATOR = Pattern.compile("[A-Za-z0-9_\\-]+");
 
     @Getter
     private final Id id;
+
+    @Getter
+    private final Instant created;
 
     @Getter
     private String username;
 
     @Getter
     private String email;
-
-    @Getter
-    private Instant created;
 
     @Getter
     private Instant updated;
@@ -54,6 +56,8 @@ public class User {
     private String language;
 
     public static User createAutomatically(@NonNull Id id, @NonNull String username, @NonNull String email) {
+        validateBeforeCreate(username, email);
+
         var created = Instant.now();
 
         return User.builder()
@@ -72,15 +76,28 @@ public class User {
         if (username.length() < MIN_USERNAME_LENGTH) {
             throw APIException.badRequest(APIError.USERNAME_TOO_SHORT);
         }
+
         if (username.length() > MAX_USER_NAME_LENGTH) {
             throw APIException.badRequest(APIError.USERNAME_TOO_LONG);
         }
-        if (!USERNAME_VALID_CHARS.matcher(username).matches()) {
+
+        if (!USERNAME_VALIDATOR.matcher(username).matches()) {
             throw APIException.badRequest(APIError.USERNAME_INVALID_CHARS);
         }
-        if (FORBIDDEN_WORDS.stream().anyMatch(forbiddenWord -> username.toLowerCase().contains(forbiddenWord.toLowerCase()))) {
+
+        if (FORBIDDEN_USERNAMES.contains(username.toLowerCase())
+                || BAD_WORDS.stream().anyMatch(word -> username.toLowerCase().contains(word))
+                || BAD_USERNAME_WORDS.stream().anyMatch(word -> username.toLowerCase().contains(word))) {
             throw APIException.badRequest(APIError.USERNAME_FORBIDDEN);
         }
+    }
+
+    public static void validateBeforeCreate(@NonNull String username, @NonNull String email) {
+        User.validateUsername(username);
+
+        Users.instance().findByEmail(email).ifPresent(user -> {
+            throw APIException.badRequest(APIError.EMAIL_ALREADY_IN_USE);
+        });
     }
 
     public void changeUsername(String username) {
