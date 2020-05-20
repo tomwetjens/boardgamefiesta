@@ -65,6 +65,7 @@ public class User {
                 .created(created)
                 .updated(created)
                 .lastSeen(created)
+                .expires(calculateExpires(created))
                 .username(username)
                 .email(email)
                 .language(DEFAULT_LANGUAGE)
@@ -129,7 +130,12 @@ public class User {
 
     public void lastSeen(Instant lastSeen) {
         this.lastSeen = lastSeen;
+        this.expires = calculateExpires(lastSeen);
         this.updated = Instant.now();
+    }
+
+    private static Instant calculateExpires(Instant lastSeen) {
+        return lastSeen.plus(RETENTION_AFTER_LAST_SEEN);
     }
 
     @Value(staticConstructor = "of")

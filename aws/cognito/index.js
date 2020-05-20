@@ -27,7 +27,9 @@ exports.handler = (event, context, callback) => {
             console.log('Success response:', res.statusCode, body);
 
             // Return to Amazon Cognito
-            event.response = body;
+            if (body && body !== '') {
+                event.response = body;
+            }
             callback(null, event);
         });
     });
