@@ -68,7 +68,7 @@ public class User {
                 .build();
     }
 
-    public static void validateUsername(String username) {
+    public static void validateUsername(@NonNull String username) {
         if (username.length() < MIN_USERNAME_LENGTH) {
             throw APIException.badRequest(APIError.USERNAME_TOO_SHORT);
         }

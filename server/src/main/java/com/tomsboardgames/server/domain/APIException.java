@@ -28,13 +28,15 @@ public class APIException extends WebApplicationException {
     private APIException(Response.Status status, String errorCode, Object... params) {
         super(errorCode, Response.status(status)
                 .type(MediaType.APPLICATION_JSON)
-                .entity(new Error(errorCode, params))
+                // TODO Add a human readable message
+                .entity(new Error(errorCode, errorCode, params))
                 .build());
     }
 
     @Value
     public static final class Error {
         String errorCode;
+        String message;
         Object[] params;
     }
 }

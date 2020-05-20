@@ -42,7 +42,7 @@ public class CognitoEndpoint {
         try {
             log.info("Pre Sign-up trigger: {}", event);
 
-            var username = event.getRequest().getUserAttributes().get("cognito:username");
+            var username = event.getUserName();
             var email = event.getRequest().getUserAttributes().get("email");
 
             log.info("Validating username: {}", username);
@@ -59,9 +59,13 @@ public class CognitoEndpoint {
             log.info("Returning from Pre Sign-up trigger: {}", response);
 
             return response;
-        } catch (RuntimeException e) {
-            log.error("Error occurrend in Pre Sign-up trigger: {}", e.getMessage(), e);
+        } catch (APIException e) {
+            // Do not wrap API exceptions
             throw e;
+        } catch (RuntimeException e) {
+            // Any other error, hide details from client
+            log.error("Error occurred in Pre Sign-up trigger: {}", e.getMessage(), e);
+            throw APIException.internalError(APIError.INTERNAL_ERROR);
         }
     }
 
@@ -77,9 +81,13 @@ public class CognitoEndpoint {
                     .username(event.getUserName())
                     .groupName("users")
                     .build());
-        } catch (RuntimeException e) {
-            log.error("Error occurrend in Post Confirmation trigger: {}", e.getMessage(), e);
+        } catch (APIException e) {
+            // Do not wrap API exceptions
             throw e;
+        } catch (RuntimeException e) {
+            // Any other error, hide details from client
+            log.error("Error occurred in Post Confirmation trigger: {}", e.getMessage(), e);
+            throw APIException.internalError(APIError.INTERNAL_ERROR);
         }
     }
 
