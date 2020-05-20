@@ -23,9 +23,9 @@ public class User {
 
     public static final String DEFAULT_LANGUAGE = "en";
 
-    private static final List<String> BAD_WORDS = ResourceLoader.readLines(User.class.getResource("/bad_words.txt"));
-    private static final List<String> FORBIDDEN_USERNAMES = ResourceLoader.readLines(User.class.getResource("/reserved_usernames.txt"));
-    private static final List<String> BAD_USERNAME_WORDS = ResourceLoader.readLines(User.class.getResource("/bad_username_words.txt"));
+    private static final List<String> BAD_WORDS = ResourceLoader.readLines(User.class.getResourceAsStream("/bad_words.txt"));
+    private static final List<String> FORBIDDEN_USERNAMES = ResourceLoader.readLines(User.class.getResourceAsStream("/reserved_usernames.txt"));
+    private static final List<String> BAD_USERNAME_WORDS = ResourceLoader.readLines(User.class.getResourceAsStream("/bad_username_words.txt"));
 
     private static final int MIN_USERNAME_LENGTH = 3;
     private static final int MAX_USER_NAME_LENGTH = 20;
@@ -65,7 +65,6 @@ public class User {
                 .created(created)
                 .updated(created)
                 .lastSeen(created)
-                .expires(calculateExpires(created))
                 .username(username)
                 .email(email)
                 .language(DEFAULT_LANGUAGE)
@@ -128,8 +127,9 @@ public class User {
         return getGravatarUrl(email);
     }
 
-    public static Instant calculateExpires(Instant lastSeen) {
-        return lastSeen.plus(RETENTION_AFTER_LAST_SEEN);
+    public void lastSeen(Instant lastSeen) {
+        this.lastSeen = lastSeen;
+        this.updated = Instant.now();
     }
 
     @Value(staticConstructor = "of")

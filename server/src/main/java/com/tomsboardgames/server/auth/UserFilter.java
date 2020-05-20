@@ -56,11 +56,13 @@ public class UserFilter implements ContainerRequestFilter {
             changed = true;
         }
 
+        user.lastSeen(Instant.now());
+
         if (changed) {
             users.update(user);
+        } else {
+            users.updateLastSeen(user);
         }
-
-        users.updateLastSeen(user.getId(), Instant.now());
     }
 
     private void createUser(JsonWebToken jwt) {

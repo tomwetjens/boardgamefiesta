@@ -128,22 +128,22 @@ public class UserDynamoDbRepository implements Users {
     }
 
     @Override
-    public void updateLastSeen(User.Id id, Instant lastSeen) {
+    public void updateLastSeen(User user) {
         var updates = new HashMap<String, AttributeValueUpdate>();
 
         updates.put("LastSeen", AttributeValueUpdate.builder()
                 .action(AttributeAction.PUT)
-                .value(AttributeValue.builder().n(Long.toString(lastSeen.getEpochSecond())).build())
+                .value(AttributeValue.builder().n(Long.toString(user.getLastSeen().getEpochSecond())).build())
                 .build());
 
         updates.put("Expires", AttributeValueUpdate.builder()
                 .action(AttributeAction.PUT)
-                .value(AttributeValue.builder().n(Long.toString(User.calculateExpires(lastSeen).getEpochSecond())).build())
+                .value(AttributeValue.builder().n(Long.toString(user.getExpires().getEpochSecond())).build())
                 .build());
 
         dynamoDbClient.updateItem(UpdateItemRequest.builder()
                 .tableName(tableName)
-                .key(key(id))
+                .key(key(user.getId()))
                 .attributeUpdates(updates)
                 .build());
     }

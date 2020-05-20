@@ -1,19 +1,16 @@
 package com.tomsboardgames;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ResourceLoader {
 
-    public static List<String> readLines(URL resource) {
-        try {
-            return Files.readAllLines(Paths.get(resource.toURI()));
-        } catch (IOException | URISyntaxException e) {
-            throw new IllegalStateException("Could not read resource: " + resource);
+    public static List<String> readLines(InputStream inputStream) {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+            return bufferedReader.lines().collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

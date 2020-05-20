@@ -22,6 +22,6 @@ public interface Users extends DomainService {
 
     void update(User user);
 
-    void updateLastSeen(User.Id id, Instant lastSeen);
+    void updateLastSeen(User user);
 
 }
