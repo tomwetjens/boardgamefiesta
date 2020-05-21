@@ -2,6 +2,8 @@ package com.tomsboardgames.server.rest.table;
 
 import com.tomsboardgames.api.Options;
 import com.tomsboardgames.server.domain.*;
+import com.tomsboardgames.server.domain.rating.Rating;
+import com.tomsboardgames.server.domain.rating.Ratings;
 import com.tomsboardgames.server.rest.table.command.ActionRequest;
 import com.tomsboardgames.server.rest.table.command.CreateTableRequest;
 import com.tomsboardgames.server.rest.table.command.InviteRequest;
@@ -42,6 +44,9 @@ public class TableResource {
     @Inject
     Users users;
 
+    @Inject
+    Ratings ratings;
+
     @Context
     SecurityContext securityContext;
 
@@ -51,7 +56,7 @@ public class TableResource {
 
         return tables.findByUserId(currentUserId)
                 .filter(table -> table.getStatus() != Table.Status.ABANDONED)
-                .map(table -> new TableView(table, getUserMapById(table), currentUserId))
+                .map(table -> new TableView(table, getUserMap(table), getRatingMap(table), currentUserId))
                 .collect(Collectors.toList());
     }
 
@@ -71,7 +76,7 @@ public class TableResource {
 
         tables.add(table);
 
-        return new TableView(table, getUserMapById(table), currentUser.getId());
+        return new TableView(table, getUserMap(table), getRatingMap(table), currentUser.getId());
     }
 
     @GET
@@ -81,7 +86,7 @@ public class TableResource {
 
         checkViewAllowed(table);
 
-        return new TableView(table, getUserMapById(table), currentUserId());
+        return new TableView(table, getUserMap(table), getRatingMap(table), currentUserId());
     }
 
     @POST
@@ -96,33 +101,29 @@ public class TableResource {
 
         tables.update(table);
 
-        return new TableView(table, getUserMapById(table), currentUserId());
+        return new TableView(table, getUserMap(table), getRatingMap(table), currentUserId());
     }
 
     @POST
     @Path("/{id}/accept")
     @Transactional
-    public TableView accept(@PathParam("id") String id) {
+    public void accept(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
         table.acceptInvite(currentUserId());
 
         tables.update(table);
-
-        return new TableView(table, getUserMapById(table), currentUserId());
     }
 
     @POST
     @Path("/{id}/reject")
     @Transactional
-    public TableView reject(@PathParam("id") String id) {
+    public void reject(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id));
 
         table.rejectInvite(currentUserId());
 
         tables.update(table);
-
-        return new TableView(table, getUserMapById(table), currentUserId());
     }
 
     @POST
@@ -266,10 +267,11 @@ public class TableResource {
 
         checkViewAllowed(table);
 
-        var userMap = getUserMapById(table);
+        var userMap = getUserMap(table);
+        var ratingMap = getRatingMap(table);
 
         return table.getLog().since(Instant.parse(since))
-                .map(logEntry -> new LogEntryView(table, logEntry, userMap))
+                .map(logEntry -> new LogEntryView(table, logEntry, userMap, ratingMap))
                 .collect(Collectors.toList());
     }
 
@@ -315,9 +317,16 @@ public class TableResource {
         }
     }
 
-    private Map<User.Id, User> getUserMapById(Table table) {
+    private Map<User.Id, User> getUserMap(Table table) {
         return table.getPlayers().stream()
                 .flatMap(player -> player.getUserId().flatMap(users::findOptionallyById).stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));
+    }
+
+    private Map<User.Id, Rating> getRatingMap(Table table) {
+        return table.getPlayers().stream()
+                .flatMap(player -> player.getUserId().stream())
+                .map(userId -> ratings.findLatest(userId, table.getGame().getId()))
+                .collect(Collectors.toMap(Rating::getUserId, Function.identity()));
     }
 }

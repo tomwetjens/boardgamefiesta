@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
 
-    private static final Duration RETENTION_AFTER_LAST_SEEN = Duration.of(365, ChronoUnit.DAYS);
+    private static final Duration RETENTION_AFTER_LAST_SEEN = Duration.of(1095, ChronoUnit.DAYS);
 
     public static final String DEFAULT_LANGUAGE = "en";
 

@@ -930,13 +930,13 @@ public abstract class Action implements com.tomsboardgames.api.Action {
                                 currentPlayerState.payDollars(amount);
                                 game.playerState(recipient).gainDollars(amount);
 
-                                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(Integer.toString(amount), recipient.getName()));
+                                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE_PLAYER, List.of(Integer.toString(amount), recipient.getName()));
                             }
                         }, () -> {
                             // Pay to bank
                             currentPlayerState.payDollars(amount);
 
-                            game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE, List.of(Integer.toString(amount)));
+                            game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.PAY_FEE_BANK, List.of(Integer.toString(amount)));
                         });
             }
         }

@@ -3,7 +3,9 @@ package com.tomsboardgames.server.rest.table.view;
 import com.tomsboardgames.server.domain.Player;
 import com.tomsboardgames.server.domain.Table;
 import com.tomsboardgames.server.domain.User;
+import com.tomsboardgames.server.domain.rating.Rating;
 import com.tomsboardgames.server.rest.user.view.UserView;
+import lombok.NonNull;
 import lombok.Value;
 
 import java.time.Instant;
@@ -32,7 +34,10 @@ public class TableView {
     Boolean turn;
     String currentPlayer;
 
-    public TableView(Table table, Map<User.Id, User> userMap, User.Id currentUserId) {
+    public TableView(@NonNull Table table,
+                     @NonNull Map<User.Id, User> userMap,
+                     @NonNull Map<User.Id, Rating> ratingMap,
+                     User.Id currentUserId) {
         id = table.getId().getId();
         game = table.getGame().getId();
         type = table.getType();
@@ -54,7 +59,7 @@ public class TableView {
                 .collect(Collectors.toSet());
 
         players = table.getPlayers().stream()
-                .collect(Collectors.toMap(player -> player.getId().getId(), player -> new PlayerView(player, userMap)));
+                .collect(Collectors.toMap(player -> player.getId().getId(), player -> new PlayerView(player, userMap, ratingMap)));
 
         accepted = table.getPlayers().stream()
                 .filter(player -> currentUserId.equals(player.getUserId().orElse(null)))
