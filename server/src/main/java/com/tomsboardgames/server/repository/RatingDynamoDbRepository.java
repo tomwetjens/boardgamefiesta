@@ -22,6 +22,7 @@ public class RatingDynamoDbRepository implements Ratings {
 
     private static final String TABLE_NAME = "gwt-ratings";
     private static final String RANKING_TABLE_NAME = "gwt-ranking";
+    private static final String GAME_ID_RANK_ORDER_INDEX = "GameId-RankOrder-index";
 
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
@@ -136,7 +137,7 @@ public class RatingDynamoDbRepository implements Ratings {
         return findRankOrder(userId, gameId)
                 .map(rankOrder -> dynamoDbClient.query(QueryRequest.builder()
                         .tableName(rankingTableName)
-                        .indexName("GameId-RankOrder-index")
+                        .indexName(GAME_ID_RANK_ORDER_INDEX)
                         .keyConditionExpression("GameId = :GameId AND RankOrder > :RankOrder")
                         .expressionAttributeValues(Map.of("RankOrder", AttributeValue.builder().s(rankOrder).build()))
                         .select(Select.COUNT)
