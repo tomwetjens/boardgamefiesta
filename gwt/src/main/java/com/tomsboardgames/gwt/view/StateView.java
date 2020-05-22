@@ -28,6 +28,7 @@ public class StateView {
     PlayerView currentPlayer;
     List<ActionType> actions;
     boolean turn;
+    boolean ended;
     Set<PossibleMoveView> possibleMoves;
     Set<PossibleBuyView> possibleBuys;
     Set<PossibleDeliveryView> possibleDeliveries;
@@ -63,6 +64,8 @@ public class StateView {
         objectiveCards = new ObjectiveCardsView(state.getObjectiveCards());
 
         currentPlayer = new PlayerView(state.getCurrentPlayer());
+
+        ended = state.isEnded();
 
         if (viewingPlayer == state.getCurrentPlayer()) {
             actions = state.possibleActions().stream()
