@@ -121,7 +121,7 @@ public class RatingDynamoDbRepository implements Ratings {
     public Stream<User.Id> findRanking(Game.Id gameId) {
         return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(rankingTableName)
-                .indexName("GameId-RankOrder-index")
+                .indexName(GAME_ID_RANK_ORDER_INDEX)
                 .keyConditionExpression("GameId = :GameId")
                 .expressionAttributeValues(Map.of("GameId", AttributeValue.builder().s(gameId.getId()).build()))
                 .scanIndexForward(false) // Descending, best player first
