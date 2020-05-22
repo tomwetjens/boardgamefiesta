@@ -42,14 +42,7 @@ public class GWT implements Game {
 
     @Override
     public State start(Set<Player> players, Options options, Random random) {
-        var game = new com.tomsboardgames.gwt.Game(players, options.getBoolean("beginner", false), random);
-
-        // TODO This just advances the game quickly to near the end - DO NOT COMMIT THIS!
-        while (game.getJobMarket().getCurrentRowIndex() < game.getJobMarket().getRows().size() - 1) {
-            executeAutoma(game, random);
-        }
-
-        return game;
+        return new com.tomsboardgames.gwt.Game(players, options.getBoolean("beginner", false), random);
     }
 
     @Override
