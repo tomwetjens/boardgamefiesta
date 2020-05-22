@@ -1,5 +1,6 @@
 package com.tomsboardgames.server.domain.rating;
 
+import com.tomsboardgames.api.Game;
 import com.tomsboardgames.server.domain.Table;
 import com.tomsboardgames.server.domain.User;
 import org.assertj.core.data.Offset;
@@ -15,12 +16,20 @@ class RatingTest {
 
     private static final Offset<Float> STRICT = Offset.strictOffset(0.01f);
 
-    private static final String GAME_ID = "aGame";
+    private static final Game.Id GAME_ID = Game.Id.of("aGame");
     private static final Table.Id TABLE_ID = Table.Id.of("aTable");
 
     private static final User.Id A = User.Id.of("A");
     private static final User.Id B = User.Id.of("B");
     private static final User.Id C = User.Id.of("C");
+
+    @Nested
+    class Initial {
+        @Test
+        void initial() {
+            assertThat(Rating.initial(A, GAME_ID).getRating()).isEqualTo(0, STRICT);
+        }
+    }
 
     @Nested
     class ExpectedScoreAgainst {
@@ -92,6 +101,24 @@ class RatingTest {
     class Adjust {
 
         @Test
+        void belowMinRating() {
+            var a1 = Rating.initial(A, GAME_ID, 50);
+            var b1 = Rating.initial(B, GAME_ID, 50);
+
+            var ratings = Set.of(a1, b1);
+            var scores = Map.of(A, 1, B, 0);
+
+            var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
+            var b2 = b1.adjust(ratings, TABLE_ID, scores, 0);
+
+            assertThat(a2.getRating()).isEqualTo(66f, STRICT);
+            assertThat(a2.getDeltas().get(B)).isEqualTo(16f, STRICT);
+
+            assertThat(b2.getRating()).isEqualTo(50f, STRICT);
+            assertThat(b2.getDeltas().get(A)).isEqualTo(0, STRICT);
+        }
+
+        @Test
         void multiplePlayers() {
             var a1 = Rating.initial(A, GAME_ID, 150);
             var b1 = Rating.initial(B, GAME_ID, 100);
@@ -108,17 +135,65 @@ class RatingTest {
             assertThat(a2.getDeltas().get(B)).isEqualTo(6.86f, STRICT);
             assertThat(a2.getDeltas().get(C)).isEqualTo(9.14f, STRICT);
 
-            assertThat(b2.getRating()).isEqualTo(103.38f, STRICT);
-            assertThat(b2.getDeltas().get(A)).isEqualTo(-6.86f, STRICT);
+            assertThat(b2.getRating()).isEqualTo(110.24f, STRICT);
+            assertThat(b2.getDeltas().get(A)).isEqualTo(0, STRICT);
             assertThat(b2.getDeltas().get(C)).isEqualTo(10.24f, STRICT);
 
             assertThat(c2.getRating()).isEqualTo(180.62f, STRICT);
             assertThat(c2.getDeltas().get(A)).isEqualTo(-9.14f, STRICT);
             assertThat(c2.getDeltas().get(B)).isEqualTo(-10.24f, STRICT);
+        }
 
-            // Rating gained should always be lost by someone else
-            assertThat(a2.getRating() + b2.getRating() + c2.getRating())
-                    .isEqualTo(a1.getRating() + b1.getRating() + c1.getRating());
+        @Test
+        void cannotLoseBelowMinRating() {
+            var a1 = Rating.initial(A, GAME_ID, 50);
+            var b1 = Rating.initial(B, GAME_ID, 100);
+
+            var ratings = Set.of(a1, b1);
+            var scores = Map.of(A, 0, B, 1);
+
+            var a2 = a1.adjust(ratings, TABLE_ID, scores, 0);
+
+            assertThat(a2.getRating()).isEqualTo(a1.getRating());
+        }
+
+        @Test
+        void cannotLoseAtMinRating() {
+            var a1 = Rating.initial(A, GAME_ID, 100);
+            var b1 = Rating.initial(B, GAME_ID, 100);
+
+            var ratings = Set.of(a1, b1);
+            var scores = Map.of(A, 0, B, 1);
+
+            var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
+
+            assertThat(a2.getRating()).isEqualTo(a1.getRating());
+        }
+
+        @Test
+        void canStillGainFromPlayerBelowMinRating() {
+            var a1 = Rating.initial(A, GAME_ID, 100);
+            var b1 = Rating.initial(B, GAME_ID, 50);
+
+            var ratings = Set.of(a1, b1);
+            var scores = Map.of(A, 1, B, 0);
+
+            var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
+
+            assertThat(a2.getRating()).isGreaterThan(a1.getRating());
+        }
+
+        @Test
+        void canStillGainFromPlayerAtMinRating() {
+            var a1 = Rating.initial(A, GAME_ID, 100);
+            var b1 = Rating.initial(B, GAME_ID, 100);
+
+            var ratings = Set.of(a1, b1);
+            var scores = Map.of(A, 1, B, 0);
+
+            var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
+
+            assertThat(a2.getRating()).isGreaterThan(a1.getRating());
         }
     }
 }

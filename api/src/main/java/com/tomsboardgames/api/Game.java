@@ -1,5 +1,7 @@
 package com.tomsboardgames.api;
 
+import lombok.Value;
+
 import javax.json.JsonObject;
 import java.io.InputStream;
 import java.time.Duration;
@@ -22,11 +24,16 @@ public interface Game {
 
     Object toView(State state, Player viewer);
 
-    String getId();
+    Id getId();
 
     State deserialize(InputStream inputStream);
 
     boolean hasAutoma();
 
     Duration getTimeLimit(Options options);
+
+    @Value(staticConstructor = "of")
+    class Id {
+        String id;
+    }
 }

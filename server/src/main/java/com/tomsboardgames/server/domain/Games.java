@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 @ApplicationScoped
 public class Games {
 
-    private final Map<String, Game> map;
+    private final Map<Game.Id, Game> map;
 
     @Inject
     public Games(Instance<Game> instance) {
@@ -21,10 +21,10 @@ public class Games {
                 .collect(Collectors.toMap(Game::getId, Function.identity()));
     }
 
-    public Game get(String name) {
-        var implementation = map.get(name);
+    public Game get(Game.Id gameId) {
+        var implementation = map.get(gameId);
         if (implementation == null) {
-            throw new IllegalArgumentException("Unknown implementation: " + name);
+            throw new IllegalArgumentException("Unknown game: " + gameId.getId());
         }
         return implementation;
     }

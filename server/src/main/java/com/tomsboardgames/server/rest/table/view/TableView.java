@@ -39,7 +39,7 @@ public class TableView {
                      @NonNull Map<User.Id, Rating> ratingMap,
                      User.Id currentUserId) {
         id = table.getId().getId();
-        game = table.getGame().getId();
+        game = table.getGame().getId().getId();
         type = table.getType();
         status = table.getStatus();
         owner = new UserView(table.getOwner(), userMap.get(table.getOwner()), currentUserId);

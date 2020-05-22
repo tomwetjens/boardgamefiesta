@@ -9,7 +9,7 @@ public class GameView {
     String id;
 
     public GameView(Game game) {
-        id = game.getId();
+        id = game.getId().getId();
     }
 
 }

@@ -21,8 +21,8 @@ public class GWT implements Game {
     private static final Duration DEFAULT_TIME_LIMIT = Duration.of(3, ChronoUnit.MINUTES);
 
     @Override
-    public String getId() {
-        return "gwt";
+    public Game.Id getId() {
+        return Game.Id.of("gwt");
     }
 
     @Override
@@ -42,7 +42,14 @@ public class GWT implements Game {
 
     @Override
     public State start(Set<Player> players, Options options, Random random) {
-        return new com.tomsboardgames.gwt.Game(players, options.getBoolean("beginner", false), random);
+        var game = new com.tomsboardgames.gwt.Game(players, options.getBoolean("beginner", false), random);
+
+        // TODO This just advances the game quickly to near the end - DO NOT COMMIT THIS!
+        while (game.getJobMarket().getCurrentRowIndex() < game.getJobMarket().getRows().size() - 1) {
+            executeAutoma(game, random);
+        }
+
+        return game;
     }
 
     @Override

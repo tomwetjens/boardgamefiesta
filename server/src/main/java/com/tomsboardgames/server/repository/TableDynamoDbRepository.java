@@ -230,7 +230,7 @@ public class TableDynamoDbRepository implements Tables {
 
     private Map<String, AttributeValue> createAttributeValues(Table table) {
         var map = new HashMap<String, AttributeValue>();
-        map.put("Game", AttributeValue.builder().s(table.getGame().getId()).build());
+        map.put("Game", AttributeValue.builder().s(table.getGame().getId().getId()).build());
         map.put("Type", AttributeValue.builder().s(table.getType().name()).build());
         map.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
         map.put("Options", AttributeValue.builder().m(table.getOptions().asMap().entrySet().stream()
@@ -260,12 +260,12 @@ public class TableDynamoDbRepository implements Tables {
     private Table mapToTable(Map<String, AttributeValue> item) {
         var id = Table.Id.of(item.get("Id").s());
 
-        var Game = games.get(item.get("Game").s());
+        var game = games.get(Game.Id.of(item.get("Game").s()));
 
         return Table.builder()
                 .id(id)
                 .type(Table.Type.valueOf(item.get("Type").s()))
-                .game(Game)
+                .game(game)
                 .status(Table.Status.valueOf(item.get("Status").s()))
                 .options(new Options(item.get("Options").m().entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
@@ -286,7 +286,7 @@ public class TableDynamoDbRepository implements Tables {
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
                         .collect(Collectors.toSet()))
-                .state(Lazy.defer(() -> getState(Game, id)))
+                .state(Lazy.defer(() -> getState(game, id)))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
     }

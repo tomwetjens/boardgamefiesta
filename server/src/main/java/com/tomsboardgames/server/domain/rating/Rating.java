@@ -1,5 +1,6 @@
 package com.tomsboardgames.server.domain.rating;
 
+import com.tomsboardgames.api.Game;
 import com.tomsboardgames.server.domain.Table;
 import com.tomsboardgames.server.domain.User;
 import lombok.*;
@@ -17,7 +18,9 @@ import java.util.stream.Collectors;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Rating {
 
-    private static final float INITIAL_RATING = 100;
+    private static final float INITIAL_RATING = 0;
+    private static final float MIN_RATING = 100;
+    public static final float K_FACTOR = 32f;
 
     @NonNull
     User.Id userId;
@@ -26,7 +29,7 @@ public class Rating {
     Instant timestamp;
 
     @NonNull
-    String gameId;
+    Game.Id gameId;
 
     Table.Id tableId;
 
@@ -35,15 +38,12 @@ public class Rating {
     @NonNull
     Map<User.Id, Float> deltas;
 
-    @NonNull
-    Instant expires;
-
-    public static Rating initial(User.Id userId, String gameId) {
+    public static Rating initial(User.Id userId, Game.Id gameId) {
         return initial(userId, gameId, INITIAL_RATING);
     }
 
-    static Rating initial(User.Id userId, String gameId, float rating) {
-        return new Rating(userId, Instant.now(), gameId, null, rating, Collections.emptyMap(), Instant.MAX);
+    static Rating initial(User.Id userId, Game.Id gameId, float rating) {
+        return new Rating(userId, Instant.now(), gameId, null, rating, Collections.emptyMap());
     }
 
     public Optional<Table.Id> getTableId() {
@@ -53,8 +53,7 @@ public class Rating {
     public Rating adjust(Collection<Rating> currentRatings, Table.Id tableId, Map<User.Id, Integer> scores, int score) {
         var opponents = currentRatings.stream()
                 .filter(rating -> !rating.getUserId().equals(this.userId))
-                .map(Rating::getUserId)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toMap(Rating::getUserId, Function.identity()));
 
         var numberOfOpponents = opponents.size();
 
@@ -68,16 +67,23 @@ public class Rating {
         var actualScores = currentRatings.stream()
                 .collect(Collectors.toMap(Rating::getUserId, other -> actualScore(score, scores.get(other.getUserId()))));
 
-        var deltas = opponents.stream()
-                .collect(Collectors.toMap(Function.identity(), opponent -> {
-                    var actualScore = actualScores.get(opponent);
-                    var expectedScore = expectedScores.get(opponent);
-                    return kFactor * (actualScore - expectedScore);
+        var deltas = opponents.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+                    var actualScore = actualScores.get(entry.getKey());
+                    var expectedScore = expectedScores.get(entry.getKey());
+
+                    var delta = kFactor * (actualScore - expectedScore);
+
+                    // Below a certain rating, a player cannot lose any points
+                    if (delta < 0 && rating <= MIN_RATING) {
+                        return 0f;
+                    }
+                    return delta;
                 }));
 
         var rating = this.rating + deltas.values().stream().reduce(Float::sum).orElse(0f);
 
-        return new Rating(this.userId, Instant.now(), this.gameId, tableId, rating, deltas, Instant.MAX);
+        return new Rating(this.userId, Instant.now(), this.gameId, tableId, rating, deltas);
     }
 
     public float expectedAgainst(Rating other) {
@@ -92,7 +98,7 @@ public class Rating {
     private float calculateKFactor(int numberOfOpponents) {
         // TODO How to determine K factor
         // Now assuming, the more opponents a player has, the more difficult, therefore less rating to lose
-        return 32f / numberOfOpponents;
+        return K_FACTOR / numberOfOpponents;
     }
 
 }

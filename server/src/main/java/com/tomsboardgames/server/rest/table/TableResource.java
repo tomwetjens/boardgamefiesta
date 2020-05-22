@@ -1,5 +1,6 @@
 package com.tomsboardgames.server.rest.table;
 
+import com.tomsboardgames.api.Game;
 import com.tomsboardgames.api.Options;
 import com.tomsboardgames.server.domain.*;
 import com.tomsboardgames.server.domain.rating.Rating;
@@ -72,7 +73,8 @@ public class TableResource {
                 .collect(Collectors.toSet())
                 : Collections.<User>emptySet();
 
-        Table table = Table.create(games.get(request.getGame()), currentUser, invitedUsers, new Options(request.getOptions() != null ? request.getOptions() : Collections.emptyMap()));
+        Table table = Table.create(games.get(Game.Id.of(request.getGame())), currentUser, invitedUsers,
+                new Options(request.getOptions() != null ? request.getOptions() : Collections.emptyMap()));
 
         tables.add(table);
 

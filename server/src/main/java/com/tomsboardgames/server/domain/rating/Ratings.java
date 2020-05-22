@@ -1,5 +1,6 @@
 package com.tomsboardgames.server.domain.rating;
 
+import com.tomsboardgames.api.Game;
 import com.tomsboardgames.server.domain.Table;
 import com.tomsboardgames.server.domain.User;
 
@@ -10,12 +11,16 @@ import java.util.stream.Stream;
 
 public interface Ratings {
 
-    Stream<Rating> findHistoric(User.Id userId, String gameId, Instant from, Instant to);
+    Stream<Rating> findHistoric(User.Id userId, Game.Id gameId, Instant from, Instant to);
 
     Optional<Rating> findByTable(User.Id userId, Table table);
 
-    Rating findLatest(User.Id userId, String gameId);
+    Rating findLatest(User.Id userId, Game.Id gameId);
 
     void addAll(Collection<Rating> ratings);
+
+    Stream<User.Id> findRanking(Game.Id gameId);
+
+    Optional<Integer> findRank(User.Id userId, Game.Id gameId);
 
 }
