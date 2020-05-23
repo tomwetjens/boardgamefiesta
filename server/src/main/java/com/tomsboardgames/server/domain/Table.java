@@ -481,7 +481,7 @@ public class Table {
         var player = Player.invite(user.getId());
         players.add(player);
 
-        log.add(new LogEntry(player, LogEntry.Type.INVITE, List.of(user.getUsername())));
+        log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getUsername())));
 
         new Invited(id, user.getId()).fire();
     }

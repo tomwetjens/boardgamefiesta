@@ -59,7 +59,8 @@ public class TableView {
                 .collect(Collectors.toSet());
 
         players = table.getPlayers().stream()
-                .collect(Collectors.toMap(player -> player.getId().getId(), player -> new PlayerView(player, userMap, ratingMap)));
+                .collect(Collectors.toMap(player -> player.getId().getId(),
+                        player -> new PlayerView(player, userMap::get, ratingMap)));
 
         accepted = table.getPlayers().stream()
                 .filter(player -> currentUserId.equals(player.getUserId().orElse(null)))

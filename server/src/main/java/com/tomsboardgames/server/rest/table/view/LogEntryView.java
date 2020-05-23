@@ -11,6 +11,7 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 @Value
 public class LogEntryView {
@@ -24,14 +25,15 @@ public class LogEntryView {
 
     public LogEntryView(@NonNull Table table,
                         @NonNull LogEntry logEntry,
-                        @NonNull Map<User.Id, User> userMap, @NonNull Map<User.Id, Rating> ratingMap) {
+                        @NonNull Function<User.Id, User> userFunction,
+                        @NonNull Map<User.Id, Rating> ratingMap) {
         this.timestamp = logEntry.getTimestamp();
         this.type = logEntry.getType();
         this.parameters = logEntry.getParameters();
         this.player = table.getPlayerById(logEntry.getPlayerId())
-                .map(player -> new PlayerView(player, userMap, ratingMap))
+                .map(player -> new PlayerView(player, userFunction, ratingMap))
                 .orElse(null);
-        this.user = logEntry.getUserId().map(userId -> new UserView(userId, userMap.get(userId), null)).orElse(null);
+        this.user = logEntry.getUserId().map(userId -> new UserView(userId, userFunction.apply(userId), null)).orElse(null);
     }
 
 }

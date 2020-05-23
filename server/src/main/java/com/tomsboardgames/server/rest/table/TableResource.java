@@ -23,6 +23,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -281,11 +282,13 @@ public class TableResource {
 
         checkViewAllowed(table);
 
-        var userMap = getUserMap(table);
+        var userMap = new HashMap<User.Id, User>();
         var ratingMap = getRatingMap(table);
 
         return table.getLog().since(Instant.parse(since))
-                .map(logEntry -> new LogEntryView(table, logEntry, userMap, ratingMap))
+                .map(logEntry -> new LogEntryView(table, logEntry,
+                        userId -> userMap.computeIfAbsent(userId, this.users::findById),
+                        ratingMap))
                 .collect(Collectors.toList());
     }
 
