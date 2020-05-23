@@ -24,6 +24,8 @@ public class Event {
         LEFT,
         PROPOSED_TO_LEAVE,
         AGREED_TO_LEAVE,
+        KICKED,
+        OPTIONS_CHANGED,
         ABANDONED
     }
 }

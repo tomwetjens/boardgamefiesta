@@ -244,6 +244,18 @@ public class TableResource {
         tables.update(table);
     }
 
+    @POST
+    @Path("/{id}/change-options")
+    public void changeOptions(@PathParam("id") String id, @NotNull @Valid ChangeOptionsRequest request) {
+        var table = tables.findById(Table.Id.of(id));
+
+        checkOwner(table);
+
+        table.changeOptions(new Options(request.getOptions()));
+
+        tables.update(table);
+    }
+
     @GET
     @Path("/{id}/state")
     public Object getState(@PathParam("id") String id) {

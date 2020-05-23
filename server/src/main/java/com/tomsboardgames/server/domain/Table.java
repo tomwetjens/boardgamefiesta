@@ -523,6 +523,16 @@ public class Table {
         new ComputerAdded(id);
     }
 
+    public void changeOptions(@NonNull Options options) {
+        if (status != Status.NEW) {
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
+        }
+
+        this.options = options;
+
+        new OptionsChanged(id).fire();
+    }
+
     public enum Status {
         NEW,
         STARTED,
@@ -618,6 +628,11 @@ public class Table {
 
     @Value
     public static class ComputerAdded implements DomainEvent {
+        @NonNull Table.Id tableId;
+    }
+
+    @Value
+    public static class OptionsChanged implements DomainEvent {
         @NonNull Table.Id tableId;
     }
 }

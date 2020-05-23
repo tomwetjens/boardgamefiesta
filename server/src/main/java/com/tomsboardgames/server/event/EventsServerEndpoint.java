@@ -111,6 +111,16 @@ public class EventsServerEndpoint {
         notifyOtherPlayers(null, table, new Event(Event.EventType.AGREED_TO_LEAVE, event.getTableId().getId(), null));
     }
 
+    void kicked(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(Event.EventType.KICKED, event.getTableId().getId(), null));
+    }
+
+    void optionsChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.OptionsChanged event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(Event.EventType.OPTIONS_CHANGED, event.getTableId().getId(), null));
+    }
+
     private void notifyOtherPlayers(User.Id currentUserId, Table table, Event event) {
         table.getPlayers().stream()
                 .filter(player -> player.getType() == Player.Type.USER)

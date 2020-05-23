@@ -233,17 +233,7 @@ public class TableDynamoDbRepository implements Tables {
         map.put("Game", AttributeValue.builder().s(table.getGame().getId().getId()).build());
         map.put("Type", AttributeValue.builder().s(table.getType().name()).build());
         map.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
-        map.put("Options", AttributeValue.builder().m(table.getOptions().asMap().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
-                    if (entry.getValue() instanceof Boolean) {
-                        return AttributeValue.builder().bool((Boolean) entry.getValue()).build();
-                    } else if (entry.getValue() instanceof Number) {
-                        return AttributeValue.builder().n(entry.getValue().toString()).build();
-                    } else {
-                        return AttributeValue.builder().s(entry.getValue().toString()).build();
-                    }
-                })))
-                .build());
+        map.put("Options", mapFromOptions(table.getOptions()));
         map.put("Created", AttributeValue.builder().n(Long.toString(table.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build());
         map.put("Started", table.getStarted() != null ? AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build() : null);
@@ -255,6 +245,20 @@ public class TableDynamoDbRepository implements Tables {
             map.put("State", mapFromState(table.getState().get()));
         }
         return map;
+    }
+
+    private AttributeValue mapFromOptions(Options options) {
+        return AttributeValue.builder().m(options.asMap().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+                    if (entry.getValue() instanceof Boolean) {
+                        return AttributeValue.builder().bool((Boolean) entry.getValue()).build();
+                    } else if (entry.getValue() instanceof Number) {
+                        return AttributeValue.builder().n(entry.getValue().toString()).build();
+                    } else {
+                        return AttributeValue.builder().s(entry.getValue().toString()).build();
+                    }
+                })))
+                .build();
     }
 
     private Table mapToTable(Map<String, AttributeValue> item) {
@@ -376,6 +380,7 @@ public class TableDynamoDbRepository implements Tables {
         map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
         map.put("OwnerUserId", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getOwner().getId()).build()).build());
         map.put("Players", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build()).build());
+        map.put("Options", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromOptions(table.getOptions())).build());
 
         if (table.getState().isResolved()) {
             map.put("State", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromState(table.getState().get())).build());
