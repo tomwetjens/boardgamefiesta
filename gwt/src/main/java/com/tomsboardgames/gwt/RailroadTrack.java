@@ -348,6 +348,10 @@ public class RailroadTrack implements Serializable {
             result -= 3;
         }
 
+        if (hasMadeDelivery(player, City.WICHITA) && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
+            result -= 1;
+        }
+
         if (hasMadeDelivery(player, City.ALBUQUERQUE) && hasMadeDelivery(player, City.EL_PASO)) {
             result += 6;
         }

@@ -5,7 +5,7 @@ import lombok.NonNull;
 import java.io.Serializable;
 import java.util.*;
 
-public final class ObjectiveCards implements Serializable {
+public class ObjectiveCards implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
