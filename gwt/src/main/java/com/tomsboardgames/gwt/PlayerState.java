@@ -461,6 +461,7 @@ public class PlayerState implements Serializable {
 
     Score score(Game game) {
         return new Score(Map.of(
+                ScoreCategory.DOLLARS.name(), balance / 5,
                 ScoreCategory.CATTLE_CARDS.name(), scoreCattleCards(),
                 ScoreCategory.OBJECTIVE_CARDS.name(), scoreObjectiveCards(game),
                 ScoreCategory.STATION_MASTERS.name(), scoreStationMasters(),

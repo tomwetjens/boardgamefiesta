@@ -5,16 +5,18 @@ import com.tomsboardgames.api.PlayerColor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class PlayerStateTest {
 
     private ObjectiveCard startingObjectiveCard = new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0);
@@ -388,4 +390,39 @@ class PlayerStateTest {
             assertThatThrownBy(() -> playerState.removeBuilding(building)).hasMessage(GWTError.BUILDING_NOT_AVAILABLE.toString());
         }
     }
+
+    @Nested
+    class Score {
+
+        @Mock
+        private Game game;
+
+        @Mock
+        private Trail trail;
+
+        @Mock
+        private RailroadTrack railroadTrack;
+
+        @BeforeEach
+        void setUp() {
+            when(game.getTrail()).thenReturn(trail);
+            when(game.getRailroadTrack()).thenReturn(railroadTrack);
+        }
+
+        @Test
+        void balance() {
+            var playerState = PlayerState.builder()
+                    .player(player)
+                    .balance(24)
+                    .hand(Collections.emptySet())
+                    .drawStack(new LinkedList<>())
+                    .build();
+
+            when(game.playerState(player)).thenReturn(playerState);
+
+            assertThat(playerState.score(game).getTotal()).isEqualTo(4);
+            assertThat(playerState.score(game).getCategories()).containsEntry(ScoreCategory.DOLLARS.name(), 4);
+        }
+    }
+
 }
