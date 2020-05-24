@@ -72,7 +72,7 @@ public abstract class Location implements Serializable {
                 .map(route -> Stream.concat(Stream.of(location), route.stream()).collect(Collectors.toList())));
     }
 
-    public static final class Start extends Location {
+    public static class Start extends Location {
 
         private static final long serialVersionUID = 1L;
 
@@ -252,7 +252,7 @@ public abstract class Location implements Serializable {
         }
     }
 
-    public static final class KansasCity extends Location {
+    public static class KansasCity extends Location {
 
         private static final long serialVersionUID = 1L;
 

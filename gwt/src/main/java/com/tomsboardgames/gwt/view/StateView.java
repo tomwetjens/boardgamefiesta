@@ -6,10 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -32,7 +29,7 @@ public class StateView {
     Set<PossibleMoveView> possibleMoves;
     Set<PossibleBuyView> possibleBuys;
     Set<PossibleDeliveryView> possibleDeliveries;
-    Set<RailroadTrackView.SpaceView> possibleSpaces;
+    Map<ActionType, Set<RailroadTrackView.SpaceView>> possibleSpaces;
 
     public StateView(Game state, Player viewingPlayer) {
         railroadTrack = new RailroadTrackView(state.getRailroadTrack());
@@ -97,37 +94,66 @@ public class StateView {
                 possibleDeliveries = getPossibleDeliveries(state, viewingPlayer);
             }
 
-            if (actions.contains(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS) ||
-                    actions.contains(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD)) {
-                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 1, 1);
-            } else if (actions.contains(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS)) {
-                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 1, 2);
+            possibleSpaces = new HashMap<>();
+
+            if (actions.contains(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS)) {
+                possibleSpaces.put(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS,
+                        getPossibleSpacesBackwards(state, viewingPlayer, 1, 1));
             } else if (actions.contains(ActionType.MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS)) {
-                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 1, Integer.MAX_VALUE);
+                possibleSpaces.put(ActionType.MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS,
+                        getPossibleSpacesBackwards(state, viewingPlayer, 1, Integer.MAX_VALUE));
             } else if (actions.contains(ActionType.MOVE_ENGINE_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, state.playerState(viewingPlayer).getNumberOfEngineers());
+                possibleSpaces.put(ActionType.MOVE_ENGINE_FORWARD,
+                        getPossibleSpacesForward(state, viewingPlayer, 1, state.playerState(viewingPlayer).getNumberOfEngineers()));
             } else if (actions.contains(ActionType.MOVE_ENGINE_1_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 1);
+                possibleSpaces.put(ActionType.MOVE_ENGINE_1_FORWARD,
+                        getPossibleSpacesForward(state, viewingPlayer, 1, 1));
             } else if (actions.contains(ActionType.MOVE_ENGINE_2_OR_3_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 2, 3);
+                possibleSpaces.put(ActionType.MOVE_ENGINE_2_OR_3_FORWARD,
+                        getPossibleSpacesForward(state, viewingPlayer, 2, 3));
             } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_2_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 2);
+                possibleSpaces.put(ActionType.MOVE_ENGINE_AT_MOST_2_FORWARD,
+                        getPossibleSpacesForward(state, viewingPlayer, 1, 2));
             } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_3_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 3);
+                possibleSpaces.put(ActionType.MOVE_ENGINE_AT_MOST_3_FORWARD,
+                        getPossibleSpacesForward(state, viewingPlayer, 1, 3));
             } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_4_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 4);
+                possibleSpaces.put(ActionType.MOVE_ENGINE_AT_MOST_4_FORWARD,
+                        getPossibleSpacesForward(state, viewingPlayer, 1, 4));
             } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_5_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 5);
+                possibleSpaces.put(ActionType.MOVE_ENGINE_AT_MOST_5_FORWARD,
+                        getPossibleSpacesForward(state, viewingPlayer, 1, 5));
             } else if (actions.contains(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, state.getTrail().buildingsInWoods(viewingPlayer));
-            } else if (actions.contains(ActionType.PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE)) {
-                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 1, 1);
-            } else if (actions.contains(ActionType.PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES)) {
-                possibleSpaces = getPossibleSpacesBackwards(state, viewingPlayer, 2, 2);
-            } else if (actions.contains(ActionType.PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 1, 1);
-            } else if (actions.contains(ActionType.PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD)) {
-                possibleSpaces = getPossibleSpacesForward(state, viewingPlayer, 2, 2);
+                possibleSpaces.put(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS,
+                        getPossibleSpacesForward(state, viewingPlayer, 1, state.getTrail().buildingsInWoods(viewingPlayer)));
+            } else {
+                // Aux actions
+                if (actions.contains(ActionType.PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE)) {
+                    possibleSpaces.put(ActionType.PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE,
+                            getPossibleSpacesBackwards(state, viewingPlayer, 1, 1));
+                }
+                if (actions.contains(ActionType.PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES)) {
+                    possibleSpaces.put(ActionType.PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES,
+                            getPossibleSpacesBackwards(state, viewingPlayer, 2, 2));
+                }
+
+                if (actions.contains(ActionType.PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD)) {
+                    possibleSpaces.put(ActionType.PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD,
+                            getPossibleSpacesForward(state, viewingPlayer, 1, 1));
+                }
+                if (actions.contains(ActionType.PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD)) {
+                    possibleSpaces.put(ActionType.PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD,
+                            getPossibleSpacesForward(state, viewingPlayer, 2, 2));
+                }
+
+                if (actions.contains(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD)) {
+                    possibleSpaces.put(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD,
+                            getPossibleSpacesBackwards(state, viewingPlayer, 1, 1));
+                }
+                if (actions.contains(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS)) {
+                    possibleSpaces.put(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS,
+                            getPossibleSpacesBackwards(state, viewingPlayer, 2, 2));
+                }
             }
         } else {
             actions = Collections.emptyList();

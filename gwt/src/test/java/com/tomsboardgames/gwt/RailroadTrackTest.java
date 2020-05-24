@@ -10,12 +10,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.tomsboardgames.gwt.RailroadTrack.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RailroadTrackTest {
@@ -286,6 +288,60 @@ class RailroadTrackTest {
                     railroadTrack.getTurnouts().get(0),
                     railroadTrack.getSpace(5),
                     railroadTrack.getSpace(6));
+        }
+
+        @Test
+        void fromStartAllSpaces() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+
+            assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getStart(), 0, 36)).containsExactlyInAnyOrderElementsOf(
+                    Stream.concat(IntStream.rangeClosed(1, 36).mapToObj(railroadTrack::getSpace),
+                            railroadTrack.getTurnouts().stream())
+                            .collect(Collectors.toSet()));
+        }
+
+        @Test
+        void fromStartToTurnout3() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+
+            assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getStart(), 0, 14))
+                    .contains(railroadTrack.getTurnouts().get(3));
+        }
+    }
+
+    @Nested
+    class ReachableSpacesBackwards {
+
+        @Test
+        void exactly1JumpOverOtherPlayer() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(16), 0, 16);
+            railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(15), 0, 15);
+
+            assertThat(railroadTrack.reachableSpacesBackwards(railroadTrack.getSpace(16), 1, 1)).containsExactlyInAnyOrder(
+                    railroadTrack.getSpace(14));
+        }
+
+        @Test
+        void exactly2JumpOverOtherPlayer() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), new Random(0));
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(16), 0, 16);
+            railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(15), 0, 15);
+
+            assertThat(railroadTrack.reachableSpacesBackwards(railroadTrack.getSpace(16), 2, 2)).containsExactlyInAnyOrder(
+                    railroadTrack.getSpace(13),
+                    railroadTrack.getTurnouts().get(3));
+        }
+
+        @Test
+        void exactly2FromTurnoutJumpOverOtherPlayer() {
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), new Random(0));
+            var from = railroadTrack.getTurnouts().get(3);
+            railroadTrack.moveEngineForward(playerA, from, 0, 14);
+            railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(13), 0, 13);
+
+            assertThat(railroadTrack.reachableSpacesBackwards(from, 2, 2)).containsExactly(
+                    railroadTrack.getSpace(11));
         }
     }
 

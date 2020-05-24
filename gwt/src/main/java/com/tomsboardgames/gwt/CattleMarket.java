@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class CattleMarket implements Serializable {
+public class CattleMarket implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

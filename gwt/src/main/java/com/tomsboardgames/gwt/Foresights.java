@@ -3,7 +3,7 @@ package com.tomsboardgames.gwt;
 import java.io.Serializable;
 import java.util.List;
 
-public final class Foresights implements Serializable {
+public class Foresights implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
