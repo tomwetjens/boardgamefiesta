@@ -481,7 +481,7 @@ public class Table {
         var player = Player.invite(user.getId());
         players.add(player);
 
-        log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getUsername())));
+        log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getId().getId())));
 
         new Invited(id, user.getId()).fire();
     }
@@ -499,7 +499,7 @@ public class Table {
         if (player.getType() == Player.Type.USER) {
             var userId = player.getUserId().orElseThrow();
 
-            log.add(new LogEntry(player, LogEntry.Type.KICK, List.of(userId.getId())));
+            log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.KICK, List.of(userId.getId())));
 
             new Kicked(this.id, userId).fire();
         }
