@@ -93,6 +93,7 @@ public class LogEntry {
         AGREED_TO_LEAVE,
         CREATE,
         KICK,
-        LEFT, IN_GAME_EVENT
+        LEFT,
+        IN_GAME_EVENT
     }
 }

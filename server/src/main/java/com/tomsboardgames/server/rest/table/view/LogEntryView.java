@@ -22,6 +22,7 @@ public class LogEntryView {
 
     UserView user;
     PlayerView player;
+    UserView otherUser;
 
     public LogEntryView(@NonNull Table table,
                         @NonNull LogEntry logEntry,
@@ -34,6 +35,16 @@ public class LogEntryView {
                 .map(player -> new PlayerView(player, userFunction, ratingMap))
                 .orElse(null);
         this.user = logEntry.getUserId().map(userId -> new UserView(userId, userFunction.apply(userId), null)).orElse(null);
+
+        switch (logEntry.getType()) {
+            case INVITE:
+            case KICK:
+                var otherUserId = User.Id.of(logEntry.getParameters().get(0));
+                otherUser = new UserView(otherUserId, userFunction.apply(otherUserId), null);
+                break;
+            default:
+                otherUser = null;
+        }
     }
 
 }
