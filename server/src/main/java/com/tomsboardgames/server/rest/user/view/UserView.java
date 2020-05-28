@@ -17,6 +17,7 @@ public class UserView {
     String avatarUrl;
     String language;
     String email;
+    String location;
 
     public UserView(User.Id userId, User user, User.Id viewer) {
         this.id = userId.getId();
@@ -26,6 +27,7 @@ public class UserView {
             this.lastSeen = user.getLastSeen();
             this.avatarUrl = user.getAvatarUrl().toString();
             this.language = user.getLanguage();
+            this.location = user.getLocation();
 
             if (user.getId().equals(viewer)) {
                 this.email = user.getEmail();

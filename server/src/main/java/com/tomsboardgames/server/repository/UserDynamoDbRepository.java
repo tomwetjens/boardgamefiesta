@@ -74,6 +74,7 @@ public class UserDynamoDbRepository implements Users {
         item.put("LastSeen", AttributeValue.builder().n(Long.toString(user.getLastSeen().getEpochSecond())).build());
         item.put("Expires", AttributeValue.builder().n(Long.toString(user.getExpires().getEpochSecond())).build());
         item.put("Language", AttributeValue.builder().s(user.getLanguage()).build());
+        item.put("Location", AttributeValue.builder().s(user.getLocation()).build());
 
         dynamoDbClient.putItem(PutItemRequest.builder()
                 .tableName(tableName)
@@ -118,6 +119,11 @@ public class UserDynamoDbRepository implements Users {
         updates.put("Language", AttributeValueUpdate.builder()
                 .action(AttributeAction.PUT)
                 .value(AttributeValue.builder().s(user.getLanguage()).build())
+                .build());
+
+        updates.put("Location", AttributeValueUpdate.builder()
+                .action(AttributeAction.PUT)
+                .value(AttributeValue.builder().s(user.getLocation()).build())
                 .build());
 
         dynamoDbClient.updateItem(UpdateItemRequest.builder()
@@ -176,6 +182,7 @@ public class UserDynamoDbRepository implements Users {
                 .username(item.get("Username").s())
                 .email(item.get("Email").s())
                 .language(item.get("Language") != null ? item.get("Language").s() : User.DEFAULT_LANGUAGE)
+                .location(item.get("Location") != null ? item.get("Location").s() : null)
                 .build();
     }
 

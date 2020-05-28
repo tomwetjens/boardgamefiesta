@@ -56,6 +56,38 @@ public class UserResource {
         return new UserView(user.getId(), user, currentUserId());
     }
 
+    @POST
+    @Path("/{id}/change-location")
+    public void changeLocation(@PathParam("id") String id, ChangeLocationRequest request) {
+        var userId = User.Id.of(id);
+
+        checkCurrentUser(userId);
+
+        var user = users.findById(userId);
+        user.changeLocation(request.getLocation());
+
+        users.update(user);
+    }
+
+    @POST
+    @Path("/{id}/change-language")
+    public void changeLanguage(@PathParam("id") String id, ChangeLanguageRequest request) {
+        var userId = User.Id.of(id);
+
+        checkCurrentUser(userId);
+
+        var user = users.findById(userId);
+        user.changeLanguage(request.getLanguage());
+
+        users.update(user);
+    }
+
+    private void checkCurrentUser(User.Id userId) {
+        if (!userId.equals(currentUserId())) {
+            throw APIException.forbidden(APIError.NOT_SUPPORTED);
+        }
+    }
+
     private User.Id currentUserId() {
         if (securityContext.getUserPrincipal() == null) {
             throw new NotAuthorizedException("");

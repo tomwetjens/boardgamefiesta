@@ -44,6 +44,9 @@ public class User {
     private String email;
 
     @Getter
+    private String location;
+
+    @Getter
     private Instant updated;
 
     @Getter
@@ -121,6 +124,11 @@ public class User {
 
     public void changeLanguage(String language) {
         this.language = language;
+        this.updated = Instant.now();
+    }
+
+    public void changeLocation(String location) {
+        this.location = location;
         this.updated = Instant.now();
     }
 
