@@ -7,6 +7,7 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -38,20 +39,20 @@ public enum ActionView {
     PAY_OTHER_MERCHANTS(Action.PayOtherMerchants.class, (jsonObject, game) -> new Action.PayOtherMerchants()),
     RETURN_ALL_ASSISTANTS(Action.ReturnAllAssistants.class, (jsonObject, game) -> new Action.ReturnAllAssistants()),
     ROLL_FOR_BLUE_GOODS(Action.RollForBlueGoods.class, (jsonObject, game) -> new Action.RollForBlueGoods()),
-    SELL_GOODS(Action.SellGoods.class, (jsonObject, game) -> new Action.SellGoods(getGoods(jsonObject.getJsonObject("goods")))),
+    SELL_GOODS(Action.SellGoods.class, (jsonObject, game) -> new Action.SellGoods(jsonObject.getJsonArray("goods").getValuesAs(JsonString.class).stream()
+            .map(JsonString::getString)
+            .map(GoodsType::valueOf)
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+            .entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().intValue())))),
     SEND_FAMILY_MEMBER(Action.SendFamilyMember.class, (jsonObject, game) -> new Action.SendFamilyMember(jsonObject.getInt("x"), jsonObject.getInt("y"))),
-    SMUGGLER(Action.Smuggler.class, (jsonObject, game) -> new Action.Smuggler(GoodsType.valueOf(jsonObject.getString("goodsType")))),
+    SMUGGLER(Action.Smuggler.class, (jsonObject, game) -> new Action.Smuggler()),
     TAKE_1_FABRIC(Action.Take1Fabric.class, (jsonObject, game) -> new Action.Take1Fabric()),
     TAKE_1_FRUIT(Action.Take1Fruit.class, (jsonObject, game) -> new Action.Take1Fruit()),
     TAKE_1_SPICE(Action.Take1Spice.class, (jsonObject, game) -> new Action.Take1Spice()),
     TAKE_2_BONUS_CARDS(Action.Take2BonusCards.class, (jsonObject, game) -> new Action.Take2BonusCards(jsonObject.getBoolean("fromCaravansary"))),
     TAKE_MOSQUE_TILE(Action.TakeMosqueTile.class, (jsonObject, game) -> new Action.TakeMosqueTile(MosqueTile.valueOf(jsonObject.getString("mosqueTile")))),
     USE_POST_OFFICE(Action.UsePostOffice.class, (jsonObject, game) -> new Action.UsePostOffice());
-
-    private static Map<GoodsType, Integer> getGoods(JsonObject goods) {
-        return goods.keySet().stream()
-                .collect(Collectors.toMap(GoodsType::valueOf, goods::getInt));
-    }
 
     private final Class<? extends Action> actionClass;
     private final BiFunction<JsonObject, Game, Action> actionFunction;

@@ -134,7 +134,7 @@ public abstract class Place implements Serializable {
                     PossibleAction.choice(Set.of(Action.CatchFamilyMemberForBonusCard.class, Action.CatchFamilyMemberFor3Lira.class))));
         }
 
-        return ActionResult.followUp(PossibleAction.any(actions));
+        return !actions.isEmpty() ? ActionResult.followUp(PossibleAction.any(actions)) : ActionResult.none();
     }
 
     void placeGovernor() {

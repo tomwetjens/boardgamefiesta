@@ -6,16 +6,17 @@ import com.tomsboardgames.istanbul.logic.Place;
 import lombok.Getter;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
 public class PlaceView {
 
     private final int number;
-    private final Set<MerchantView> merchants;
-    private final Set<PlayerColor> familyMembers;
+    private final List<MerchantView> merchants;
+    private final List<PlayerColor> familyMembers;
     private final Map<PlayerColor, Integer> assistants;
     private final Boolean governor;
     private final Boolean smuggler;
@@ -23,11 +24,17 @@ public class PlaceView {
     PlaceView(Place place) {
         this.number = place.getNumber();
 
-        this.merchants = nullIfEmpty(place.getMerchants().stream().map(MerchantView::new).collect(Collectors.toSet()));
+        this.merchants = nullIfEmpty(place.getMerchants().stream()
+                .map(MerchantView::new)
+                .sorted(Comparator.comparing(MerchantView::getColor))
+                .collect(Collectors.toList()));
         this.assistants = nullIfEmpty(place.getAssistants().entrySet().stream()
                 .filter(entry -> entry.getValue() > 0)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-        this.familyMembers = nullIfEmpty(place.getFamilyMembers().stream().map(Player::getColor).collect(Collectors.toSet()));
+        this.familyMembers = nullIfEmpty(place.getFamilyMembers().stream()
+                .map(Player::getColor)
+                .sorted()
+                .collect(Collectors.toList()));
         this.governor = nullIfFalse(place.isGovernor());
         this.smuggler = nullIfFalse(place.isSmuggler());
     }

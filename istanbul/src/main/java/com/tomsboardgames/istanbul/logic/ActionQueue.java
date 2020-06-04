@@ -30,7 +30,7 @@ public class ActionQueue implements Serializable {
         possibleAction.perform(action);
 
         if (possibleAction.isCompleted()) {
-            inOrder.poll();
+            inOrder.remove(possibleAction);
         }
     }
 

@@ -94,19 +94,19 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
     }
 
-    @Value
-    @EqualsAndHashCode(callSuper = false)
     public static class Smuggler extends Action {
-        GoodsType goodsType;
-
         @Override
         ActionResult perform(Game game, Random random) {
-            game.currentPlayerState().addGoods(goodsType, 1);
-
             game.getPlace(Place::isSmuggler).takeSmuggler();
             game.randomPlace(random).placeSmuggler();
 
-            return ActionResult.followUp(PossibleAction.choice(Set.of(Action.Pay2Lira.class, Action.Pay1Good.class)));
+            return ActionResult.followUp(
+                    PossibleAction.whenThen(PossibleAction.optional(takeAnyGood()),
+                            PossibleAction.choice(Set.of(Action.Pay2Lira.class, Action.Pay1Good.class))));
+        }
+
+        private static PossibleAction takeAnyGood() {
+            return PossibleAction.choice(Set.of(Take1Fabric.class, Take1Spice.class, Take1Fruit.class, Take1Blue.class));
         }
     }
 
@@ -317,6 +317,14 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         @Override
         ActionResult perform(Game game, Random random) {
             game.currentPlayerState().addGoods(GoodsType.SPICE, 1);
+            return ActionResult.none();
+        }
+    }
+
+    public class Take1Blue extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().addGoods(GoodsType.BLUE, 1);
             return ActionResult.none();
         }
     }

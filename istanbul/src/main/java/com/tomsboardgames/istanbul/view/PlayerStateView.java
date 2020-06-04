@@ -6,9 +6,7 @@ import com.tomsboardgames.istanbul.logic.MosqueTile;
 import com.tomsboardgames.istanbul.logic.PlayerState;
 import lombok.Getter;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 public class PlayerStateView {
@@ -17,7 +15,7 @@ public class PlayerStateView {
     private final int lira;
     private final int capacity;
     private final Map<GoodsType, Integer> goods;
-    private final Set<MosqueTile> mosqueTiles;
+    private final List<MosqueTile> mosqueTiles;
 
     private List<BonusCard> bonusCards;
 
@@ -26,10 +24,13 @@ public class PlayerStateView {
         this.lira = playerState.getLira();
         this.capacity = playerState.getCapacity();
         this.goods = playerState.getGoods();
-        this.mosqueTiles = playerState.getMosqueTiles();
+
+        this.mosqueTiles = new ArrayList<>(playerState.getMosqueTiles());
+        Collections.sort(this.mosqueTiles);
 
         if (self) {
             this.bonusCards = playerState.getBonusCards();
+            Collections.sort(this.bonusCards);
         }
     }
 }
