@@ -334,16 +334,6 @@ public class Game implements State, Serializable {
     }
 
     @Override
-    public int getMinNumberOfPlayers() {
-        return players.size();
-    }
-
-    @Override
-    public int getMaxNumberOfPlayers() {
-        return players.size();
-    }
-
-    @Override
     public void leave(Player player) {
         if (currentPlayer == player) {
             actionStack.clear();

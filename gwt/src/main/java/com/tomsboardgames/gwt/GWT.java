@@ -26,7 +26,7 @@ public class GWT implements Game {
     }
 
     @Override
-    public Set<PlayerColor> getAvailableColors() {
+    public Set<PlayerColor> getSupportedColors() {
         return EnumSet.of(PlayerColor.RED, PlayerColor.BLUE, PlayerColor.YELLOW, PlayerColor.WHITE);
     }
 

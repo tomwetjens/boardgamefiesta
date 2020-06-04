@@ -42,4 +42,7 @@ public class Options {
         return (Number) values.get(key);
     }
 
+    public <E extends Enum<E>> E getEnum(String key, Class<E> enumType, E defaultValue) {
+        return values.containsKey(key) ? Enum.valueOf(enumType, (String) values.get(key)) : defaultValue;
+    }
 }

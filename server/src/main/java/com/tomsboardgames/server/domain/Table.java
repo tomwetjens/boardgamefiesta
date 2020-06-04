@@ -132,7 +132,7 @@ public class Table {
             throw APIException.badRequest(APIError.MIN_PLAYERS);
         }
 
-        var randomColors = new LinkedList<>(game.getAvailableColors());
+        var randomColors = new LinkedList<>(game.getSupportedColors());
         Collections.shuffle(randomColors, RANDOM);
 
         players.forEach(player -> player.assignColor(randomColors.poll()));

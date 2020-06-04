@@ -10,7 +10,7 @@ import java.util.Set;
 
 public interface Game {
 
-    Set<PlayerColor> getAvailableColors();
+    Set<PlayerColor> getSupportedColors();
 
     int getMinNumberOfPlayers();
 

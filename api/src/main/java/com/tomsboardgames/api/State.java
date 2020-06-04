@@ -26,10 +26,6 @@ public interface State {
 
     Set<Player> winners();
 
-    int getMinNumberOfPlayers();
-
-    int getMaxNumberOfPlayers();
-
     boolean isEnded();
 
     Player getCurrentPlayer();
