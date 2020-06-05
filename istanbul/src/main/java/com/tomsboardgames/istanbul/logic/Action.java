@@ -37,7 +37,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             var from = game.getCurrentPlace();
 
             if (game.distance(from, to) > 2) {
-                throw new IstanbulException(IstanbulError.TOO_MANY_STEPS);
+                throw new IstanbulException(IstanbulError.PLACE_NOT_REACHABLE);
             }
 
             from.takeMerchant(game.currentPlayerState().getMerchant());

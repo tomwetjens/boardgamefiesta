@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public abstract class Place implements Serializable {
@@ -118,10 +119,6 @@ public abstract class Place implements Serializable {
         return merchants.size() > 1;
     }
 
-    protected int numberOfOtherFamilyMembersToCatch(Player currentPlayer) {
-        return familyMembers.size() - (familyMembers.contains(currentPlayer) ? 1 : 0);
-    }
-
     private ActionResult encounterActions(Game game) {
         var actions = new HashSet<PossibleAction>();
 
@@ -132,9 +129,9 @@ public abstract class Place implements Serializable {
             actions.add(PossibleAction.optional(Action.Smuggler.class));
         }
 
-        var numberOfOtherFamilyMembers = numberOfOtherFamilyMembersToCatch(game.getCurrentPlayer());
-        if (numberOfOtherFamilyMembers > 0) {
-            actions.add(PossibleAction.repeat(numberOfOtherFamilyMembers, numberOfOtherFamilyMembers,
+        var numberOfFamilyMembersToCatch = (int) familyMembersToCatch(game.getCurrentPlayer()).count();
+        if (numberOfFamilyMembersToCatch > 0) {
+            actions.add(PossibleAction.repeat(numberOfFamilyMembersToCatch, numberOfFamilyMembersToCatch,
                     PossibleAction.choice(Set.of(Action.CatchFamilyMemberForBonusCard.class, Action.CatchFamilyMemberFor3Lira.class))));
         }
 
@@ -175,17 +172,17 @@ public abstract class Place implements Serializable {
         }
     }
 
-    Set<Player> getOtherFamilyMembers(PlayerColor playerColor) {
-        return familyMembers.stream().filter(familyMember -> familyMember.getColor() != playerColor).collect(Collectors.toSet());
+    Stream<Player> familyMembersToCatch(Player currentPlayer) {
+        return familyMembers.stream()
+                .filter(familyMember -> familyMember != currentPlayer);
     }
 
     void catchFamilyMember(Game game) {
         var policeStation = game.getPoliceStation();
 
-        var otherFamilyMember = getOtherFamilyMembers(game.getCurrentPlayer().getColor())
-                .stream()
+        var otherFamilyMember = familyMembersToCatch(game.getCurrentPlayer())
                 .findAny()
-                .orElseThrow(() -> new IstanbulException(IstanbulError.NO_OTHER_FAMILY_MEMBER_AT_PLACE));
+                .orElseThrow(() -> new IstanbulException(IstanbulError.NO_FAMILY_MEMBER_TO_CATCH));
 
         takeFamilyMember(otherFamilyMember);
         policeStation.placeFamilyMember(otherFamilyMember);
@@ -541,8 +538,9 @@ public abstract class Place implements Serializable {
         }
 
         @Override
-        protected int numberOfOtherFamilyMembersToCatch(Player currentPlayer) {
-            return 0;
+        Stream<Player> familyMembersToCatch(Player currentPlayer) {
+            // Family members already at the police station cannot be caught
+            return Stream.empty();
         }
     }
 
