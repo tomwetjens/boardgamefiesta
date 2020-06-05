@@ -11,7 +11,6 @@ import java.io.*;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Game implements Serializable, State {
 
@@ -187,16 +186,16 @@ public class Game implements Serializable, State {
     public void endTurn(@NonNull Random random) {
         actionQueue.skipAll();
 
+        nextPlayer();
+    }
+
+    private void nextPlayer() {
         if (currentPlayerState().getRubies() == 6 ||
                 (currentPlayerState().getRubies() == 5 && players.size() > 2)) {
             // Triggers end of game, finish the round
             lastRound = true;
         }
 
-        nextPlayer();
-    }
-
-    private void nextPlayer() {
         var currentPlayerIndex = players.indexOf(this.currentPlayer);
         this.currentPlayer = players.get((currentPlayerIndex + 1) % players.size());
 
@@ -217,7 +216,14 @@ public class Game implements Serializable, State {
 
     @Override
     public void leave(Player player) {
-// TODO
+        if (players.contains(player)) {
+            if (currentPlayer == player) {
+                actionQueue.clear();
+                nextPlayer();
+            }
+
+            players.remove(player);
+        }
     }
 
     public Set<Class<? extends Action>> getPossibleActions() {
@@ -249,20 +255,12 @@ public class Game implements Serializable, State {
         throw new IllegalArgumentException("Place not found");
     }
 
-    public PlayerState getPlayerState(Player player) {
-        return playerStates.get(player);
-    }
-
     Place getCurrentPlace() {
         return getCurrentPlace(currentPlayer.getColor());
     }
 
     Place getCurrentPlace(PlayerColor playerColor) {
         return currentPlaces.get(playerColor);
-    }
-
-    void setCurrentPlace(PlayerColor playerColor, Place to) {
-        currentPlaces.put(playerColor, to);
     }
 
     BonusCard drawBonusCard(Random random) {
@@ -284,6 +282,16 @@ public class Game implements Serializable, State {
         throw new IllegalArgumentException("Place not found");
     }
 
+    ActionResult move(Place from, Place to) {
+        var merchant = currentPlayerState().getMerchant();
+
+        from.takeMerchant(merchant);
+
+        currentPlaces.put(currentPlayer.getColor(), to);
+
+        return to.placeMerchant(merchant, this);
+    }
+
     @SuppressWarnings("unchecked")
     private <T extends Place> T getPlace(Class<T> clazz) {
         for (Place[] places : layout) {
@@ -296,6 +304,9 @@ public class Game implements Serializable, State {
         throw new IllegalArgumentException("Place not found: " + clazz);
     }
 
+    public PlayerState getPlayerState(Player player) {
+        return playerStates.get(player);
+    }
 
     public Place.GreatMosque getGreatMosque() {
         return getPlace(Place.GreatMosque.class);

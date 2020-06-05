@@ -12,8 +12,8 @@ public class MosqueView extends PlaceView {
     MosqueView(Place.Mosque mosque) {
         super(mosque);
 
-        a = mosque.getAGoodsCount().orElse(null);
-        b = mosque.getBGoodsCount().orElse(null);
+        a = mosque.getA().orElse(null);
+        b = mosque.getB().orElse(null);
     }
 
 }

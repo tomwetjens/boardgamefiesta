@@ -268,7 +268,6 @@ public class Table {
         updated = Instant.now();
 
         if (status == Status.STARTED) {
-            // TODO How to continue the game if player leaves
             if (players.size() > game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
                 runStateChange(() -> state.get().leave(state.get().getPlayerByName(player.getId().getId())));

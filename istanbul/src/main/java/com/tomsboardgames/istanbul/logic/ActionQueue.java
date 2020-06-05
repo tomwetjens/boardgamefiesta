@@ -88,4 +88,9 @@ public class ActionQueue implements Serializable {
     void addAnyTime(@NonNull Class<? extends Action> action) {
         this.anyTime.add(action);
     }
+
+    public void clear() {
+        inOrder.clear();
+        anyTime.clear();
+    }
 }

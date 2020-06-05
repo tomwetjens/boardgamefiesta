@@ -40,11 +40,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
                 throw new IstanbulException(IstanbulError.PLACE_NOT_REACHABLE);
             }
 
-            from.takeMerchant(game.currentPlayerState().getMerchant());
-
-            game.setCurrentPlace(game.getCurrentPlayer().getColor(), to);
-
-            return to.placeMerchant(game.currentPlayerState().getMerchant(), game);
+            return game.move(from, to);
         }
     }
 
@@ -127,7 +123,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
         @Override
         ActionResult perform(Game game, Random random) {
-            return expectCurrentPlace(game, game.getGreatMosque(), game.getSmallMosque()).takeTile(mosqueTile, game);
+            return expectCurrentPlace(game, game.getGreatMosque(), game.getSmallMosque()).takeMosqueTile(mosqueTile, game);
         }
     }
 

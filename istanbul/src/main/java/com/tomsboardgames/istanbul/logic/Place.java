@@ -2,10 +2,7 @@ package com.tomsboardgames.istanbul.logic;
 
 import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.PlayerColor;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 import java.util.*;
@@ -546,74 +543,73 @@ public abstract class Place implements Serializable {
 
     public static class Mosque extends Place {
 
-        private final MosqueTile a;
-        private final List<Integer> aGoodsCounts;
+        private final MosqueTileStack a;
+        private final MosqueTileStack b;
 
-        private final MosqueTile b;
-        private final List<Integer> bGoodsCounts;
+        @AllArgsConstructor(access = AccessLevel.PRIVATE)
+        private static class MosqueTileStack {
 
-        @Getter
-        private int rubies;
+            @Getter
+            private final MosqueTile mosqueTile;
+            private final List<Integer> goodsCounts;
 
-        Mosque(int number, int playerCount, MosqueTile a, MosqueTile b) {
-            super(number);
-
-            this.a = a;
-            this.b = b;
-
-            switch (playerCount) {
-                case 2:
-                    aGoodsCounts = Arrays.asList(2, 4);
-                    bGoodsCounts = Arrays.asList(2, 4);
-                    break;
-                case 3:
-                    aGoodsCounts = Arrays.asList(2, 3, 4);
-                    bGoodsCounts = Arrays.asList(2, 3, 4);
-                    break;
-                default:
-                    aGoodsCounts = Arrays.asList(2, 3, 4, 5);
-                    bGoodsCounts = Arrays.asList(2, 3, 4, 5);
+            static MosqueTileStack forPlayerCount(@NonNull MosqueTile mosqueTile, int playerCount) {
+                return new MosqueTileStack(mosqueTile, initialGoodsCounts(playerCount));
             }
 
-            this.rubies = Math.min(4, playerCount);
+            boolean isAvailable() {
+                return !goodsCounts.isEmpty();
+            }
+
+            Optional<Integer> getGoodsCount() {
+                return goodsCounts.stream().findFirst();
+            }
+
+            void take() {
+                goodsCounts.remove(0);
+            }
+
+            private static List<Integer> initialGoodsCounts(int playerCount) {
+                switch (playerCount) {
+                    case 2:
+                        return Arrays.asList(2, 4);
+                    case 3:
+                        return Arrays.asList(2, 3, 4);
+                    default:
+                        return Arrays.asList(2, 3, 4, 5);
+                }
+            }
+
+        }
+
+        Mosque(int number, int playerCount, @NonNull MosqueTile a, @NonNull MosqueTile b) {
+            super(number);
+
+            this.a = MosqueTileStack.forPlayerCount(a, playerCount);
+            this.b = MosqueTileStack.forPlayerCount(b, playerCount);
         }
 
         @Override
         protected Optional<PossibleAction> getPossibleAction(Game game) {
-            if (!aGoodsCounts.isEmpty() || !bGoodsCounts.isEmpty()) {
+            if (a.isAvailable() || b.isAvailable()) {
                 return Optional.of(PossibleAction.optional(Action.TakeMosqueTile.class));
             }
             return Optional.empty();
         }
 
-        public Optional<MosqueTile> getA() {
-            return aGoodsCounts.isEmpty() ? Optional.empty() : Optional.of(a);
+        public Optional<Integer> getA() {
+            return a.getGoodsCount();
         }
 
-        public Optional<MosqueTile> getB() {
-            return bGoodsCounts.isEmpty() ? Optional.empty() : Optional.of(b);
+        public Optional<Integer> getB() {
+            return b.getGoodsCount();
         }
 
-        public Optional<Integer> getAGoodsCount() {
-            return aGoodsCounts.stream().findFirst();
-        }
+        ActionResult takeMosqueTile(@NonNull MosqueTile mosqueTile, @NonNull Game game) {
+            MosqueTileStack stack = getStack(mosqueTile);
 
-        public Optional<Integer> getBGoodsCount() {
-            return aGoodsCounts.stream().findFirst();
-        }
-
-        ActionResult takeTile(MosqueTile mosqueTile, Game game) {
-            List<Integer> goodsCounts;
-
-            if (a == mosqueTile && !aGoodsCounts.isEmpty()) {
-                goodsCounts = this.aGoodsCounts;
-            } else if (b == mosqueTile && !bGoodsCounts.isEmpty()) {
-                goodsCounts = this.bGoodsCounts;
-            } else {
-                throw new IstanbulException(IstanbulError.MOSQUE_TILE_NOT_AVAILABLE);
-            }
-
-            var goodsCount = goodsCounts.get(0);
+            var goodsCount = stack.getGoodsCount()
+                    .orElseThrow(() -> new IstanbulException(IstanbulError.MOSQUE_TILE_NOT_AVAILABLE));
 
             var currentPlayerState = game.currentPlayerState();
             if (!currentPlayerState.hasAtLeastGoods(mosqueTile.getGoodsType(), goodsCount)) {
@@ -623,16 +619,30 @@ public abstract class Place implements Serializable {
             currentPlayerState.removeGoods(mosqueTile.getGoodsType(), 1);
             currentPlayerState.addMosqueTile(mosqueTile);
 
-            goodsCounts.remove(0);
+            stack.take();
 
-            if (currentPlayerState.hasMosqueTile(a) && currentPlayerState.hasMosqueTile(b)
-                    && rubies > 0) {
+            if (hasBothMosqueTiles(currentPlayerState)) {
                 currentPlayerState.gainRuby();
-                rubies--;
             }
 
             return mosqueTile.afterAcquire(game);
         }
+
+        private boolean hasBothMosqueTiles(PlayerState playerState) {
+            return playerState.hasMosqueTile(a.getMosqueTile())
+                    && playerState.hasMosqueTile(b.getMosqueTile());
+        }
+
+        private MosqueTileStack getStack(MosqueTile mosqueTile) {
+            if (a.getMosqueTile() == mosqueTile) {
+                return this.a;
+            } else if (b.getMosqueTile() == mosqueTile) {
+                return this.b;
+            } else {
+                throw new IstanbulException(IstanbulError.MOSQUE_TILE_NOT_AVAILABLE);
+            }
+        }
+
     }
 
     public static class SmallMosque extends Mosque implements Serializable {
