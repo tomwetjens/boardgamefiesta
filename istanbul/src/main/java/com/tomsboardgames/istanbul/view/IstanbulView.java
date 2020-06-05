@@ -25,7 +25,8 @@ public class IstanbulView {
                 .collect(Collectors.toList());
 
         this.actions = state.getCurrentPlayer() == viewer
-                ? state.getPossibleActions().map(ActionView::of)
+                ? state.getPossibleActions().stream()
+                .map(ActionView::of)
                 .sorted()
                 .collect(Collectors.toList())
                 : null;

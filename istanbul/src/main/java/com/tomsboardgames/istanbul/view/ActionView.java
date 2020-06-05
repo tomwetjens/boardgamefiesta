@@ -31,7 +31,7 @@ public enum ActionView {
     MAX_FABRIC(Action.MaxFabric.class, (jsonObject, game) -> new Action.MaxFabric()),
     MAX_FRUIT(Action.MaxFruit.class, (jsonObject, game) -> new Action.MaxFruit()),
     MAX_SPICE(Action.MaxSpice.class, (jsonObject, game) -> new Action.MaxSpice()),
-    MOVE(Action.Move.class, (jsonObject, game) -> new Action.Move(jsonObject.getInt("x"), jsonObject.getInt("y"))),
+    MOVE(Action.Move.class, (jsonObject, game) -> new Action.Move(getPlace(jsonObject, game))),
     PAY_1_GOOD(Action.Pay1Good.class, (jsonObject, game) -> new Action.Pay1Good(GoodsType.valueOf(jsonObject.getString("goodsType")))),
     PAY_2_LIRA(Action.Pay2Lira.class, (jsonObject, game) -> new Action.Pay2Lira()),
     PAY_2_LIRA_FOR_1_ADDITIONAL_GOOD(Action.Pay2LiraFor1AdditionalGood.class, (jsonObject, game) -> new Action.Pay2LiraFor1AdditionalGood(GoodsType.valueOf(jsonObject.getString("goodsType")))),
@@ -45,7 +45,7 @@ public enum ActionView {
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
             .entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().intValue())))),
-    SEND_FAMILY_MEMBER(Action.SendFamilyMember.class, (jsonObject, game) -> new Action.SendFamilyMember(jsonObject.getInt("x"), jsonObject.getInt("y"))),
+    SEND_FAMILY_MEMBER(Action.SendFamilyMember.class, (jsonObject, game) -> new Action.SendFamilyMember(getPlace(jsonObject, game))),
     SMUGGLER(Action.Smuggler.class, (jsonObject, game) -> new Action.Smuggler()),
     TAKE_1_FABRIC(Action.Take1Fabric.class, (jsonObject, game) -> new Action.Take1Fabric()),
     TAKE_1_FRUIT(Action.Take1Fruit.class, (jsonObject, game) -> new Action.Take1Fruit()),
@@ -53,6 +53,12 @@ public enum ActionView {
     TAKE_2_BONUS_CARDS(Action.Take2BonusCards.class, (jsonObject, game) -> new Action.Take2BonusCards(jsonObject.getBoolean("fromCaravansary"))),
     TAKE_MOSQUE_TILE(Action.TakeMosqueTile.class, (jsonObject, game) -> new Action.TakeMosqueTile(MosqueTile.valueOf(jsonObject.getString("mosqueTile")))),
     USE_POST_OFFICE(Action.UsePostOffice.class, (jsonObject, game) -> new Action.UsePostOffice());
+
+    private static Place getPlace(JsonObject jsonObject, Game game) {
+        var x = jsonObject.getInt("x");
+        var y = jsonObject.getInt("y");
+        return game.getLayout()[x][y];
+    }
 
     private final Class<? extends Action> actionClass;
     private final BiFunction<JsonObject, Game, Action> actionFunction;

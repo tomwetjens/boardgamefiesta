@@ -118,6 +118,10 @@ public abstract class Place implements Serializable {
         return merchants.size() > 1;
     }
 
+    protected int numberOfOtherFamilyMembersToCatch(Player currentPlayer) {
+        return familyMembers.size() - (familyMembers.contains(currentPlayer) ? 1 : 0);
+    }
+
     private ActionResult encounterActions(Game game) {
         var actions = new HashSet<PossibleAction>();
 
@@ -128,7 +132,7 @@ public abstract class Place implements Serializable {
             actions.add(PossibleAction.optional(Action.Smuggler.class));
         }
 
-        var numberOfOtherFamilyMembers = familyMembers.size() - (familyMembers.contains(game.getCurrentPlayer()) ? 1 : 0);
+        var numberOfOtherFamilyMembers = numberOfOtherFamilyMembersToCatch(game.getCurrentPlayer());
         if (numberOfOtherFamilyMembers > 0) {
             actions.add(PossibleAction.repeat(numberOfOtherFamilyMembers, numberOfOtherFamilyMembers,
                     PossibleAction.choice(Set.of(Action.CatchFamilyMemberForBonusCard.class, Action.CatchFamilyMemberFor3Lira.class))));
@@ -176,7 +180,7 @@ public abstract class Place implements Serializable {
     }
 
     void catchFamilyMember(Game game) {
-        var policeStation = game.getPlace(Place.PoliceStation.class);
+        var policeStation = game.getPoliceStation();
 
         var otherFamilyMember = getOtherFamilyMembers(game.getCurrentPlayer().getColor())
                 .stream()
@@ -536,6 +540,10 @@ public abstract class Place implements Serializable {
             return Optional.of(PossibleAction.optional(Action.SendFamilyMember.class));
         }
 
+        @Override
+        protected int numberOfOtherFamilyMembersToCatch(Player currentPlayer) {
+            return 0;
+        }
     }
 
     public static class Mosque extends Place {

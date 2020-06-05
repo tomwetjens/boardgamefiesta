@@ -4,9 +4,10 @@ import lombok.NonNull;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ActionQueue implements Serializable {
@@ -78,8 +79,10 @@ public class ActionQueue implements Serializable {
         return anyTime.isEmpty() && inOrder.isEmpty();
     }
 
-    public Stream<Class<? extends Action>> getPossibleActions() {
-        return Stream.concat(this.anyTime.stream(), this.inOrder.stream().limit(1).flatMap(PossibleAction::getPossibleActions));
+    public Set<Class<? extends Action>> getPossibleActions() {
+        return Stream.concat(this.anyTime.stream(), this.inOrder.stream().limit(1)
+                .flatMap(PossibleAction::getPossibleActions))
+                .collect(Collectors.toSet());
     }
 
     void addAnyTime(@NonNull Class<? extends Action> action) {

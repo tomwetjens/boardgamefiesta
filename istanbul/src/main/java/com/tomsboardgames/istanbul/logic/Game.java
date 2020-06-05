@@ -126,18 +126,6 @@ public class Game implements Serializable, State {
         });
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Place> T getPlace(Class<T> clazz) {
-        for (Place[] places : layout) {
-            for (Place place : places) {
-                if (clazz == place.getClass()) {
-                    return (T) place;
-                }
-            }
-        }
-        throw new IstanbulException(IstanbulError.INVALID_PLACE);
-    }
-
     @Override
     public void perform(com.tomsboardgames.api.Action action, Random random) {
         perform((Action) action, random);
@@ -232,7 +220,7 @@ public class Game implements Serializable, State {
 // TODO
     }
 
-    public Stream<Class<? extends Action>> getPossibleActions() {
+    public Set<Class<? extends Action>> getPossibleActions() {
         return actionQueue.getPossibleActions();
     }
 
@@ -244,15 +232,21 @@ public class Game implements Serializable, State {
         return layout[x][y];
     }
 
-    int distance(int x, int y, Place to) {
-        for (int x2 = 0; x2 < layout.length; x2++) {
-            for (int y2 = 0; y2 < layout[x2].length; y2++) {
-                if (layout[x2][y2] == to) {
-                    return Math.abs(x - x2) + Math.abs(y - y2);
+    int distance(Place from, Place to) {
+        for (int x1 = 0; x1 < layout.length; x1++) {
+            for (int y1 = 0; y1 < layout[x1].length; y1++) {
+                if (layout[x1][y1] == from) {
+                    for (int x2 = 0; x2 < layout.length; x2++) {
+                        for (int y2 = 0; y2 < layout[x2].length; y2++) {
+                            if (layout[x2][y2] == to) {
+                                return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+                            }
+                        }
+                    }
                 }
             }
         }
-        throw new IstanbulException(IstanbulError.INVALID_PLACE);
+        throw new IllegalArgumentException("Place not found");
     }
 
     public PlayerState getPlayerState(Player player) {
@@ -287,7 +281,84 @@ public class Game implements Serializable, State {
                 }
             }
         }
-        throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
+        throw new IllegalArgumentException("Place not found");
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Place> T getPlace(Class<T> clazz) {
+        for (Place[] places : layout) {
+            for (Place place : places) {
+                if (clazz == place.getClass()) {
+                    return (T) place;
+                }
+            }
+        }
+        throw new IllegalArgumentException("Place not found: " + clazz);
+    }
+
+
+    public Place.GreatMosque getGreatMosque() {
+        return getPlace(Place.GreatMosque.class);
+    }
+
+    public Place.SmallMosque getSmallMosque() {
+        return getPlace(Place.SmallMosque.class);
+    }
+
+    public Place.LargeMarket getLargeMarket() {
+        return getPlace(Place.LargeMarket.class);
+    }
+
+    public Place.SmallMarket getSmallMarket() {
+        return getPlace(Place.SmallMarket.class);
+    }
+
+    public Place.SultansPalace getSultansPalace() {
+        return getPlace(Place.SultansPalace.class);
+    }
+
+    public Place.GemstoneDealer getGemstoneDealer() {
+        return getPlace(Place.GemstoneDealer.class);
+    }
+
+    public Place.TeaHouse getTeaHouse() {
+        return getPlace(Place.TeaHouse.class);
+    }
+
+    public Place.BlackMarket getBlackMarket() {
+        return getPlace(Place.BlackMarket.class);
+    }
+
+    public Place.Fountain getFountain() {
+        return getPlace(Place.Fountain.class);
+    }
+
+    public Place.Caravansary getCaravansary() {
+        return getPlace(Place.Caravansary.class);
+    }
+
+    public Place.PostOffice getPostOffice() {
+        return getPlace(Place.PostOffice.class);
+    }
+
+    public Place.Wainwright getWainwright() {
+        return getPlace(Place.Wainwright.class);
+    }
+
+    public Place.SpiceWarehouse getSpiceWarehouse() {
+        return getPlace(Place.SpiceWarehouse.class);
+    }
+
+    public Place.FruitWarehouse getFruitWarehouse() {
+        return getPlace(Place.FruitWarehouse.class);
+    }
+
+    public Place.FabricWarehouse getFabricWarehouse() {
+        return getPlace(Place.FabricWarehouse.class);
+    }
+
+    public Place.PoliceStation getPoliceStation() {
+        return getPlace(Place.PoliceStation.class);
     }
 
 }

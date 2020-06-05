@@ -11,24 +11,36 @@ public enum LayoutType {
     SHORT_PATHS() {
         @Override
         Place[][] createLayout(int playerCount, @NonNull Random random) {
-            // TODO
-            return new Place[0][];
+            return new Place[][]{
+                    {Place.GreatMosque.forPlayerCount(playerCount), new Place.PostOffice(), new Place.FabricWarehouse(), Place.SmallMosque.forPlayerCount(playerCount)},
+                    {new Place.FruitWarehouse(), new Place.PoliceStation(), new Place.Fountain(), new Place.SpiceWarehouse()},
+                    {new Place.BlackMarket(), new Place.Caravansary(), Place.SmallMarket.randomize(random), new Place.TeaHouse()},
+                    {Place.SultansPalace.forPlayerCount(playerCount), Place.LargeMarket.randomize(random), new Place.Wainwright(), Place.GemstoneDealer.forPlayerCount(playerCount)}
+            };
         }
     },
 
     LONG_PATHS() {
         @Override
         Place[][] createLayout(int playerCount, @NonNull Random random) {
-            // TODO
-            return new Place[0][];
+            return new Place[][]{
+                    {Place.GemstoneDealer.forPlayerCount(playerCount), new Place.FabricWarehouse(), new Place.BlackMarket(), Place.SmallMarket.randomize(random)},
+                    {Place.GreatMosque.forPlayerCount(playerCount), new Place.Fountain(), new Place.Caravansary(), new Place.FruitWarehouse()},
+                    {new Place.SpiceWarehouse(), new Place.PostOffice(), new Place.PoliceStation(), new Place.Wainwright()},
+                    {Place.LargeMarket.randomize(random), new Place.TeaHouse(), Place.SmallMosque.forPlayerCount(playerCount), Place.SultansPalace.forPlayerCount(playerCount)},
+            };
         }
     },
 
     IN_ORDER() {
         @Override
         Place[][] createLayout(int playerCount, @NonNull Random random) {
-            // TODO
-            return new Place[0][];
+            return new Place[][]{
+                    {new Place.Wainwright(), new Place.FabricWarehouse(), new Place.SpiceWarehouse(), new Place.FruitWarehouse()},
+                    {new Place.PostOffice(), new Place.Caravansary(), new Place.Fountain(), new Place.BlackMarket()},
+                    {new Place.TeaHouse(), Place.LargeMarket.randomize(random), Place.SmallMarket.randomize(random), new Place.PoliceStation()},
+                    {Place.SultansPalace.forPlayerCount(playerCount), Place.SmallMosque.forPlayerCount(playerCount), Place.GreatMosque.forPlayerCount(playerCount), Place.GemstoneDealer.forPlayerCount(playerCount)}
+            };
         }
     },
 

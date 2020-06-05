@@ -4,6 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -15,20 +16,29 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
     abstract ActionResult perform(Game game, Random random);
 
+    @SuppressWarnings("unchecked")
+    protected <T extends Place> T expectCurrentPlace(Game game, T... anyOfPlaces) {
+        var currentPlace = game.getCurrentPlace();
+
+        if (!Arrays.<Place>asList(anyOfPlaces).contains(currentPlace)) {
+            throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
+        }
+
+        return (T) currentPlace;
+    }
+
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class Move extends Action {
-        int x, y;
+        Place to;
 
         @Override
         ActionResult perform(Game game, Random random) {
             var from = game.getCurrentPlace();
 
-            if (game.distance(x, y, from) > 2) {
+            if (game.distance(from, to) > 2) {
                 throw new IstanbulException(IstanbulError.TOO_MANY_STEPS);
             }
-
-            var to = game.getPlace(x, y);
 
             from.takeMerchant(game.currentPlayerState().getMerchant());
 
@@ -117,13 +127,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
         @Override
         ActionResult perform(Game game, Random random) {
-            var place = game.getCurrentPlace();
-
-            if (!(place instanceof Place.Mosque)) {
-                throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
-            }
-
-            return ((Place.Mosque) place).takeTile(mosqueTile, game);
+            return expectCurrentPlace(game, game.getGreatMosque(), game.getSmallMosque()).takeTile(mosqueTile, game);
         }
     }
 
@@ -209,7 +213,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     public static class UsePostOffice extends Action {
         @Override
         ActionResult perform(Game game, Random random) {
-            var postOffice = game.getPlace(Place.PostOffice.class);
+            var postOffice = game.getPostOffice();
 
             return postOffice.use(game);
         }
@@ -284,7 +288,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             var currentPlayerState = game.currentPlayerState();
 
             if (fromCaravansary) {
-                var caravansary = game.getPlace(Place.Caravansary.class);
+                var caravansary = game.getCaravansary();
                 currentPlayerState.addBonusCard(caravansary.drawBonusCard());
                 currentPlayerState.addBonusCard(caravansary.drawBonusCard());
             } else {
@@ -321,7 +325,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         }
     }
 
-    public class Take1Blue extends Action {
+    public static class Take1Blue extends Action {
         @Override
         ActionResult perform(Game game, Random random) {
             game.currentPlayerState().addGoods(GoodsType.BLUE, 1);
@@ -360,7 +364,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
         @Override
         ActionResult perform(Game game, Random random) {
-            var teaHouse = game.getPlace(Place.TeaHouse.class);
+            var teaHouse = game.getTeaHouse();
 
             teaHouse.guessAndRoll(game.currentPlayerState(), guess, random);
 
@@ -375,13 +379,8 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
         @Override
         ActionResult perform(Game game, Random random) {
-            var place = game.getCurrentPlace();
-
-            if (!(place instanceof Place.Market)) {
-                throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
-            }
-
-            ((Place.Market) place).sellGoods(game, goods);
+            expectCurrentPlace(game, game.getSmallMarket(), game.getLargeMarket())
+                    .sellGoods(game, goods);
 
             return ActionResult.none();
         }
@@ -390,12 +389,11 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class SendFamilyMember extends Action {
-        int x, y;
+        Place to;
 
         @Override
         ActionResult perform(Game game, Random random) {
-            var policeStation = game.getPlace(Place.PoliceStation.class);
-            var to = game.getPlace(x, y);
+            var policeStation = game.getPoliceStation();
 
             if (to == policeStation) {
                 throw new IstanbulException(IstanbulError.ALREADY_AT_PLACE);
@@ -414,7 +412,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
         @Override
         ActionResult perform(Game game, Random random) {
-            var sultansPalace = game.getPlace(Place.SultansPalace.class);
+            var sultansPalace = game.getSultansPalace();
 
             sultansPalace.deliverToSultan(game.currentPlayerState(), preferredGoodsTypes);
 
@@ -425,7 +423,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     public static class BuyRuby extends Action {
         @Override
         ActionResult perform(Game game, Random random) {
-            var gemstoneDealer = game.getPlace(Place.GemstoneDealer.class);
+            var gemstoneDealer = game.getGemstoneDealer();
 
             gemstoneDealer.buy(game.currentPlayerState());
 
