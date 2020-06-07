@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Builder
@@ -32,30 +33,38 @@ public class User {
     private static final Pattern USERNAME_VALIDATOR = Pattern.compile("[A-Za-z0-9_\\-]+");
 
     @Getter
+    @NonNull
     private final Id id;
 
     @Getter
+    @NonNull
     private final Instant created;
 
     @Getter
+    @NonNull
     private String username;
 
     @Getter
+    @NonNull
     private String email;
 
     @Getter
     private String location;
 
     @Getter
+    @NonNull
     private Instant updated;
 
     @Getter
+    @NonNull
     private Instant lastSeen;
 
     @Getter
+    @NonNull
     private Instant expires;
 
     @Getter
+    @NonNull
     private String language;
 
     public static User createAutomatically(@NonNull Id id, @NonNull String username, @NonNull String email) {
@@ -130,6 +139,10 @@ public class User {
     public void changeLocation(String location) {
         this.location = location;
         this.updated = Instant.now();
+    }
+
+    public Optional<String> getLocation() {
+        return Optional.ofNullable(location);
     }
 
     public URI getAvatarUrl() {

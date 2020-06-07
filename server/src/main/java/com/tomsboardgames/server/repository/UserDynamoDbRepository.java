@@ -74,7 +74,7 @@ public class UserDynamoDbRepository implements Users {
         item.put("LastSeen", AttributeValue.builder().n(Long.toString(user.getLastSeen().getEpochSecond())).build());
         item.put("Expires", AttributeValue.builder().n(Long.toString(user.getExpires().getEpochSecond())).build());
         item.put("Language", AttributeValue.builder().s(user.getLanguage()).build());
-        item.put("Location", AttributeValue.builder().s(user.getLocation()).build());
+        item.put("Location", user.getLocation().map(location -> AttributeValue.builder().s(location).build()).orElse(null));
 
         dynamoDbClient.putItem(PutItemRequest.builder()
                 .tableName(tableName)
@@ -121,10 +121,12 @@ public class UserDynamoDbRepository implements Users {
                 .value(AttributeValue.builder().s(user.getLanguage()).build())
                 .build());
 
-        updates.put("Location", AttributeValueUpdate.builder()
-                .action(AttributeAction.PUT)
-                .value(AttributeValue.builder().s(user.getLocation()).build())
-                .build());
+        updates.put("Location", user.getLocation()
+                .map(location -> AttributeValueUpdate.builder()
+                        .action(AttributeAction.PUT)
+                        .value(AttributeValue.builder().s(location).build())
+                        .build())
+                .orElse(null));
 
         dynamoDbClient.updateItem(UpdateItemRequest.builder()
                 .tableName(tableName)

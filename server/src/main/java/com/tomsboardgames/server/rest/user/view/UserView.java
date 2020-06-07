@@ -27,7 +27,7 @@ public class UserView {
             this.lastSeen = user.getLastSeen();
             this.avatarUrl = user.getAvatarUrl().toString();
             this.language = user.getLanguage();
-            this.location = user.getLocation();
+            this.location = user.getLocation().orElse(null);
 
             if (user.getId().equals(viewer)) {
                 this.email = user.getEmail();
