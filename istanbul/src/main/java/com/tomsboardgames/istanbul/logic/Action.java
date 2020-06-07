@@ -1,6 +1,8 @@
 package com.tomsboardgames.istanbul.logic;
 
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 import lombok.Value;
 
 import java.io.Serializable;
@@ -29,18 +31,27 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
     @Value
     @EqualsAndHashCode(callSuper = false)
+    @AllArgsConstructor
     public static class Move extends Action {
+        @NonNull
         Place to;
+
+        BonusCard bonusCard;
+
+        public Move(@NonNull Place to) {
+            this.to = to;
+            this.bonusCard = null;
+        }
 
         @Override
         ActionResult perform(Game game, Random random) {
-            var from = game.getCurrentPlace();
-
-            if (game.distance(from, to) > 2) {
-                throw new IstanbulException(IstanbulError.PLACE_NOT_REACHABLE);
+            if (bonusCard == BonusCard.MOVE_0) {
+                return game.move(to, 0, 0);
+            } else if (bonusCard == BonusCard.MOVE_3_OR_4) {
+                return game.move(to, 3, 4);
+            } else {
+                return game.move(to, 1, 2);
             }
-
-            return game.move(from, to);
         }
     }
 
@@ -174,17 +185,18 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         }
     }
 
-    @Value
-    @EqualsAndHashCode(callSuper = false)
     public static class Pay2LiraFor1AdditionalGood extends Action {
-        GoodsType goodsType;
-
         @Override
         ActionResult perform(Game game, Random random) {
             var currentPlayerState = game.currentPlayerState();
+
             currentPlayerState.payLira(2);
-            currentPlayerState.addGoods(goodsType, 1);
-            return ActionResult.none();
+
+            return ActionResult.followUp(PossibleAction.choice(Set.of(
+                    Action.Take1Blue.class,
+                    Action.Take1Fruit.class,
+                    Action.Take1Spice.class,
+                    Action.Take1Fabric.class)));
         }
     }
 
@@ -211,7 +223,20 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         ActionResult perform(Game game, Random random) {
             var postOffice = game.getPostOffice();
 
-            return postOffice.use(game);
+            var result = postOffice.use(game);
+
+            return game.currentPlayerState().hasBonusCard(BonusCard.POST_OFFICE_2X)
+                    ? result.andThen(ActionResult.followUp(PossibleAction.optional(BonusCardUsePostOffice.class)))
+                    : result;
+        }
+    }
+
+    public static class BonusCardUsePostOffice extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            var actionResult = new UsePostOffice().perform(game, random);
+            game.currentPlayerState().removeBonusCard(BonusCard.POST_OFFICE_2X);
+            return actionResult;
         }
     }
 
@@ -277,13 +302,13 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class Take2BonusCards extends Action {
-        boolean fromCaravansary;
+        boolean caravansary;
 
         @Override
         ActionResult perform(Game game, Random random) {
             var currentPlayerState = game.currentPlayerState();
 
-            if (fromCaravansary) {
+            if (caravansary) {
                 var caravansary = game.getCaravansary();
                 currentPlayerState.addBonusCard(caravansary.drawBonusCard());
                 currentPlayerState.addBonusCard(caravansary.drawBonusCard());
@@ -362,7 +387,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         ActionResult perform(Game game, Random random) {
             var teaHouse = game.getTeaHouse();
 
-            teaHouse.guessAndRoll(game.currentPlayerState(), guess, random);
+            teaHouse.guessAndRoll(game, guess, random);
 
             return ActionResult.none();
         }
@@ -371,12 +396,28 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class SellGoods extends Action {
+        @NonNull
         Map<GoodsType, Integer> goods;
+
+        BonusCard bonusCard;
 
         @Override
         ActionResult perform(Game game, Random random) {
-            expectCurrentPlace(game, game.getSmallMarket(), game.getLargeMarket())
-                    .sellGoods(game, goods);
+            var smallMarket = game.getSmallMarket();
+
+            var market = expectCurrentPlace(game, smallMarket, game.getLargeMarket());
+
+            if (bonusCard == BonusCard.SMALL_MARKET_ANY_GOOD) {
+                if (market != smallMarket) {
+                    throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
+                }
+
+                game.currentPlayerState().removeBonusCard(bonusCard);
+
+                smallMarket.sellAnyGoods(game, goods);
+            } else {
+                market.sellDemandGoods(game, goods);
+            }
 
             return ActionResult.none();
         }
@@ -385,6 +426,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class SendFamilyMember extends Action {
+        @NonNull
         Place to;
 
         @Override
@@ -412,7 +454,23 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
             sultansPalace.deliverToSultan(game.currentPlayerState(), preferredGoodsTypes);
 
-            return ActionResult.none();
+            return game.currentPlayerState().hasBonusCard(BonusCard.SULTAN_2X)
+                    ? ActionResult.followUp(PossibleAction.optional(BonusCardDeliverToSultan.class))
+                    : ActionResult.none();
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class BonusCardDeliverToSultan extends Action {
+
+        Set<GoodsType> preferredGoodsTypes;
+
+        @Override
+        ActionResult perform(Game game, Random random) {
+            var actionResult = new DeliverToSultan(preferredGoodsTypes).perform(game, random);
+            game.currentPlayerState().removeBonusCard(BonusCard.SULTAN_2X);
+            return actionResult;
         }
     }
 
@@ -423,7 +481,45 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
             gemstoneDealer.buy(game.currentPlayerState());
 
+            return game.currentPlayerState().hasBonusCard(BonusCard.GEMSTONE_DEALER_2X)
+                    ? ActionResult.followUp(PossibleAction.optional(PossibleAction.optional(BonusCardBuyRuby.class)))
+                    : ActionResult.none();
+        }
+    }
+
+    public static class BonusCardBuyRuby extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            var actionResult = new BuyRuby().perform(game, random);
+            game.currentPlayerState().removeBonusCard(BonusCard.GEMSTONE_DEALER_2X);
+            return actionResult;
+        }
+    }
+
+    public static class BonusCardTake5Lira extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            var currentPlayerState = game.currentPlayerState();
+
+            currentPlayerState.removeBonusCard(BonusCard.TAKE_5_LIRA);
+            currentPlayerState.gainLira(5);
+
             return ActionResult.none();
+        }
+    }
+
+    public static class BonusCardGain1Good extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            var currentPlayerState = game.currentPlayerState();
+
+            currentPlayerState.removeBonusCard(BonusCard.GAIN_1_GOOD);
+
+            return ActionResult.followUp(PossibleAction.choice(Set.of(
+                    Action.Take1Fabric.class,
+                    Action.Take1Spice.class,
+                    Action.Take1Fruit.class,
+                    Action.Take1Blue.class)));
         }
     }
 }

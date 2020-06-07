@@ -410,31 +410,43 @@ public abstract class Place implements Serializable {
             return Optional.of(PossibleAction.optional(Action.GuessAndRollForLira.class));
         }
 
-        void guessAndRoll(@NonNull PlayerState playerState, int guess, @NonNull Random random) {
+        void guessAndRoll(@NonNull Game game, int guess, @NonNull Random random) {
+            var currentPlayer = game.getCurrentPlayer();
+
+            game.fireEvent(currentPlayer, IstanbulEvent.GUESSED, guess);
+
             var die1 = random.nextInt(6);
             var die2 = random.nextInt(6);
 
+            game.fireEvent(currentPlayer, IstanbulEvent.ROLLED, die1, die2);
+
+            var currentPlayerState = game.getPlayerState(currentPlayer);
             var lira = 2;
 
             if (die1 + die2 >= guess) {
                 lira = guess;
             } else {
-                if (playerState.hasMosqueTile(MosqueTile.TURN_OR_REROLL_DICE)) {
+                if (currentPlayerState.hasMosqueTile(MosqueTile.TURN_OR_REROLL_DICE)) {
                     // Can we turn one die to make the guess?
                     if (die1 + 4 >= guess || die2 + 4 >= guess) {
+                        game.fireEvent(currentPlayer, IstanbulEvent.TURNED_DIE);
+
                         lira = guess;
                     }
 
                     // Else reroll automatically
                     die1 = random.nextInt(6);
                     die2 = random.nextInt(6);
+
+                    game.fireEvent(currentPlayer, IstanbulEvent.ROLLED, die1, die2);
+
                     if (die1 + die2 >= guess) {
                         lira = guess;
                     }
                 }
             }
 
-            playerState.gainLira(lira);
+            currentPlayerState.gainLira(lira);
         }
     }
 
@@ -464,7 +476,7 @@ public abstract class Place implements Serializable {
             return Optional.of(PossibleAction.optional(Action.SellGoods.class));
         }
 
-        void sellGoods(Game game, Map<GoodsType, Integer> goods) {
+        void sellDemandGoods(Game game, Map<GoodsType, Integer> goods) {
             var currentPlayerState = game.currentPlayerState();
             var demand = demands.getFirst();
 
@@ -473,11 +485,14 @@ public abstract class Place implements Serializable {
                             Math.min(entry.getValue(), demand.get(entry.getKey()))))
                     .sum();
 
+            sell(currentPlayerState, numberOfGoods);
+        }
+
+        protected void sell(PlayerState currentPlayerState, int numberOfGoods) {
             if (numberOfGoods > 0) {
                 currentPlayerState.gainLira(rewards[numberOfGoods - 1]);
 
-                demands.remove(demand);
-                demands.addLast(demand);
+                demands.addLast(demands.remove(0));
             }
         }
 
@@ -495,6 +510,16 @@ public abstract class Place implements Serializable {
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 1, GoodsType.FRUIT, 2, GoodsType.BLUE, 1),
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 3, GoodsType.FRUIT, 1, GoodsType.BLUE, 0)),
                     new int[]{2, 5, 9, 14, 20}, random);
+        }
+
+        void sellAnyGoods(Game game, Map<GoodsType, Integer> goods) {
+            var currentPlayerState = game.currentPlayerState();
+
+            var numberOfGoods = goods.entrySet().stream()
+                    .mapToInt(entry -> currentPlayerState.removeGoods(entry.getKey(), entry.getValue()))
+                    .sum();
+
+            sell(currentPlayerState, numberOfGoods);
         }
 
         static SmallMarket randomize(@NonNull Random random) {
@@ -547,14 +572,16 @@ public abstract class Place implements Serializable {
         private final MosqueTileStack b;
 
         @AllArgsConstructor(access = AccessLevel.PRIVATE)
-        private static class MosqueTileStack {
+        private static class MosqueTileStack implements Serializable {
+
+            private static final long serialVersionUID = 1L;
 
             @Getter
             private final MosqueTile mosqueTile;
             private final List<Integer> goodsCounts;
 
             static MosqueTileStack forPlayerCount(@NonNull MosqueTile mosqueTile, int playerCount) {
-                return new MosqueTileStack(mosqueTile, initialGoodsCounts(playerCount));
+                return new MosqueTileStack(mosqueTile, new LinkedList<>(initialGoodsCounts(playerCount)));
             }
 
             boolean isAvailable() {

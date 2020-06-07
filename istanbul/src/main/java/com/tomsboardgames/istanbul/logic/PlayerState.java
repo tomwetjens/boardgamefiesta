@@ -100,4 +100,15 @@ public class PlayerState implements Serializable {
             throw new IstanbulException(IstanbulError.BONUS_CARD_NOT_AVAILABLE);
         }
     }
+
+    boolean hasBonusCard(BonusCard bonusCard) {
+        return bonusCards.contains(bonusCard);
+    }
+
+    BonusCard removeBonusCard(BonusCard bonusCard) {
+        if (!bonusCards.remove(bonusCard)) {
+            throw new IstanbulException(IstanbulError.BONUS_CARD_NOT_AVAILABLE);
+        }
+        return bonusCard;
+    }
 }

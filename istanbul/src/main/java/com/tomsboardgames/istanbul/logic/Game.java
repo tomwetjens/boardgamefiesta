@@ -157,20 +157,34 @@ public class Game implements Serializable, State {
     }
 
     public void perform(@NonNull Action action, @NonNull Random random) {
-        // TODO Play bonus card at any time
-        if (!actionQueue.canPerform(action.getClass())) {
+        ActionResult actionResult;
+
+        if (canPerformAnyTime(action) || canPerformBeforeOrAfter(action)) {
+            actionResult = action.perform(this, random);
+        } else if (actionQueue.canPerform(action.getClass())) {
+            actionResult = action.perform(this, random);
+            actionQueue.perform(action.getClass());
+        } else {
             throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
         }
 
-        ActionResult actionResult = action.perform(this, random);
-
-        actionQueue.perform(action.getClass());
-
         actionQueue.addFirst(actionResult.getFollowUpActions());
 
-        if (actionQueue.isEmpty()) {
+        if (canPerformAnotherAction()) {
             endTurn(random);
         }
+    }
+
+    private boolean canPerformAnotherAction() {
+        return actionQueue.isEmpty() && anyTimeActions().isEmpty() && beforeOrAfterActions().isEmpty();
+    }
+
+    private boolean canPerformBeforeOrAfter(Action action) {
+        return actionQueue.getCurrent().isEmpty() && beforeOrAfterActions().contains(action.getClass());
+    }
+
+    private boolean canPerformAnyTime(Action action) {
+        return anyTimeActions().contains(action.getClass());
     }
 
     @Override
@@ -190,8 +204,9 @@ public class Game implements Serializable, State {
     }
 
     private void nextPlayer() {
-        if (currentPlayerState().getRubies() == 6 ||
-                (currentPlayerState().getRubies() == 5 && players.size() > 2)) {
+        var currentPlayerState = currentPlayerState();
+        if (currentPlayerState.getRubies() == 6 ||
+                (currentPlayerState.getRubies() == 5 && players.size() > 2)) {
             // Triggers end of game, finish the round
             lastRound = true;
         }
@@ -202,9 +217,11 @@ public class Game implements Serializable, State {
         if (!isEnded()) {
             this.actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
 
-            if (currentPlayerState().hasMosqueTile(MosqueTile.PAY_2_LIRA_TO_RETURN_ASSISTANT)) {
+            var nextPlayerState = currentPlayerState();
+
+            if (nextPlayerState.hasMosqueTile(MosqueTile.PAY_2_LIRA_TO_RETURN_ASSISTANT)) {
                 // Once in a turn
-                this.actionQueue.addAnyTime(Action.Pay2LiraToReturnAssistant.class);
+                this.actionQueue.addAnyTime(PossibleAction.optional(Action.Pay2LiraToReturnAssistant.class));
             }
         }
     }
@@ -227,7 +244,30 @@ public class Game implements Serializable, State {
     }
 
     public Set<Class<? extends Action>> getPossibleActions() {
-        return actionQueue.getPossibleActions();
+        var possibleActions = new HashSet<>(actionQueue.getPossibleActions());
+        possibleActions.addAll(beforeOrAfterActions());
+        possibleActions.addAll(anyTimeActions());
+        return Collections.unmodifiableSet(possibleActions);
+    }
+
+    /**
+     * Actions that can be performed before or after an action during the current player's turn, but not during another action.
+     */
+    private Set<Class<? extends Action>> beforeOrAfterActions() {
+        if (currentPlayerState().hasBonusCard(BonusCard.GAIN_1_GOOD)) {
+            return Collections.singleton(Action.BonusCardGain1Good.class);
+        }
+        return Collections.emptySet();
+    }
+
+    /**
+     * Actions that can be performed at any time during the current player's turn, also during other actions.
+     */
+    private Set<Class<? extends Action>> anyTimeActions() {
+        if (currentPlayerState().hasBonusCard(BonusCard.TAKE_5_LIRA)) {
+            return Collections.singleton(Action.BonusCardTake5Lira.class);
+        }
+        return Collections.emptySet();
     }
 
     PlayerState currentPlayerState() {
@@ -238,7 +278,7 @@ public class Game implements Serializable, State {
         return layout[x][y];
     }
 
-    int distance(Place from, Place to) {
+    private int distance(Place from, Place to) {
         for (int x1 = 0; x1 < layout.length; x1++) {
             for (int y1 = 0; y1 < layout[x1].length; y1++) {
                 if (layout[x1][y1] == from) {
@@ -282,7 +322,14 @@ public class Game implements Serializable, State {
         throw new IllegalArgumentException("Place not found");
     }
 
-    ActionResult move(Place from, Place to) {
+    ActionResult move(@NonNull Place to, int atLeast, int atMost) {
+        var from = getCurrentPlace();
+
+        var dist = distance(from, to);
+        if (dist < atLeast && dist > atMost) {
+            throw new IstanbulException(IstanbulError.PLACE_NOT_REACHABLE);
+        }
+
         var merchant = currentPlayerState().getMerchant();
 
         from.takeMerchant(merchant);
@@ -372,4 +419,7 @@ public class Game implements Serializable, State {
         return getPlace(Place.PoliceStation.class);
     }
 
+    void fireEvent(Player player, IstanbulEvent event, int... values) {
+        // TODO
+    }
 }

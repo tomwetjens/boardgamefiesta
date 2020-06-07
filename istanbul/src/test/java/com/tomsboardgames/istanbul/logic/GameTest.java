@@ -17,6 +17,72 @@ class GameTest {
     private Player playerGreen = new Player("Green", PlayerColor.GREEN);
 
     @Nested
+    class BonusCards {
+
+        @Nested
+        class Take5Lira {
+
+            @Test
+            void availableBeforeMove() {
+                // Given
+                var game = new Game(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+
+                // When
+                game.currentPlayerState().addBonusCard(BonusCard.TAKE_5_LIRA);
+
+                // Then
+                assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.BonusCardTake5Lira.class);
+            }
+
+            @Test
+            void perform() {
+                // Given
+                var game = new Game(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+                game.currentPlayerState().addBonusCard(BonusCard.TAKE_5_LIRA);
+
+                // When
+                game.perform(new Action.BonusCardTake5Lira(), new Random(0));
+
+                // Then
+                assertThat(game.currentPlayerState().getLira()).isEqualTo(7);
+            }
+        }
+
+        @Nested
+        class Gain1Good {
+
+            @Test
+            void availableBeforeMove() {
+                // Given
+                var game = new Game(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+
+                // When
+                game.currentPlayerState().addBonusCard(BonusCard.GAIN_1_GOOD);
+
+                // Then
+                assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.BonusCardGain1Good.class);
+            }
+
+            @Test
+            void perform() {
+                // Given
+                var game = new Game(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+                game.currentPlayerState().addBonusCard(BonusCard.GAIN_1_GOOD);
+
+                // When
+                game.perform(new Action.BonusCardGain1Good(), new Random(0));
+
+                // Then
+                assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(
+                        Action.Take1Fabric.class,
+                        Action.Take1Spice.class,
+                        Action.Take1Fruit.class,
+                        Action.Take1Blue.class);
+            }
+        }
+    }
+
+    @Nested
     class PoliceStation {
 
         @Test
@@ -130,5 +196,72 @@ class GameTest {
     @Test
     void catchFamilyMembersAtPlaceWithSmugglerAndGovernor() {
         // TODO
+    }
+
+    @Nested
+    class BlackMarket {
+
+        @Test
+        void rollOrTakeBothAvailable() {
+            // Given
+            var game = new Game(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
+            game.perform(new Action.Move(game.getBlackMarket()), new Random(0));
+
+            // When
+            game.perform(new Action.LeaveAssistant(), new Random(0));
+
+            // Then
+            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(
+                    Action.RollForBlueGoods.class,
+                    Action.Take1Spice.class,
+                    Action.Take1Fruit.class,
+                    Action.Take1Fabric.class);
+        }
+
+        @Test
+        void rollFirst() {
+            // Given
+            var game = new Game(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
+            game.perform(new Action.Move(game.getBlackMarket()), new Random(0));
+            game.perform(new Action.LeaveAssistant(), new Random(0));
+
+            // When
+            game.perform(new Action.RollForBlueGoods(), new Random(0));
+
+            // Then
+            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(
+                    Action.Take1Spice.class,
+                    Action.Take1Fruit.class,
+                    Action.Take1Fabric.class);
+        }
+
+        @Test
+        void takeGoodFirst() {
+            // Given
+            var game = new Game(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
+            game.perform(new Action.Move(game.getBlackMarket()), new Random(0));
+            game.perform(new Action.LeaveAssistant(), new Random(0));
+
+            // When
+            game.perform(new Action.Take1Fabric(), new Random(0));
+
+            // Then
+            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.RollForBlueGoods.class);
+        }
+
+        @Test
+        void complete() {
+            // Given
+            var game = new Game(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
+            game.perform(new Action.Move(game.getBlackMarket()), new Random(0));
+            game.perform(new Action.LeaveAssistant(), new Random(0));
+            game.perform(new Action.Take1Fabric(), new Random(0));
+
+            // When
+            game.perform(new Action.RollForBlueGoods(), new Random(0));
+
+            // Then
+            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Move.class);
+        }
     }
 }

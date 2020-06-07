@@ -123,18 +123,18 @@ public abstract class PossibleAction {
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (this.current == null) {
-                this.current = possibleActions.stream()
+            if (current == null) {
+                current = possibleActions.stream()
                         .filter(possibleAction -> possibleAction.canPerform(action))
                         .findFirst()
                         .orElseThrow(() -> new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION));
             }
 
-            this.current.perform(action);
+            current.perform(action);
 
-            if (this.current.isCompleted()) {
-                this.possibleActions.remove(this.current);
-                this.current = null;
+            if (current.isCompleted()) {
+                possibleActions.remove(this.current);
+                current = null;
             }
         }
 
@@ -262,6 +262,10 @@ public abstract class PossibleAction {
             }
 
             current.perform(action);
+
+            if (current.isCompleted()) {
+                current = null;
+            }
 
             count++;
         }
