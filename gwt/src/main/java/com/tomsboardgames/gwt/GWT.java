@@ -18,11 +18,13 @@ import java.util.Set;
 @ApplicationScoped
 public class GWT implements Game {
 
+    public static final Id ID = Id.of("gwt");
+
     private static final Duration DEFAULT_TIME_LIMIT = Duration.of(3, ChronoUnit.MINUTES);
 
     @Override
     public Game.Id getId() {
-        return Game.Id.of("gwt");
+        return ID;
     }
 
     @Override

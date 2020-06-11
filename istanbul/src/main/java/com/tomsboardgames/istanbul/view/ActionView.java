@@ -42,6 +42,7 @@ public enum ActionView {
     TAKE_1_FABRIC(Action.Take1Fabric.class, (jsonObject, game) -> new Action.Take1Fabric()),
     TAKE_1_FRUIT(Action.Take1Fruit.class, (jsonObject, game) -> new Action.Take1Fruit()),
     TAKE_1_SPICE(Action.Take1Spice.class, (jsonObject, game) -> new Action.Take1Spice()),
+    TAKE_1_BLUE(Action.Take1Blue.class, (jsonObject, game) -> new Action.Take1Blue()),
     TAKE_2_BONUS_CARDS(Action.Take2BonusCards.class, (jsonObject, game) -> new Action.Take2BonusCards(jsonObject.getBoolean("caravansary"))),
     BONUS_CARD_TAKE_5_LIRA(Action.BonusCardTake5Lira.class, (jsonObject, game) -> new Action.BonusCardTake5Lira()),
     TAKE_MOSQUE_TILE(Action.TakeMosqueTile.class, (jsonObject, game) -> new Action.TakeMosqueTile(MosqueTile.valueOf(jsonObject.getString("mosqueTile")))),

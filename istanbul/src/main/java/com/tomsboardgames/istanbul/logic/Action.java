@@ -46,11 +46,11 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         @Override
         ActionResult perform(Game game, Random random) {
             if (bonusCard == BonusCard.MOVE_0) {
-                return game.move(to, 0, 0);
+                return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 0, 0);
             } else if (bonusCard == BonusCard.MOVE_3_OR_4) {
-                return game.move(to, 3, 4);
+                return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 3, 4);
             } else {
-                return game.move(to, 1, 2);
+                return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 1, 2);
             }
         }
     }
@@ -84,16 +84,12 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
                 otherMerchant.getPlayer().ifPresentOrElse(player -> game.getPlayerState(player).gainLira(2),
                         // In 2P variant, if neutral, pay to bank then randomly place somewhere else
-                        () -> repositionDummyMerchant(otherMerchant, game, random));
+                        () -> game.moveMerchant(otherMerchant, game.randomPlace(random), 0, 4));
             });
 
             return place.placeActions(game);
         }
 
-        private void repositionDummyMerchant(Merchant otherMerchant, Game game, Random random) {
-            game.getCurrentPlace(otherMerchant.getColor()).takeMerchant(otherMerchant);
-            game.randomPlace(random).placeMerchant(otherMerchant, game);
-        }
     }
 
     public static class Governor extends Action {
@@ -117,9 +113,8 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             game.getPlace(Place::isSmuggler).takeSmuggler();
             game.randomPlace(random).placeSmuggler();
 
-            return ActionResult.followUp(
-                    PossibleAction.whenThen(PossibleAction.optional(takeAnyGood()),
-                            PossibleAction.choice(Set.of(Action.Pay2Lira.class, Action.Pay1Good.class))));
+            return ActionResult.followUp(PossibleAction.whenThen(takeAnyGood(),
+                    PossibleAction.choice(Set.of(Action.Pay2Lira.class, Action.Pay1Good.class)), 0, 1));
         }
 
         private static PossibleAction takeAnyGood() {
@@ -282,7 +277,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
         @Override
         ActionResult perform(Game game, Random random) {
-            game.currentPlayerState().discardBonusCard(bonusCard);
+            game.currentPlayerState().removeBonusCard(bonusCard);
             return ActionResult.none();
         }
     }
@@ -309,7 +304,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             var currentPlayerState = game.currentPlayerState();
 
             if (caravansary) {
-                var caravansary = game.getCaravansary();
+                var caravansary = expectCurrentPlace(game, game.getCaravansary());
                 currentPlayerState.addBonusCard(caravansary.drawBonusCard());
                 currentPlayerState.addBonusCard(caravansary.drawBonusCard());
             } else {
@@ -317,7 +312,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
                 currentPlayerState.addBonusCard(game.drawBonusCard(random));
             }
 
-            return ActionResult.followUp(PossibleAction.mandatory(Action.DiscardBonusCard.class));
+            return ActionResult.none();
         }
     }
 

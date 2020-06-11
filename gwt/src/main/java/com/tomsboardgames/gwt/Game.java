@@ -285,7 +285,7 @@ public class Game implements State, Serializable {
         }
 
         Location from = trail.getCurrentLocation(player)
-                .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION, player));
+                .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION));
 
         var playerState = playerState(player);
 

@@ -5,15 +5,16 @@ import lombok.Getter;
 public class InGameException extends RuntimeException {
 
     @Getter
-    private final String error;
+    private final Game.Id gameId;
 
     @Getter
-    private final transient Object[] params;
+    private final String error;
 
-    protected InGameException(String error, Object... params) {
+    protected InGameException(Game.Id gameId, String error) {
         super(error);
+
+        this.gameId = gameId;
         this.error = error;
-        this.params = params;
     }
 
 }

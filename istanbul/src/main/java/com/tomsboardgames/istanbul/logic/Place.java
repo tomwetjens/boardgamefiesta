@@ -302,7 +302,8 @@ public abstract class Place implements Serializable {
 
         @Override
         protected Optional<PossibleAction> getPossibleAction(Game game) {
-            return Optional.of(PossibleAction.optional(Action.Take2BonusCards.class));
+            return Optional.of(PossibleAction.whenThen(PossibleAction.optional(Action.Take2BonusCards.class),
+                    PossibleAction.mandatory(Action.DiscardBonusCard.class), 0, 1));
         }
 
         List<BonusCard> takeDiscardPile() {
@@ -313,7 +314,7 @@ public abstract class Place implements Serializable {
 
         public BonusCard drawBonusCard() {
             if (discardPile.isEmpty()) {
-                throw new IstanbulException(IstanbulError.BONUS_CARD_NOT_AVAILABLE);
+                throw new IstanbulException(IstanbulError.NO_BONUS_CARD_AVAILABLE);
             }
             return discardPile.remove(0);
         }

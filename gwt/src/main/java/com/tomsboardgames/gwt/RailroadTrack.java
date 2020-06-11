@@ -108,7 +108,7 @@ public class RailroadTrack implements Serializable {
     public Space.NumberedSpace getSpace(int number) {
         Space.NumberedSpace numberedSpace = normalSpaces.get(number);
         if (numberedSpace == null) {
-            throw new GWTException(GWTError.NO_SUCH_SPACE, number);
+            throw new GWTException(GWTError.NO_SUCH_SPACE);
         }
         return numberedSpace;
     }
@@ -157,7 +157,7 @@ public class RailroadTrack implements Serializable {
         ReachableSpace reachableSpace = reachableSpaces.stream()
                 .filter(rs -> rs.space == to)
                 .min(Comparator.comparingInt(ReachableSpace::getSteps))
-                .orElseThrow(() -> new GWTException(GWTError.SPACE_NOT_REACHABLE, atLeast, atMost));
+                .orElseThrow(() -> new GWTException(GWTError.SPACE_NOT_REACHABLE));
 
         currentSpaces.put(player, to);
 
@@ -268,7 +268,7 @@ public class RailroadTrack implements Serializable {
 
     ImmediateActions deliverToCity(Player player, City city, Game game) {
         if (!city.isMultipleDeliveries() && hasMadeDelivery(player, city)) {
-            throw new GWTException(GWTError.ALREADY_DELIVERED_TO_CITY, city);
+            throw new GWTException(GWTError.ALREADY_DELIVERED_TO_CITY);
         }
 
         cities.computeIfAbsent(city, k -> new LinkedList<>()).add(player);

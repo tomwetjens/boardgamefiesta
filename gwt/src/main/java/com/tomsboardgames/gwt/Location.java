@@ -238,7 +238,7 @@ public abstract class Location implements Serializable {
             }
 
             if (hazard.getType() != this.type) {
-                throw new GWTException(GWTError.HAZARD_MUST_BE_OF_TYPE, type);
+                throw new GWTException(GWTError.HAZARD_MUST_BE_OF_TYPE);
             }
 
             this.hazard = hazard;

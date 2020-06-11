@@ -72,13 +72,13 @@ public class JobMarket implements Serializable {
 
     void takeWorker(int rowIndex, Worker worker) {
         if (rowIndex >= currentRowIndex) {
-            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker, rowIndex);
+            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE);
         }
 
         var row = rows.get(rowIndex);
 
         if (!row.workers.contains(worker)) {
-            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker, rowIndex);
+            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE);
         }
 
         rows.get(rowIndex).workers.remove(worker);
@@ -86,13 +86,13 @@ public class JobMarket implements Serializable {
 
     public int cost(int rowIndex, Worker worker) {
         if (rowIndex >= currentRowIndex) {
-            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker, rowIndex);
+            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE);
         }
 
         var row = rows.get(rowIndex);
 
         if (!row.workers.contains(worker)) {
-            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE, worker, rowIndex);
+            throw new GWTException(GWTError.WORKER_NOT_AVAILABLE);
         }
 
         return row.getCost();

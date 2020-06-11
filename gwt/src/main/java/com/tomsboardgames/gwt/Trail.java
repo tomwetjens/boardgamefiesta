@@ -166,7 +166,7 @@ public class Trail implements Serializable {
         Location.HazardLocation hazardLocation = getHazardLocations(hazard.getType()).stream()
                 .filter(location -> hazard == location.getHazard().orElse(null))
                 .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.HAZARD_NOT_ON_TRAIL, hazard.getType(), hazard.getHand(), hazard.getPoints()));
+                .orElseThrow(() -> new GWTException(GWTError.HAZARD_NOT_ON_TRAIL));
 
         hazardLocation.removeHazard();
     }
@@ -175,13 +175,13 @@ public class Trail implements Serializable {
         return getLocations().stream()
                 .filter(location -> location.getName().equals(name))
                 .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION, name));
+                .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION));
     }
 
     public Location.TeepeeLocation getTeepeeLocation(int reward) {
         return teepeeLocations.stream()
                 .filter(teepeeLocation -> teepeeLocation.getReward() == reward).findAny()
-                .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION, reward));
+                .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION));
     }
 
     Set<PossibleMove> possibleMoves(Player player, int balance, int stepLimit, int playerCount) {
@@ -219,11 +219,11 @@ public class Trail implements Serializable {
 
     Set<PossibleMove> possibleMoves(Location from, Location to, Player player, int balance, int stepLimit, int playerCount) {
         if (from.isEmpty()) {
-            throw new GWTException(GWTError.LOCATION_EMPTY, from.getName());
+            throw new GWTException(GWTError.LOCATION_EMPTY);
         }
 
         if (to.isEmpty()) {
-            throw new GWTException(GWTError.LOCATION_EMPTY, to.getName());
+            throw new GWTException(GWTError.LOCATION_EMPTY);
         }
 
         return reachableLocations(from, to, stepLimit)

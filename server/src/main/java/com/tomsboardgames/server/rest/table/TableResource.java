@@ -70,7 +70,7 @@ public class TableResource {
         var invitedUsers = request.getInviteUserIds() != null
                 ? request.getInviteUserIds().stream()
                 .map(userId -> users.findOptionallyById(User.Id.of(userId))
-                        .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, userId)))
+                        .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER)))
                 .collect(Collectors.toSet())
                 : Collections.<User>emptySet();
 
@@ -215,7 +215,7 @@ public class TableResource {
         checkOwner(table);
 
         table.invite(users.findOptionallyById(User.Id.of(request.getUserId()))
-                .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER, request.getUserId())));
+                .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER)));
 
         tables.update(table);
     }

@@ -12,10 +12,11 @@ public enum BonusCard {
     SULTAN_2X,
     POST_OFFICE_2X,
     GEMSTONE_DEALER_2X,
+    // TODO Implement this bonus card
     FAMILY_MEMBER_TO_POLICE_STATION,
     MOVE_0,
     MOVE_3_OR_4,
-    RETURN_1_ASSISTANT,
+    RETURN_1_ASSISTANT, // TODO Only in first phase
     SMALL_MARKET_ANY_GOOD;
 
     static Collection<BonusCard> createDeck() {
@@ -25,6 +26,7 @@ public enum BonusCard {
                 IntStream.range(0, 2).mapToObj(i -> SULTAN_2X),
                 IntStream.range(0, 2).mapToObj(i -> POST_OFFICE_2X),
                 IntStream.range(0, 2).mapToObj(i -> GEMSTONE_DEALER_2X),
+                // TODO Implement bonus card FAMILY_MEMBER_TO_POLICE_STATION
                 IntStream.range(0, 2).mapToObj(i -> FAMILY_MEMBER_TO_POLICE_STATION),
                 IntStream.range(0, 2).mapToObj(i -> MOVE_0),
                 IntStream.range(0, 4).mapToObj(i -> MOVE_3_OR_4),
@@ -34,4 +36,4 @@ public enum BonusCard {
                 .collect(Collectors.toList());
 
     }
-    }
+}

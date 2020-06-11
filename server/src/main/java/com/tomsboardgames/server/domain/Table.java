@@ -163,7 +163,7 @@ public class Table {
         try {
             runStateChange(() -> state.get().perform(action, RANDOM));
         } catch (InGameException e) {
-            throw new APIException(e);
+            throw APIException.inGame(e);
         }
     }
 
@@ -217,7 +217,7 @@ public class Table {
         try {
             runStateChange(() -> state.get().skip(RANDOM));
         } catch (InGameException e) {
-            throw new APIException(e);
+            throw APIException.inGame(e);
         }
     }
 
@@ -231,7 +231,7 @@ public class Table {
         try {
             runStateChange(() -> state.get().endTurn(RANDOM));
         } catch (InGameException e) {
-            throw new APIException(e);
+            throw APIException.inGame(e);
         }
 
         player.endTurn();

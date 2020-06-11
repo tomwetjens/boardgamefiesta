@@ -15,7 +15,8 @@ import java.util.Set;
 @ApplicationScoped
 public class Istanbul implements Game {
 
-    private static final Id ID = Id.of("istanbul");
+    public static final Id ID = Id.of("istanbul");
+
     private static final Duration DEFAULT_TIME_LIMIT = Duration.ofSeconds(90);
 
     @Override

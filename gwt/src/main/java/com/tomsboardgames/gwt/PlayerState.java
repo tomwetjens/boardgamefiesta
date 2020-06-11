@@ -99,7 +99,7 @@ public class PlayerState implements Serializable {
                 .collect(Collectors.toSet());
 
         if (cattleCards.size() != amount) {
-            throw new GWTException(GWTError.CATTLE_CARDS_NOT_IN_HAND, type, amount);
+            throw new GWTException(GWTError.CATTLE_CARDS_NOT_IN_HAND);
         }
 
         hand.removeAll(cattleCards);
@@ -120,7 +120,7 @@ public class PlayerState implements Serializable {
 
     void payDollars(int amount) {
         if (balance < amount) {
-            throw new GWTException(GWTError.NOT_ENOUGH_BALANCE_TO_PAY, amount);
+            throw new GWTException(GWTError.NOT_ENOUGH_BALANCE_TO_PAY);
         }
         balance -= amount;
     }
@@ -195,7 +195,7 @@ public class PlayerState implements Serializable {
 
     void removeWorker(Worker worker) {
         if (workers.get(worker) <= 1) {
-            throw new GWTException(GWTError.NOT_ENOUGH_WORKERS, worker);
+            throw new GWTException(GWTError.NOT_ENOUGH_WORKERS);
         }
 
         workers.computeIfPresent(worker, (k, v) -> v - 1);
@@ -264,7 +264,7 @@ public class PlayerState implements Serializable {
 
     void unlock(Unlockable unlockable) {
         if (unlocked.getOrDefault(unlockable, 0) == unlockable.getCount()) {
-            throw new GWTException(GWTError.ALREADY_UNLOCKED, unlockable);
+            throw new GWTException(GWTError.ALREADY_UNLOCKED);
         }
 
         if (unlockable.getCost() > 0) {

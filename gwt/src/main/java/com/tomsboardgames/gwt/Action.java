@@ -570,7 +570,7 @@ public abstract class Action implements com.tomsboardgames.api.Action {
             int breedingValue = game.currentPlayerState().handValue() + certificates;
 
             if (breedingValue < city.getValue()) {
-                throw new GWTException(GWTError.NOT_ENOUGH_BREEDING_VALUE, breedingValue, city.getValue());
+                throw new GWTException(GWTError.NOT_ENOUGH_BREEDING_VALUE);
             }
 
             int transportCosts = Math.max(0, city.getSignals() - game.getRailroadTrack().signalsPassed(game.getCurrentPlayer()));
@@ -865,14 +865,14 @@ public abstract class Action implements com.tomsboardgames.api.Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             if (steps.isEmpty()) {
-                throw new GWTException(GWTError.MUST_MOVE_AT_LEAST_STEPS, 1);
+                throw new GWTException(GWTError.MUST_MOVE_AT_LEAST_STEPS);
             }
 
             PlayerState currentPlayerState = game.currentPlayerState();
 
             int stepLimit = currentPlayerState.getStepLimit(game.getPlayers().size());
             if (steps.size() > Math.min(atMost, stepLimit)) {
-                throw new GWTException(GWTError.STEPS_EXCEED_LIMIT, stepLimit);
+                throw new GWTException(GWTError.STEPS_EXCEED_LIMIT);
             }
 
             Player player = game.getCurrentPlayer();
@@ -902,7 +902,7 @@ public abstract class Action implements com.tomsboardgames.api.Action {
         private void checkDirectAndConsecutiveSteps(Location from, List<Location> steps) {
             Location to = steps.get(0);
             if (!from.isDirect(to)) {
-                throw new GWTException(GWTError.CANNOT_STEP_DIRECTLY_FROM_TO, from, to);
+                throw new GWTException(GWTError.CANNOT_STEP_DIRECTLY_FROM_TO);
             }
             if (steps.size() > 1) {
                 checkDirectAndConsecutiveSteps(to, steps.subList(1, steps.size()));
@@ -1193,7 +1193,7 @@ public abstract class Action implements com.tomsboardgames.api.Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             Location currentLocation = game.getTrail().getCurrentLocation(game.getCurrentPlayer())
-                    .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION, game.getCurrentPlayer()));
+                    .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION));
 
             Set<Location> adjacentLocations = game.getTrail().getAdjacentLocations(currentLocation);
 

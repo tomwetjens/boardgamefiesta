@@ -170,13 +170,13 @@ public class Game implements Serializable, State {
 
         actionQueue.addFirst(actionResult.getFollowUpActions());
 
-        if (canPerformAnotherAction()) {
+        if (!canPerformAnotherAction()) {
             endTurn(random);
         }
     }
 
     private boolean canPerformAnotherAction() {
-        return actionQueue.isEmpty() && anyTimeActions().isEmpty() && beforeOrAfterActions().isEmpty();
+        return !actionQueue.isEmpty() || !anyTimeActions().isEmpty() || !beforeOrAfterActions().isEmpty();
     }
 
     private boolean canPerformBeforeOrAfter(Action action) {
@@ -245,7 +245,9 @@ public class Game implements Serializable, State {
 
     public Set<Class<? extends Action>> getPossibleActions() {
         var possibleActions = new HashSet<>(actionQueue.getPossibleActions());
-        possibleActions.addAll(beforeOrAfterActions());
+        if (actionQueue.getCurrent().isEmpty()) {
+            possibleActions.addAll(beforeOrAfterActions());
+        }
         possibleActions.addAll(anyTimeActions());
         return Collections.unmodifiableSet(possibleActions);
     }
@@ -322,19 +324,17 @@ public class Game implements Serializable, State {
         throw new IllegalArgumentException("Place not found");
     }
 
-    ActionResult move(@NonNull Place to, int atLeast, int atMost) {
-        var from = getCurrentPlace();
+    ActionResult moveMerchant(@NonNull Merchant merchant, @NonNull Place to, int atLeast, int atMost) {
+        var from = getCurrentPlace(merchant.getColor());
 
         var dist = distance(from, to);
         if (dist < atLeast && dist > atMost) {
             throw new IstanbulException(IstanbulError.PLACE_NOT_REACHABLE);
         }
 
-        var merchant = currentPlayerState().getMerchant();
-
         from.takeMerchant(merchant);
 
-        currentPlaces.put(currentPlayer.getColor(), to);
+        currentPlaces.put(merchant.getColor(), to);
 
         return to.placeMerchant(merchant, this);
     }

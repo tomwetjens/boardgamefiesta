@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,8 +37,8 @@ public abstract class PossibleAction {
         return new Repeat(atLeast, atMost, possibleAction);
     }
 
-    public static PossibleAction whenThen(@NonNull PossibleAction when, @NonNull PossibleAction then) {
-        return new WhenThen(when, then);
+    public static PossibleAction whenThen(@NonNull PossibleAction when, @NonNull PossibleAction then, int atLeast, int atMost) {
+        return new WhenThen(when, then, atLeast, atMost);
     }
 
     abstract void perform(Class<? extends Action> action);
@@ -305,80 +307,88 @@ public abstract class PossibleAction {
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    private static class WhenThen extends PossibleAction {
+    private static class WhenThen extends PossibleAction implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         private final PossibleAction when;
         private final PossibleAction then;
+        private final int atLeast;
+        private final int atMost;
 
-        private final List<PossibleAction> thens;
-        private PossibleAction currentThen;
+        private int whens;
+        private int thens;
+        private PossibleAction current;
 
-        private WhenThen(PossibleAction when, PossibleAction then) {
+        private WhenThen(PossibleAction when, PossibleAction then, int atLeast, int atMost) {
             this.when = when;
             this.then = then;
-            this.thens = new LinkedList<>();
+            this.atLeast = atLeast;
+            this.atMost = atMost;
         }
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (currentThen != null) {
-                // Continue the current "then" first
-                currentThen.perform(action);
-            } else if (then.canPerform(action)) {
-                // Start a "then"
-                currentThen = thens.get(0);
-                currentThen.perform(action);
-            } else {
-                // Continue the "when"
-                when.perform(action);
-                thens.add(then.clone());
+            if (current == null) {
+                if (then.canPerform(action) && thens < whens) {
+                    // Start a "then"
+                    current = then.clone();
+                    thens++;
+                } else if (when.canPerform(action) && whens < atMost) {
+                    // Start a "when"
+                    current = when.clone();
+                    whens++;
+                } else {
+                    throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
+                }
             }
 
-            // If current is completed, remove it
-            if (currentThen != null && currentThen.isCompleted()) {
-                thens.remove(currentThen);
-                currentThen = null;
+            current.perform(action);
+
+            if (current.isCompleted()) {
+                current = null;
             }
         }
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            if (currentThen != null) {
-                // Must continue the current "then" first
-                return currentThen.canPerform(action);
+            if (current != null) {
+                // Must continue the current first
+                return current.canPerform(action);
             }
-            return when.canPerform(action) || (thens.size() > 0 && then.canPerform(action));
+            return (whens < atMost && when.canPerform(action)) || (thens < whens && then.canPerform(action));
         }
 
         @Override
         void skip() {
-            if (currentThen != null) {
-                currentThen.skip();
-                currentThen = null;
+            if (current != null) {
+                current.skip();
+                current = null;
             }
 
-            when.skip();
+            if (whens < atLeast || thens < whens) {
+                throw new IstanbulException(IstanbulError.CANNOT_SKIP_ACTION);
+            }
         }
 
         @Override
         boolean isCompleted() {
-            return thens.isEmpty() && when.isCompleted();
+            return current == null && whens == atMost && thens == whens;
         }
 
         @Override
         Stream<Class<? extends Action>> getPossibleActions() {
-            if (currentThen != null) {
-                return currentThen.getPossibleActions();
+            if (current != null) {
+                return current.getPossibleActions();
             }
-            return Stream.concat(when.getPossibleActions(), thens.isEmpty() ? Stream.empty()
-                    : then.getPossibleActions());
+            return Stream.concat(
+                    whens < atMost ? when.getPossibleActions() : Stream.empty(),
+                    thens < whens ? then.getPossibleActions() : Stream.empty());
         }
 
         @Override
         protected PossibleAction clone() {
-            return new WhenThen(when.clone(), then.clone(), thens.stream()
-                    .map(PossibleAction::clone)
-                    .collect(Collectors.toList()), currentThen.clone());
+            return new WhenThen(when.clone(), then.clone(), atLeast, atMost, whens, thens, current.clone());
         }
     }
 }

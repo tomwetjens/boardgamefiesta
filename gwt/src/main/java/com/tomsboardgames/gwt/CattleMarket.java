@@ -194,7 +194,7 @@ public class CattleMarket implements Serializable {
                 .collect(Collectors.toSet());
 
         if (possibleSingles.isEmpty()) {
-            throw new GWTException(GWTError.NOT_ENOUGH_CATTLE_CARDS_OF_BREEDING_VALUE_AVAILABLE, breedingValue);
+            throw new GWTException(GWTError.NOT_ENOUGH_CATTLE_CARDS_OF_BREEDING_VALUE_AVAILABLE);
         }
 
         Set<PossibleBuy> possiblePairs = Collections.emptySet();

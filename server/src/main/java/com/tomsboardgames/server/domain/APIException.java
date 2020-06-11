@@ -9,34 +9,34 @@ import javax.ws.rs.core.Response;
 
 public class APIException extends WebApplicationException {
 
-    public APIException(InGameException cause) {
-        this(Response.Status.BAD_REQUEST, cause.getError(), cause.getParams());
+    public static APIException inGame(InGameException e) {
+        return new APIException(Response.Status.BAD_REQUEST, new Error(APIError.IN_GAME_ERROR, e.getGameId().getId(), e.getError()));
     }
 
-    public static APIException badRequest(APIError e, Object... params) {
-        return new APIException(Response.Status.BAD_REQUEST, e.name(), params);
+    public static APIException badRequest(APIError apiError) {
+        return new APIException(Response.Status.BAD_REQUEST, new Error(apiError, null, null));
     }
 
-    public static APIException forbidden(APIError e, Object... params) {
-        return new APIException(Response.Status.FORBIDDEN, e.name(), params);
+    public static APIException forbidden(APIError apiError) {
+        return new APIException(Response.Status.FORBIDDEN, new Error(apiError, null, null));
     }
 
-    public static APIException internalError(APIError e, Object... params) {
-        return new APIException(Response.Status.INTERNAL_SERVER_ERROR, e.name(), params);
+    public static APIException internalError(APIError apiError) {
+        return new APIException(Response.Status.INTERNAL_SERVER_ERROR, new Error(apiError, null, null));
     }
 
-    private APIException(Response.Status status, String errorCode, Object... params) {
-        super(errorCode, Response.status(status)
+    private APIException(Response.Status status, Error error) {
+        super(error.getErrorCode().name(), Response.status(status)
                 .type(MediaType.APPLICATION_JSON)
-                // TODO Add a human readable message
-                .entity(new Error(errorCode, errorCode, params))
+                .entity(error)
                 .build());
     }
 
     @Value
-    public static final class Error {
-        String errorCode;
-        String message;
-        Object[] params;
+    public static class Error {
+        APIError errorCode;
+        String gameId;
+        String reasonCode;
     }
+
 }
