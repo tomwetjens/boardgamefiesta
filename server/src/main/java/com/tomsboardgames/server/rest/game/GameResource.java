@@ -1,15 +1,11 @@
 package com.tomsboardgames.server.rest.game;
 
+import com.tomsboardgames.api.Game;
 import com.tomsboardgames.server.domain.Games;
 import com.tomsboardgames.server.rest.game.view.GameView;
-import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,8 +13,6 @@ import java.util.stream.Collectors;
 @Path("/games")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
-@Slf4j
 public class GameResource {
 
     @Inject
@@ -30,4 +24,13 @@ public class GameResource {
                 .map(GameView::new)
                 .collect(Collectors.toList());
     }
+
+    @GET
+    @Path("/{id}")
+    public GameView getGame(@PathParam("id") String id) {
+        return games.findById(Game.Id.of(id))
+                .map(GameView::new)
+                .orElseThrow(NotFoundException::new);
+    }
+
 }

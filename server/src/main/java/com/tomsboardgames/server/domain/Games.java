@@ -6,6 +6,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,5 +32,9 @@ public class Games {
 
     public Stream<Game> findAll() {
         return map.values().stream();
+    }
+
+    public Optional<Game> findById(Game.Id id) {
+        return Optional.ofNullable(map.get(id));
     }
 }
