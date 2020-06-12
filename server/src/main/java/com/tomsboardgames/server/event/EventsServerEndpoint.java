@@ -18,7 +18,9 @@ import javax.websocket.OnError;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+import java.security.Principal;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
@@ -28,7 +30,8 @@ public class EventsServerEndpoint {
 
     private static final Jsonb JSONB = JsonbBuilder.create();
 
-    private static final Map<User.Id, Session> SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<User.Id, Session> USER_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<String, Session> ANONYMOUS_SESSIONS = new ConcurrentHashMap<>();
 
     private final Tables tables;
 
@@ -39,18 +42,20 @@ public class EventsServerEndpoint {
 
     @OnOpen
     public void onOpen(Session session) {
-        User.Id currentUserId = currentUserId(session);
-        SESSIONS.put(currentUserId, session);
+        currentUserId(session).ifPresentOrElse(userId -> USER_SESSIONS.put(userId, session),
+                () -> ANONYMOUS_SESSIONS.put(session.getId(), session));
     }
 
     @OnClose
     public void onClose(Session session) {
-        SESSIONS.remove(currentUserId(session));
+        currentUserId(session).ifPresentOrElse(USER_SESSIONS::remove,
+                () -> ANONYMOUS_SESSIONS.put(session.getId(), session));
     }
 
     @OnError
     public void onError(Session session, Throwable throwable) {
-        SESSIONS.remove(currentUserId(session));
+        currentUserId(session).ifPresentOrElse(USER_SESSIONS::remove,
+                () -> ANONYMOUS_SESSIONS.put(session.getId(), session));
     }
 
     void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted event) {
@@ -130,14 +135,14 @@ public class EventsServerEndpoint {
     }
 
     private void notifyUser(User.Id userId, Event event) {
-        Session session = SESSIONS.get(userId);
+        Session session = USER_SESSIONS.get(userId);
         if (session != null) {
             session.getAsyncRemote().sendObject(JSONB.toJson(event));
         }
     }
 
-    private User.Id currentUserId(Session session) {
-        return User.Id.of(session.getUserPrincipal().getName());
+    private Optional<User.Id> currentUserId(Session session) {
+        return Optional.ofNullable(session.getUserPrincipal()).map(Principal::getName).map(User.Id::of);
     }
 
 }

@@ -26,16 +26,24 @@ public class EventsAuthFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
-        try {
-            IdTokenCredential idTokenCredential = new IdTokenCredential(httpServletRequest.getParameter("token"), null);
-            TokenAuthenticationRequest tokenAuthenticationRequest = new TokenAuthenticationRequest(idTokenCredential);
 
-            SecurityIdentity securityIdentity = oidcIdentityProvider.authenticate(tokenAuthenticationRequest, function -> CompletableFuture.completedFuture(function.get()))
-                    .toCompletableFuture().get();
+        var token = httpServletRequest.getParameter("token");
 
-            filterChain.doFilter(new AuthenticatedRequest(httpServletRequest, securityIdentity.getPrincipal()), servletResponse);
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Websockets auth filter error", e);
+        if (token != null && !"".equals(token)) {
+            try {
+
+                IdTokenCredential idTokenCredential = new IdTokenCredential(token, null);
+                TokenAuthenticationRequest tokenAuthenticationRequest = new TokenAuthenticationRequest(idTokenCredential);
+
+                SecurityIdentity securityIdentity = oidcIdentityProvider.authenticate(tokenAuthenticationRequest, function -> CompletableFuture.completedFuture(function.get()))
+                        .toCompletableFuture().get();
+
+                filterChain.doFilter(new AuthenticatedRequest(httpServletRequest, securityIdentity.getPrincipal()), servletResponse);
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("Websockets auth filter error", e);
+            }
+        } else {
+            filterChain.doFilter(servletRequest, servletResponse);
         }
     }
 
