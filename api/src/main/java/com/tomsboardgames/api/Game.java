@@ -16,6 +16,14 @@ public interface Game {
 
     int getMaxNumberOfPlayers();
 
+    String getPublishers();
+
+    String getDesigners();
+
+    String getArtists();
+
+    String getWebsite();
+
     State start(Set<Player> players, Options options, Random random);
 
     void executeAutoma(State state, Random random);

@@ -514,7 +514,7 @@ public class Table {
         }
 
         if (!game.hasAutoma()) {
-            throw APIException.badRequest(APIError.NOT_SUPPORTED);
+            throw APIException.badRequest(APIError.COMPUTER_NOT_SUPPORTED);
         }
 
         players.add(Player.computer());

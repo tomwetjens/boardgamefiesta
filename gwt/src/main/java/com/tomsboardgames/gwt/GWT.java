@@ -43,6 +43,26 @@ public class GWT implements Game {
     }
 
     @Override
+    public String getPublishers() {
+        return "eggertspiele";
+    }
+
+    @Override
+    public String getDesigners() {
+        return "Alexander Pfister";
+    }
+
+    @Override
+    public String getArtists() {
+        return "Alexander Pfister, Andreas Resch";
+    }
+
+    @Override
+    public String getWebsite() {
+        return "https://boardgamegeek.com/boardgame/193738/great-western-trail/";
+    }
+
+    @Override
     public State start(Set<Player> players, Options options, Random random) {
         return new com.tomsboardgames.gwt.Game(players, options.getBoolean("beginner", false), random);
     }

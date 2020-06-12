@@ -40,6 +40,26 @@ public class Istanbul implements Game {
     }
 
     @Override
+    public String getPublishers() {
+        return "Pegasus Spiele";
+    }
+
+    @Override
+    public String getDesigners() {
+        return "Rüdiger Dorn";
+    }
+
+    @Override
+    public String getArtists() {
+        return "Andreas Resch, Hans-Georg Schneider";
+    }
+
+    @Override
+    public String getWebsite() {
+        return "https://boardgamegeek.com/boardgame/148949/istanbul/";
+    }
+
+    @Override
     public State start(Set<Player> players, Options options, Random random) {
         var layoutType = options.getEnum("layoutType", LayoutType.class, LayoutType.RANDOM);
         return new com.tomsboardgames.istanbul.logic.Game(players, layoutType, random);
