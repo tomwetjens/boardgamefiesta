@@ -37,7 +37,7 @@ public class Game implements Serializable, State {
     @Getter
     private Player currentPlayer;
 
-    private boolean lastRound;
+    private Status status;
 
     private transient List<EventListener> eventListeners = new ArrayList<>();
 
@@ -77,6 +77,8 @@ public class Game implements Serializable, State {
 
         this.bonusCards = new LinkedList<>(BonusCard.createDeck());
         Collections.shuffle(this.bonusCards, random);
+
+        this.status = Status.STARTED;
 
         this.actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
     }
@@ -147,13 +149,25 @@ public class Game implements Serializable, State {
 
     @Override
     public int score(Player player) {
-        // TODO
-        return 0;
+        return getPlayerState(player).getRubies();
     }
 
     @Override
     public Set<Player> winners() {
-        return null;
+        var max = playerStates.entrySet().stream()
+                .max(Comparator.<Map.Entry<Player, PlayerState>>comparingInt(entry -> entry.getValue().getRubies())
+                        .thenComparingInt(entry -> entry.getValue().getLira())
+                        .thenComparingInt(entry -> entry.getValue().getTotalGoods())
+                        .thenComparingInt(entry -> entry.getValue().getBonusCards().size()))
+                .map(Map.Entry::getValue)
+                .orElseThrow();
+        return playerStates.entrySet().stream()
+                .filter(entry -> entry.getValue().getRubies() == max.getRubies()
+                        && entry.getValue().getLira() == max.getLira()
+                        && entry.getValue().getTotalGoods() == max.getTotalGoods()
+                        && entry.getValue().getBonusCards().size() == max.getBonusCards().size())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 
     public void perform(@NonNull Action action, @NonNull Random random) {
@@ -208,16 +222,38 @@ public class Game implements Serializable, State {
         if (currentPlayerState.getRubies() == 6 ||
                 (currentPlayerState.getRubies() == 5 && players.size() > 2)) {
             // Triggers end of game, finish the round
-            lastRound = true;
+            status = Status.LAST_ROUND;
         }
 
         var currentPlayerIndex = players.indexOf(this.currentPlayer);
         this.currentPlayer = players.get((currentPlayerIndex + 1) % players.size());
 
+        var nextPlayerState = currentPlayerState();
+
+        switch (status) {
+            case LAST_ROUND:
+                if (currentPlayer == startPlayer) {
+                    // Finished last round
+                    status = Status.PLAY_LEFTOVER_BONUS_CARDS;
+
+                    // If player does not have any bonus cards to play, go to the next player directly
+                    // This can go on to the next, etc. until the start player, if no players have bonus cards to play
+                    if (!nextPlayerState.hasBonusCard(BonusCard.GAIN_1_GOOD)
+                            && !nextPlayerState.hasBonusCard(BonusCard.TAKE_5_LIRA)) {
+                        nextPlayer();
+                    }
+                }
+                break;
+            case PLAY_LEFTOVER_BONUS_CARDS:
+                if (currentPlayer == startPlayer) {
+                    // All players have played last bonus cards (if applicable)
+                    status = Status.ENDED;
+                }
+                break;
+        }
+
         if (!isEnded()) {
             this.actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
-
-            var nextPlayerState = currentPlayerState();
 
             if (nextPlayerState.hasMosqueTile(MosqueTile.PAY_2_LIRA_TO_RETURN_ASSISTANT)) {
                 // Once in a turn
@@ -228,7 +264,7 @@ public class Game implements Serializable, State {
 
     @Override
     public boolean isEnded() {
-        return lastRound && currentPlayer == startPlayer;
+        return status == Status.ENDED;
     }
 
     @Override
@@ -269,7 +305,17 @@ public class Game implements Serializable, State {
         if (currentPlayerState().hasBonusCard(BonusCard.TAKE_5_LIRA)) {
             return Collections.singleton(Action.BonusCardTake5Lira.class);
         }
+        if (currentPlayerState().hasBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION)) {
+            return Collections.singleton(Action.PlaceFamilyMemberOnPoliceStation.class);
+        }
+        if (isFirstPhase() && currentPlayerState().hasBonusCard(BonusCard.RETURN_1_ASSISTANT)) {
+            return Collections.singleton(Action.Return1Assistant.class);
+        }
         return Collections.emptySet();
+    }
+
+    private boolean isFirstPhase() {
+        return actionQueue.canPerform(Action.LeaveAssistant.class) || actionQueue.canPerform(Action.Move.class);
     }
 
     PlayerState currentPlayerState() {
@@ -419,7 +465,25 @@ public class Game implements Serializable, State {
         return getPlace(Place.PoliceStation.class);
     }
 
-    void fireEvent(Player player, IstanbulEvent event, int... values) {
-        // TODO
+    void fireEvent(IstanbulEvent event) {
+        eventListeners.forEach(eventListener -> eventListener.event(event));
+    }
+
+    Place getFamilyMemberCurrentPlace(Player player) {
+        for (Place[] places : layout) {
+            for (Place place : places) {
+                if (place.getFamilyMembers().contains(player)) {
+                    return place;
+                }
+            }
+        }
+        throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
+    }
+
+    private enum Status {
+        STARTED,
+        LAST_ROUND,
+        PLAY_LEFTOVER_BONUS_CARDS,
+        ENDED
     }
 }

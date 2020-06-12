@@ -414,12 +414,12 @@ public abstract class Place implements Serializable {
         void guessAndRoll(@NonNull Game game, int guess, @NonNull Random random) {
             var currentPlayer = game.getCurrentPlayer();
 
-            game.fireEvent(currentPlayer, IstanbulEvent.GUESSED, guess);
+            game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.GUESSED, guess));
 
             var die1 = random.nextInt(6);
             var die2 = random.nextInt(6);
 
-            game.fireEvent(currentPlayer, IstanbulEvent.ROLLED, die1, die2);
+            game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.ROLLED, die1, die2));
 
             var currentPlayerState = game.getPlayerState(currentPlayer);
             var lira = 2;
@@ -430,7 +430,7 @@ public abstract class Place implements Serializable {
                 if (currentPlayerState.hasMosqueTile(MosqueTile.TURN_OR_REROLL_DICE)) {
                     // Can we turn one die to make the guess?
                     if (die1 + 4 >= guess || die2 + 4 >= guess) {
-                        game.fireEvent(currentPlayer, IstanbulEvent.TURNED_DIE);
+                        game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.TURNED_DIE));
 
                         lira = guess;
                     }
@@ -439,7 +439,7 @@ public abstract class Place implements Serializable {
                     die1 = random.nextInt(6);
                     die2 = random.nextInt(6);
 
-                    game.fireEvent(currentPlayer, IstanbulEvent.ROLLED, die1, die2);
+                    game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.ROLLED, die1, die2));
 
                     if (die1 + die2 >= guess) {
                         lira = guess;

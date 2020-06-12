@@ -48,7 +48,11 @@ public enum ActionView {
     TAKE_MOSQUE_TILE(Action.TakeMosqueTile.class, (jsonObject, game) -> new Action.TakeMosqueTile(MosqueTile.valueOf(jsonObject.getString("mosqueTile")))),
     USE_POST_OFFICE(Action.UsePostOffice.class, (jsonObject, game) -> new Action.UsePostOffice()),
     BONUS_CARD_USE_POST_OFFICE(Action.BonusCardUsePostOffice.class, (jsonObject, game) -> new Action.BonusCardUsePostOffice()),
-    BONUS_CARD_GAIN_1_GOOD(Action.BonusCardGain1Good.class, (jsonObject, game) -> new Action.BonusCardGain1Good());
+    BONUS_CARD_GAIN_1_GOOD(Action.BonusCardGain1Good.class, (jsonObject, game) -> new Action.BonusCardGain1Good()),
+    TAKE_3_LIRA(Action.Take3Lira.class, (jsonObject, game) -> new Action.Take3Lira()),
+    TAKE_BONUS_CARD(Action.TakeBonusCard.class, (jsonObject, game) -> new Action.TakeBonusCard()),
+    PLACE_MEMBER_ON_POLICE_STATION(Action.PlaceFamilyMemberOnPoliceStation.class, (jsonObject, game) -> new Action.PlaceFamilyMemberOnPoliceStation()),
+    RETURN_1_ASSISTANT(Action.Return1Assistant.class, (jsonObject, game) -> new Action.Return1Assistant(getPlace(jsonObject, game)));
 
     private static GoodsType getGoodsType(JsonObject jsonObject) {
         return GoodsType.valueOf(jsonObject.getString("goodsType"));

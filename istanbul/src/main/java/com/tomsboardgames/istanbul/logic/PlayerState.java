@@ -104,4 +104,8 @@ public class PlayerState implements Serializable {
             throw new IstanbulException(IstanbulError.DOESNT_HAVE_BONUS_CARD);
         }
     }
+
+    int getTotalGoods() {
+        return goods.values().stream().mapToInt(Integer::intValue).sum();
+    }
 }

@@ -46,8 +46,10 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         @Override
         ActionResult perform(Game game, Random random) {
             if (bonusCard == BonusCard.MOVE_0) {
+                game.currentPlayerState().removeBonusCard(BonusCard.MOVE_0);
                 return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 0, 0);
             } else if (bonusCard == BonusCard.MOVE_3_OR_4) {
+                game.currentPlayerState().removeBonusCard(BonusCard.MOVE_3_OR_4);
                 return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 3, 4);
             } else {
                 return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 1, 2);
@@ -515,6 +517,52 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
                     Action.Take1Spice.class,
                     Action.Take1Fruit.class,
                     Action.Take1Blue.class)));
+        }
+    }
+
+    public static class PlaceFamilyMemberOnPoliceStation extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            var policeStation = game.getPoliceStation();
+
+            if (policeStation.getFamilyMembers().contains(game.getCurrentPlayer())) {
+                throw new IstanbulException(IstanbulError.ALREADY_AT_PLACE);
+            }
+
+            var from = game.getFamilyMemberCurrentPlace(game.getCurrentPlayer());
+
+            from.takeFamilyMember(game.getCurrentPlayer());
+            policeStation.placeFamilyMember(game.getCurrentPlayer());
+
+            return ActionResult.followUp(PossibleAction.choice(Set.of(Action.TakeBonusCard.class, Action.Take3Lira.class)));
+        }
+    }
+
+    public static class TakeBonusCard extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().addBonusCard(game.drawBonusCard(random));
+            return ActionResult.none();
+        }
+    }
+
+    public static class Take3Lira extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().gainLira(3);
+            return ActionResult.none();
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class Return1Assistant extends Action {
+        Place from;
+
+        @Override
+        ActionResult perform(Game game, Random random) {
+            from.returnAssistant(game.currentPlayerState().getMerchant());
+            return ActionResult.none();
         }
     }
 }
