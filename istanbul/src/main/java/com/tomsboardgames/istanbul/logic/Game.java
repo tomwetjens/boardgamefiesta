@@ -66,7 +66,7 @@ public class Game implements Serializable, State {
         }
 
         var policeStation = getPlace(Place.PoliceStation.class);
-        this.players.forEach(player -> policeStation.sendFamilyMember(this, player));
+        this.players.forEach(player -> policeStation.placeFamilyMember(this, player));
 
         if (playerCount == 2) {
             placeDummyMerchants();

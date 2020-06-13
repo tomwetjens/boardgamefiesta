@@ -54,6 +54,10 @@ public abstract class Place implements Serializable {
             merchant.returnAssistants(numberOfAssistants);
             assistants.put(merchant.getColor(), 0);
 
+            if (mustPayOtherMerchants()) {
+                return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class));
+            }
+
             return placeActions(game);
         } else if (merchant.getAssistants() > 0) {
             return ActionResult.followUp(PossibleAction.optional(Action.LeaveAssistant.class));
@@ -79,19 +83,18 @@ public abstract class Place implements Serializable {
         var currentAssistants = assistants.getOrDefault(merchant.getColor(), 0);
         assistants.put(merchant.getColor(), currentAssistants + 1);
 
-        return placeActions(game);
-    }
-
-    ActionResult sendFamilyMember(Game game, Player player) {
-        placeFamilyMember(player);
+        if (mustPayOtherMerchants()) {
+            return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class));
+        }
 
         return placeActions(game);
     }
 
-    void placeFamilyMember(Player player) {
+    ActionResult placeFamilyMember(Game game, Player player) {
         if (!familyMembers.add(player)) {
             throw new IstanbulException(IstanbulError.ALREADY_AT_PLACE);
         }
+        return placeActions(game);
     }
 
     ActionResult placeActions(Game game) {
@@ -101,11 +104,6 @@ public abstract class Place implements Serializable {
         //   1b. If player skips, then ends turn (because stack is empty)
         // 2. Action of the place
         // 3. Any governor, smuggler or family action
-
-        if (mustPayOtherMerchants()) {
-            return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class));
-        }
-
         return getPossibleAction(game)
                 .map(ActionResult::new)
                 .orElse(ActionResult.none())
@@ -182,7 +180,7 @@ public abstract class Place implements Serializable {
                 .orElseThrow(() -> new IstanbulException(IstanbulError.NO_FAMILY_MEMBER_TO_CATCH));
 
         takeFamilyMember(otherFamilyMember);
-        policeStation.placeFamilyMember(otherFamilyMember);
+        policeStation.placeFamilyMember(game, otherFamilyMember);
     }
 
     public static class Wainwright extends Place implements Serializable {

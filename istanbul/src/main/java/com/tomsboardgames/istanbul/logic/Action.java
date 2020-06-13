@@ -436,7 +436,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
             policeStation.takeFamilyMember(game.getCurrentPlayer());
 
-            return to.sendFamilyMember(game, game.getCurrentPlayer());
+            return to.placeFamilyMember(game, game.getCurrentPlayer());
         }
     }
 
@@ -532,7 +532,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             var from = game.getFamilyMemberCurrentPlace(game.getCurrentPlayer());
 
             from.takeFamilyMember(game.getCurrentPlayer());
-            policeStation.placeFamilyMember(game.getCurrentPlayer());
+            policeStation.placeFamilyMember(game, game.getCurrentPlayer());
 
             return ActionResult.followUp(PossibleAction.choice(Set.of(Action.TakeBonusCard.class, Action.Take3Lira.class)));
         }
