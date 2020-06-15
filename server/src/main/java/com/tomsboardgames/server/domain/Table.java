@@ -377,17 +377,6 @@ public class Table {
         log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
 
         updated = Instant.now();
-
-        afterRespondToInvitation();
-    }
-
-    private void afterRespondToInvitation() {
-        if (allPlayersResponded()) {
-            if ((int) playersThatAccepted().count() >= 2) {
-                // If enough players have accepted, automatically start
-                start();
-            }
-        }
     }
 
     public void abandon() {
@@ -432,8 +421,6 @@ public class Table {
         log.add(new LogEntry(player, LogEntry.Type.REJECT));
 
         updated = Instant.now();
-
-        afterRespondToInvitation();
     }
 
     public Set<Player> getPlayers() {
