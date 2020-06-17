@@ -1,6 +1,9 @@
 package com.tomsboardgames.istanbul.logic;
 
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.Singular;
 
 import java.io.Serializable;
 import java.util.*;
@@ -10,27 +13,54 @@ public class PlayerState implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Getter
-    private final List<BonusCard> bonusCards = new LinkedList<>();
+    private final List<BonusCard> bonusCards;
     @Getter
-    private final Set<MosqueTile> mosqueTiles = new HashSet<>();
+    private final Set<MosqueTile> mosqueTiles;
     @Getter
-    private final Map<GoodsType, Integer> goods = new HashMap<>();
-
-    @Getter
-    private final Merchant merchant;
+    private final Map<GoodsType, Integer> goods;
 
     @Getter
     private int lira;
 
     @Getter
-    private int capacity = 2;
+    private int capacity;
 
     @Getter
     private int rubies;
 
-    PlayerState(int lira, Merchant merchant) {
+    @Builder
+    PlayerState(int lira,
+                int capacity,
+                int rubies,
+                @Singular @NonNull List<BonusCard> bonusCards,
+                @Singular @NonNull Set<MosqueTile> mosqueTiles,
+                @Singular @NonNull Map<GoodsType, Integer> goods) {
+        if (lira < 0) {
+            throw new IllegalArgumentException("Lira must be >= 0");
+        }
+
+        if (capacity < 2 || capacity > 5) {
+            throw new IllegalArgumentException("Capacity must be between 2 and 5");
+        }
+
+        if (rubies < 0 || rubies > 6) {
+            throw new IllegalArgumentException("Rubies must be between 0 and 6");
+        }
+
+        if (goods.values().stream().anyMatch(amount -> amount < 0 || amount > capacity)) {
+            throw new IllegalArgumentException("Goods must be >= 0 and must not exceed capacity");
+        }
+
         this.lira = lira;
-        this.merchant = merchant;
+        this.capacity = capacity;
+        this.rubies = rubies;
+        this.bonusCards = new LinkedList<>(bonusCards);
+        this.mosqueTiles = new HashSet<>(mosqueTiles);
+        this.goods = new HashMap<>(goods);
+    }
+
+    static PlayerState start(int playerIndex) {
+        return new PlayerState(2 + playerIndex, 2, 0, Collections.emptyList(), Collections.emptySet(), Collections.emptyMap());
     }
 
     boolean hasMosqueTile(MosqueTile mosqueTile) {
@@ -91,8 +121,11 @@ public class PlayerState implements Serializable {
         }
     }
 
-    void gainRuby() {
-        rubies++;
+    void gainRubies(int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("amount must be >=0");
+        }
+        rubies += amount;
     }
 
     boolean hasBonusCard(BonusCard bonusCard) {
@@ -107,5 +140,13 @@ public class PlayerState implements Serializable {
 
     int getTotalGoods() {
         return goods.values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    boolean hasMaxRubies(int playerCount) {
+        return rubies >= maxRubies(playerCount);
+    }
+
+    public static int maxRubies(int playerCount) {
+        return playerCount > 2 ? 5 : 6;
     }
 }

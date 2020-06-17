@@ -1,6 +1,5 @@
 package com.tomsboardgames.istanbul.logic;
 
-import com.tomsboardgames.istanbul.logic.*;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,7 +60,7 @@ class PlaceTest {
 
             sultansPalace.deliverToSultan(playerState, Set.of(GoodsType.BLUE));
 
-            verify(playerState).gainRuby();
+            verify(playerState).gainRubies(1);
             assertThat(sultansPalace.getUncovered()).isEqualTo(6);
         }
 
@@ -76,7 +75,7 @@ class PlaceTest {
 
             sultansPalace.deliverToSultan(playerState, Set.of(GoodsType.BLUE));
 
-            verify(playerState).gainRuby();
+            verify(playerState).gainRubies(1);
             assertThat(sultansPalace.getUncovered()).isEqualTo(11);
         }
 
@@ -91,7 +90,7 @@ class PlaceTest {
 
             sultansPalace.deliverToSultan(playerState, Set.of(GoodsType.BLUE, GoodsType.FABRIC));
 
-            verify(playerState).gainRuby();
+            verify(playerState).gainRubies(1);
             assertThat(sultansPalace.getUncovered()).isEqualTo(11);
         }
 
@@ -126,7 +125,7 @@ class PlaceTest {
             gemstoneDealer.buy(playerState);
 
             verify(playerState).payLira(16);
-            verify(playerState).gainRuby();
+            verify(playerState).gainRubies(1);
 
             assertThat(gemstoneDealer.getCost()).isEqualTo(17);
         }

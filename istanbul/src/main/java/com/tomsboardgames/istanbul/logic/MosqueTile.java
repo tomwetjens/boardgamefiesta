@@ -13,7 +13,7 @@ public enum MosqueTile {
     PAY_2_LIRA_FOR_1_ADDITIONAL_GOOD(GoodsType.SPICE, game -> ActionResult.none()),
 
     EXTRA_ASSISTANT(GoodsType.BLUE, game -> {
-        game.currentPlayerState().getMerchant().returnAssistants(1);
+        game.getCurrentMerchant().returnAssistants(1);
         return ActionResult.none();
     }),
 

@@ -47,12 +47,12 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         ActionResult perform(Game game, Random random) {
             if (bonusCard == BonusCard.MOVE_0) {
                 game.currentPlayerState().removeBonusCard(BonusCard.MOVE_0);
-                return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 0, 0);
+                return game.moveMerchant(game.getCurrentMerchant(), to, 0, 0);
             } else if (bonusCard == BonusCard.MOVE_3_OR_4) {
                 game.currentPlayerState().removeBonusCard(BonusCard.MOVE_3_OR_4);
-                return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 3, 4);
+                return game.moveMerchant(game.getCurrentMerchant(), to, 3, 4);
             } else {
-                return game.moveMerchant(game.currentPlayerState().getMerchant(), to, 1, 2);
+                return game.moveMerchant(game.getCurrentMerchant(), to, 1, 2);
             }
         }
     }
@@ -62,8 +62,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         @Override
         ActionResult perform(Game game, Random random) {
             var place = game.getCurrentPlace();
-
-            return place.leaveAssistant(game.currentPlayerState().getMerchant(), game);
+            return place.leaveAssistant(place.getMerchant(game.getCurrentPlayer().getColor()), game);
         }
     }
 
@@ -74,7 +73,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             var place = game.getCurrentPlace();
 
             var otherMerchants = place.getMerchants().stream()
-                    .filter(merchant -> merchant != currentPlayerState.getMerchant())
+                    .filter(merchant -> merchant.getColor() != game.getCurrentPlayer().getColor())
                     .collect(Collectors.toList());
 
             if (otherMerchants.size() * 2 > currentPlayerState.getLira()) {
@@ -101,7 +100,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
             game.currentPlayerState().addBonusCard(bonusCard);
 
-            game.getPlace(Place::isGovernor).takeGovernor();
+            game.place(Place::isGovernor).takeGovernor();
             game.randomPlace(random).placeGovernor();
 
             return ActionResult.followUp(PossibleAction.choice(Set.of(Action.Pay2Lira.class, Action.DiscardBonusCard.class)));
@@ -112,7 +111,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     public static class Smuggler extends Action {
         @Override
         ActionResult perform(Game game, Random random) {
-            game.getPlace(Place::isSmuggler).takeSmuggler();
+            game.place(Place::isSmuggler).takeSmuggler();
             game.randomPlace(random).placeSmuggler();
 
             return ActionResult.followUp(PossibleAction.whenThen(takeAnyGood(),
@@ -204,12 +203,10 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
         @Override
         ActionResult perform(Game game, Random random) {
-            var place = game.getPlace(x, y);
+            var place = game.place(x, y);
 
-            var currentPlayerState = game.currentPlayerState();
-
-            currentPlayerState.payLira(2);
-            place.returnAssistant(currentPlayerState.getMerchant());
+            game.currentPlayerState().payLira(2);
+            place.returnAssistant(game.getCurrentMerchant());
 
             return ActionResult.none();
         }
@@ -321,7 +318,11 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     public static class ReturnAllAssistants extends Action {
         @Override
         ActionResult perform(Game game, Random random) {
-            Place.Fountain.returnAllAssistants(game.currentPlayerState(), game.getLayout());
+            var merchant = game.getCurrentMerchant();
+
+            for (Place place : game.getLayout().getPlaces()) {
+                place.returnAssistants(merchant);
+            }
 
             return ActionResult.none();
         }
@@ -561,7 +562,7 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
         @Override
         ActionResult perform(Game game, Random random) {
-            from.returnAssistant(game.currentPlayerState().getMerchant());
+            from.returnAssistant(game.getCurrentMerchant());
             return ActionResult.none();
         }
     }

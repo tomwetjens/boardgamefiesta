@@ -35,7 +35,7 @@ public abstract class Place implements Serializable {
 
     protected abstract Optional<PossibleAction> getPossibleAction(Game game);
 
-    ActionResult placeMerchant(Merchant merchant, Game game) {
+    ActionResult placeMerchant(@NonNull Merchant merchant, @NonNull Game game) {
         if (!merchants.add(merchant)) {
             throw new IstanbulException(IstanbulError.ALREADY_AT_PLACE);
         }
@@ -67,7 +67,7 @@ public abstract class Place implements Serializable {
         }
     }
 
-    void takeMerchant(Merchant merchant) {
+    void removeMerchant(Merchant merchant) {
         if (!merchants.remove(merchant)) {
             throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
         }
@@ -181,6 +181,13 @@ public abstract class Place implements Serializable {
 
         takeFamilyMember(otherFamilyMember);
         policeStation.placeFamilyMember(game, otherFamilyMember);
+    }
+
+    Merchant getMerchant(PlayerColor color) {
+        return merchants.stream()
+                .filter(merchant -> merchant.getColor() == color)
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("Merchant not at place"));
     }
 
     public static class Wainwright extends Place implements Serializable {
@@ -332,16 +339,6 @@ public abstract class Place implements Serializable {
 
             // Immediately activate and return place actions
             return placeActions(game);
-        }
-
-        static void returnAllAssistants(PlayerState playerState, @NonNull Place[][] layout) {
-            var merchant = playerState.getMerchant();
-
-            for (Place[] places : layout) {
-                for (Place place : places) {
-                    place.returnAssistants(merchant);
-                }
-            }
         }
 
         @Override
@@ -648,7 +645,7 @@ public abstract class Place implements Serializable {
             stack.take();
 
             if (hasBothMosqueTiles(currentPlayerState)) {
-                currentPlayerState.gainRuby();
+                currentPlayerState.gainRubies(1);
             }
 
             return mosqueTile.afterAcquire(game);
@@ -763,7 +760,7 @@ public abstract class Place implements Serializable {
             requiredGoodsByType.forEach((goodsType, amount) ->
                     playerState.removeGoods(goodsType, amount.intValue()));
 
-            playerState.gainRuby();
+            playerState.gainRubies(1);
 
             uncovered++;
         }
@@ -828,7 +825,7 @@ public abstract class Place implements Serializable {
             }
 
             playerState.payLira(cost);
-            playerState.gainRuby();
+            playerState.gainRubies(1);
 
             cost++;
         }

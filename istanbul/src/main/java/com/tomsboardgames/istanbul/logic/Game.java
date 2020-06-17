@@ -1,9 +1,12 @@
+
 package com.tomsboardgames.istanbul.logic;
 
 import com.tomsboardgames.api.EventListener;
 import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.PlayerColor;
 import com.tomsboardgames.api.State;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -11,76 +14,108 @@ import java.io.*;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Game implements Serializable, State {
 
     private static final long serialVersionUID = 1L;
 
     public static final Set<PlayerColor> SUPPORTED_COLORS = Set.of(PlayerColor.WHITE, PlayerColor.YELLOW, PlayerColor.RED, PlayerColor.GREEN, PlayerColor.BLUE);
 
-    private final ActionQueue actionQueue = new ActionQueue();
-
     @Getter
+    @NonNull
     private final List<Player> players;
 
-    @Getter
-    private final Place[][] layout;
-
-    private final Map<Player, PlayerState> playerStates = new HashMap<>();
-    private final Map<PlayerColor, Place> currentPlaces = new HashMap<>();
-
-    private final LinkedList<BonusCard> bonusCards;
+    @NonNull
+    private final Map<Player, PlayerState> playerStates;
 
     @Getter
+    @NonNull
+    private final Layout layout;
+
+    @Getter
+    @NonNull
     private final Player startPlayer;
 
+    @NonNull
+    private final LinkedList<BonusCard> bonusCards;
+
+    private final ActionQueue actionQueue;
+
     @Getter
+    @NonNull
     private Player currentPlayer;
 
+    @NonNull
     private Status status;
 
-    private transient List<EventListener> eventListeners = new ArrayList<>();
+    private transient List<EventListener> eventListeners;
 
-    public Game(@NonNull Set<Player> players, @NonNull LayoutType layoutType, @NonNull Random random) {
-        this.players = new ArrayList<>(players);
-        Collections.shuffle(this.players, random);
+    public static Game start(@NonNull Set<Player> players, @NonNull LayoutType layoutType, @NonNull Random random) {
+        var playerOrder = new ArrayList<>(players);
+        Collections.shuffle(playerOrder, random);
 
         int playerCount = players.size();
 
-        this.layout = layoutType.createLayout(playerCount, random);
+        var layout = layoutType.createLayout(playerCount, random);
 
-        this.startPlayer = this.players.get(0);
-        this.currentPlayer = this.startPlayer;
+        layout.randomPlace(random).placeGovernor();
+        layout.randomPlace(random).placeSmuggler();
 
-        var fountain = getPlace(Place.Fountain.class);
+        var startPlayer = playerOrder.get(0);
 
-        for (int i = 0; i < this.players.size(); i++) {
-            var player = this.players.get(i);
+        var playerStates = IntStream.range(0, players.size())
+                .boxed()
+                .collect(Collectors.toMap(playerOrder::get, PlayerState::start));
 
-            var merchant = Merchant.forPlayer(player);
+        var bonusCards = new LinkedList<>(BonusCard.createDeck());
+        Collections.shuffle(bonusCards, random);
 
-            playerStates.put(player, new PlayerState(2 + i, merchant));
+        var actionQueue = new ActionQueue();
+        actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
 
-            fountain.placeMerchant(merchant, this);
-            currentPlaces.put(player.getColor(), fountain);
-        }
+        var game = new Game(
+                playerOrder,
+                playerStates,
+                layout,
+                startPlayer,
+                bonusCards,
+                actionQueue,
+                startPlayer,
+                Status.STARTED,
+                new ArrayList<>());
 
-        var policeStation = getPlace(Place.PoliceStation.class);
-        this.players.forEach(player -> policeStation.placeFamilyMember(this, player));
+        var fountain = layout.getFountain();
+        var policeStation = layout.getPoliceStation();
+        players.forEach(player -> {
+            fountain.placeMerchant(Merchant.forPlayer(player), game);
+            policeStation.placeFamilyMember(game, player);
+        });
 
         if (playerCount == 2) {
-            placeDummyMerchants();
+            game.placeDummyMerchants();
         }
 
-        randomPlace(random).placeGovernor();
-        randomPlace(random).placeSmuggler();
+        return game;
+    }
 
-        this.bonusCards = new LinkedList<>(BonusCard.createDeck());
-        Collections.shuffle(this.bonusCards, random);
+    private void placeDummyMerchants() {
+        var smallMosque = layout.getSmallMosque();
+        var greatMosque = layout.getGreatMosque();
+        var gemstoneDealer = layout.getGemstoneDealer();
 
-        this.status = Status.STARTED;
+        var availableColors = SUPPORTED_COLORS.stream()
+                .filter(color -> players.stream().noneMatch(player -> player.getColor() == color))
+                .collect(Collectors.toCollection(LinkedList::new));
+        Collections.shuffle(availableColors);
 
-        this.actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
+        var places = List.of(smallMosque, greatMosque, gemstoneDealer);
+        places.forEach(place -> {
+            var dummy = Merchant.dummy(availableColors.poll());
+
+            place.placeMerchant(dummy, this);
+        });
     }
 
     @Override
@@ -102,31 +137,6 @@ public class Game implements Serializable, State {
         }
     }
 
-    Place randomPlace(@NonNull Random random) {
-        var x = random.nextInt(layout.length);
-        var y = random.nextInt(layout[x].length);
-        return layout[x][y];
-    }
-
-    private void placeDummyMerchants() {
-        var smallMosque = getPlace(Place.SmallMosque.class);
-        var greatMosque = getPlace(Place.GreatMosque.class);
-        var gemstoneDealer = getPlace(Place.GemstoneDealer.class);
-
-        var availableColors = SUPPORTED_COLORS.stream()
-                .filter(color -> this.players.stream().noneMatch(player -> player.getColor() == color))
-                .collect(Collectors.toCollection(LinkedList::new));
-        Collections.shuffle(availableColors);
-
-        var places = List.of(smallMosque, greatMosque, gemstoneDealer);
-        places.forEach(place -> {
-            var dummy = Merchant.dummy(availableColors.poll());
-
-            place.placeMerchant(dummy, this);
-            currentPlaces.put(dummy.getColor(), place);
-        });
-    }
-
     @Override
     public void perform(com.tomsboardgames.api.Action action, Random random) {
         perform((Action) action, random);
@@ -135,6 +145,7 @@ public class Game implements Serializable, State {
     @Override
     public void addEventListener(EventListener eventListener) {
         if (eventListeners == null) {
+            // Could be null after deserialization
             eventListeners = new LinkedList<>();
         }
         eventListeners.add(eventListener);
@@ -143,6 +154,7 @@ public class Game implements Serializable, State {
     @Override
     public void removeEventListener(EventListener eventListener) {
         if (eventListeners != null) {
+            // Could be null after deserialization
             eventListeners.remove(eventListener);
         }
     }
@@ -218,41 +230,37 @@ public class Game implements Serializable, State {
     }
 
     private void nextPlayer() {
-        var currentPlayerState = currentPlayerState();
-        if (currentPlayerState.getRubies() == 6 ||
-                (currentPlayerState.getRubies() == 5 && players.size() > 2)) {
+        if (status == Status.STARTED && currentPlayerState().hasMaxRubies(players.size())) {
             // Triggers end of game, finish the round
             status = Status.LAST_ROUND;
         }
 
         var currentPlayerIndex = players.indexOf(this.currentPlayer);
-        this.currentPlayer = players.get((currentPlayerIndex + 1) % players.size());
+        var nextPlayer = players.get((currentPlayerIndex + 1) % players.size());
+        var nextPlayerState = getPlayerState(nextPlayer);
 
-        var nextPlayerState = currentPlayerState();
+        this.currentPlayer = nextPlayer;
 
-        switch (status) {
-            case LAST_ROUND:
-                if (currentPlayer == startPlayer) {
-                    // Finished last round
-                    status = Status.PLAY_LEFTOVER_BONUS_CARDS;
-
-                    // If player does not have any bonus cards to play, go to the next player directly
-                    // This can go on to the next, etc. until the start player, if no players have bonus cards to play
-                    if (!nextPlayerState.hasBonusCard(BonusCard.GAIN_1_GOOD)
-                            && !nextPlayerState.hasBonusCard(BonusCard.TAKE_5_LIRA)) {
-                        nextPlayer();
-                    }
-                }
-                break;
-            case PLAY_LEFTOVER_BONUS_CARDS:
-                if (currentPlayer == startPlayer) {
-                    // All players have played last bonus cards (if applicable)
-                    status = Status.ENDED;
-                }
-                break;
+        // Status transitions
+        if (this.currentPlayer == startPlayer) {
+            if (status == Status.LAST_ROUND) {
+                // Finished last round
+                status = Status.PLAY_LEFTOVER_BONUS_CARDS;
+            } else if (status == Status.PLAY_LEFTOVER_BONUS_CARDS) {
+                // All players have played last bonus cards (if applicable)
+                status = Status.ENDED;
+            }
         }
 
-        if (!isEnded()) {
+        if (status == Status.PLAY_LEFTOVER_BONUS_CARDS) {
+            // If player does not have any bonus cards to play, go to the next player directly
+            // This can go on to the next, etc. until the start player, if no players have bonus cards to play
+            if (getPossibleActions().isEmpty()) {
+                nextPlayer();
+            }
+        }
+
+        if (!isEnded() && status != Status.PLAY_LEFTOVER_BONUS_CARDS) {
             this.actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
 
             if (nextPlayerState.hasMosqueTile(MosqueTile.PAY_2_LIRA_TO_RETURN_ASSISTANT)) {
@@ -305,11 +313,13 @@ public class Game implements Serializable, State {
         if (currentPlayerState().hasBonusCard(BonusCard.TAKE_5_LIRA)) {
             return Collections.singleton(Action.BonusCardTake5Lira.class);
         }
-        if (currentPlayerState().hasBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION)) {
-            return Collections.singleton(Action.PlaceFamilyMemberOnPoliceStation.class);
-        }
-        if (isFirstPhase() && currentPlayerState().hasBonusCard(BonusCard.RETURN_1_ASSISTANT)) {
-            return Collections.singleton(Action.Return1Assistant.class);
+        if (status != Status.PLAY_LEFTOVER_BONUS_CARDS) {
+            if (currentPlayerState().hasBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION)) {
+                return Collections.singleton(Action.PlaceFamilyMemberOnPoliceStation.class);
+            }
+            if (isFirstPhase() && currentPlayerState().hasBonusCard(BonusCard.RETURN_1_ASSISTANT)) {
+                return Collections.singleton(Action.Return1Assistant.class);
+            }
         }
         return Collections.emptySet();
     }
@@ -322,79 +332,57 @@ public class Game implements Serializable, State {
         return playerStates.get(currentPlayer);
     }
 
-    Place getPlace(int x, int y) {
-        return layout[x][y];
-    }
-
-    private int distance(Place from, Place to) {
-        for (int x1 = 0; x1 < layout.length; x1++) {
-            for (int y1 = 0; y1 < layout[x1].length; y1++) {
-                if (layout[x1][y1] == from) {
-                    for (int x2 = 0; x2 < layout.length; x2++) {
-                        for (int y2 = 0; y2 < layout[x2].length; y2++) {
-                            if (layout[x2][y2] == to) {
-                                return Math.abs(x1 - x2) + Math.abs(y1 - y2);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        throw new IllegalArgumentException("Place not found");
-    }
 
     Place getCurrentPlace() {
         return getCurrentPlace(currentPlayer.getColor());
     }
 
     Place getCurrentPlace(PlayerColor playerColor) {
-        return currentPlaces.get(playerColor);
+        return layout.currentPlaceOfMerchant(playerColor);
+    }
+
+    Place getFamilyMemberCurrentPlace(Player player) {
+        return layout.currentPlaceOfFamilyMember(player);
     }
 
     BonusCard drawBonusCard(Random random) {
         if (bonusCards.isEmpty()) {
-            bonusCards.addAll(getPlace(Place.Caravansary.class).takeDiscardPile());
+            bonusCards.addAll(layout.getCaravansary().takeDiscardPile());
             Collections.shuffle(bonusCards, random);
         }
         return bonusCards.poll();
     }
 
-    Place getPlace(Predicate<Place> predicate) {
-        for (Place[] places : layout) {
-            for (Place place : places) {
-                if (predicate.test(place)) {
-                    return place;
-                }
-            }
-        }
-        throw new IllegalArgumentException("Place not found");
-    }
-
     ActionResult moveMerchant(@NonNull Merchant merchant, @NonNull Place to, int atLeast, int atMost) {
         var from = getCurrentPlace(merchant.getColor());
 
-        var dist = distance(from, to);
+        var dist = layout.distance(from, to);
         if (dist < atLeast && dist > atMost) {
             throw new IstanbulException(IstanbulError.PLACE_NOT_REACHABLE);
         }
 
-        from.takeMerchant(merchant);
-
-        currentPlaces.put(merchant.getColor(), to);
+        from.removeMerchant(merchant);
 
         return to.placeMerchant(merchant, this);
     }
 
-    @SuppressWarnings("unchecked")
-    private <T extends Place> T getPlace(Class<T> clazz) {
-        for (Place[] places : layout) {
-            for (Place place : places) {
-                if (clazz == place.getClass()) {
-                    return (T) place;
-                }
-            }
+    void fireEvent(IstanbulEvent event) {
+        if (eventListeners != null) {
+            // Could be null after deserialization
+            eventListeners.forEach(eventListener -> eventListener.event(event));
         }
-        throw new IllegalArgumentException("Place not found: " + clazz);
+    }
+
+    Place randomPlace(@NonNull Random random) {
+        return layout.randomPlace(random);
+    }
+
+    public Place place(int x, int y) {
+        return layout.place(x, y);
+    }
+
+    Place place(Predicate<Place> predicate) {
+        return layout.place(predicate);
     }
 
     public PlayerState getPlayerState(Player player) {
@@ -402,85 +390,74 @@ public class Game implements Serializable, State {
     }
 
     public Place.GreatMosque getGreatMosque() {
-        return getPlace(Place.GreatMosque.class);
+        return layout.getGreatMosque();
     }
 
     public Place.SmallMosque getSmallMosque() {
-        return getPlace(Place.SmallMosque.class);
+        return layout.getSmallMosque();
     }
 
     public Place.LargeMarket getLargeMarket() {
-        return getPlace(Place.LargeMarket.class);
+        return layout.getLargeMarket();
     }
 
     public Place.SmallMarket getSmallMarket() {
-        return getPlace(Place.SmallMarket.class);
+        return layout.getSmallMarket();
     }
 
     public Place.SultansPalace getSultansPalace() {
-        return getPlace(Place.SultansPalace.class);
+        return layout.getSultansPalace();
     }
 
     public Place.GemstoneDealer getGemstoneDealer() {
-        return getPlace(Place.GemstoneDealer.class);
+        return layout.getGemstoneDealer();
     }
 
     public Place.TeaHouse getTeaHouse() {
-        return getPlace(Place.TeaHouse.class);
+        return layout.getTeaHouse();
     }
 
     public Place.BlackMarket getBlackMarket() {
-        return getPlace(Place.BlackMarket.class);
+        return layout.getBlackMarket();
     }
 
     public Place.Fountain getFountain() {
-        return getPlace(Place.Fountain.class);
+        return layout.getFountain();
     }
 
     public Place.Caravansary getCaravansary() {
-        return getPlace(Place.Caravansary.class);
+        return layout.getCaravansary();
     }
 
     public Place.PostOffice getPostOffice() {
-        return getPlace(Place.PostOffice.class);
+        return layout.getPostOffice();
     }
 
     public Place.Wainwright getWainwright() {
-        return getPlace(Place.Wainwright.class);
+        return layout.getWainwright();
     }
 
     public Place.SpiceWarehouse getSpiceWarehouse() {
-        return getPlace(Place.SpiceWarehouse.class);
+        return layout.getSpiceWarehouse();
     }
 
     public Place.FruitWarehouse getFruitWarehouse() {
-        return getPlace(Place.FruitWarehouse.class);
+        return layout.getFruitWarehouse();
     }
 
     public Place.FabricWarehouse getFabricWarehouse() {
-        return getPlace(Place.FabricWarehouse.class);
+        return layout.getFabricWarehouse();
     }
 
     public Place.PoliceStation getPoliceStation() {
-        return getPlace(Place.PoliceStation.class);
+        return layout.getPoliceStation();
     }
 
-    void fireEvent(IstanbulEvent event) {
-        eventListeners.forEach(eventListener -> eventListener.event(event));
+    Merchant getCurrentMerchant() {
+        return getCurrentPlace().getMerchant(currentPlayer.getColor());
     }
 
-    Place getFamilyMemberCurrentPlace(Player player) {
-        for (Place[] places : layout) {
-            for (Place place : places) {
-                if (place.getFamilyMembers().contains(player)) {
-                    return place;
-                }
-            }
-        }
-        throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
-    }
-
-    private enum Status {
+    enum Status {
         STARTED,
         LAST_ROUND,
         PLAY_LEFTOVER_BONUS_CARDS,

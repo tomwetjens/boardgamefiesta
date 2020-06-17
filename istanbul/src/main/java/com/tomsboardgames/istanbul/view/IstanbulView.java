@@ -5,10 +5,10 @@ import com.tomsboardgames.api.PlayerColor;
 import com.tomsboardgames.istanbul.logic.Game;
 import lombok.Getter;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Getter
 public class IstanbulView {
@@ -18,8 +18,9 @@ public class IstanbulView {
     private final Map<PlayerColor, PlayerStateView> players;
 
     public IstanbulView(Game state, Player viewer) {
-        this.layout = Arrays.stream(state.getLayout())
-                .map(places -> Arrays.stream(places)
+        this.layout = IntStream.range(0, state.getLayout().height())
+                .mapToObj(y -> IntStream.range(0, state.getLayout().width())
+                        .mapToObj(x -> state.getLayout().place(x, y))
                         .map(PlaceView::of)
                         .collect(Collectors.toList()))
                 .collect(Collectors.toList());

@@ -28,7 +28,7 @@ public enum ActionView {
     MAX_FABRIC(Action.MaxFabric.class, (jsonObject, game) -> new Action.MaxFabric()),
     MAX_FRUIT(Action.MaxFruit.class, (jsonObject, game) -> new Action.MaxFruit()),
     MAX_SPICE(Action.MaxSpice.class, (jsonObject, game) -> new Action.MaxSpice()),
-    MOVE(Action.Move.class, (jsonObject, game) -> new Action.Move(getPlace(jsonObject, game), getBonusCard(jsonObject))),
+    MOVE(Action.Move.class, (jsonObject, game) -> new Action.Move(place(jsonObject, game), getBonusCard(jsonObject))),
     PAY_1_GOOD(Action.Pay1Good.class, (jsonObject, game) -> new Action.Pay1Good(getGoodsType(jsonObject))),
     PAY_2_LIRA(Action.Pay2Lira.class, (jsonObject, game) -> new Action.Pay2Lira()),
     PAY_2_LIRA_FOR_1_ADDITIONAL_GOOD(Action.Pay2LiraFor1AdditionalGood.class, (jsonObject, game) -> new Action.Pay2LiraFor1AdditionalGood()),
@@ -37,7 +37,7 @@ public enum ActionView {
     RETURN_ALL_ASSISTANTS(Action.ReturnAllAssistants.class, (jsonObject, game) -> new Action.ReturnAllAssistants()),
     ROLL_FOR_BLUE_GOODS(Action.RollForBlueGoods.class, (jsonObject, game) -> new Action.RollForBlueGoods()),
     SELL_GOODS(Action.SellGoods.class, (jsonObject, game) -> new Action.SellGoods(getGoods(jsonObject), getBonusCard(jsonObject))),
-    SEND_FAMILY_MEMBER(Action.SendFamilyMember.class, (jsonObject, game) -> new Action.SendFamilyMember(getPlace(jsonObject, game))),
+    SEND_FAMILY_MEMBER(Action.SendFamilyMember.class, (jsonObject, game) -> new Action.SendFamilyMember(place(jsonObject, game))),
     SMUGGLER(Action.Smuggler.class, (jsonObject, game) -> new Action.Smuggler()),
     TAKE_1_FABRIC(Action.Take1Fabric.class, (jsonObject, game) -> new Action.Take1Fabric()),
     TAKE_1_FRUIT(Action.Take1Fruit.class, (jsonObject, game) -> new Action.Take1Fruit()),
@@ -52,7 +52,7 @@ public enum ActionView {
     TAKE_3_LIRA(Action.Take3Lira.class, (jsonObject, game) -> new Action.Take3Lira()),
     TAKE_BONUS_CARD(Action.TakeBonusCard.class, (jsonObject, game) -> new Action.TakeBonusCard()),
     PLACE_MEMBER_ON_POLICE_STATION(Action.PlaceFamilyMemberOnPoliceStation.class, (jsonObject, game) -> new Action.PlaceFamilyMemberOnPoliceStation()),
-    RETURN_1_ASSISTANT(Action.Return1Assistant.class, (jsonObject, game) -> new Action.Return1Assistant(getPlace(jsonObject, game)));
+    RETURN_1_ASSISTANT(Action.Return1Assistant.class, (jsonObject, game) -> new Action.Return1Assistant(place(jsonObject, game)));
 
     private static GoodsType getGoodsType(JsonObject jsonObject) {
         return GoodsType.valueOf(jsonObject.getString("goodsType"));
@@ -80,10 +80,10 @@ public enum ActionView {
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().intValue()));
     }
 
-    private static Place getPlace(JsonObject jsonObject, Game game) {
+    private static Place place(JsonObject jsonObject, Game game) {
         var x = jsonObject.getInt("x");
         var y = jsonObject.getInt("y");
-        return game.getLayout()[x][y];
+        return game.place(x, y);
     }
 
     private final Class<? extends Action> actionClass;

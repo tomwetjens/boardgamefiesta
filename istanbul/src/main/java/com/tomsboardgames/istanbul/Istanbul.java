@@ -62,7 +62,7 @@ public class Istanbul implements Game {
     @Override
     public State start(Set<Player> players, Options options, Random random) {
         var layoutType = options.getEnum("layoutType", LayoutType.class, LayoutType.RANDOM);
-        return new com.tomsboardgames.istanbul.logic.Game(players, layoutType, random);
+        return com.tomsboardgames.istanbul.logic.Game.start(players, layoutType, random);
     }
 
     @Override
