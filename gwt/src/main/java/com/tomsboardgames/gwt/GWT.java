@@ -16,7 +16,7 @@ import java.util.Random;
 import java.util.Set;
 
 @ApplicationScoped
-public class GWT implements Game {
+public class GWT implements Game<com.tomsboardgames.gwt.Game> {
 
     public static final Id ID = Id.of("gwt");
 
@@ -63,27 +63,27 @@ public class GWT implements Game {
     }
 
     @Override
-    public State start(Set<Player> players, Options options, Random random) {
+    public com.tomsboardgames.gwt.Game start(Set<Player> players, Options options, Random random) {
         return new com.tomsboardgames.gwt.Game(players, options.getBoolean("beginner", false), random);
     }
 
     @Override
-    public void executeAutoma(State state, Random random) {
-        new Automa().execute((com.tomsboardgames.gwt.Game) state, random);
+    public void executeAutoma(com.tomsboardgames.gwt.Game state, Random random) {
+        new Automa().execute(state, random);
     }
 
     @Override
-    public Action toAction(JsonObject jsonObject, State state) {
-        return ActionType.toAction(jsonObject, (com.tomsboardgames.gwt.Game) state);
+    public Action toAction(JsonObject jsonObject, com.tomsboardgames.gwt.Game state) {
+        return ActionType.toAction(jsonObject, state);
     }
 
     @Override
-    public Object toView(State state, Player viewer) {
-        return new StateView((com.tomsboardgames.gwt.Game) state, viewer);
+    public Object toView(com.tomsboardgames.gwt.Game state, Player viewer) {
+        return new StateView(state, viewer);
     }
 
     @Override
-    public State deserialize(InputStream inputStream) {
+    public com.tomsboardgames.gwt.Game deserialize(InputStream inputStream) {
         return com.tomsboardgames.gwt.Game.deserialize(inputStream);
     }
 

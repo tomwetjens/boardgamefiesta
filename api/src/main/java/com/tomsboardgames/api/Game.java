@@ -8,7 +8,7 @@ import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
 
-public interface Game {
+public interface Game<T extends State> {
 
     Set<PlayerColor> getSupportedColors();
 
@@ -24,17 +24,17 @@ public interface Game {
 
     String getWebsite();
 
-    State start(Set<Player> players, Options options, Random random);
+    T start(Set<Player> players, Options options, Random random);
 
-    void executeAutoma(State state, Random random);
+    void executeAutoma(T state, Random random);
 
-    Action toAction(JsonObject jsonObject, State state);
+    Action toAction(JsonObject jsonObject, T state);
 
-    Object toView(State state, Player viewer);
+    Object toView(T state, Player viewer);
 
     Id getId();
 
-    State deserialize(InputStream inputStream);
+    T deserialize(InputStream inputStream);
 
     boolean hasAutoma();
 

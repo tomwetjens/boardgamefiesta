@@ -13,7 +13,7 @@ import java.util.Random;
 import java.util.Set;
 
 @ApplicationScoped
-public class Istanbul implements Game {
+public class Istanbul implements Game<com.tomsboardgames.istanbul.logic.Game> {
 
     public static final Id ID = Id.of("istanbul");
 
@@ -60,23 +60,23 @@ public class Istanbul implements Game {
     }
 
     @Override
-    public State start(Set<Player> players, Options options, Random random) {
+    public com.tomsboardgames.istanbul.logic.Game start(Set<Player> players, Options options, Random random) {
         var layoutType = options.getEnum("layoutType", LayoutType.class, LayoutType.RANDOM);
         return com.tomsboardgames.istanbul.logic.Game.start(players, layoutType, random);
     }
 
     @Override
-    public void executeAutoma(State state, Random random) {
+    public void executeAutoma(com.tomsboardgames.istanbul.logic.Game state, Random random) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object toView(State state, Player viewer) {
-        return new IstanbulView((com.tomsboardgames.istanbul.logic.Game) state, viewer);
+    public Object toView(com.tomsboardgames.istanbul.logic.Game state, Player viewer) {
+        return new IstanbulView(state, viewer);
     }
 
     @Override
-    public State deserialize(InputStream inputStream) {
+    public com.tomsboardgames.istanbul.logic.Game deserialize(InputStream inputStream) {
         return com.tomsboardgames.istanbul.logic.Game.deserialize(inputStream);
     }
 
@@ -91,8 +91,8 @@ public class Istanbul implements Game {
     }
 
     @Override
-    public com.tomsboardgames.istanbul.logic.Action toAction(JsonObject jsonObject, State state) {
+    public com.tomsboardgames.istanbul.logic.Action toAction(JsonObject jsonObject, com.tomsboardgames.istanbul.logic.Game state) {
         var type = ActionView.valueOf(jsonObject.getString("type"));
-        return type.toAction(jsonObject, (com.tomsboardgames.istanbul.logic.Game) state);
+        return type.toAction(jsonObject, state);
     }
 }

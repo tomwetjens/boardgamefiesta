@@ -35,7 +35,7 @@ public class Table {
 
     @Getter
     @NonNull
-    private final Game game;
+    private final Game<State> game;
 
     @Getter
     @NonNull
@@ -132,10 +132,10 @@ public class Table {
             throw APIException.badRequest(APIError.MIN_PLAYERS);
         }
 
-        var randomColors = new LinkedList<>(game.getSupportedColors());
+        var randomColors = new ArrayList<>(game.getSupportedColors());
         Collections.shuffle(randomColors, RANDOM);
 
-        players.forEach(player -> player.assignColor(randomColors.poll()));
+        players.forEach(player -> player.assignColor(randomColors.remove(randomColors.size() - 1)));
 
         state = Lazy.of(game.start(players.stream()
                 .map(player -> new com.tomsboardgames.api.Player(player.getId().getId(), player.getColor()))
