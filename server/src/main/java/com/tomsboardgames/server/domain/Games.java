@@ -8,7 +8,6 @@ import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -18,9 +17,9 @@ public class Games implements DomainService {
     private final Map<Game.Id, Game<State>> map;
 
     @Inject
-    public Games(Instance<Game<State>> instance) {
+    public Games(Instance<Game<?>> instance) {
         map = instance.stream()
-                .collect(Collectors.toMap(Game::getId, Function.identity()));
+                .collect(Collectors.toMap(Game::getId, game -> (Game<State>) game));
     }
 
     public static Games instance() {

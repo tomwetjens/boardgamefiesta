@@ -190,7 +190,7 @@ public class TableDynamoDbRepository implements Tables {
                 .consistentRead(true)
                 .attributesToGet("Id",
                         "Type",
-                        "Game",
+                        "GameId",
                         "Status",
                         "Options",
                         "Created",
@@ -198,7 +198,7 @@ public class TableDynamoDbRepository implements Tables {
                         "Started",
                         "Ended",
                         "Expires",
-                        "OwnerUserId",
+                        "OwnerId",
                         "Players")
                 .build());
 
@@ -378,7 +378,7 @@ public class TableDynamoDbRepository implements Tables {
             map.put("Ended", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build()).build());
         }
         map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
-        map.put("OwnerUserId", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getOwnerId().getId()).build()).build());
+        map.put("OwnerId", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getOwnerId().getId()).build()).build());
         map.put("Players", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build()).build());
         map.put("Options", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromOptions(table.getOptions())).build());
 
