@@ -1,6 +1,7 @@
 package com.tomsboardgames.server.domain;
 
 import com.tomsboardgames.api.Game;
+import com.tomsboardgames.api.State;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
@@ -12,17 +13,21 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ApplicationScoped
-public class Games {
+public class Games implements DomainService {
 
-    private final Map<Game.Id, Game> map;
+    private final Map<Game.Id, Game<State>> map;
 
     @Inject
-    public Games(Instance<Game> instance) {
+    public Games(Instance<Game<State>> instance) {
         map = instance.stream()
                 .collect(Collectors.toMap(Game::getId, Function.identity()));
     }
 
-    public Game get(Game.Id gameId) {
+    public static Games instance() {
+        return DomainService.instance(Games.class);
+    }
+
+    public Game<State> get(Game.Id gameId) {
         var implementation = map.get(gameId);
         if (implementation == null) {
             throw new IllegalArgumentException("Unknown game: " + gameId.getId());
@@ -30,11 +35,11 @@ public class Games {
         return implementation;
     }
 
-    public Stream<Game> findAll() {
+    public Stream<Game<State>> findAll() {
         return map.values().stream();
     }
 
-    public Optional<Game> findById(Game.Id id) {
+    public Optional<Game<State>> findById(Game.Id id) {
         return Optional.ofNullable(map.get(id));
     }
 }

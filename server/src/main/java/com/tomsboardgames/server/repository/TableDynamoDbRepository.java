@@ -139,7 +139,7 @@ public class TableDynamoDbRepository implements Tables {
                 .build());
 
         var lookupItemsBySortKey = response.items().stream()
-                .filter(item -> !item.get("UserId").s().equals("Game-" + table.getId().getId())) // Filter out the main item
+                .filter(item -> !item.get("UserId").s().equals("Table-" + table.getId().getId())) // Filter out the main item
                 .collect(Collectors.toMap(item -> item.get("UserId").s(), Function.identity()));
 
         var playersBySortKey = table.getPlayers().stream()
@@ -230,7 +230,7 @@ public class TableDynamoDbRepository implements Tables {
 
     private Map<String, AttributeValue> createAttributeValues(Table table) {
         var map = new HashMap<String, AttributeValue>();
-        map.put("Game", AttributeValue.builder().s(table.getGame().getId().getId()).build());
+        map.put("GameId", AttributeValue.builder().s(table.getGameId().getId()).build());
         map.put("Type", AttributeValue.builder().s(table.getType().name()).build());
         map.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
         map.put("Options", mapFromOptions(table.getOptions()));
@@ -239,7 +239,7 @@ public class TableDynamoDbRepository implements Tables {
         map.put("Started", table.getStarted() != null ? AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build() : null);
         map.put("Ended", table.getEnded() != null ? AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build() : null);
         map.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
-        map.put("OwnerUserId", AttributeValue.builder().s(table.getOwner().getId()).build());
+        map.put("OwnerId", AttributeValue.builder().s(table.getOwnerId().getId()).build());
         map.put("Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
         if (table.getState() != null) {
             map.put("State", mapFromState(table.getState().get()));
@@ -264,12 +264,12 @@ public class TableDynamoDbRepository implements Tables {
     private Table mapToTable(Map<String, AttributeValue> item) {
         var id = Table.Id.of(item.get("Id").s());
 
-        var game = games.get(Game.Id.of(item.get("Game").s()));
+        var gameId = Game.Id.of(item.get("GameId").s());
 
         return Table.builder()
                 .id(id)
                 .type(Table.Type.valueOf(item.get("Type").s()))
-                .game(game)
+                .gameId(gameId)
                 .status(Table.Status.valueOf(item.get("Status").s()))
                 .options(new Options(item.get("Options").m().entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
@@ -286,27 +286,27 @@ public class TableDynamoDbRepository implements Tables {
                 .started(item.get("Started") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Started").n())) : null)
                 .ended(item.get("Ended") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Ended").n())) : null)
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
-                .owner(User.Id.of(item.get("OwnerUserId").s()))
+                .ownerId(User.Id.of(item.get("OwnerId").s()))
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
                         .collect(Collectors.toSet()))
-                .state(Lazy.defer(() -> getState(game, id)))
+                .state(Lazy.defer(() -> getState(gameId, id)))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
     }
 
-    private State getState(Game game, Table.Id id) {
+    private State getState(Game.Id gameId, Table.Id tableId) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(tableName)
-                .key(key(id))
+                .key(key(tableId))
                 .consistentRead(true)
-                .attributesToGet("State", "Game")
+                .attributesToGet("State")
                 .build());
 
         var attributeValue = response.item().get("State");
 
         if (attributeValue != null) {
-            return game.deserialize(attributeValue.b().asInputStream());
+            return games.get(gameId).deserialize(attributeValue.b().asInputStream());
         }
         return null;
     }
@@ -355,7 +355,7 @@ public class TableDynamoDbRepository implements Tables {
     private Map<String, AttributeValue> key(Table.Id id) {
         var key = new HashMap<String, AttributeValue>();
         key.put("Id", AttributeValue.builder().s(id.getId()).build());
-        key.put("UserId", AttributeValue.builder().s("Game-" + id.getId()).build());
+        key.put("UserId", AttributeValue.builder().s("Table-" + id.getId()).build());
         return key;
     }
 
@@ -378,7 +378,7 @@ public class TableDynamoDbRepository implements Tables {
             map.put("Ended", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build()).build());
         }
         map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
-        map.put("OwnerUserId", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getOwner().getId()).build()).build());
+        map.put("OwnerUserId", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getOwnerId().getId()).build()).build());
         map.put("Players", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build()).build());
         map.put("Options", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromOptions(table.getOptions())).build());
 

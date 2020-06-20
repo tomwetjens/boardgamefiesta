@@ -35,7 +35,7 @@ public class Table {
 
     @Getter
     @NonNull
-    private final Game<State> game;
+    private final Game.Id gameId;
 
     @Getter
     @NonNull
@@ -58,7 +58,7 @@ public class Table {
 
     @Getter
     @NonNull
-    private User.Id owner;
+    private User.Id ownerId;
 
     @Getter
     private Lazy<State> state;
@@ -76,7 +76,7 @@ public class Table {
     @Getter
     private Instant ended;
 
-    public static Table create(@NonNull Game game,
+    public static Table create(@NonNull Game<State> game,
                                @NonNull User owner,
                                @NonNull Set<User> inviteUsers,
                                @NonNull Options options) {
@@ -100,14 +100,14 @@ public class Table {
         var created = Instant.now();
         Table table = Table.builder()
                 .id(Id.generate())
-                .game(game)
+                .gameId(game.getId())
                 .type(Type.REALTIME)
                 .status(Status.NEW)
                 .options(options)
                 .created(created)
                 .updated(created)
                 .expires(created.plus(START_TIMEOUT))
-                .owner(owner.getId())
+                .ownerId(owner.getId())
                 .players(Collections.singleton(player))
                 .log(new Log())
                 .build();
@@ -127,6 +127,8 @@ public class Table {
         }
 
         players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
+
+        var game = Games.instance().get(gameId);
 
         if (players.size() < game.getMinNumberOfPlayers()) {
             throw APIException.badRequest(APIError.MIN_PLAYERS);
@@ -148,7 +150,7 @@ public class Table {
         updated = started;
         expires = started.plus(ACTION_TIMEOUT);
 
-        log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.START));
+        log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.START));
 
         new Started(id).fire();
 
@@ -177,6 +179,7 @@ public class Table {
             throw new IllegalStateException("Current player is not computer");
         }
 
+        var game = Games.instance().get(gameId);
         runStateChange(() -> game.executeAutoma(state.get(), RANDOM));
     }
 
@@ -201,6 +204,7 @@ public class Table {
                 currentPlayer.endTurn();
 
                 if (newCurrentPlayer != null) {
+                    var game = Games.instance().get(gameId);
                     newCurrentPlayer.beginTurn(game.getTimeLimit(options));
                 }
             }
@@ -249,7 +253,7 @@ public class Table {
         var player = getPlayerByUserId(userId)
                 .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
 
-        if (owner.equals(userId)) {
+        if (ownerId.equals(userId)) {
             // if owner wants to leave, have to appoint a new owner
             otherHumanPlayers(userId)
                     .filter(Player::hasAccepted)
@@ -268,6 +272,7 @@ public class Table {
         updated = Instant.now();
 
         if (status == Status.STARTED) {
+            var game = Games.instance().get(gameId);
             if (players.size() > game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
                 runStateChange(() -> state.get().leave(state.get().getPlayerByName(player.getId().getId())));
@@ -287,7 +292,7 @@ public class Table {
     }
 
     private void changeOwner(User.Id userId) {
-        owner = userId;
+        ownerId = userId;
         updated = Instant.now();
 
         new ChangedOwner(id, userId).fire();
@@ -384,7 +389,7 @@ public class Table {
             throw APIException.badRequest(APIError.CANNOT_ABANDON);
         }
 
-        if (status != Status.STARTED && otherHumanPlayers(owner).count() > 1) {
+        if (status != Status.STARTED && otherHumanPlayers(ownerId).count() > 1) {
             throw APIException.forbidden(APIError.CANNOT_ABANDON);
         }
 
@@ -397,10 +402,6 @@ public class Table {
 
     private Stream<Player> playersThatAccepted() {
         return players.stream().filter(Player::hasAccepted);
-    }
-
-    private boolean allPlayersResponded() {
-        return players.stream().allMatch(Player::hasResponded);
     }
 
     public void rejectInvite(@NonNull User.Id userId) {
@@ -456,6 +457,7 @@ public class Table {
             throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
+        var game = Games.instance().get(gameId);
         if (players.size() == game.getMaxNumberOfPlayers()) {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
@@ -467,7 +469,7 @@ public class Table {
         var player = Player.invite(user.getId());
         players.add(player);
 
-        log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getId().getId())));
+        log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getId().getId())));
 
         new Invited(id, user.getId()).fire();
     }
@@ -485,7 +487,7 @@ public class Table {
         if (player.getType() == Player.Type.USER) {
             var userId = player.getUserId().orElseThrow();
 
-            log.add(new LogEntry(getPlayerByUserId(owner).orElseThrow(), LogEntry.Type.KICK, List.of(userId.getId())));
+            log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.KICK, List.of(userId.getId())));
 
             new Kicked(this.id, userId).fire();
         }
@@ -496,6 +498,7 @@ public class Table {
             throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
+        var game = Games.instance().get(gameId);
         if (players.size() == game.getMaxNumberOfPlayers()) {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }

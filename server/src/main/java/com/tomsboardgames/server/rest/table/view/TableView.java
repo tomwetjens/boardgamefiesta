@@ -39,10 +39,10 @@ public class TableView {
                      @NonNull Map<User.Id, Rating> ratingMap,
                      User.Id currentUserId) {
         id = table.getId().getId();
-        game = table.getGame().getId().getId();
+        game = table.getGameId().getId();
         type = table.getType();
         status = table.getStatus();
-        owner = new UserView(table.getOwner(), userMap.get(table.getOwner()), currentUserId);
+        owner = new UserView(table.getOwnerId(), userMap.get(table.getOwnerId()), currentUserId);
         options = table.getOptions().asMap();
 
         player = table.getPlayers().stream()
@@ -68,7 +68,7 @@ public class TableView {
         created = table.getCreated();
         started = table.getStarted();
         ended = table.getEnded();
-        startable = table.canStart() && currentUserId.equals(table.getOwner());
+        startable = table.canStart() && currentUserId.equals(table.getOwnerId());
 
         if (table.getStatus() == Table.Status.STARTED) {
             var currentPlayer = table.getCurrentPlayer();

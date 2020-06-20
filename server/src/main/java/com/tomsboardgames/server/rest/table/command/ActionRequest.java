@@ -1,7 +1,8 @@
 package com.tomsboardgames.server.rest.table.command;
 
 import com.tomsboardgames.api.Action;
-import com.tomsboardgames.server.domain.Table;
+import com.tomsboardgames.api.Game;
+import com.tomsboardgames.api.State;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -25,8 +26,8 @@ public class ActionRequest {
         }
     }
 
-    public Action toAction(Table table) {
-        return table.getGame().toAction(jsonObject, table.getState().get());
+    public <T extends State> Action toAction(Game<T> game, T state) {
+        return game.toAction(jsonObject, state);
     }
 
 }
