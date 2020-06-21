@@ -18,9 +18,9 @@ public class IstanbulView {
     private final Map<PlayerColor, PlayerStateView> players;
 
     public IstanbulView(Game state, Player viewer) {
-        this.layout = IntStream.range(0, state.getLayout().height())
-                .mapToObj(y -> IntStream.range(0, state.getLayout().width())
-                        .mapToObj(x -> state.getLayout().place(x, y))
+        this.layout = IntStream.range(0, state.getLayout().width())
+                .mapToObj(x -> IntStream.range(0, state.getLayout().height())
+                        .mapToObj(y -> state.getLayout().place(x, y))
                         .map(PlaceView::of)
                         .collect(Collectors.toList()))
                 .collect(Collectors.toList());

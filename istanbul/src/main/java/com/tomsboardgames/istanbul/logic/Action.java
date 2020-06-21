@@ -115,7 +115,12 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             game.randomPlace(random).placeSmuggler();
 
             return ActionResult.followUp(PossibleAction.whenThen(takeAnyGood(),
-                    PossibleAction.choice(Set.of(Action.Pay2Lira.class, Action.Pay1Good.class)), 0, 1));
+                    PossibleAction.choice(Set.of(
+                            Action.Pay2Lira.class,
+                            Action.Pay1Fabric.class,
+                            Action.Pay1Fruit.class,
+                            Action.Pay1Spice.class,
+                            Action.Pay1Blue.class)), 0, 1));
         }
 
         private static PossibleAction takeAnyGood() {
@@ -283,18 +288,6 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static class Pay1Good extends Action {
-        GoodsType goodsType;
-
-        @Override
-        ActionResult perform(Game game, Random random) {
-            game.currentPlayerState().removeGoods(goodsType, 1);
-            return null;
-        }
-    }
-
-    @Value
-    @EqualsAndHashCode(callSuper = false)
     public static class Take2BonusCards extends Action {
         boolean caravansary;
 
@@ -444,16 +437,14 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class DeliverToSultan extends Action {
-        Set<GoodsType> preferredGoodsTypes;
-
         @Override
         ActionResult perform(Game game, Random random) {
             var sultansPalace = game.getSultansPalace();
 
-            sultansPalace.deliverToSultan(game.currentPlayerState(), preferredGoodsTypes);
+            var actionResult = sultansPalace.deliverToSultan(game.currentPlayerState());
 
             return game.currentPlayerState().hasBonusCard(BonusCard.SULTAN_2X)
-                    ? ActionResult.followUp(PossibleAction.optional(BonusCardDeliverToSultan.class))
+                    ? actionResult.andThen(ActionResult.followUp(PossibleAction.optional(BonusCardDeliverToSultan.class)))
                     : ActionResult.none();
         }
     }
@@ -462,11 +453,9 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
     @EqualsAndHashCode(callSuper = false)
     public static class BonusCardDeliverToSultan extends Action {
 
-        Set<GoodsType> preferredGoodsTypes;
-
         @Override
         ActionResult perform(Game game, Random random) {
-            var actionResult = new DeliverToSultan(preferredGoodsTypes).perform(game, random);
+            var actionResult = new DeliverToSultan().perform(game, random);
             game.currentPlayerState().removeBonusCard(BonusCard.SULTAN_2X);
             return actionResult;
         }
@@ -563,6 +552,38 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
         @Override
         ActionResult perform(Game game, Random random) {
             from.returnAssistant(game.getCurrentMerchant());
+            return ActionResult.none();
+        }
+    }
+
+    public static class Pay1Fabric extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().removeGoods(GoodsType.FABRIC, 1);
+            return ActionResult.none();
+        }
+    }
+
+    public static class Pay1Fruit extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().removeGoods(GoodsType.FRUIT, 1);
+            return ActionResult.none();
+        }
+    }
+
+    public static class Pay1Spice extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().removeGoods(GoodsType.SPICE, 1);
+            return ActionResult.none();
+        }
+    }
+
+    public static class Pay1Blue extends Action {
+        @Override
+        ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().removeGoods(GoodsType.BLUE, 1);
             return ActionResult.none();
         }
     }

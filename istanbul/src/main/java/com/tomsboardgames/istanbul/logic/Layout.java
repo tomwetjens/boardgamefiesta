@@ -4,6 +4,7 @@ import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.PlayerColor;
 import lombok.NonNull;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -11,7 +12,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class Layout {
+public class Layout implements Serializable {
 
     private static final int WIDTH = 4;
     private static final int HEIGHT = 4;

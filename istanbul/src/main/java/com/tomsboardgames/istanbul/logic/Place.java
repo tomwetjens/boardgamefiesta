@@ -741,7 +741,7 @@ public abstract class Place implements Serializable {
             return Optional.of(PossibleAction.optional(Action.DeliverToSultan.class));
         }
 
-        void deliverToSultan(PlayerState playerState, Set<GoodsType> preferredGoodsTypes) {
+        ActionResult deliverToSultan(PlayerState playerState) {
             if (uncovered > 10) {
                 throw new IstanbulException(IstanbulError.NO_RUBY_AVAILABLE);
             }
@@ -751,38 +751,34 @@ public abstract class Place implements Serializable {
                     .flatMap(Optional::stream)
                     .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-            addRequiredGoodsOfAnyType(preferredGoodsTypes, requiredGoodsByType);
+            var numberOfAnyGoodsType = (int) REQUIRED_GOODS.stream()
+                    .limit(uncovered)
+                    .filter(Optional::isEmpty)
+                    .count();
 
-            if (!hasEnoughGoods(playerState, requiredGoodsByType)) {
+            // Check if player has all the required goods types,
+            // Also check the total number of goods, in case "any" goods types are required
+            if (!hasEnoughGoods(playerState, requiredGoodsByType) || playerState.getTotalGoods() < uncovered) {
                 throw new IstanbulException(IstanbulError.NOT_ENOUGH_GOODS);
             }
 
+            // First pay all the required goods types
             requiredGoodsByType.forEach((goodsType, amount) ->
                     playerState.removeGoods(goodsType, amount.intValue()));
 
+            // Because we checked the player has enough goods, give the ruby already
+            // even though the player still needs to choose which of the "any" goods to pay
             playerState.gainRubies(1);
 
             uncovered++;
-        }
 
-        private void addRequiredGoodsOfAnyType(Set<GoodsType> preferredGoodsTypeInCaseOfAny, Map<GoodsType, Long> requiredGoodsByType) {
-            if (preferredGoodsTypeInCaseOfAny.size() > 2) {
-                throw new IllegalArgumentException("Cannot specify more than 2 preferred goods types");
-            }
-
-            var numberOfRequiredGoodsOfAnyType = uncovered - requiredGoodsByType.values().stream().mapToInt(Long::intValue).sum(); // 0, 1 or 2
-
-            if (numberOfRequiredGoodsOfAnyType > 0) {
-                if (preferredGoodsTypeInCaseOfAny.isEmpty()) {
-                    throw new IstanbulException(IstanbulError.MUST_SPECIFY_GOODS_TYPE);
-                }
-
-                preferredGoodsTypeInCaseOfAny.forEach(preferredGoodsType -> {
-                    var numberOfGoodsOfPreferredType = (int) Math.ceil(numberOfRequiredGoodsOfAnyType / (float) preferredGoodsTypeInCaseOfAny.size());
-
-                    requiredGoodsByType.put(preferredGoodsType, requiredGoodsByType.getOrDefault(preferredGoodsType, 0L) + numberOfGoodsOfPreferredType);
-                });
-            }
+            // Make sure the player pays the remaining "any" goods
+            return ActionResult.followUp(PossibleAction.repeat(numberOfAnyGoodsType, numberOfAnyGoodsType,
+                    PossibleAction.choice(Set.of(
+                            Action.Pay1Fabric.class,
+                            Action.Pay1Fruit.class,
+                            Action.Pay1Spice.class,
+                            Action.Pay1Blue.class))));
         }
 
         private boolean hasEnoughGoods(PlayerState playerState, Map<GoodsType, Long> requiredGoodsByType) {

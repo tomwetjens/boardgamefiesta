@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -19,8 +18,8 @@ public enum ActionView {
     BUY_WHEELBARROW_EXTENSION(Action.BuyWheelbarrowExtension.class, (jsonObject, game) -> new Action.BuyWheelbarrowExtension()),
     CATCH_FAMILY_MEMBER_FOR_3_LIRA(Action.CatchFamilyMemberFor3Lira.class, (jsonObject, game) -> new Action.CatchFamilyMemberFor3Lira()),
     CATCH_FAMILY_MEMBER_FOR_BONUS_CARD(Action.CatchFamilyMemberForBonusCard.class, (jsonObject, game) -> new Action.CatchFamilyMemberForBonusCard()),
-    DELIVER_TO_SULTAN(Action.DeliverToSultan.class, (jsonObject, game) -> new Action.DeliverToSultan(getGoodsTypes(jsonObject))),
-    BONUS_CARD_DELIVER_TO_SULTAN(Action.BonusCardDeliverToSultan.class, (jsonObject, game) -> new Action.BonusCardDeliverToSultan(getGoodsTypes(jsonObject))),
+    DELIVER_TO_SULTAN(Action.DeliverToSultan.class, (jsonObject, game) -> new Action.DeliverToSultan()),
+    BONUS_CARD_DELIVER_TO_SULTAN(Action.BonusCardDeliverToSultan.class, (jsonObject, game) -> new Action.BonusCardDeliverToSultan()),
     DISCARD_BONUS_CARD(Action.DiscardBonusCard.class, (jsonObject, game) -> new Action.DiscardBonusCard(getBonusCard(jsonObject))),
     GOVERNOR(Action.Governor.class, (jsonObject, game) -> new Action.Governor()),
     GUESS_AND_ROLL_FOR_LIRA(Action.GuessAndRollForLira.class, (jsonObject, game) -> new Action.GuessAndRollForLira(jsonObject.getInt("guess"))),
@@ -29,7 +28,10 @@ public enum ActionView {
     MAX_FRUIT(Action.MaxFruit.class, (jsonObject, game) -> new Action.MaxFruit()),
     MAX_SPICE(Action.MaxSpice.class, (jsonObject, game) -> new Action.MaxSpice()),
     MOVE(Action.Move.class, (jsonObject, game) -> new Action.Move(place(jsonObject, game), getBonusCard(jsonObject))),
-    PAY_1_GOOD(Action.Pay1Good.class, (jsonObject, game) -> new Action.Pay1Good(getGoodsType(jsonObject))),
+    PAY_1_FABRIC(Action.Pay1Fabric.class, (jsonObject, game) -> new Action.Pay1Fabric()),
+    PAY_1_FRUIT(Action.Pay1Fruit.class, (jsonObject, game) -> new Action.Pay1Fruit()),
+    PAY_1_SPICE(Action.Pay1Spice.class, (jsonObject, game) -> new Action.Pay1Spice()),
+    PAY_1_BLUE(Action.Pay1Blue.class, (jsonObject, game) -> new Action.Pay1Blue()),
     PAY_2_LIRA(Action.Pay2Lira.class, (jsonObject, game) -> new Action.Pay2Lira()),
     PAY_2_LIRA_FOR_1_ADDITIONAL_GOOD(Action.Pay2LiraFor1AdditionalGood.class, (jsonObject, game) -> new Action.Pay2LiraFor1AdditionalGood()),
     PAY_2_LIRA_TO_RETURN_ASSISTANT(Action.Pay2LiraToReturnAssistant.class, (jsonObject, game) -> new Action.Pay2LiraToReturnAssistant(jsonObject.getInt("x"), jsonObject.getInt("y"))),
@@ -54,21 +56,8 @@ public enum ActionView {
     PLACE_MEMBER_ON_POLICE_STATION(Action.PlaceFamilyMemberOnPoliceStation.class, (jsonObject, game) -> new Action.PlaceFamilyMemberOnPoliceStation()),
     RETURN_1_ASSISTANT(Action.Return1Assistant.class, (jsonObject, game) -> new Action.Return1Assistant(place(jsonObject, game)));
 
-    private static GoodsType getGoodsType(JsonObject jsonObject) {
-        return GoodsType.valueOf(jsonObject.getString("goodsType"));
-    }
-
     private static BonusCard getBonusCard(JsonObject jsonObject) {
         return jsonObject.containsKey("bonusCard") ? BonusCard.valueOf(jsonObject.getString("bonusCard")) : null;
-    }
-
-    private static Set<GoodsType> getGoodsTypes(JsonObject jsonObject) {
-        return jsonObject.getJsonArray("preferredGoodsTypes")
-                .getValuesAs(JsonString.class)
-                .stream()
-                .map(JsonString::getString)
-                .map(GoodsType::valueOf)
-                .collect(Collectors.toSet());
     }
 
     private static Map<GoodsType, Integer> getGoods(JsonObject jsonObject) {
@@ -101,4 +90,5 @@ public enum ActionView {
         }
         throw new IllegalArgumentException("Unknown action: " + actionClass);
     }
+
 }
