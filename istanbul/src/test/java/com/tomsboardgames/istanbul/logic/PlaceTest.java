@@ -6,9 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
-import java.util.Set;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
@@ -32,19 +29,10 @@ class PlaceTest {
         }
 
         @Test
-        void mustSpecifyPreferredGoodsType() {
-            var sultansPalace = Place.SultansPalace.withUncovered(5);
-
-            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState, Collections.emptySet()))
-                    .isInstanceOf(IstanbulException.class)
-                    .hasMessage(IstanbulError.MUST_SPECIFY_GOODS_TYPE.name());
-        }
-
-        @Test
         void notEnoughGoods() {
             var sultansPalace = Place.SultansPalace.withUncovered(5);
 
-            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState, Set.of(GoodsType.BLUE)))
+            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState))
                     .isInstanceOf(IstanbulException.class)
                     .hasMessage(IstanbulError.NOT_ENOUGH_GOODS.name());
         }
@@ -56,49 +44,88 @@ class PlaceTest {
             when(playerState.hasAtLeastGoods(GoodsType.FABRIC, 1)).thenReturn(true);
             when(playerState.hasAtLeastGoods(GoodsType.SPICE, 1)).thenReturn(true);
             when(playerState.hasAtLeastGoods(GoodsType.FRUIT, 1)).thenReturn(true);
-            when(playerState.hasAtLeastGoods(GoodsType.BLUE, 2)).thenReturn(true);
+            when(playerState.hasAtLeastGoods(GoodsType.BLUE, 1)).thenReturn(true);
+            when(playerState.getTotalGoods()).thenReturn(5);
 
-            sultansPalace.deliverToSultan(playerState, Set.of(GoodsType.BLUE));
+            var actionResult = sultansPalace.deliverToSultan(playerState);
+
+            assertThat(actionResult.getFollowUpActions())
+                    .hasOnlyOneElementSatisfying(possibleAction -> {
+                        assertThat(possibleAction.getPossibleActions()).containsExactlyInAnyOrder(
+                                Action.Pay1Fabric.class, Action.Pay1Blue.class, Action.Pay1Fruit.class, Action.Pay1Spice.class);
+
+                        possibleAction.perform(Action.Pay1Fabric.class);
+
+                        assertThat(possibleAction.isCompleted()).isTrue();
+                    });
 
             verify(playerState).gainRubies(1);
             assertThat(sultansPalace.getUncovered()).isEqualTo(6);
         }
 
         @Test
-        void twoAnyGoodsOneSpecified() {
+        void oneAnyGoodNotEnoughGoods() {
+            var sultansPalace = Place.SultansPalace.withUncovered(5);
+
+            when(playerState.hasAtLeastGoods(GoodsType.FABRIC, 1)).thenReturn(true);
+            when(playerState.hasAtLeastGoods(GoodsType.SPICE, 1)).thenReturn(true);
+            when(playerState.hasAtLeastGoods(GoodsType.FRUIT, 1)).thenReturn(true);
+            when(playerState.hasAtLeastGoods(GoodsType.BLUE, 1)).thenReturn(true);
+            when(playerState.getTotalGoods()).thenReturn(4);
+
+            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState))
+                    .isInstanceOf(IstanbulException.class)
+                    .hasMessage(IstanbulError.NOT_ENOUGH_GOODS.name());
+        }
+
+        @Test
+        void twoAnyGoods() {
             var sultansPalace = Place.SultansPalace.withUncovered(10);
 
             when(playerState.hasAtLeastGoods(GoodsType.FABRIC, 2)).thenReturn(true);
             when(playerState.hasAtLeastGoods(GoodsType.SPICE, 2)).thenReturn(true);
             when(playerState.hasAtLeastGoods(GoodsType.FRUIT, 2)).thenReturn(true);
-            when(playerState.hasAtLeastGoods(GoodsType.BLUE, 4)).thenReturn(true);
+            when(playerState.hasAtLeastGoods(GoodsType.BLUE, 2)).thenReturn(true);
+            when(playerState.getTotalGoods()).thenReturn(10);
 
-            sultansPalace.deliverToSultan(playerState, Set.of(GoodsType.BLUE));
+            var actionResult = sultansPalace.deliverToSultan(playerState);
+
+            assertThat(actionResult.getFollowUpActions())
+                    .hasOnlyOneElementSatisfying(possibleAction -> {
+                        assertThat(possibleAction.getPossibleActions()).containsExactlyInAnyOrder(
+                                Action.Pay1Fabric.class, Action.Pay1Blue.class, Action.Pay1Fruit.class, Action.Pay1Spice.class);
+
+                        possibleAction.perform(Action.Pay1Fabric.class);
+
+                        assertThat(possibleAction.getPossibleActions()).containsExactlyInAnyOrder(
+                                Action.Pay1Fabric.class, Action.Pay1Blue.class, Action.Pay1Fruit.class, Action.Pay1Spice.class);
+                    });
+
 
             verify(playerState).gainRubies(1);
             assertThat(sultansPalace.getUncovered()).isEqualTo(11);
         }
 
         @Test
-        void twoAnyGoodsTwoSpecified() {
+        void twoAnyGoodsNotEnoughGoods() {
             var sultansPalace = Place.SultansPalace.withUncovered(10);
 
-            when(playerState.hasAtLeastGoods(GoodsType.FABRIC, 3)).thenReturn(true);
+            when(playerState.hasAtLeastGoods(GoodsType.FABRIC, 2)).thenReturn(true);
             when(playerState.hasAtLeastGoods(GoodsType.SPICE, 2)).thenReturn(true);
             when(playerState.hasAtLeastGoods(GoodsType.FRUIT, 2)).thenReturn(true);
-            when(playerState.hasAtLeastGoods(GoodsType.BLUE, 3)).thenReturn(true);
+            when(playerState.hasAtLeastGoods(GoodsType.BLUE, 2)).thenReturn(true);
+            when(playerState.getTotalGoods()).thenReturn(9);
 
-            sultansPalace.deliverToSultan(playerState, Set.of(GoodsType.BLUE, GoodsType.FABRIC));
-
-            verify(playerState).gainRubies(1);
-            assertThat(sultansPalace.getUncovered()).isEqualTo(11);
+            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState))
+                    .isInstanceOf(IstanbulException.class)
+                    .hasMessage(IstanbulError.NOT_ENOUGH_GOODS.name());
         }
 
         @Test
         void noRubyAvailable() {
             var sultansPalace = Place.SultansPalace.withUncovered(11);
 
-            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState, Set.of(GoodsType.BLUE, GoodsType.FABRIC)))
+            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState))
                     .isInstanceOf(IstanbulException.class)
                     .hasMessage(IstanbulError.NO_RUBY_AVAILABLE.name());
         }

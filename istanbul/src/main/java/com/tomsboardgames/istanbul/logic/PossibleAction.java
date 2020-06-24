@@ -1,8 +1,6 @@
 package com.tomsboardgames.istanbul.logic;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -53,6 +51,7 @@ public abstract class PossibleAction {
 
     protected abstract PossibleAction clone();
 
+    @ToString
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     private static class Single extends PossibleAction implements Serializable {
 
@@ -108,6 +107,7 @@ public abstract class PossibleAction {
         }
     }
 
+    @ToString
     private static class Any extends PossibleAction implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -176,6 +176,7 @@ public abstract class PossibleAction {
 
     }
 
+    @ToString
     private static class Choice extends PossibleAction implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -225,6 +226,7 @@ public abstract class PossibleAction {
         }
     }
 
+    @ToString
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     private static class Repeat extends PossibleAction implements Serializable {
 
@@ -306,6 +308,7 @@ public abstract class PossibleAction {
         }
     }
 
+    @ToString
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     private static class WhenThen extends PossibleAction implements Serializable {
 
