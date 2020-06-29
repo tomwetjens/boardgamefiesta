@@ -62,6 +62,16 @@ class PlaceTest {
             verify(playerState).gainRubies(1);
             assertThat(sultansPalace.getUncovered()).isEqualTo(6);
         }
+        // TODO PAY_2_LIRA_TO_RETURN_ASSISTANT gives error
+        // TODO both mosque locations active when selecting tiles
+        // TODO Als PAY_2_LIRA_TO_RETURN_ASSISTANT nog kan, maar klik skip, dan error NO ACTION
+        // TODO Send family member frontend broken
+        // TODO PAY_2_LIRA_TO_RETURN_ASSISTANT mosque tiles plaatjes bij player board
+        // TODO Test Sultan with any with smuggler
+        // TODO Sultan actually pays the goods?
+        // TODO Popover hover on player discs and objects
+        // TODO "Lift up" discs to reveal whats undernearth
+        // TODO Select goods to sell, add button 'all'
 
         @Test
         void oneAnyGoodNotEnoughGoods() {
