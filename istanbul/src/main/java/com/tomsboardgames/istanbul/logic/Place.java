@@ -2,18 +2,19 @@ package com.tomsboardgames.istanbul.logic;
 
 import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.PlayerColor;
+import com.tomsboardgames.json.JsonDeserializer;
+import com.tomsboardgames.json.JsonSerializer;
 import lombok.*;
 
-import java.io.Serializable;
+import javax.json.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public abstract class Place implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public abstract class Place {
 
     @Getter
     private final int number;
@@ -127,7 +128,9 @@ public abstract class Place implements Serializable {
         var numberOfFamilyMembersToCatch = (int) familyMembersToCatch(game.getCurrentPlayer()).count();
         if (numberOfFamilyMembersToCatch > 0) {
             actions.add(PossibleAction.repeat(numberOfFamilyMembersToCatch, numberOfFamilyMembersToCatch,
-                    PossibleAction.choice(Set.of(Action.CatchFamilyMemberForBonusCard.class, Action.CatchFamilyMemberFor3Lira.class))));
+                    PossibleAction.choice(Set.of(
+                            PossibleAction.optional(Action.CatchFamilyMemberForBonusCard.class),
+                            PossibleAction.optional(Action.CatchFamilyMemberFor3Lira.class)))));
         }
 
         return !actions.isEmpty() ? ActionResult.followUp(PossibleAction.any(actions)) : ActionResult.none();
@@ -190,9 +193,92 @@ public abstract class Place implements Serializable {
                 .orElseThrow(() -> new IllegalStateException("Merchant not at place"));
     }
 
-    public static class Wainwright extends Place implements Serializable {
+    JsonObjectBuilder serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("number", number)
+                .add("merchants", serializer.fromCollection(merchants, Merchant::serialize))
+                .add("assistants", serializer.fromIntegerMap(assistants, PlayerColor::name))
+                .add("familyMembers", serializer.fromStrings(familyMembers, Player::getName))
+                .add("governor", governor)
+                .add("smuggler", smuggler);
+    }
 
-        private static final long serialVersionUID = 1L;
+    static Place deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
+        var number = jsonObject.getInt("number");
+
+        Place place;
+        switch (number) {
+            case 1:
+                place = new Wainwright();
+                break;
+            case 2:
+                place = new FabricWarehouse();
+                break;
+            case 3:
+                place = new SpiceWarehouse();
+                break;
+            case 4:
+                place = new FruitWarehouse();
+                break;
+            case 5:
+                place = PostOffice.deserialize(jsonObject);
+                break;
+            case 6:
+                place = Caravansary.deserialize(jsonObject);
+                break;
+            case 7:
+                place = new Fountain();
+                break;
+            case 8:
+                place = new BlackMarket();
+                break;
+            case 9:
+                place = new TeaHouse();
+                break;
+            case LargeMarket.NUMBER:
+            case SmallMarket.NUMBER:
+                place = Market.deserialize(number, jsonObject);
+                break;
+            case 12:
+                place = new PoliceStation();
+                break;
+            case 13:
+                place = SultansPalace.deserialize(jsonObject);
+                break;
+            case SmallMosque.NUMBER:
+            case GreatMosque.NUMBER:
+                place = Mosque.deserialize(number, jsonObject);
+                break;
+            case 16:
+                place = GemstoneDealer.deserialize(jsonObject);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown place: " + number);
+        }
+
+        place.merchants.addAll(jsonObject.getJsonArray("merchants")
+                .stream()
+                .map(JsonValue::asJsonObject)
+                .map(merchant -> Merchant.deserialize(playerMap, merchant))
+                .collect(Collectors.toSet()));
+
+        place.assistants.putAll(JsonDeserializer.forObject(jsonObject.getJsonObject("assistants")).asIntegerMap(PlayerColor::valueOf));
+
+        place.familyMembers.addAll(jsonObject.getJsonArray("familyMembers").stream()
+                .map(jsonValue -> (JsonString) jsonValue)
+                .map(JsonString::getString)
+                .map(playerMap::get)
+                .collect(Collectors.toSet()));
+
+        place.governor = jsonObject.getBoolean("governor");
+
+        place.smuggler = jsonObject.getBoolean("smuggler");
+
+        return place;
+    }
+
+    public static class Wainwright extends Place {
 
         Wainwright() {
             super(1);
@@ -202,10 +288,10 @@ public abstract class Place implements Serializable {
         protected Optional<PossibleAction> getPossibleAction(Game game) {
             return Optional.of(PossibleAction.optional(Action.BuyWheelbarrowExtension.class));
         }
+
     }
 
-    public static class FabricWarehouse extends Place implements Serializable {
-        private static final long serialVersionUID = 1L;
+    public static class FabricWarehouse extends Place {
 
         FabricWarehouse() {
             super(2);
@@ -215,10 +301,10 @@ public abstract class Place implements Serializable {
         protected Optional<PossibleAction> getPossibleAction(Game game) {
             return Optional.of(PossibleAction.optional(Action.MaxFabric.class));
         }
+
     }
 
-    public static class SpiceWarehouse extends Place implements Serializable {
-        private static final long serialVersionUID = 1L;
+    public static class SpiceWarehouse extends Place {
 
         SpiceWarehouse() {
             super(3);
@@ -228,10 +314,10 @@ public abstract class Place implements Serializable {
         protected Optional<PossibleAction> getPossibleAction(Game game) {
             return Optional.of(PossibleAction.optional(Action.MaxSpice.class));
         }
+
     }
 
-    public static class FruitWarehouse extends Place implements Serializable {
-        private static final long serialVersionUID = 1L;
+    public static class FruitWarehouse extends Place {
 
         FruitWarehouse() {
             super(4);
@@ -241,16 +327,20 @@ public abstract class Place implements Serializable {
         protected Optional<PossibleAction> getPossibleAction(Game game) {
             return Optional.of(PossibleAction.optional(Action.MaxFruit.class));
         }
+
     }
 
-    public static class PostOffice extends Place implements Serializable {
+    public static class PostOffice extends Place {
 
-        private static final long serialVersionUID = 1L;
-
-        private final boolean[] indicators = new boolean[4];
+        private final List<Integer> indicators;
 
         PostOffice() {
+            this(new ArrayList<>(List.of(0, 0, 0, 0)));
+        }
+
+        private PostOffice(List<Integer> indicators) {
             super(5);
+            this.indicators = indicators;
         }
 
         @Override
@@ -263,52 +353,78 @@ public abstract class Place implements Serializable {
             // row 2: spice, 1 lira, fruit, 1 lira
 
             var currentPlayerState = game.currentPlayerState();
-            currentPlayerState.addGoods(indicators[0] ? GoodsType.SPICE : GoodsType.FABRIC, 1);
-            currentPlayerState.gainLira(indicators[1] ? 1 : 2);
-            currentPlayerState.addGoods(indicators[2] ? GoodsType.FRUIT : GoodsType.BLUE, 1);
-            currentPlayerState.gainLira(indicators[3] ? 1 : 2);
+            currentPlayerState.addGoods(indicators.get(0) == 1 ? GoodsType.SPICE : GoodsType.FABRIC, 1);
+            currentPlayerState.gainLira(indicators.get(1) == 1 ? 1 : 2);
+            currentPlayerState.addGoods(indicators.get(2) == 1 ? GoodsType.FRUIT : GoodsType.BLUE, 1);
+            currentPlayerState.gainLira(indicators.get(3) == 1 ? 1 : 2);
 
             var leftMost = leftMostInTopRow();
             if (leftMost >= 0) {
                 // Move from top row to bottom row
-                indicators[leftMost] = true;
+                indicators.set(leftMost, 1);
             } else {
                 // Move all from bottom row back to top row
-                Arrays.fill(indicators, false);
+                IntStream.range(0, indicators.size()).forEach(index -> indicators.set(index, 0));
             }
 
             return ActionResult.none();
         }
 
+        @Override
+        JsonObjectBuilder serialize(JsonBuilderFactory factory) {
+            var serializer = JsonSerializer.forFactory(factory);
+            return super.serialize(factory)
+                    .add("indicators", serializer.fromIntegers(indicators.stream()));
+        }
+
+        static PostOffice deserialize(JsonObject jsonObject) {
+            return new PostOffice(jsonObject.getJsonArray("indicators").stream()
+                    .map(jsonValue -> (JsonNumber) jsonValue)
+                    .map(JsonNumber::intValue)
+                    .collect(Collectors.toList()));
+        }
+
         public List<Boolean> getIndicators() {
-            return List.of(indicators[0], indicators[1], indicators[2], indicators[3]);
+            return List.of(indicators.get(0) == 1, indicators.get(1) == 1, indicators.get(2) == 1, indicators.get(3) == 1);
         }
 
         private int leftMostInTopRow() {
-            for (int i = 0; i < indicators.length; i++) {
-                if (!indicators[i]) {
-                    return i;
-                }
-            }
-            return -1;
+            return indicators.indexOf(0);
         }
     }
 
-    public static class Caravansary extends Place implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    public static class Caravansary extends Place {
 
         @Getter
-        private final List<BonusCard> discardPile = new LinkedList<>();
+        private final List<BonusCard> discardPile;
+
+        private Caravansary(List<BonusCard> discardPile) {
+            super(6);
+            this.discardPile = discardPile;
+        }
 
         Caravansary() {
-            super(6);
+            this(new LinkedList<>());
         }
 
         @Override
         protected Optional<PossibleAction> getPossibleAction(Game game) {
             return Optional.of(PossibleAction.whenThen(PossibleAction.optional(Action.Take2BonusCards.class),
                     PossibleAction.mandatory(Action.DiscardBonusCard.class), 0, 1));
+        }
+
+        @Override
+        JsonObjectBuilder serialize(JsonBuilderFactory factory) {
+            return super.serialize(factory)
+                    .add("discardPile", JsonSerializer.forFactory(factory).fromStrings(discardPile, BonusCard::name));
+        }
+
+        static Caravansary deserialize(JsonObject jsonObject) {
+            return new Caravansary(jsonObject.getJsonArray("discardPile").stream()
+                    .map(jsonValue -> (JsonString) jsonValue)
+                    .map(JsonString::getString)
+                    .map(BonusCard::valueOf)
+                    .collect(Collectors.toList()));
         }
 
         List<BonusCard> takeDiscardPile() {
@@ -326,8 +442,7 @@ public abstract class Place implements Serializable {
 
     }
 
-    public static class Fountain extends Place implements Serializable {
-        private static final long serialVersionUID = 1L;
+    public static class Fountain extends Place {
 
         Fountain() {
             super(7);
@@ -370,9 +485,7 @@ public abstract class Place implements Serializable {
         merchant.returnAssistants(1);
     }
 
-    public static class BlackMarket extends Place implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    public static class BlackMarket extends Place {
 
         BlackMarket() {
             super(8);
@@ -388,14 +501,15 @@ public abstract class Place implements Serializable {
         @Override
         protected Optional<PossibleAction> getPossibleAction(Game game) {
             return Optional.of(PossibleAction.any(Set.of(
-                    PossibleAction.choice(Set.of(Action.Take1Fabric.class, Action.Take1Spice.class, Action.Take1Fruit.class)),
+                    PossibleAction.choice(Set.of(
+                            PossibleAction.optional(Action.Take1Fabric.class),
+                            PossibleAction.optional(Action.Take1Spice.class),
+                            PossibleAction.optional(Action.Take1Fruit.class))),
                     PossibleAction.optional(Action.RollForBlueGoods.class))));
         }
     }
 
-    public static class TeaHouse extends Place implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    public static class TeaHouse extends Place {
 
         TeaHouse() {
             super(9);
@@ -448,23 +562,26 @@ public abstract class Place implements Serializable {
 
     public static class Market extends Place {
 
-        private static final long serialVersionUID = 1L;
+        private final List<Map<GoodsType, Integer>> demands;
+        private final List<Integer> rewards;
 
-        private final LinkedList<Map<GoodsType, Integer>> demands;
-        private final int[] rewards;
-
-        protected Market(int number, Collection<Map<GoodsType, Integer>> demands, int[] rewards,
-                         Random random) {
+        protected Market(int number, List<Map<GoodsType, Integer>> demands, List<Integer> rewards) {
             super(number);
-
-            this.demands = new LinkedList<>(demands);
-            Collections.shuffle(this.demands, random);
-
+            this.demands = demands;
             this.rewards = rewards;
         }
 
+        protected Market(int number,
+                         Collection<Map<GoodsType, Integer>> demands,
+                         List<Integer> rewards,
+                         Random random) {
+            this(number, new ArrayList<>(demands), rewards);
+
+            Collections.shuffle(this.demands, random);
+        }
+
         public Map<GoodsType, Integer> getDemand() {
-            return demands.getFirst();
+            return demands.get(0);
         }
 
         @Override
@@ -472,9 +589,34 @@ public abstract class Place implements Serializable {
             return Optional.of(PossibleAction.optional(Action.SellGoods.class));
         }
 
+        @Override
+        JsonObjectBuilder serialize(JsonBuilderFactory factory) {
+            var serializer = JsonSerializer.forFactory(factory);
+            return super.serialize(factory)
+                    .add("demands", serializer.fromCollection(demands,
+                            demand -> serializer.fromIntegerMap(demand, GoodsType::name)));
+        }
+
+        static Market deserialize(int number, JsonObject jsonObject) {
+            var demands = jsonObject.getJsonArray("demands").stream()
+                    .map(JsonValue::asJsonObject)
+                    .map(JsonDeserializer::forObject)
+                    .map(deserializer -> deserializer.asIntegerMap(GoodsType::valueOf))
+                    .collect(Collectors.toList());
+
+            switch (number) {
+                case LargeMarket.NUMBER:
+                    return new LargeMarket(demands);
+                case SmallMarket.NUMBER:
+                    return new SmallMarket(demands);
+                default:
+                    throw new IllegalArgumentException("Unknown market: " + number);
+            }
+        }
+
         void sellDemandGoods(Game game, Map<GoodsType, Integer> goods) {
             var currentPlayerState = game.currentPlayerState();
-            var demand = demands.getFirst();
+            var demand = demands.get(0);
 
             var numberOfGoods = goods.entrySet().stream()
                     .mapToInt(entry -> currentPlayerState.removeGoods(entry.getKey(),
@@ -486,26 +628,30 @@ public abstract class Place implements Serializable {
 
         protected void sell(PlayerState currentPlayerState, int numberOfGoods) {
             if (numberOfGoods > 0) {
-                currentPlayerState.gainLira(rewards[numberOfGoods - 1]);
+                currentPlayerState.gainLira(rewards.get(numberOfGoods - 1));
 
-                demands.addLast(demands.remove(0));
+                demands.add(demands.remove(0));
             }
         }
 
     }
 
-    public static class SmallMarket extends Market implements Serializable {
+    public static class SmallMarket extends Market {
 
-        private static final long serialVersionUID = 1L;
+        private static final int NUMBER = 11;
+        private static final List<Integer> REWARDS = List.of(2, 5, 9, 14, 20);
+
+        private SmallMarket(List<Map<GoodsType, Integer>> demands) {
+            super(NUMBER, demands, REWARDS);
+        }
 
         private SmallMarket(Random random) {
-            super(11, List.of(
+            super(NUMBER, List.of(
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 2, GoodsType.FRUIT, 1, GoodsType.BLUE, 1),
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 2, GoodsType.FRUIT, 2, GoodsType.BLUE, 0),
                     Map.of(GoodsType.FABRIC, 0, GoodsType.SPICE, 2, GoodsType.FRUIT, 2, GoodsType.BLUE, 1),
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 1, GoodsType.FRUIT, 2, GoodsType.BLUE, 1),
-                    Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 3, GoodsType.FRUIT, 1, GoodsType.BLUE, 0)),
-                    new int[]{2, 5, 9, 14, 20}, random);
+                    Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 3, GoodsType.FRUIT, 1, GoodsType.BLUE, 0)), REWARDS, random);
         }
 
         void sellAnyGoods(Game game, Map<GoodsType, Integer> goods) {
@@ -523,18 +669,23 @@ public abstract class Place implements Serializable {
         }
     }
 
-    public static class LargeMarket extends Market implements Serializable {
+    public static class LargeMarket extends Market {
 
-        private static final long serialVersionUID = 1L;
+        private static final int NUMBER = 10;
+        private static final List<Integer> REWARDS = List.of(3, 7, 12, 18, 25);
+
+        private LargeMarket(List<Map<GoodsType, Integer>> demands) {
+            super(NUMBER, demands, REWARDS);
+        }
 
         private LargeMarket(Random random) {
-            super(10, List.of(
+            super(NUMBER, List.of(
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 1, GoodsType.FRUIT, 1, GoodsType.BLUE, 2),
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 1, GoodsType.FRUIT, 0, GoodsType.BLUE, 3),
                     Map.of(GoodsType.FABRIC, 2, GoodsType.SPICE, 1, GoodsType.FRUIT, 0, GoodsType.BLUE, 2),
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 0, GoodsType.FRUIT, 1, GoodsType.BLUE, 3),
                     Map.of(GoodsType.FABRIC, 2, GoodsType.SPICE, 0, GoodsType.FRUIT, 1, GoodsType.BLUE, 2)),
-                    new int[]{3, 7, 12, 18, 25}, random);
+                    REWARDS, random);
         }
 
         static LargeMarket randomize(@NonNull Random random) {
@@ -542,9 +693,7 @@ public abstract class Place implements Serializable {
         }
     }
 
-    public static class PoliceStation extends Place implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    public static class PoliceStation extends Place {
 
         PoliceStation() {
             super(12);
@@ -568,9 +717,7 @@ public abstract class Place implements Serializable {
         private final MosqueTileStack b;
 
         @AllArgsConstructor(access = AccessLevel.PRIVATE)
-        private static class MosqueTileStack implements Serializable {
-
-            private static final long serialVersionUID = 1L;
+        static class MosqueTileStack {
 
             @Getter
             private final MosqueTile mosqueTile;
@@ -578,6 +725,10 @@ public abstract class Place implements Serializable {
 
             static MosqueTileStack forPlayerCount(@NonNull MosqueTile mosqueTile, int playerCount) {
                 return new MosqueTileStack(mosqueTile, new LinkedList<>(initialGoodsCounts(playerCount)));
+            }
+
+            static MosqueTileStack withGoodsCounts(@NonNull MosqueTile mosqueTile, @NonNull List<Integer> goodsCounts) {
+                return new MosqueTileStack(mosqueTile, goodsCounts);
             }
 
             boolean isAvailable() {
@@ -605,11 +756,39 @@ public abstract class Place implements Serializable {
 
         }
 
-        Mosque(int number, int playerCount, @NonNull MosqueTile a, @NonNull MosqueTile b) {
+        Mosque(int number, @NonNull MosqueTileStack a, @NonNull MosqueTileStack b) {
             super(number);
+            this.a = a;
+            this.b = b;
+        }
 
-            this.a = MosqueTileStack.forPlayerCount(a, playerCount);
-            this.b = MosqueTileStack.forPlayerCount(b, playerCount);
+        @Override
+        JsonObjectBuilder serialize(JsonBuilderFactory factory) {
+            var serializer = JsonSerializer.forFactory(factory);
+            return super.serialize(factory)
+                    .add("a", serializer.fromIntegers(a.goodsCounts.stream()))
+                    .add("b", serializer.fromIntegers(b.goodsCounts.stream()));
+        }
+
+        static Mosque deserialize(int number, JsonObject jsonObject) {
+            var a = jsonObject.getJsonArray("a").stream()
+                    .map(jsonValue -> (JsonNumber) jsonValue)
+                    .map(JsonNumber::intValue)
+                    .collect(Collectors.toList());
+
+            var b = jsonObject.getJsonArray("b").stream()
+                    .map(jsonValue -> (JsonNumber) jsonValue)
+                    .map(JsonNumber::intValue)
+                    .collect(Collectors.toList());
+
+            switch (number) {
+                case SmallMosque.NUMBER:
+                    return SmallMosque.withGoodsCounts(a, b);
+                case GreatMosque.NUMBER:
+                    return GreatMosque.withGoodsCounts(a, b);
+                default:
+                    throw new IllegalArgumentException("Unknown mosque: " + number);
+            }
         }
 
         @Override
@@ -668,40 +847,54 @@ public abstract class Place implements Serializable {
 
     }
 
-    public static class SmallMosque extends Mosque implements Serializable {
+    public static class SmallMosque extends Mosque {
 
-        private static final long serialVersionUID = 1L;
+        private static final int NUMBER = 14;
+        private static final MosqueTile A = MosqueTile.TURN_OR_REROLL_DICE;
+        private static final MosqueTile B = MosqueTile.PAY_2_LIRA_FOR_1_ADDITIONAL_GOOD;
 
-        private SmallMosque(int playerCount) {
-            super(14, playerCount,
-                    MosqueTile.TURN_OR_REROLL_DICE,
-                    MosqueTile.PAY_2_LIRA_FOR_1_ADDITIONAL_GOOD);
+        private SmallMosque(MosqueTileStack a, MosqueTileStack b) {
+            super(NUMBER, a, b);
         }
 
         static SmallMosque forPlayerCount(int playerCount) {
-            return new SmallMosque(playerCount);
+            return new SmallMosque(
+                    MosqueTileStack.forPlayerCount(A, playerCount),
+                    MosqueTileStack.forPlayerCount(B, playerCount));
+        }
+
+        static SmallMosque withGoodsCounts(List<Integer> a, List<Integer> b) {
+            return new SmallMosque(
+                    MosqueTileStack.withGoodsCounts(A, a),
+                    MosqueTileStack.withGoodsCounts(B, b));
         }
     }
 
-    public static class GreatMosque extends Mosque implements Serializable {
+    public static class GreatMosque extends Mosque {
 
-        private static final long serialVersionUID = 1L;
+        private static final int NUMBER = 15;
+        private static final MosqueTile A = MosqueTile.PAY_2_LIRA_TO_RETURN_ASSISTANT;
+        private static final MosqueTile B = MosqueTile.EXTRA_ASSISTANT;
 
-        private GreatMosque(int playerCount) {
-            super(15, playerCount,
-                    MosqueTile.PAY_2_LIRA_TO_RETURN_ASSISTANT,
-                    MosqueTile.EXTRA_ASSISTANT);
+        private GreatMosque(MosqueTileStack a, MosqueTileStack b) {
+            super(NUMBER, a, b);
         }
 
         static GreatMosque forPlayerCount(int playerCount) {
-            return new GreatMosque(playerCount);
+            return new GreatMosque(
+                    MosqueTileStack.forPlayerCount(A, playerCount),
+                    MosqueTileStack.forPlayerCount(B, playerCount));
+        }
+
+        static GreatMosque withGoodsCounts(List<Integer> a, List<Integer> b) {
+            return new GreatMosque(
+                    MosqueTileStack.withGoodsCounts(A, a),
+                    MosqueTileStack.withGoodsCounts(B, b));
         }
     }
 
 
-    public static class SultansPalace extends Place implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    public static class SultansPalace extends Place {
 
         private static final List<Optional<GoodsType>> REQUIRED_GOODS = List.of(
                 Optional.of(GoodsType.BLUE),
@@ -734,6 +927,16 @@ public abstract class Place implements Serializable {
                 throw new IllegalArgumentException("Number of uncovered is out of range");
             }
             return new SultansPalace(uncovered);
+        }
+
+        static SultansPalace deserialize(JsonObject jsonObject) {
+            return new SultansPalace(jsonObject.getInt("uncovered"));
+        }
+
+        @Override
+        JsonObjectBuilder serialize(JsonBuilderFactory factory) {
+            return super.serialize(factory)
+                    .add("uncovered", uncovered);
         }
 
         @Override
@@ -775,10 +978,10 @@ public abstract class Place implements Serializable {
             // Make sure the player pays the remaining "any" goods
             return ActionResult.followUp(PossibleAction.repeat(numberOfAnyGoodsType, numberOfAnyGoodsType,
                     PossibleAction.choice(Set.of(
-                            Action.Pay1Fabric.class,
-                            Action.Pay1Fruit.class,
-                            Action.Pay1Spice.class,
-                            Action.Pay1Blue.class))));
+                            PossibleAction.optional(Action.Pay1Fabric.class),
+                            PossibleAction.optional(Action.Pay1Fruit.class),
+                            PossibleAction.optional(Action.Pay1Spice.class),
+                            PossibleAction.optional(Action.Pay1Blue.class)))));
         }
 
         private boolean hasEnoughGoods(PlayerState playerState, Map<GoodsType, Long> requiredGoodsByType) {
@@ -787,9 +990,7 @@ public abstract class Place implements Serializable {
         }
     }
 
-    public static class GemstoneDealer extends Place implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    public static class GemstoneDealer extends Place {
 
         @Getter
         private int cost;
@@ -808,6 +1009,16 @@ public abstract class Place implements Serializable {
                 throw new IllegalArgumentException("Cost out of range");
             }
             return new GemstoneDealer(cost);
+        }
+
+        static GemstoneDealer deserialize(JsonObject jsonObject) {
+            return new GemstoneDealer(jsonObject.getInt("cost"));
+        }
+
+        @Override
+        JsonObjectBuilder serialize(JsonBuilderFactory factory) {
+            return super.serialize(factory)
+                    .add("cost", cost);
         }
 
         @Override

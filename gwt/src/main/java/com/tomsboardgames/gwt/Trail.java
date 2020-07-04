@@ -2,45 +2,41 @@ package com.tomsboardgames.gwt;
 
 import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.Score;
+import com.tomsboardgames.json.JsonSerializer;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonString;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Trail implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class Trail {
 
     @Getter
     private final Location.Start start;
 
     private final List<Location.TeepeeLocation> teepeeLocations;
 
+    private final List<Location.BuildingLocation> neutralBuildingLocations;
+
     @Getter
     private final Location.KansasCity kansasCity;
 
     private final Map<Player, Location> playerLocations = new HashMap<>();
 
-    public Trail(@NonNull Collection<Player> players, boolean beginner, @NonNull Random random) {
-        var neutralBuildings = new LinkedList<>(createNeutralBuildingSet());
-        if (!beginner) {
-            Collections.shuffle(neutralBuildings, random);
-        }
-
+    private Trail() {
         kansasCity = new Location.KansasCity();
 
         Location.BuildingLocation g = new Location.BuildingLocation("G", false,
                 new Location.BuildingLocation("G-1", false, kansasCity),
                 new Location.BuildingLocation("G-2", false, kansasCity));
-        g.placeBuilding(neutralBuildings.poll());
 
         Location.BuildingLocation f = new Location.BuildingLocation("F", false,
                 new Location.BuildingLocation("F-1", false, g),
                 new Location.BuildingLocation("F-2", true, g));
-        f.placeBuilding(neutralBuildings.poll());
 
         Location.HazardLocation rockfallSection = new Location.HazardLocation(HazardType.ROCKFALL, 1,
                 new Location.HazardLocation(HazardType.ROCKFALL, 2,
@@ -53,10 +49,8 @@ public class Trail implements Serializable {
                 new Location.BuildingLocation("E-1", true,
                         new Location.BuildingLocation("E-2", true, f)),
                 rockfallSection);
-        e.placeBuilding(neutralBuildings.poll());
 
         Location.BuildingLocation d = new Location.BuildingLocation("D", false, e);
-        d.placeBuilding(neutralBuildings.poll());
 
         Location.TeepeeLocation teepeeLocation10 = new Location.TeepeeLocation(10,
                 new Location.BuildingLocation("INDIAN-TRADE-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false,
@@ -85,7 +79,6 @@ public class Trail implements Serializable {
                 new Location.BuildingLocation("C-1-1", true,
                         new Location.BuildingLocation("C-1-2", true, e)),
                 crossRoadsIndianTrade);
-        c.placeBuilding(neutralBuildings.poll());
 
         Location.HazardLocation droughtSection = new Location.HazardLocation(HazardType.DROUGHT, 1,
                 new Location.HazardLocation(HazardType.DROUGHT, 2,
@@ -97,7 +90,6 @@ public class Trail implements Serializable {
                 new Location.BuildingLocation("B-1", true,
                         new Location.BuildingLocation("B-2", false,
                                 new Location.BuildingLocation("B-3", false, c))));
-        b.placeBuilding(neutralBuildings.poll());
 
         Location.HazardLocation floodSection = new Location.HazardLocation(HazardType.FLOOD, 1,
                 new Location.HazardLocation(HazardType.FLOOD, 2,
@@ -110,20 +102,98 @@ public class Trail implements Serializable {
                         new Location.BuildingLocation("A-2", false,
                                 new Location.BuildingLocation("A-3", false, b))),
                 floodSection);
-        a.placeBuilding(neutralBuildings.poll());
+
+        neutralBuildingLocations = List.of(a, b, c, d, e, f, g);
 
         start = new Location.Start(a);
     }
 
+    public Trail(boolean beginner, @NonNull Random random) {
+        this();
+
+        var neutralBuildings = new LinkedList<>(createNeutralBuildingSet());
+        if (!beginner) {
+            Collections.shuffle(neutralBuildings, random);
+        }
+
+        neutralBuildingLocations.forEach(buildingLocation ->
+                buildingLocation.placeBuilding(neutralBuildings.poll()));
+    }
+
+    JsonObject serialize(JsonBuilderFactory factory) {
+        var locations = factory.createObjectBuilder();
+
+        getBuildingLocations().stream()
+                .filter(buildingLocation -> buildingLocation.getBuilding().isPresent())
+                .forEach(buildingLocation -> locations.add(buildingLocation.getName(), factory.createObjectBuilder()
+                        .add("building", buildingLocation.getBuilding().map(b -> b.serialize(factory)).orElse(null))));
+
+        getTeepeeLocations().stream()
+                .filter(teepeeLocation -> teepeeLocation.getTeepee().isPresent())
+                .forEach(teepeeLocation -> locations.add(teepeeLocation.getName(), factory.createObjectBuilder()
+                        .add("teepee", teepeeLocation.getTeepee().map(Teepee::name).orElse(null))));
+
+        getHazardLocations()
+                .filter(hazardLocation -> hazardLocation.getHazard().isPresent())
+                .forEach(hazardLocation -> locations.add(hazardLocation.getName(), factory.createObjectBuilder()
+                        .add("hazard", hazardLocation.getHazard().map(h -> h.serialize(factory)).orElse(null))));
+
+        return factory.createObjectBuilder()
+                .add("playerLocations", JsonSerializer.forFactory(factory).fromStringMap(playerLocations, Player::getName, Location::getName))
+                .add("locations", locations)
+                .build();
+    }
+
+    static Trail deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
+        var trail = new Trail();
+
+        jsonObject.getJsonObject("playerLocations").forEach((key, value) ->
+                trail.playerLocations.put(playerMap.get(key), trail.getLocation(((JsonString) value).getString())));
+
+        var locations = jsonObject.getJsonObject("locations");
+
+        trail.getBuildingLocations().forEach(buildingLocation -> {
+            var location = locations.getJsonObject(buildingLocation.getName());
+            if (location != null) {
+                var building = location.getJsonObject("building");
+                if (building != null) {
+                    buildingLocation.placeBuilding(Building.deserialize(playerMap, building));
+                }
+            }
+        });
+
+        trail.getTeepeeLocations().forEach(teepeeLocation -> {
+            var location = locations.getJsonObject(teepeeLocation.getName());
+            if (location != null) {
+                var teepee = location.getString("teepee");
+                if (teepee != null) {
+                    teepeeLocation.placeTeepee(Teepee.valueOf(teepee));
+                }
+            }
+        });
+
+        trail.getHazardLocations().forEach(hazardLocation -> {
+            var location = locations.getJsonObject(hazardLocation.getName());
+            if (location != null) {
+                var hazard = location.getJsonObject("hazard");
+                if (hazard != null) {
+                    hazardLocation.placeHazard(Hazard.deserialize(hazard));
+                }
+            }
+        });
+
+        return trail;
+    }
+
     private static List<NeutralBuilding> createNeutralBuildingSet() {
         return Arrays.asList(
-                new NeutralBuilding.G(),
-                new NeutralBuilding.F(),
-                new NeutralBuilding.E(),
-                new NeutralBuilding.D(),
-                new NeutralBuilding.C(),
+                new NeutralBuilding.A(),
                 new NeutralBuilding.B(),
-                new NeutralBuilding.A()
+                new NeutralBuilding.C(),
+                new NeutralBuilding.D(),
+                new NeutralBuilding.E(),
+                new NeutralBuilding.F(),
+                new NeutralBuilding.G()
         );
     }
 
@@ -135,10 +205,14 @@ public class Trail implements Serializable {
         return Stream.concat(Stream.of(from), from.getNext().stream().flatMap(this::getLocations));
     }
 
-    public List<Location.HazardLocation> getHazardLocations(HazardType hazardType) {
+    private Stream<Location.HazardLocation> getHazardLocations() {
         return getLocations().stream()
                 .filter(location -> location instanceof Location.HazardLocation)
-                .map(location -> (Location.HazardLocation) location)
+                .map(location -> (Location.HazardLocation) location);
+    }
+
+    public List<Location.HazardLocation> getHazardLocations(HazardType hazardType) {
+        return getHazardLocations()
                 .filter(hazardLocation -> hazardLocation.getType() == hazardType)
                 .collect(Collectors.toList());
     }
@@ -169,6 +243,7 @@ public class Trail implements Serializable {
                 .orElseThrow(() -> new GWTException(GWTError.HAZARD_NOT_ON_TRAIL));
 
         hazardLocation.removeHazard();
+
     }
 
     public Location getLocation(String name) {

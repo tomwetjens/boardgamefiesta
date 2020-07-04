@@ -1,21 +1,47 @@
 package com.tomsboardgames.gwt;
 
+import com.tomsboardgames.json.JsonSerializer;
 import lombok.NonNull;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class ObjectiveCards implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class ObjectiveCards {
 
     private final Queue<ObjectiveCard> drawStack;
     private final Set<ObjectiveCard> available;
 
+    private ObjectiveCards(Queue<ObjectiveCard> drawStack, Set<ObjectiveCard> available) {
+        this.drawStack = drawStack;
+        this.available = available;
+    }
+
     ObjectiveCards(Random random) {
-        this.drawStack = createDrawStack(random);
-        this.available = new HashSet<>();
+        this(createDrawStack(random), new HashSet<>());
         fill();
+    }
+
+    JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("drawStack", serializer.fromCollection(drawStack, ObjectiveCard::serialize))
+                .add("available", serializer.fromCollection(available, ObjectiveCard::serialize))
+                .build();
+    }
+
+    static ObjectiveCards deserialize(JsonObject jsonObject) {
+        return new ObjectiveCards(
+                jsonObject.getJsonArray("drawStack").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(ObjectiveCard::deserialize)
+                        .collect(Collectors.toCollection(LinkedList::new)),
+                jsonObject.getJsonArray("available").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(ObjectiveCard::deserialize)
+                        .collect(Collectors.toSet()));
     }
 
     static Queue<ObjectiveCard> createStartingObjectiveCardsDrawStack(@NonNull Random random) {
@@ -55,7 +81,7 @@ public class ObjectiveCards implements Serializable {
         }
     }
 
-    private Queue<ObjectiveCard> createDrawStack(Random random) {
+    private static Queue<ObjectiveCard> createDrawStack(Random random) {
         List<ObjectiveCard> deck = new ArrayList<>(createSet());
         Collections.shuffle(deck, random);
         return new LinkedList<>(deck);
@@ -104,4 +130,5 @@ public class ObjectiveCards implements Serializable {
         }
         return drawStack.poll();
     }
+
 }

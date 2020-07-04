@@ -1,19 +1,19 @@
 package com.tomsboardgames.gwt;
 
+import com.tomsboardgames.json.JsonDeserializer;
+import com.tomsboardgames.json.JsonSerializer;
 import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.Score;
 import lombok.*;
 
-import java.io.Serializable;
+import javax.json.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class PlayerState implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class PlayerState {
 
     private static final List<Integer> CERTIFICATE_STEPS = Arrays.asList(0, 1, 2, 3, 4, 6);
 
@@ -24,15 +24,15 @@ public class PlayerState implements Serializable {
     private final Player player;
     private final Queue<Card> drawStack;
     private final Set<Card> hand;
-    private final List<Card> discardPile = new LinkedList<>();
-    private final Map<Worker, Integer> workers = new EnumMap<>(Worker.class);
+    private final List<Card> discardPile;
+    private final Map<Worker, Integer> workers;
     private final Set<PlayerBuilding> buildings;
     @Singular("unlocked")
     private final Map<Unlockable, Integer> unlocked;
-    private final Set<ObjectiveCard> objectives = new HashSet<>();
-    private final Set<StationMaster> stationMasters = new HashSet<>();
-    private final List<Teepee> teepees = new LinkedList<>();
-    private final Set<Hazard> hazards = new HashSet<>();
+    private final Set<ObjectiveCard> objectives;
+    private final Set<StationMaster> stationMasters;
+    private final List<Teepee> teepees;
+    private final Set<Hazard> hazards;
 
     @Getter
     private int tempCertificates;
@@ -47,9 +47,11 @@ public class PlayerState implements Serializable {
         this.tempCertificates = 0;
 
         this.drawStack = createDrawStack(random);
+        this.discardPile = new LinkedList<>();
 
         this.hand = new HashSet<>();
 
+        this.workers = new EnumMap<>(Worker.class);
         this.workers.put(Worker.COWBOY, 1);
         this.workers.put(Worker.CRAFTSMAN, 1);
         this.workers.put(Worker.ENGINEER, 1);
@@ -59,9 +61,61 @@ public class PlayerState implements Serializable {
         this.unlocked.put(Unlockable.AUX_GAIN_DOLLAR, 1);
         this.unlocked.put(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, 1);
 
+        this.objectives = new HashSet<>();
         this.objectives.add(startingObjectiveCard);
 
+        this.stationMasters = new HashSet<>();
+        this.teepees = new LinkedList<>();
+        this.hazards = new HashSet<>();
+
         drawUpToHandLimit(random);
+    }
+
+    JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+
+        return factory.createObjectBuilder()
+                .add("drawStack", serializer.fromCollection(drawStack, Card::serialize))
+                .add("hand", serializer.fromCollection(hand, Card::serialize))
+                .add("discardPile", serializer.fromCollection(discardPile, Card::serialize))
+                .add("workers", serializer.fromIntegerMap(workers, Worker::name))
+                .add("buildings", serializer.fromStrings(buildings, Building::getName))
+                .add("balance", balance)
+                .add("unlocked", serializer.fromIntegerMap(unlocked, Unlockable::name))
+                .add("objectives", serializer.fromCollection(objectives, ObjectiveCard::serialize))
+                .add("stationMasters", serializer.fromStrings(stationMasters, StationMaster::name))
+                .add("teepees", serializer.fromStrings(teepees, Teepee::name))
+                .add("hazards", serializer.fromCollection(hazards, Hazard::serialize))
+                .build();
+    }
+
+    static PlayerState deserialize(Player player, JsonObject jsonObject) {
+        return builder()
+                .player(player)
+                .drawStack(jsonObject.getJsonArray("drawStack").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Card::deserialize)
+                        .collect(Collectors.toCollection(LinkedList::new)))
+                .hand(jsonObject.getJsonArray("hand").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Card::deserialize)
+                        .collect(Collectors.toSet()))
+                .discardPile(jsonObject.getJsonArray("discardPile").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Card::deserialize)
+                        .collect(Collectors.toCollection(LinkedList::new)))
+                .workers(JsonDeserializer.forObject(jsonObject.getJsonObject("workers")).asIntegerMap(Worker::valueOf))
+                .buildings(jsonObject.getJsonArray("buildings")
+                        .getValuesAs(JsonString::getString).stream()
+                        .map(name -> PlayerBuilding.forName(name, player))
+                        .collect(Collectors.toSet()))
+                .balance(jsonObject.getInt("balance"))
+                .unlocked(JsonDeserializer.forObject(jsonObject.getJsonObject("unlocked")).asIntegerMap(Unlockable::valueOf))
+                .objectives(jsonObject.getJsonArray("objectives").stream().map(JsonValue::asJsonObject).map(ObjectiveCard::deserialize).collect(Collectors.toSet()))
+                .stationMasters(jsonObject.getJsonArray("stationMasters").getValuesAs(JsonString::getString).stream().map(StationMaster::valueOf).collect(Collectors.toSet()))
+                .teepees(jsonObject.getJsonArray("teepees").getValuesAs(JsonString::getString).stream().map(Teepee::valueOf).collect(Collectors.toList()))
+                .hazards(jsonObject.getJsonArray("hazards").stream().map(JsonValue::asJsonObject).map(Hazard::deserialize).collect(Collectors.toSet()))
+                .build();
     }
 
     void drawCard(Random random) {

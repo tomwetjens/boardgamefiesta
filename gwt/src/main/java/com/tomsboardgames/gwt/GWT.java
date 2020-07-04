@@ -8,7 +8,6 @@ import com.tomsboardgames.gwt.view.StateView;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.JsonObject;
-import java.io.InputStream;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
@@ -64,7 +63,7 @@ public class GWT implements Game<com.tomsboardgames.gwt.Game> {
 
     @Override
     public com.tomsboardgames.gwt.Game start(Set<Player> players, Options options, Random random) {
-        return new com.tomsboardgames.gwt.Game(players, options.getBoolean("beginner", false), random);
+        return com.tomsboardgames.gwt.Game.start(players, options.getBoolean("beginner", false), random);
     }
 
     @Override
@@ -83,8 +82,8 @@ public class GWT implements Game<com.tomsboardgames.gwt.Game> {
     }
 
     @Override
-    public com.tomsboardgames.gwt.Game deserialize(InputStream inputStream) {
-        return com.tomsboardgames.gwt.Game.deserialize(inputStream);
+    public com.tomsboardgames.gwt.Game deserialize(JsonObject jsonObject) {
+        return com.tomsboardgames.gwt.Game.deserialize(jsonObject);
     }
 
     @Override

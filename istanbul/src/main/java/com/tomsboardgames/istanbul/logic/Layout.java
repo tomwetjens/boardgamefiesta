@@ -2,17 +2,20 @@ package com.tomsboardgames.istanbul.logic;
 
 import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.PlayerColor;
+import com.tomsboardgames.json.JsonSerializer;
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class Layout implements Serializable {
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public class Layout {
 
     private static final int WIDTH = 4;
     private static final int HEIGHT = 4;
@@ -186,4 +189,21 @@ public class Layout implements Serializable {
         return Arrays.stream(layout).flatMap(Arrays::stream).collect(Collectors.toSet());
     }
 
+    JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("layout", serializer.fromStream(Arrays.stream(layout), column ->
+                        serializer.fromStream(Arrays.stream(column), place -> place.serialize(factory).build())))
+                .build();
+    }
+
+    static Layout deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
+        return new Layout(jsonObject.getJsonArray("layout").stream()
+                .map(JsonValue::asJsonArray)
+                .map(column -> column.stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(place -> Place.deserialize(playerMap, place))
+                        .toArray(Place[]::new))
+                .toArray(Place[][]::new));
+    }
 }

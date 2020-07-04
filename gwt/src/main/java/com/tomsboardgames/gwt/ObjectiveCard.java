@@ -1,8 +1,12 @@
 package com.tomsboardgames.gwt;
 
+import com.tomsboardgames.json.JsonSerializer;
 import com.tomsboardgames.api.Player;
 import lombok.*;
 
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonString;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -13,8 +17,6 @@ import java.util.stream.Stream;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class ObjectiveCard extends Card {
 
-    private static final long serialVersionUID = 1L;
-
     PossibleAction possibleAction;
     List<Task> tasks;
     int points;
@@ -22,6 +24,25 @@ public class ObjectiveCard extends Card {
 
     Optional<PossibleAction> getPossibleAction() {
         return Optional.ofNullable(possibleAction);
+    }
+
+    @Override
+    JsonObject serialize(JsonBuilderFactory factory) {
+        return factory.createObjectBuilder()
+                .add("possibleAction", possibleAction != null ? possibleAction.serialize(factory) : null)
+                .add("tasks", JsonSerializer.forFactory(factory).fromStrings(tasks.stream().map(Task::name)))
+                .add("points", points)
+                .add("penalty", penalty)
+                .build();
+    }
+
+    static ObjectiveCard deserialize(JsonObject jsonObject) {
+        var possibleAction = jsonObject.getJsonObject("possibleAction");
+        return new ObjectiveCard(
+                possibleAction != null ? PossibleAction.deserialize(possibleAction) : null,
+                jsonObject.getJsonArray("tasks").getValuesAs(JsonString::getString).stream().map(Task::valueOf).collect(Collectors.toList()),
+                jsonObject.getInt("points"),
+                jsonObject.getInt("penalty"));
     }
 
     public Optional<Class<? extends Action>> getAction() {
@@ -85,7 +106,7 @@ public class ObjectiveCard extends Card {
 
     @Value
     @Builder
-    private static final class Counts {
+    private static class Counts {
         @Singular
         Map<Task, Integer> counts;
 
@@ -109,7 +130,7 @@ public class ObjectiveCard extends Card {
         BREEDING_VALUE_3,
         BREEDING_VALUE_4,
         BREEDING_VALUE_5,
-        SAN_FRANCISCO;
+        SAN_FRANCISCO
     }
 
 }

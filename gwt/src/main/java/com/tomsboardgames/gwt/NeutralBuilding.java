@@ -1,16 +1,27 @@
 package com.tomsboardgames.gwt;
 
-public abstract class NeutralBuilding extends Building {
+import javax.json.JsonString;
 
-    private static final long serialVersionUID = 1L;
+public abstract class NeutralBuilding extends Building {
 
     NeutralBuilding(String name) {
         super(name, Hand.NONE);
     }
 
-    public static final class A extends NeutralBuilding {
+    public static NeutralBuilding forName(String name) {
+        switch (name) {
+            case "A": return new NeutralBuilding.A();
+            case "B": return new NeutralBuilding.B();
+            case "C": return new NeutralBuilding.C();
+            case "D": return new NeutralBuilding.D();
+            case "E": return new NeutralBuilding.E();
+            case "F": return new NeutralBuilding.F();
+            case "G": return new NeutralBuilding.G();
+            default: throw new IllegalArgumentException("Unsupported neutral building: " + name);
+        }
+    }
 
-        private static final long serialVersionUID = 1L;
+    public static final class A extends NeutralBuilding {
 
         A() {
             super("A");
@@ -24,8 +35,6 @@ public abstract class NeutralBuilding extends Building {
 
     public static final class B extends NeutralBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         B() {
             super("B");
         }
@@ -37,8 +46,6 @@ public abstract class NeutralBuilding extends Building {
     }
 
     public static final class C extends NeutralBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         C() {
             super("C");
@@ -54,8 +61,6 @@ public abstract class NeutralBuilding extends Building {
 
     public static final class D extends NeutralBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         D() {
             super("D");
         }
@@ -69,8 +74,6 @@ public abstract class NeutralBuilding extends Building {
     }
 
     public static final class E extends NeutralBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         E() {
             super("E");
@@ -95,8 +98,6 @@ public abstract class NeutralBuilding extends Building {
     }
 
     public static final class G extends NeutralBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         G() {
             super("G");

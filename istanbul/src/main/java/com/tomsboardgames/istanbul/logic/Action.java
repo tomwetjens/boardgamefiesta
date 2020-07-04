@@ -5,16 +5,13 @@ import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class Action implements com.tomsboardgames.api.Action, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public abstract class Action implements com.tomsboardgames.api.Action {
 
     abstract ActionResult perform(Game game, Random random);
 
@@ -103,7 +100,9 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             game.place(Place::isGovernor).takeGovernor();
             game.randomPlace(random).placeGovernor();
 
-            return ActionResult.followUp(PossibleAction.choice(Set.of(Action.Pay2Lira.class, Action.DiscardBonusCard.class)));
+            return ActionResult.followUp(PossibleAction.choice(Set.of(
+                    PossibleAction.optional(Action.Pay2Lira.class),
+                    PossibleAction.optional(Action.DiscardBonusCard.class))));
         }
 
     }
@@ -116,15 +115,19 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
 
             return ActionResult.followUp(PossibleAction.whenThen(takeAnyGood(),
                     PossibleAction.choice(Set.of(
-                            Action.Pay2Lira.class,
-                            Action.Pay1Fabric.class,
-                            Action.Pay1Fruit.class,
-                            Action.Pay1Spice.class,
-                            Action.Pay1Blue.class)), 0, 1));
+                            PossibleAction.optional(Action.Pay2Lira.class),
+                            PossibleAction.optional(Action.Pay1Fabric.class),
+                            PossibleAction.optional(Action.Pay1Fruit.class),
+                            PossibleAction.optional(Action.Pay1Spice.class),
+                            PossibleAction.optional(Action.Pay1Blue.class))), 0, 1));
         }
 
         private static PossibleAction takeAnyGood() {
-            return PossibleAction.choice(Set.of(Take1Fabric.class, Take1Spice.class, Take1Fruit.class, Take1Blue.class));
+            return PossibleAction.choice(Set.of(
+                    PossibleAction.optional(Take1Fabric.class),
+                    PossibleAction.optional(Take1Spice.class),
+                    PossibleAction.optional(Take1Fruit.class),
+                    PossibleAction.optional(Take1Blue.class)));
         }
     }
 
@@ -194,10 +197,10 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             currentPlayerState.payLira(2);
 
             return ActionResult.followUp(PossibleAction.choice(Set.of(
-                    Action.Take1Blue.class,
-                    Action.Take1Fruit.class,
-                    Action.Take1Spice.class,
-                    Action.Take1Fabric.class)));
+                    PossibleAction.optional(Action.Take1Blue.class),
+                    PossibleAction.optional(Action.Take1Fruit.class),
+                    PossibleAction.optional(Action.Take1Spice.class),
+                    PossibleAction.optional(Action.Take1Fabric.class))));
         }
     }
 
@@ -503,10 +506,10 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             currentPlayerState.removeBonusCard(BonusCard.GAIN_1_GOOD);
 
             return ActionResult.followUp(PossibleAction.choice(Set.of(
-                    Action.Take1Fabric.class,
-                    Action.Take1Spice.class,
-                    Action.Take1Fruit.class,
-                    Action.Take1Blue.class)));
+                    PossibleAction.optional(Action.Take1Fabric.class),
+                    PossibleAction.optional(Action.Take1Spice.class),
+                    PossibleAction.optional(Action.Take1Fruit.class),
+                    PossibleAction.optional(Action.Take1Blue.class))));
         }
     }
 
@@ -524,7 +527,9 @@ public abstract class Action implements com.tomsboardgames.api.Action, Serializa
             from.takeFamilyMember(game.getCurrentPlayer());
             policeStation.placeFamilyMember(game, game.getCurrentPlayer());
 
-            return ActionResult.followUp(PossibleAction.choice(Set.of(Action.TakeBonusCard.class, Action.Take3Lira.class)));
+            return ActionResult.followUp(PossibleAction.choice(Set.of(
+                    PossibleAction.optional(Action.TakeBonusCard.class),
+                    PossibleAction.optional(Action.Take3Lira.class))));
         }
     }
 

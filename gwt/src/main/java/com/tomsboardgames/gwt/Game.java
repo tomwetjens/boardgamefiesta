@@ -1,23 +1,23 @@
 package com.tomsboardgames.gwt;
 
 import com.tomsboardgames.api.EventListener;
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.api.Score;
-import com.tomsboardgames.api.State;
+import com.tomsboardgames.api.*;
+import com.tomsboardgames.json.JsonSerializer;
 import com.tomsboardgames.gwt.view.ActionType;
-import lombok.Getter;
-import lombok.NonNull;
+import lombok.*;
 
-import java.io.*;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class Game implements State, Serializable {
-
-    private static final long serialVersionUID = 1L;
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder(access = AccessLevel.PRIVATE)
+public class Game implements State {
 
     private final List<Player> players;
 
@@ -46,7 +46,7 @@ public class Game implements State, Serializable {
 
     private final ActionStack actionStack;
 
-    private transient Set<EventListener> eventListeners = new HashSet<>();
+    private transient Set<EventListener> eventListeners;
 
     @Getter
     private Player currentPlayer;
@@ -54,7 +54,7 @@ public class Game implements State, Serializable {
     @Getter
     private boolean ended;
 
-    public Game(@NonNull Set<Player> players, boolean beginner, @NonNull Random random) {
+    public static Game start(@NonNull Set<Player> players, boolean beginner, @NonNull Random random) {
         if (players.size() < 2) {
             throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
         }
@@ -63,8 +63,8 @@ public class Game implements State, Serializable {
             throw new GWTException(GWTError.AT_MOST_4_PLAYERS_SUPPORTED);
         }
 
-        this.players = new LinkedList<>(players);
-        Collections.shuffle(this.players, random);
+        var playerOrder = new LinkedList<>(players);
+        Collections.shuffle(playerOrder, random);
 
         PlayerBuilding.BuildingSet buildings = beginner
                 ? PlayerBuilding.BuildingSet.beginner()
@@ -72,28 +72,31 @@ public class Game implements State, Serializable {
 
         Queue<ObjectiveCard> startingObjectiveCards = ObjectiveCards.createStartingObjectiveCardsDrawStack(random);
 
-        this.playerStates = new HashMap<>();
+        var playerStates = new HashMap<Player, PlayerState>();
         int startBalance = 6;
-        for (Player player : this.players) {
-            this.playerStates.put(player, new PlayerState(player, startBalance++, startingObjectiveCards.poll(), random, buildings));
+        for (Player player : players) {
+            playerStates.put(player, new PlayerState(player, startBalance++, startingObjectiveCards.poll(), random, buildings));
         }
 
-        this.currentPlayer = this.players.get(0);
+        var kansasCitySupply = new KansasCitySupply(random);
 
-        this.railroadTrack = new RailroadTrack(players, random);
+        var game = builder()
+                .players(playerOrder)
+                .playerStates(playerStates)
+                .currentPlayer(playerOrder.get(0))
+                .railroadTrack(new RailroadTrack(players, random))
+                .kansasCitySupply(kansasCitySupply)
+                .trail(new Trail(beginner, random))
+                .jobMarket(new JobMarket(players.size()))
+                .foresights(new Foresights(kansasCitySupply))
+                .cattleMarket(new CattleMarket(players.size(), random))
+                .objectiveCards(new ObjectiveCards(random))
+                .actionStack(new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class))))
+                .build();
 
-        this.kansasCitySupply = new KansasCitySupply(random);
-        this.trail = new Trail(this.players, beginner, random);
-        this.jobMarket = new JobMarket(players.size());
-        placeInitialTiles();
+        game.placeInitialTiles();
 
-        this.foresights = new Foresights(kansasCitySupply);
-        this.cattleMarket = new CattleMarket(players.size(), random);
-        this.objectiveCards = new ObjectiveCards(random);
-
-        this.actionStack = new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
-
-        fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
+        return game;
     }
 
     private void placeInitialTiles() {
@@ -170,7 +173,9 @@ public class Game implements State, Serializable {
     }
 
     void fireEvent(Player player, GWTEvent.Type type, List<String> values) {
-        eventListeners.forEach(eventLogger -> eventLogger.event(new GWTEvent(player, type, values)));
+        if (eventListeners != null) {
+            eventListeners.forEach(eventLogger -> eventLogger.event(new GWTEvent(player, type, values)));
+        }
     }
 
     private void fireEvent(Action action) {
@@ -302,22 +307,51 @@ public class Game implements State, Serializable {
     }
 
     @Override
-    public void serialize(OutputStream outputStream) {
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
-            objectOutputStream.writeObject(this);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("players", serializer.fromCollection(players, Player::serialize))
+                .add("playerStates", serializer.fromMap(playerStates, Player::getName, PlayerState::serialize))
+                .add("currentPlayer", currentPlayer.getName())
+                .add("railroadTrack", railroadTrack.serialize(factory))
+                .add("kansasCitySupply", kansasCitySupply.serialize(factory))
+                .add("trail", trail.serialize(factory))
+                .add("jobMarket", jobMarket.serialize(factory))
+                .add("foresights", foresights.serialize(factory))
+                .add("cattleMarket", cattleMarket.serialize(factory))
+                .add("objectiveCards", objectiveCards.serialize(factory))
+                .add("actionStack", actionStack.serialize(factory))
+                .build();
     }
 
-    public static Game deserialize(InputStream inputStream) {
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-            return (Game) objectInputStream.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new UnsupportedOperationException(e);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    static Game deserialize(JsonObject jsonObject) {
+        var players = jsonObject.getJsonArray("players").stream()
+                .map(JsonValue::asJsonObject)
+                .map(Player::deserialize)
+                .collect(Collectors.toList());
+
+        var playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
+
+        var kansasCitySupply = KansasCitySupply.deserialize(jsonObject.getJsonObject("kansasCitySupply"));
+
+        return builder()
+                .players(players)
+                .playerStates(deserializePlayerStates(playerMap, jsonObject.getJsonObject("playerStates")))
+                .currentPlayer(playerMap.get(jsonObject.getString("currentPlayer")))
+                .railroadTrack(RailroadTrack.deserialize(playerMap, jsonObject.getJsonObject("railroadTrack")))
+                .kansasCitySupply(kansasCitySupply)
+                .trail(Trail.deserialize(playerMap, jsonObject.getJsonObject("trail")))
+                .jobMarket(JobMarket.deserialize(players.size(), jsonObject.getJsonObject("jobMarket")))
+                .foresights(Foresights.deserialize(kansasCitySupply, jsonObject.getJsonObject("foresights")))
+                .cattleMarket(CattleMarket.deserialize(players.size(), jsonObject.getJsonObject("cattleMarket")))
+                .objectiveCards(ObjectiveCards.deserialize(jsonObject.getJsonObject("objectiveCards")))
+                .actionStack(ActionStack.deserialize(jsonObject.getJsonObject("actionStack")))
+                .build();
+    }
+
+    private static Map<Player, PlayerState> deserializePlayerStates(Map<String, Player> playerMap, JsonObject jsonObject) {
+        return jsonObject.keySet().stream()
+                .collect(Collectors.toMap(playerMap::get, key -> PlayerState.deserialize(playerMap.get(key), jsonObject.getJsonObject(key).asJsonObject())));
     }
 
     @Override

@@ -76,8 +76,8 @@ public class Istanbul implements Game<com.tomsboardgames.istanbul.logic.Game> {
     }
 
     @Override
-    public com.tomsboardgames.istanbul.logic.Game deserialize(InputStream inputStream) {
-        return com.tomsboardgames.istanbul.logic.Game.deserialize(inputStream);
+    public com.tomsboardgames.istanbul.logic.Game deserialize(JsonObject jsonObject) {
+        return com.tomsboardgames.istanbul.logic.Game.deserialize(jsonObject);
     }
 
     @Override

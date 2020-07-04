@@ -1,16 +1,19 @@
 package com.tomsboardgames.istanbul.logic;
 
+import com.tomsboardgames.json.JsonDeserializer;
+import com.tomsboardgames.json.JsonSerializer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonString;
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class PlayerState implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class PlayerState {
 
     @Getter
     private final List<BonusCard> bonusCards;
@@ -148,5 +151,35 @@ public class PlayerState implements Serializable {
 
     public static int maxRubies(int playerCount) {
         return playerCount > 2 ? 5 : 6;
+    }
+
+    JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("bonusCards", serializer.fromStrings(bonusCards, BonusCard::name))
+                .add("mosqueTiles", serializer.fromStrings(mosqueTiles, MosqueTile::name))
+                .add("goods", serializer.fromIntegerMap(goods, GoodsType::name))
+                .add("lira", lira)
+                .add("capacity", capacity)
+                .add("rubies", rubies)
+                .build();
+    }
+
+    static PlayerState deserialize(JsonObject jsonObject) {
+        return new PlayerState(
+                jsonObject.getInt("lira"),
+                jsonObject.getInt("capacity"),
+                jsonObject.getInt("rubies"),
+                jsonObject.getJsonArray("bonusCards").stream()
+                        .map(jsonValue -> (JsonString) jsonValue)
+                        .map(JsonString::getString)
+                        .map(BonusCard::valueOf)
+                        .collect(Collectors.toList()),
+                jsonObject.getJsonArray("mosqueTiles").stream()
+                        .map(jsonValue -> (JsonString) jsonValue)
+                        .map(JsonString::getString)
+                        .map(MosqueTile::valueOf)
+                        .collect(Collectors.toSet()),
+                JsonDeserializer.forObject(jsonObject.getJsonObject("goods")).asIntegerMap(GoodsType::valueOf));
     }
 }

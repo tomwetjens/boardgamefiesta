@@ -2,9 +2,14 @@ package com.tomsboardgames.gwt;
 
 import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.Score;
+import com.tomsboardgames.json.JsonDeserializer;
+import com.tomsboardgames.json.JsonSerializer;
 import lombok.*;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -12,9 +17,7 @@ import java.util.stream.Stream;
 
 @Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class RailroadTrack implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class RailroadTrack {
 
     private static final int MAX_SPACE = 39;
 
@@ -31,18 +34,18 @@ public class RailroadTrack implements Serializable {
     private final Space.StartSpace start;
     @Getter
     private final Space.EndSpace end;
-    private final Map<Integer, Space.NumberedSpace> normalSpaces = new HashMap<>();
+    private final Map<String, Space> spaces = new HashMap<>();
     private final List<Space.TurnoutSpace> turnouts = new ArrayList<>(TURNOUTS.size());
     private final Map<Player, Space> currentSpaces = new HashMap<>();
 
     private final Map<City, List<Player>> cities;
 
-    RailroadTrack(@NonNull Set<Player> players, @NonNull Random random) {
-        this.stations = createStations(random);
-        this.cities = createEmptyCities();
+    private RailroadTrack(List<Station> stations, Map<City, List<Player>> cities) {
+        this.stations = stations;
+        this.cities = cities;
 
         end = new Space.EndSpace(MAX_SPACE, stations.get(stations.size() - 1));
-        normalSpaces.put(end.getNumber(), end);
+        spaces.put(end.getName(), end);
 
         Space.NumberedSpace last = end;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
@@ -51,19 +54,19 @@ public class RailroadTrack implements Serializable {
             last.previous.add(current);
             last = current;
 
-            normalSpaces.put(number, current);
+            spaces.put(current.getName(), current);
         }
 
         start = new Space.StartSpace(last);
         last.previous.add(start);
-        normalSpaces.put(start.getNumber(), start);
+        spaces.put(start.getName(), start);
 
         // Turn outs
         for (int i = 0; i < TURNOUTS.size(); i++) {
             int number = TURNOUTS.get(i);
 
-            Space previous = normalSpaces.get(number);
-            Space next = normalSpaces.get(number + 1);
+            Space previous = spaces.get(Integer.toString(number));
+            Space next = spaces.get(Integer.toString(number + 1));
 
             Space.TurnoutSpace turnout = new Space.TurnoutSpace(previous, next, stations.get(i));
 
@@ -72,28 +75,32 @@ public class RailroadTrack implements Serializable {
 
             this.turnouts.add(turnout);
         }
+    }
+
+    RailroadTrack(@NonNull Set<Player> players, @NonNull Random random) {
+        this(createInitialStations(random), createInitialCities());
 
         players.forEach(player -> currentSpaces.put(player, start));
     }
 
-    private static List<Station> createStations(@NonNull Random random) {
+    private static List<Station> createInitialStations(Random random) {
         List<StationMaster> stationMasters = Arrays.asList(StationMaster.values());
         Collections.shuffle(stationMasters, random);
 
         return Arrays.asList(
-                new Station(2, 1, Collections.singleton(DiscColor.WHITE), stationMasters.get(0)),
-                new Station(2, 1, Collections.singleton(DiscColor.WHITE), stationMasters.get(1)),
-                new Station(4, 2, Collections.singleton(DiscColor.WHITE), stationMasters.get(2)),
-                new Station(4, 2, Collections.singleton(DiscColor.WHITE), stationMasters.get(3)),
-                new Station(6, 3, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), stationMasters.get(4)),
-                new Station(8, 5, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
-                new Station(7, 6, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
-                new Station(6, 7, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
-                new Station(5, 8, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
-                new Station(3, 9, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null));
+                Station.initial(2, 1, Collections.singleton(DiscColor.WHITE), stationMasters.get(0)),
+                Station.initial(2, 1, Collections.singleton(DiscColor.WHITE), stationMasters.get(1)),
+                Station.initial(4, 2, Collections.singleton(DiscColor.WHITE), stationMasters.get(2)),
+                Station.initial(4, 2, Collections.singleton(DiscColor.WHITE), stationMasters.get(3)),
+                Station.initial(6, 3, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), stationMasters.get(4)),
+                Station.initial(8, 5, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
+                Station.initial(7, 6, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
+                Station.initial(6, 7, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
+                Station.initial(5, 8, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
+                Station.initial(3, 9, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null));
     }
 
-    private static Map<City, List<Player>> createEmptyCities() {
+    private static Map<City, List<Player>> createInitialCities() {
         var cities = new EnumMap<City, List<Player>>(City.class);
         for (City city : City.values()) {
             cities.put(city, new LinkedList<>());
@@ -101,16 +108,44 @@ public class RailroadTrack implements Serializable {
         return cities;
     }
 
+    JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("stations", serializer.fromCollection(stations, Station::serialize))
+                .add("cities", serializer.fromMap(cities, City::name, players -> serializer.fromStrings(players, Player::getName)))
+                .add("currentSpaces", serializer.fromStringMap(currentSpaces, Player::getName, Space::getName))
+                .build();
+    }
+
+    static RailroadTrack deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
+        var railroadTrack = new RailroadTrack(
+                jsonObject.getJsonArray("stations").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(obj -> Station.deserialize(playerMap, obj))
+                        .collect(Collectors.toList()),
+                JsonDeserializer.forObject(jsonObject.getJsonObject("cities"))
+                        .asMap(City::valueOf, jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
+                                .map(playerMap::get).collect(Collectors.toList())));
+
+        railroadTrack.currentSpaces.putAll(JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces")).asStringMap(playerMap::get, railroadTrack::getSpace));
+
+        return railroadTrack;
+    }
+
     public List<Station> getStations() {
         return Collections.unmodifiableList(stations);
     }
 
-    public Space.NumberedSpace getSpace(int number) {
-        Space.NumberedSpace numberedSpace = normalSpaces.get(number);
-        if (numberedSpace == null) {
+    public Space getSpace(String name) {
+        Space space = spaces.get(name);
+        if (space == null) {
             throw new GWTException(GWTError.NO_SUCH_SPACE);
         }
-        return numberedSpace;
+        return space;
+    }
+
+    public Space.NumberedSpace getSpace(int number) {
+        return (Space.NumberedSpace) getSpace(Integer.toString(number));
     }
 
     public List<Space.TurnoutSpace> getTurnouts() {
@@ -193,19 +228,19 @@ public class RailroadTrack implements Serializable {
     }
 
     @Value
-    public static final class EngineMove {
+    public static class EngineMove {
         ImmediateActions immediateActions;
         int steps;
     }
 
     public Set<Space> reachableSpacesForward(@NonNull Space from, int atLeast, int atMost) {
-        return reachableSpaces(from, from, atLeast, atMost,0, Space::getNext).stream()
+        return reachableSpaces(from, from, atLeast, atMost, 0, Space::getNext).stream()
                 .map(ReachableSpace::getSpace)
                 .collect(Collectors.toSet());
     }
 
     public Set<Space> reachableSpacesBackwards(@NonNull Space from, int atLeast, int atMost) {
-        return reachableSpaces(from, from, atLeast, atMost,0, Space::getPrevious).stream()
+        return reachableSpaces(from, from, atLeast, atMost, 0, Space::getPrevious).stream()
                 .map(ReachableSpace::getSpace)
                 .collect(Collectors.toSet());
     }
@@ -225,7 +260,7 @@ public class RailroadTrack implements Serializable {
             reachable.addAll(direction.apply(current).stream()
                     .flatMap(next -> reachableSpaces(from, next, atLeast, atMost, steps, direction).stream())
                     .collect(Collectors.toSet()));
-        } else if (available && atMost > 1) {
+        } else if (atMost > 1) {
             // Space is possible so count as step
             reachable.addAll(direction.apply(current).stream()
                     .flatMap(next -> reachableSpaces(from, next, Math.max(atLeast - 1, 0), atMost - 1, steps + 1, direction).stream())
@@ -378,15 +413,13 @@ public class RailroadTrack implements Serializable {
     }
 
     @Value
-    public static final class PossibleDelivery {
+    public static class PossibleDelivery {
         City city;
         int certificates;
         int reward;
     }
 
-    public static abstract class Space implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    public static abstract class Space {
 
         private final boolean signal;
         private final Station station;
@@ -429,8 +462,6 @@ public class RailroadTrack implements Serializable {
         @Getter
         public static class NumberedSpace extends Space {
 
-            private static final long serialVersionUID = 1L;
-
             @Getter
             private final int number;
 
@@ -452,16 +483,12 @@ public class RailroadTrack implements Serializable {
         @ToString
         public static final class StartSpace extends NumberedSpace {
 
-            private static final long serialVersionUID = 1L;
-
             private StartSpace(@NonNull NumberedSpace next) {
                 super(false, 0, Collections.singleton(next));
             }
         }
 
         public static final class TurnoutSpace extends Space {
-
-            private static final long serialVersionUID = 1L;
 
             public TurnoutSpace(@NonNull Space previous, @NonNull Space next, @NonNull Station station) {
                 super(false, station, Collections.singleton(next));
@@ -476,8 +503,6 @@ public class RailroadTrack implements Serializable {
 
         @ToString
         public static final class EndSpace extends NumberedSpace {
-            private static final long serialVersionUID = 1L;
-
             public EndSpace(int number, @NonNull Station station) {
                 super(false, number, station, Collections.emptySet());
             }

@@ -12,6 +12,19 @@ import java.util.stream.Stream;
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action implements com.tomsboardgames.api.Action {
 
+    @SuppressWarnings("unchecked")
+    static Class<? extends Action> deserializeClass(String str) {
+        try {
+            return (Class<? extends Action>) Class.forName(Action.class.getName() + "$" + str);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Unknown action: " + str);
+        }
+    }
+
+    static String serializeClass(Class<? extends Action> action) {
+        return action.getSimpleName();
+    }
+
     abstract ImmediateActions perform(@NonNull Game game, @NonNull Random random);
 
     List<String> toEventParams(Game game) {

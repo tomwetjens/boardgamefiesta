@@ -3,14 +3,11 @@ package com.tomsboardgames.gwt;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class Location implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public abstract class Location {
 
     @Getter
     private final String name;
@@ -74,8 +71,6 @@ public abstract class Location implements Serializable {
 
     public static class Start extends Location {
 
-        private static final long serialVersionUID = 1L;
-
         Start(Location... next) {
             super("START", next);
         }
@@ -88,8 +83,6 @@ public abstract class Location implements Serializable {
 
     @Getter
     public static class BuildingLocation extends Location {
-
-        private static final long serialVersionUID = 1L;
 
         private final Class<? extends Action> riskAction;
         private final boolean inWoods;
@@ -189,8 +182,6 @@ public abstract class Location implements Serializable {
 
     public static final class HazardLocation extends Location {
 
-        private static final long serialVersionUID = 1L;
-
         @NonNull
         @Getter
         private final HazardType type;
@@ -254,8 +245,6 @@ public abstract class Location implements Serializable {
 
     public static class KansasCity extends Location {
 
-        private static final long serialVersionUID = 1L;
-
         KansasCity(Location... next) {
             super("KANSAS_CITY", next);
         }
@@ -272,8 +261,6 @@ public abstract class Location implements Serializable {
     }
 
     public static final class TeepeeLocation extends Location {
-
-        private static final long serialVersionUID = 1L;
 
         @Getter
         private final int reward;

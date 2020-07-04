@@ -3,7 +3,6 @@ package com.tomsboardgames.api;
 import lombok.Value;
 
 import javax.json.JsonObject;
-import java.io.InputStream;
 import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
@@ -34,7 +33,7 @@ public interface Game<T extends State> {
 
     Id getId();
 
-    T deserialize(InputStream inputStream);
+    T deserialize(JsonObject jsonObject);
 
     boolean hasAutoma();
 

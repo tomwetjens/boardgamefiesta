@@ -410,31 +410,6 @@ class PossibleActionTest {
             assertThat(possibleAction.isFinal()).isTrue();
         }
 
-        @Test
-        void shouldBecomeImmediateIfCurrentBecomesImmediate() {
-            when(a.canPerform(A.class)).thenReturn(true);
-            when(a.isFinal()).thenReturn(false);
-            when(a.getPossibleActions()).thenReturn(Set.of(A.class));
-
-            when(b.getPossibleActions()).thenReturn(Set.of(B.class));
-
-            var possibleAction = PossibleAction.any(Stream.of(a, b));
-
-            assertThat(possibleAction.isImmediate()).isFalse();
-
-            possibleAction.perform(A.class);
-
-            when(a.isImmediate()).thenReturn(true);
-
-            assertThat(possibleAction.isImmediate()).isTrue();
-            assertThat(possibleAction.getPossibleActions()).containsExactly(A.class);
-
-            when(a.isFinal()).thenReturn(true);
-            possibleAction.perform(A.class);
-
-            assertThat(possibleAction.isImmediate()).isFalse();
-            assertThat(possibleAction.getPossibleActions()).containsExactly(B.class);
-        }
     }
 
     abstract class A extends Action {

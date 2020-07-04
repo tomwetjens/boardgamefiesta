@@ -5,13 +5,13 @@ import com.tomsboardgames.api.PlayerColor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import java.util.Map;
 import java.util.Optional;
 
 @AllArgsConstructor
-public class Merchant implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class Merchant {
 
     @Getter
     private final PlayerColor color;
@@ -42,5 +42,20 @@ public class Merchant implements Serializable {
 
     public Optional<Player> getPlayer() {
         return Optional.ofNullable(player);
+    }
+
+    static Merchant deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
+        return new Merchant(
+                PlayerColor.valueOf(jsonObject.getString("color")),
+                playerMap.get(jsonObject.getString("player")),
+                jsonObject.getInt("assistants"));
+    }
+
+    JsonObject serialize(JsonBuilderFactory jsonBuilderFactory) {
+        return jsonBuilderFactory.createObjectBuilder()
+                .add("color", color.name())
+                .add("player", player != null ? player.getName() : null)
+                .add("assistants", assistants)
+                .build();
     }
 }

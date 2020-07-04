@@ -228,9 +228,7 @@ class CattleMarketTest {
     }
 
     private CattleMarket createCattleMarket(Set<Card.CattleCard> cattleCards) {
-        return CattleMarket.builder()
-                .market(cattleCards)
-                .build();
+        return new CattleMarket(2, new LinkedList<>(), cattleCards);
     }
 
     private CattleMarket createCattleMarketWithAllCards() {

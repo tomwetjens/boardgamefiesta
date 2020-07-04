@@ -5,7 +5,6 @@ import com.tomsboardgames.api.PlayerColor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
@@ -24,7 +23,7 @@ class TrailTest {
 
     @BeforeEach
     void setUp() {
-        trail = new Trail(Arrays.asList(playerA, playerB, playerC, playerD), true, new Random(0));
+        trail = new Trail(true, new Random(0));
 
         ((Location.BuildingLocation) trail.getLocation("A-1")).placeBuilding(new PlayerBuilding.Building1A(playerA));
         ((Location.BuildingLocation) trail.getLocation("A-2")).placeBuilding(new PlayerBuilding.Building2A(playerA));

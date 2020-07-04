@@ -1,16 +1,32 @@
 package com.tomsboardgames.gwt;
 
-import java.io.Serializable;
+import com.tomsboardgames.json.JsonSerializer;
+
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.util.*;
+import java.util.stream.Collectors;
 
-class ActionStack implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+class ActionStack {
 
     private final Deque<PossibleAction> actions;
 
     ActionStack(Collection<PossibleAction> startActions) {
         this.actions = new LinkedList<>(startActions);
+    }
+
+    JsonObject serialize(JsonBuilderFactory factory) {
+        return factory.createObjectBuilder()
+                .add("actions", JsonSerializer.forFactory(factory).fromCollection(actions, PossibleAction::serialize))
+                .build();
+    }
+
+    static ActionStack deserialize(JsonObject jsonObject) {
+        return new ActionStack(jsonObject.getJsonArray("actions").stream()
+                .map(JsonValue::asJsonObject)
+                .map(PossibleAction::deserialize)
+                .collect(Collectors.toList()));
     }
 
     void push(Collection<? extends PossibleAction> possibleActions) {
@@ -83,4 +99,5 @@ class ActionStack implements Serializable {
     void clear() {
         actions.clear();
     }
+
 }

@@ -1,8 +1,14 @@
 package com.tomsboardgames.istanbul.logic;
 
-import lombok.*;
+import com.tomsboardgames.json.JsonSerializer;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,18 +22,18 @@ public abstract class PossibleAction {
     }
 
     public static PossibleAction optional(@NonNull PossibleAction possibleAction) {
-        return new Any(Collections.singleton(possibleAction));
+        return new Any(Collections.singleton(possibleAction), null);
     }
 
     public static PossibleAction any(@NonNull Set<PossibleAction> actions) {
-        return new Any(actions);
+        return new Any(actions, null);
     }
 
     public static PossibleAction mandatory(@NonNull Class<? extends Action> action) {
         return new Single(action, true);
     }
 
-    public static PossibleAction choice(@NonNull Set<Class<? extends Action>> actions) {
+    public static PossibleAction choice(@NonNull Set<PossibleAction> actions) {
         return new Choice(actions);
     }
 
@@ -51,11 +57,35 @@ public abstract class PossibleAction {
 
     protected abstract PossibleAction clone();
 
+    abstract JsonObject serialize(JsonBuilderFactory factory);
+
+    static PossibleAction deserialize(JsonObject jsonObject) {
+        var any = jsonObject.getJsonObject("any");
+        if (any != null) {
+            return Any.deserialize(any);
+        }
+
+        var choice = jsonObject.getJsonObject("choice");
+        if (choice != null) {
+            return Choice.deserialize(jsonObject);
+        }
+
+        var repeat = jsonObject.getJsonObject("repeat");
+        if (repeat != null) {
+            return Repeat.deserialize(repeat);
+        }
+
+        var whenThen = jsonObject.getJsonObject("whenThen");
+        if (whenThen != null) {
+            return WhenThen.deserialize(whenThen);
+        }
+
+        return Single.deserialize(jsonObject);
+    }
+
     @ToString
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    private static class Single extends PossibleAction implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    private static class Single extends PossibleAction {
 
         private final Class<? extends Action> action;
 
@@ -105,22 +135,42 @@ public abstract class PossibleAction {
         protected PossibleAction clone() {
             return new Single(action, mandatory, completed);
         }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("action", action.getSimpleName())
+                    .add("mandatory", mandatory)
+                    .add("completed", completed)
+                    .build();
+        }
+
+        @SuppressWarnings("unchecked")
+        static Single deserialize(JsonObject jsonObject) {
+            try {
+                return new Single(
+                        (Class<? extends Action>) Class.forName(Action.class.getName() + "$" + jsonObject.getString("action")),
+                        jsonObject.getBoolean("mandatory"),
+                        jsonObject.getBoolean("completed"));
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
     }
 
     @ToString
-    private static class Any extends PossibleAction implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    private static class Any extends PossibleAction {
 
         private final Set<PossibleAction> possibleActions;
 
         private PossibleAction current;
 
-        private Any(@NonNull Set<PossibleAction> possibleActions) {
+        private Any(@NonNull Set<PossibleAction> possibleActions, PossibleAction current) {
             if (possibleActions.isEmpty()) {
                 throw new IllegalArgumentException("Must contain at least 1 possible action");
             }
             this.possibleActions = new HashSet<>(possibleActions);
+            this.current = current;
         }
 
         @Override
@@ -171,28 +221,39 @@ public abstract class PossibleAction {
         protected PossibleAction clone() {
             return new Any(possibleActions.stream()
                     .map(PossibleAction::clone)
-                    .collect(Collectors.toSet()));
+                    .collect(Collectors.toSet()), current);
         }
 
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("any", factory.createObjectBuilder()
+                            .add("possibleActions", JsonSerializer.forFactory(factory).fromCollection(possibleActions, PossibleAction::serialize))
+                            .add("current", current != null ? current.serialize(factory) : null))
+                    .build();
+        }
+
+        static Any deserialize(JsonObject jsonObject) {
+            var current = jsonObject.getJsonObject("current");
+            return new Any(jsonObject.getJsonArray("possibleActions").stream()
+                    .map(JsonValue::asJsonObject)
+                    .map(PossibleAction::deserialize)
+                    .collect(Collectors.toSet()), current != null ? PossibleAction.deserialize(current) : null);
+        }
     }
 
     @ToString
-    private static class Choice extends PossibleAction implements Serializable {
+    private static class Choice extends PossibleAction {
 
-        private static final long serialVersionUID = 1L;
+        private final Set<PossibleAction> choices;
 
-        private final Set<Class<? extends Action>> choices;
-
-        private Choice(@NonNull Set<Class<? extends Action>> choices) {
-            if (choices.size() < 2) {
-                throw new IllegalArgumentException("Must provide at least 2 choices");
-            }
+        private Choice(@NonNull Set<PossibleAction> choices) {
             this.choices = new HashSet<>(choices);
         }
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (!choices.contains(action)) {
+            if (!canPerform(action)) {
                 throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
             }
 
@@ -207,7 +268,7 @@ public abstract class PossibleAction {
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            return choices.contains(action);
+            return choices.stream().anyMatch(possibleAction -> possibleAction.canPerform(action));
         }
 
         @Override
@@ -217,20 +278,33 @@ public abstract class PossibleAction {
 
         @Override
         Stream<Class<? extends Action>> getPossibleActions() {
-            return choices.stream();
+            return choices.stream().flatMap(PossibleAction::getPossibleActions);
         }
 
         @Override
         protected PossibleAction clone() {
             return new Choice(choices);
         }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("choice", factory.createObjectBuilder()
+                            .add("choices", JsonSerializer.forFactory(factory).fromCollection(choices, PossibleAction::serialize)))
+                    .build();
+        }
+
+        static Choice deserialize(JsonObject jsonObject) {
+            return new Choice(jsonObject.getJsonArray("choices").stream()
+                    .map(JsonValue::asJsonObject)
+                    .map(PossibleAction::deserialize)
+                    .collect(Collectors.toSet()));
+        }
     }
 
     @ToString
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    private static class Repeat extends PossibleAction implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    private static class Repeat extends PossibleAction {
 
         private final int atLeast;
         private final int atMost;
@@ -306,13 +380,33 @@ public abstract class PossibleAction {
         protected PossibleAction clone() {
             return new Repeat(atLeast, atMost, repeatingAction.clone(), current.clone(), count);
         }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("repeat", factory.createObjectBuilder()
+                            .add("atLeast", atLeast)
+                            .add("atMost", atMost)
+                            .add("repeatingAction", repeatingAction.serialize(factory))
+                            .add("current", current != null ? current.serialize(factory) : null)
+                            .add("count", count))
+                    .build();
+        }
+
+        static Repeat deserialize(JsonObject jsonObject) {
+            var current = jsonObject.getJsonObject("current");
+            return new Repeat(
+                    jsonObject.getInt("atLeast"),
+                    jsonObject.getInt("atMost"),
+                    PossibleAction.deserialize(jsonObject.getJsonObject("repeatingAction")),
+                    current != null ? PossibleAction.deserialize(current) : null,
+                    jsonObject.getInt("count"));
+        }
     }
 
     @ToString
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    private static class WhenThen extends PossibleAction implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    private static class WhenThen extends PossibleAction {
 
         private final PossibleAction when;
         private final PossibleAction then;
@@ -392,6 +486,32 @@ public abstract class PossibleAction {
         @Override
         protected PossibleAction clone() {
             return new WhenThen(when.clone(), then.clone(), atLeast, atMost, whens, thens, current.clone());
+        }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("whenThen", factory.createObjectBuilder()
+                            .add("when", when.serialize(factory))
+                            .add("then", then.serialize(factory))
+                            .add("atLeast", atLeast)
+                            .add("atMost", atMost)
+                            .add("whens", whens)
+                            .add("thens", thens)
+                            .add("current", current != null ? current.serialize(factory) : null))
+                    .build();
+        }
+
+        static WhenThen deserialize(JsonObject jsonObject) {
+            var current = jsonObject.getJsonObject("current");
+            return new WhenThen(
+                    PossibleAction.deserialize(jsonObject.getJsonObject("when")),
+                    PossibleAction.deserialize(jsonObject.getJsonObject("then")),
+                    jsonObject.getInt("atLeast"),
+                    jsonObject.getInt("atMost"),
+                    jsonObject.getInt("whens"),
+                    jsonObject.getInt("thens"),
+                    current != null ? PossibleAction.deserialize(current) : null);
         }
     }
 }

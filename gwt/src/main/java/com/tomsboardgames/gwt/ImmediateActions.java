@@ -3,20 +3,19 @@ package com.tomsboardgames.gwt;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class ImmediateActions {
 
-    private final List<ImmediateAction> actions;
+    private final List<PossibleAction> actions;
 
-    private ImmediateActions(List<ImmediateAction> actions) {
+    private ImmediateActions(List<PossibleAction> actions) {
         this.actions = actions;
     }
 
     static ImmediateActions of(PossibleAction... possibleAction) {
-        return new ImmediateActions(Arrays.stream(possibleAction).map(ImmediateAction::new).collect(Collectors.toList()));
+        return new ImmediateActions(Arrays.stream(possibleAction).collect(Collectors.toList()));
     }
 
     static ImmediateActions none() {
@@ -28,7 +27,7 @@ class ImmediateActions {
     }
 
     ImmediateActions andThen(PossibleAction... possibleAction) {
-        return new ImmediateActions(Stream.concat(actions.stream(), Arrays.stream(possibleAction).map(ImmediateAction::new))
+        return new ImmediateActions(Stream.concat(actions.stream(), Arrays.stream(possibleAction))
                 .collect(Collectors.toUnmodifiableList()));
     }
 
@@ -41,49 +40,4 @@ class ImmediateActions {
         return actions.isEmpty();
     }
 
-    private static final class ImmediateAction extends PossibleAction {
-
-        private static final long serialVersionUID = 1L;
-
-        private final PossibleAction possibleAction;
-
-        private ImmediateAction(PossibleAction possibleAction) {
-            this.possibleAction = possibleAction;
-        }
-
-        @Override
-        public void perform(Class<? extends Action> action) {
-            possibleAction.perform(action);
-        }
-
-        @Override
-        public void skip() {
-            possibleAction.skip();
-        }
-
-        @Override
-        public boolean isFinal() {
-            return possibleAction.isFinal();
-        }
-
-        @Override
-        public boolean canPerform(Class<? extends Action> action) {
-            return possibleAction.canPerform(action);
-        }
-
-        @Override
-        public Set<Class<? extends Action>> getPossibleActions() {
-            return possibleAction.getPossibleActions();
-        }
-
-        @Override
-        public boolean isImmediate() {
-            return true;
-        }
-
-        @Override
-        public PossibleAction clone() {
-            return new ImmediateAction(possibleAction.clone());
-        }
-    }
 }

@@ -2,7 +2,8 @@ package com.tomsboardgames.api;
 
 import lombok.NonNull;
 
-import java.io.OutputStream;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -22,7 +23,7 @@ public interface State {
 
     int score(Player player);
 
-    void serialize(OutputStream outputStream);
+    JsonObject serialize(JsonBuilderFactory factory);
 
     Set<Player> winners();
 

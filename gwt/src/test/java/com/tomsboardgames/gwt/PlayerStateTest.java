@@ -176,7 +176,7 @@ class PlayerStateTest {
 
         @Test
         void add() {
-            PlayerState playerState = PlayerState.builder().build();
+            PlayerState playerState = PlayerState.builder().hazards(new HashSet<>()).build();
 
             Hazard hazard = new Hazard(HazardType.FLOOD, Hand.GREEN, 2);
             playerState.addHazard(hazard);
@@ -187,7 +187,7 @@ class PlayerStateTest {
         @Test
         void addDuplicate() {
             Hazard hazard = new Hazard(HazardType.FLOOD, Hand.GREEN, 2);
-            PlayerState playerState = PlayerState.builder().build();
+            PlayerState playerState = PlayerState.builder().hazards(new HashSet<>()).build();
             playerState.addHazard(hazard);
 
             assertThatThrownBy(() -> playerState.addHazard(hazard)).hasMessage(GWTError.ALREADY_HAS_HAZARD.toString());
@@ -196,7 +196,7 @@ class PlayerStateTest {
         @Test
         void addSimilar() {
             Hazard hazard = new Hazard(HazardType.FLOOD, Hand.GREEN, 2);
-            PlayerState playerState = PlayerState.builder().build();
+            PlayerState playerState = PlayerState.builder().hazards(new HashSet<>()).build();
             playerState.addHazard(hazard);
 
             Hazard hazard2 = new Hazard(HazardType.FLOOD, Hand.GREEN, 2);
@@ -416,6 +416,12 @@ class PlayerStateTest {
                     .balance(24)
                     .hand(Collections.emptySet())
                     .drawStack(new LinkedList<>())
+                    .discardPile(Collections.emptyList())
+                    .teepees(Collections.emptyList())
+                    .hazards(Collections.emptySet())
+                    .objectives(Collections.emptySet())
+                    .stationMasters(Collections.emptySet())
+                    .workers(Collections.emptyMap())
                     .build();
 
             when(game.playerState(player)).thenReturn(playerState);

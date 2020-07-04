@@ -34,7 +34,7 @@ class GameTest {
 
         @Test
         void beginner() {
-            Game game = new Game(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             assertThat(game.getPlayers()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
@@ -56,20 +56,20 @@ class GameTest {
 
         @Test
         void randomized() {
-            Game game = new Game(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), false, new Random(0));
+            Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), false, new Random(0));
 
             assertThat(game.getPlayers()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
 
             // Neutral buildings should be randomized
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get()).isInstanceOf(NeutralBuilding.D.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("B")).getBuilding().get()).isInstanceOf(NeutralBuilding.B.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("C")).getBuilding().get()).isInstanceOf(NeutralBuilding.E.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("D")).getBuilding().get()).isInstanceOf(NeutralBuilding.A.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("E")).getBuilding().get()).isInstanceOf(NeutralBuilding.G.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("F")).getBuilding().get()).isInstanceOf(NeutralBuilding.C.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get()).isInstanceOf(NeutralBuilding.F.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get()).isInstanceOf(NeutralBuilding.B.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("B")).getBuilding().get()).isInstanceOf(NeutralBuilding.E.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("C")).getBuilding().get()).isInstanceOf(NeutralBuilding.A.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("D")).getBuilding().get()).isInstanceOf(NeutralBuilding.G.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("E")).getBuilding().get()).isInstanceOf(NeutralBuilding.C.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("F")).getBuilding().get()).isInstanceOf(NeutralBuilding.F.class);
+            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get()).isInstanceOf(NeutralBuilding.D.class);
 
             // Player buildings should be randomized
             Class[] randomizedBuildings = {
@@ -93,12 +93,9 @@ class GameTest {
 
         @Test
         void serialize() {
-            Game state = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            var game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            state.serialize(byteArrayOutputStream);
-
-            Game deserialized = Game.deserialize(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+            // TODO
         }
     }
 
@@ -126,21 +123,21 @@ class GameTest {
 
         @Test
         void needWhite() {
-            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             assertThat(game.placeDisc(Collections.singletonList(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
         }
 
         @Test
         void needBlackOrWhite() {
-            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             assertThat(game.placeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
         }
 
         @Test
         void needWhiteButCanOnlyUnlockBlack() {
-            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
             assertThat(game.placeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
 
@@ -163,7 +160,7 @@ class GameTest {
 
         @Test
         void cannotUnlockButStationsUpgraded() {
-            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 
@@ -193,7 +190,7 @@ class GameTest {
 
         @Test
         void cannotUnlockNoStationsUpgraded() {
-            Game game = new Game(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 

@@ -1,19 +1,51 @@
 package com.tomsboardgames.istanbul.logic;
 
+import com.tomsboardgames.json.JsonSerializer;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ActionQueue implements Serializable {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class ActionQueue {
 
-    private static final long serialVersionUID = 1L;
-
-    private final LinkedList<PossibleAction> inOrder = new LinkedList<>();
-    private final List<PossibleAction> anyTime = new LinkedList<>();
+    private final List<PossibleAction> anyTime;
+    private final LinkedList<PossibleAction> inOrder;
     private PossibleAction current;
+
+    ActionQueue() {
+        inOrder = new LinkedList<>();
+        anyTime = new LinkedList<>();
+    }
+
+    JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("anyTime", serializer.fromCollection(anyTime, PossibleAction::serialize))
+                .add("inOrder", serializer.fromCollection(inOrder, PossibleAction::serialize))
+                .add("current", current != null ? current.serialize(factory) : null)
+                .build();
+    }
+
+    static ActionQueue deserialize(JsonObject jsonObject) {
+        var current = jsonObject.getJsonObject("current");
+        return new ActionQueue(
+                jsonObject.getJsonArray("anyTime").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(PossibleAction::deserialize)
+                        .collect(Collectors.toList()),
+                jsonObject.getJsonArray("inOrder").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(PossibleAction::deserialize)
+                        .collect(Collectors.toCollection(LinkedList::new)),
+                current != null ? PossibleAction.deserialize(current) : null);
+    }
 
     void perform(@NonNull Class<? extends Action> action) {
         if (current != null) {
@@ -129,4 +161,5 @@ public class ActionQueue implements Serializable {
     public Optional<PossibleAction> getCurrent() {
         return Optional.ofNullable(current);
     }
+
 }

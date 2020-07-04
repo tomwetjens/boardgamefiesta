@@ -1,29 +1,53 @@
 package com.tomsboardgames.gwt;
 
-import lombok.*;
+import com.tomsboardgames.json.JsonSerializer;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Value;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-@Builder
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class CattleMarket implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class CattleMarket {
 
     private final int limit;
     private final Queue<Card.CattleCard> drawStack;
     private final Set<Card.CattleCard> market;
 
     CattleMarket(int playerCount, Random random) {
-        this.limit = playerCount == 2 ? 7 : playerCount == 3 ? 10 : 13;
-        this.drawStack = createDrawStack(random);
-        this.market = new HashSet<>();
-
+        this(playerCount, createDrawStack(random), new HashSet<>());
         fillUp();
+    }
+
+    CattleMarket(int playerCount, Queue<Card.CattleCard> drawStack, Set<Card.CattleCard> market) {
+        this.limit = playerCount == 2 ? 7 : playerCount == 3 ? 10 : 13;
+        this.drawStack = drawStack;
+        this.market = market;
+    }
+
+    JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("drawStack", serializer.fromCollection(drawStack, Card.CattleCard::serialize))
+                .add("market", serializer.fromCollection(market, Card.CattleCard::serialize))
+                .build();
+    }
+
+    static CattleMarket deserialize(int playerCount, JsonObject jsonObject) {
+        return new CattleMarket(playerCount,
+                jsonObject.getJsonArray("drawStack").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Card.CattleCard::deserialize)
+                        .collect(Collectors.toCollection(LinkedList::new)),
+                jsonObject.getJsonArray("market").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Card.CattleCard::deserialize)
+                        .collect(Collectors.toSet()));
     }
 
     public Set<Card.CattleCard> getMarket() {
@@ -123,7 +147,7 @@ public class CattleMarket implements Serializable {
     }
 
     @Value
-    public static final class Cost {
+    public static class Cost {
         int dollars;
         int cowboys;
     }

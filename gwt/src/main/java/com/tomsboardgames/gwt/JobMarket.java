@@ -1,16 +1,24 @@
 package com.tomsboardgames.gwt;
 
+import com.tomsboardgames.json.JsonSerializer;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class JobMarket implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+@Builder(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class JobMarket {
 
     @Getter
     private final List<Row> rows;
@@ -39,6 +47,27 @@ public class JobMarket implements Serializable {
                 new Row(4));
 
         this.currentRowIndex = 0;
+    }
+
+    JsonObject serialize(JsonBuilderFactory factory) {
+        return factory.createObjectBuilder()
+                .add("currentRowIndex", rowLimit)
+                .add("rows", JsonSerializer.forFactory(factory).fromCollection(rows, Row::serialize))
+                .build();
+    }
+
+    static JobMarket deserialize(int playerCount, JsonObject jsonObject) {
+        var jobMarket = builder()
+                .currentRowIndex(jsonObject.getInt("currentRowIndex"))
+                .rows(jsonObject.getJsonArray("rows").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Row::deserialize)
+                        .collect(Collectors.toList()))
+                .build();
+
+        jobMarket.adjustRowLimit(playerCount);
+
+        return jobMarket;
     }
 
     void adjustRowLimit(int playerCount) {
@@ -98,14 +127,16 @@ public class JobMarket implements Serializable {
         return row.getCost();
     }
 
-    public final class Row implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    @Builder(access = AccessLevel.PRIVATE)
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class Row {
 
         @Getter
         private final int cost;
+
         @Getter
         private final boolean cattleMarket;
+
         private final List<Worker> workers;
 
         private Row(int cost) {
@@ -115,11 +146,25 @@ public class JobMarket implements Serializable {
         private Row(int cost, boolean cattleMarket) {
             this.cost = cost;
             this.cattleMarket = cattleMarket;
-            this.workers = new ArrayList<>(rowLimit);
+            this.workers = new ArrayList<>(4);
         }
 
         public List<Worker> getWorkers() {
             return Collections.unmodifiableList(workers);
+        }
+
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("cost", cost)
+                    .add("cattleMarket", cattleMarket)
+                    .add("workers", JsonSerializer.forFactory(factory).fromStrings(workers.stream().map(Worker::name)))
+                    .build();
+        }
+
+        static Row deserialize(JsonObject jsonObject) {
+            return new Row(jsonObject.getInt("cost"),
+                    jsonObject.getBoolean("cattleMarket"),
+                    jsonObject.getJsonArray("workers").getValuesAs(jsonValue -> Worker.valueOf(((JsonString) jsonValue).getString())));
         }
     }
 }

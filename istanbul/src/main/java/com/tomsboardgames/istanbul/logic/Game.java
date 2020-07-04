@@ -5,21 +5,25 @@ import com.tomsboardgames.api.EventListener;
 import com.tomsboardgames.api.Player;
 import com.tomsboardgames.api.PlayerColor;
 import com.tomsboardgames.api.State;
+import com.tomsboardgames.json.JsonDeserializer;
+import com.tomsboardgames.json.JsonSerializer;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.io.*;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Game implements Serializable, State {
-
-    private static final long serialVersionUID = 1L;
+public class Game implements State {
 
     public static final Set<PlayerColor> SUPPORTED_COLORS = Set.of(PlayerColor.WHITE, PlayerColor.YELLOW, PlayerColor.RED, PlayerColor.GREEN, PlayerColor.BLUE);
 
@@ -50,7 +54,7 @@ public class Game implements Serializable, State {
     @NonNull
     private Status status;
 
-    private transient List<EventListener> eventListeners;
+    private List<EventListener> eventListeners;
 
     public static Game start(@NonNull Set<Player> players, @NonNull LayoutType layoutType, @NonNull Random random) {
         var playerOrder = new ArrayList<>(players);
@@ -119,22 +123,40 @@ public class Game implements Serializable, State {
     }
 
     @Override
-    public void serialize(OutputStream outputStream) {
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
-            objectOutputStream.writeObject(this);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public JsonObject serialize(JsonBuilderFactory factory) {
+        var serializer = JsonSerializer.forFactory(factory);
+        return factory.createObjectBuilder()
+                .add("players", serializer.fromCollection(players, Player::serialize))
+                .add("playerStates", serializer.fromMap(playerStates, Player::getName, PlayerState::serialize))
+                .add("layout", layout.serialize(factory))
+                .add("startPlayer", startPlayer.getName())
+                .add("bonusCards", serializer.fromStrings(bonusCards, BonusCard::name))
+                .add("actionQueue", actionQueue.serialize(factory))
+                .add("currentPlayer", currentPlayer.getName())
+                .add("status", status.name())
+                .build();
     }
 
-    public static Game deserialize(InputStream inputStream) {
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-            return (Game) objectInputStream.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new UnsupportedOperationException(e);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public static Game deserialize(JsonObject jsonObject) {
+        var players = jsonObject.getJsonArray("players").stream()
+                .map(JsonValue::asJsonObject)
+                .map(Player::deserialize).collect(Collectors.toList());
+
+        var playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
+
+        return new Game(
+                players,
+                JsonDeserializer.forObject(jsonObject.getJsonObject("playerStates")).asObjectMap(playerMap::get, PlayerState::deserialize),
+                Layout.deserialize(playerMap, jsonObject.getJsonObject("layout")),
+                playerMap.get(jsonObject.getString("startPlayer")),
+                jsonObject.getJsonArray("bonusCards").stream()
+                        .map(jsonValue -> (JsonString) jsonValue)
+                        .map(JsonString::getString)
+                        .map(BonusCard::valueOf)
+                        .collect(Collectors.toCollection(LinkedList::new)),
+                ActionQueue.deserialize(jsonObject.getJsonObject("actionQueue")),
+                playerMap.get(jsonObject.getString("currentPlayer")),
+                Status.valueOf(jsonObject.getString("status")), null);
     }
 
     @Override

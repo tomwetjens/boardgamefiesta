@@ -1,16 +1,17 @@
 package com.tomsboardgames.gwt;
 
+import com.tomsboardgames.json.JsonSerializer;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
-import java.io.Serializable;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-abstract class PossibleAction implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+abstract class PossibleAction {
 
     /**
      * Player MUST perform the action and cannot skip it.
@@ -36,6 +37,7 @@ abstract class PossibleAction implements Serializable {
     /**
      * Player MAY perform none, a single, some or all of the options in ANY order.
      */
+    @SafeVarargs
     static PossibleAction any(Class<? extends Action>... actions) {
         return any(Arrays.asList(actions));
     }
@@ -59,6 +61,7 @@ abstract class PossibleAction implements Serializable {
     /**
      * Player MAY perform none, a single, some or all of the options in ANY order.
      */
+    @SafeVarargs
     static PossibleAction any(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Any(Stream.concat(
                 Stream.of(possibleAction),
@@ -67,7 +70,7 @@ abstract class PossibleAction implements Serializable {
     }
 
     static PossibleAction whenThen(int atLeast, int atMost, Class<? extends Action> when, Class<? extends Action> then) {
-        return new WhenThen(atLeast, atMost, when, then);
+        return new WhenThen(atLeast, atMost, when, then, 0);
     }
 
     static PossibleAction repeat(int atLeast, int atMost, Class<? extends Action> action) {
@@ -77,6 +80,7 @@ abstract class PossibleAction implements Serializable {
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
+    @SafeVarargs
     static PossibleAction choice(Class<? extends Action>... actions) {
         return new Choice(Arrays.stream(actions)
                 .map(PossibleAction::optional)
@@ -100,11 +104,38 @@ abstract class PossibleAction implements Serializable {
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
+    @SafeVarargs
     static PossibleAction choice(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Choice(Stream.concat(Stream.of(possibleAction), Arrays.stream(actions)
                 .map(PossibleAction::optional))
                 .collect(Collectors.toCollection(HashSet::new)));
     }
+
+    static PossibleAction deserialize(JsonObject jsonObject) {
+        var mandatory = jsonObject.getJsonObject("mandatory");
+        if (mandatory != null) {
+            return Mandatory.deserialize(mandatory);
+        }
+
+        var any = jsonObject.getJsonObject("any");
+        if (any != null) {
+            return Any.deserialize(any);
+        }
+
+        var choice = jsonObject.getJsonObject("choice");
+        if (choice != null) {
+            return Choice.deserialize(choice);
+        }
+
+        var whenThen = jsonObject.getJsonObject("whenThen");
+        if (whenThen != null) {
+            return WhenThen.deserialize(whenThen);
+        }
+
+        return Repeat.deserialize(jsonObject.getJsonObject("repeat"));
+    }
+
+    abstract JsonObject serialize(JsonBuilderFactory factory);
 
     /**
      * Makes a copy.
@@ -128,11 +159,6 @@ abstract class PossibleAction implements Serializable {
     abstract boolean isFinal();
 
     /**
-     * Determines if the action must be performed before any other action.
-     */
-    abstract boolean isImmediate();
-
-    /**
      * Determines if the action can be performed.
      */
     abstract boolean canPerform(Class<? extends Action> action);
@@ -145,12 +171,22 @@ abstract class PossibleAction implements Serializable {
 
     private static final class Mandatory extends PossibleAction {
 
-        private static final long serialVersionUID = 1L;
-
         private Class<? extends Action> action;
 
         private Mandatory(Class<? extends Action> action) {
             this.action = action;
+        }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("mandatory", factory.createObjectBuilder()
+                            .add("action", Action.serializeClass(action)))
+                    .build();
+        }
+
+        static Mandatory deserialize(JsonObject jsonObject) {
+            return new Mandatory(Action.deserializeClass(jsonObject.getString("action")));
         }
 
         @Override
@@ -178,11 +214,6 @@ abstract class PossibleAction implements Serializable {
         }
 
         @Override
-        boolean isImmediate() {
-            return false;
-        }
-
-        @Override
         Set<Class<? extends Action>> getPossibleActions() {
             return action != null ? Collections.singleton(action) : Collections.emptySet();
         }
@@ -196,13 +227,29 @@ abstract class PossibleAction implements Serializable {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     private static final class Any extends PossibleAction {
 
-        private static final long serialVersionUID = 1L;
-
         private final List<PossibleAction> actions;
         private PossibleAction current;
 
         private Any(List<PossibleAction> actions) {
             this.actions = actions;
+        }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("any", factory.createObjectBuilder()
+                            .add("actions", JsonSerializer.forFactory(factory).fromCollection(actions, PossibleAction::serialize))
+                            .add("current", actions.indexOf(current)))
+                    .build();
+        }
+
+        static Any deserialize(JsonObject jsonObject) {
+            var actions = jsonObject.getJsonArray("actions").stream()
+                    .map(JsonValue::asJsonObject)
+                    .map(PossibleAction::deserialize)
+                    .collect(Collectors.toList());
+            var current = jsonObject.getInt("current");
+            return new Any(actions, current != -1 ? actions.get(current) : null);
         }
 
         @Override
@@ -262,11 +309,6 @@ abstract class PossibleAction implements Serializable {
         }
 
         @Override
-        boolean isImmediate() {
-            return current != null && current.isImmediate();
-        }
-
-        @Override
         Set<Class<? extends Action>> getPossibleActions() {
             if (current != null) {
                 return current.getPossibleActions();
@@ -285,12 +327,25 @@ abstract class PossibleAction implements Serializable {
 
     private static final class Choice extends PossibleAction {
 
-        private static final long serialVersionUID = 1L;
-
         private final Set<PossibleAction> actions;
 
         private Choice(Set<PossibleAction> actions) {
             this.actions = actions;
+        }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("choice", factory.createObjectBuilder()
+                            .add("actions", JsonSerializer.forFactory(factory).fromCollection(actions, PossibleAction::serialize)))
+                    .build();
+        }
+
+        static Choice deserialize(JsonObject jsonObject) {
+            return new Choice(jsonObject.getJsonArray("actions").stream()
+                    .map(JsonValue::asJsonObject)
+                    .map(PossibleAction::deserialize)
+                    .collect(Collectors.toSet()));
         }
 
         @Override
@@ -342,11 +397,6 @@ abstract class PossibleAction implements Serializable {
         }
 
         @Override
-        boolean isImmediate() {
-            return actions.stream().anyMatch(PossibleAction::isImmediate);
-        }
-
-        @Override
         Set<Class<? extends Action>> getPossibleActions() {
             // List all choices as possible. When one is performed, the others are removed
             return actions.stream()
@@ -362,15 +412,34 @@ abstract class PossibleAction implements Serializable {
 
     private static final class WhenThen extends Repeat {
 
-        private static final long serialVersionUID = 1L;
-
         private final Class<? extends Action> then;
 
-        private int thens = 0;
+        private int thens;
 
-        private WhenThen(int atLeast, int atMost, Class<? extends Action> when, Class<? extends Action> then) {
+        private WhenThen(int atLeast, int atMost, Class<? extends Action> when, Class<? extends Action> then, int thens) {
             super(atLeast, atMost, when);
             this.then = then;
+            this.thens = thens;
+        }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("whenThen", factory.createObjectBuilder()
+                            .add("when", Action.serializeClass(action))
+                            .add("then", Action.serializeClass(then))
+                            .add("thens", thens)
+                            .add("atLeast", atLeast)
+                            .add("atMost", atMost))
+                    .build();
+        }
+
+        static Repeat deserialize(JsonObject jsonObject) {
+            return new WhenThen(jsonObject.getInt("atLeast"),
+                    jsonObject.getInt("atMost"),
+                    Action.deserializeClass(jsonObject.getString("when")),
+                    Action.deserializeClass(jsonObject.getString("then")),
+                    jsonObject.getInt("thens"));
         }
 
         @Override
@@ -403,12 +472,6 @@ abstract class PossibleAction implements Serializable {
         }
 
         @Override
-        boolean isImmediate() {
-            // Becomes immediate when performed at least once
-            return thens > 0 || super.isImmediate();
-        }
-
-        @Override
         boolean canPerform(Class<? extends Action> action) {
             if (action == then) {
                 return thens > 0;
@@ -430,13 +493,11 @@ abstract class PossibleAction implements Serializable {
 
         @Override
         public PossibleAction clone() {
-            return new WhenThen(atLeast, atMost, action, then);
+            return new WhenThen(atLeast, atMost, action, then, thens);
         }
     }
 
     private static class Repeat extends PossibleAction {
-
-        private static final long serialVersionUID = 1L;
 
         protected final Class<? extends Action> action;
 
@@ -447,6 +508,22 @@ abstract class PossibleAction implements Serializable {
             this.atLeast = atLeast;
             this.atMost = atMost;
             this.action = action;
+        }
+
+        @Override
+        JsonObject serialize(JsonBuilderFactory factory) {
+            return factory.createObjectBuilder()
+                    .add("repeat", factory.createObjectBuilder()
+                            .add("action", Action.serializeClass(action))
+                            .add("atLeast", atLeast)
+                            .add("atMost", atMost))
+                    .build();
+        }
+
+        static Repeat deserialize(JsonObject jsonObject) {
+            return new Repeat(jsonObject.getInt("atLeast"),
+                    jsonObject.getInt("atMost"),
+                    Action.deserializeClass(jsonObject.getString("action")));
         }
 
         @Override
@@ -480,11 +557,6 @@ abstract class PossibleAction implements Serializable {
         @Override
         boolean isFinal() {
             return atMost == 0;
-        }
-
-        @Override
-        boolean isImmediate() {
-            return false;
         }
 
         @Override

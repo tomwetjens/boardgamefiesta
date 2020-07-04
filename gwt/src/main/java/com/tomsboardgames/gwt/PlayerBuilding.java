@@ -1,6 +1,7 @@
 package com.tomsboardgames.gwt;
 
 import com.tomsboardgames.api.Player;
+import com.tomsboardgames.api.PlayerColor;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,8 +13,6 @@ import java.util.stream.Stream;
 
 @Getter
 public abstract class PlayerBuilding extends Building {
-
-    private static final long serialVersionUID = 1L;
 
     private final Player player;
     private final int craftsmen;
@@ -29,6 +28,32 @@ public abstract class PlayerBuilding extends Building {
         this.player = player;
         this.craftsmen = craftsmen;
         this.points = points;
+    }
+
+    static PlayerBuilding forName(String name, Player player) {
+        switch (name) {
+            case "1a": return new PlayerBuilding.Building1A(player);
+            case "2a": return new PlayerBuilding.Building2A(player);
+            case "3a": return new PlayerBuilding.Building3A(player);
+            case "4a": return new PlayerBuilding.Building4A(player);
+            case "5a": return new PlayerBuilding.Building5A(player);
+            case "6a": return new PlayerBuilding.Building6A(player);
+            case "7a": return new PlayerBuilding.Building7A(player);
+            case "8a": return new PlayerBuilding.Building8A(player);
+            case "9a": return new PlayerBuilding.Building9A(player);
+            case "10a": return new PlayerBuilding.Building10A(player);
+            case "1b": return new PlayerBuilding.Building1B(player);
+            case "2b": return new PlayerBuilding.Building2B(player);
+            case "3b": return new PlayerBuilding.Building3B(player);
+            case "4b": return new PlayerBuilding.Building4B(player);
+            case "5b": return new PlayerBuilding.Building5B(player);
+            case "6b": return new PlayerBuilding.Building6B(player);
+            case "7b": return new PlayerBuilding.Building7B(player);
+            case "8b": return new PlayerBuilding.Building8B(player);
+            case "9b": return new PlayerBuilding.Building9B(player);
+            case "10b": return new PlayerBuilding.Building10B(player);
+            default: throw new IllegalArgumentException("Unknown player building: " + name);
+        }
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -69,8 +94,6 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building1A extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building1A(Player player) {
             super(1, BuildingSet.Side.A, player, Hand.GREEN, 1, 1);
         }
@@ -82,8 +105,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     public static final class Building2A extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building2A(Player player) {
             super(2, BuildingSet.Side.A, player, Hand.NONE, 1, 1);
@@ -97,8 +118,6 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building3A extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building3A(Player player) {
             super(3, BuildingSet.Side.A, player, Hand.NONE, 1, 1);
         }
@@ -110,8 +129,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     public static final class Building4A extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building4A(Player player) {
             super(4, BuildingSet.Side.A, player, Hand.BLACK, 2, 3);
@@ -125,8 +142,6 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building5A extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building5A(Player player) {
             super(5, BuildingSet.Side.A, player, Hand.NONE, 3, 4);
         }
@@ -138,8 +153,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     public static final class Building6A extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building6A(Player player) {
             super(6, BuildingSet.Side.A, player, Hand.NONE, 4, 5);
@@ -153,8 +166,6 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building7A extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building7A(Player player) {
             super(7, BuildingSet.Side.A, player, Hand.BOTH, 5, 6);
         }
@@ -166,8 +177,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     public static final class Building8A extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building8A(Player player) {
             super(8, BuildingSet.Side.A, player, Hand.GREEN, 5, 6);
@@ -183,8 +192,6 @@ public abstract class PlayerBuilding extends Building {
 
     public static final class Building9A extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building9A(Player player) {
             super(9, BuildingSet.Side.A, player, Hand.NONE, 7, 9);
         }
@@ -196,8 +203,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     public static final class Building10A extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building10A(Player player) {
             super(10, BuildingSet.Side.A, player, Hand.BLACK, 9, 13);
@@ -211,8 +216,6 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building1B extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building1B(Player player) {
             super(1, BuildingSet.Side.B, player, Hand.GREEN, 1, 1);
         }
@@ -224,8 +227,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     static class Building2B extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building2B(Player player) {
             super(2, BuildingSet.Side.B, player, Hand.NONE, 1, 1);
@@ -239,8 +240,6 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building3B extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building3B(Player player) {
             super(3, BuildingSet.Side.B, player, Hand.NONE, 2, 3);
         }
@@ -252,8 +251,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     private static class Building4B extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building4B(Player player) {
             super(4, BuildingSet.Side.B, player, Hand.BLACK, 2, 3);
@@ -267,8 +264,6 @@ public abstract class PlayerBuilding extends Building {
 
     static class Building5B extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building5B(Player player) {
             super(5, BuildingSet.Side.B, player, Hand.NONE, 3, 4);
         }
@@ -280,8 +275,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     private static class Building6B extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building6B(Player player) {
             super(6, BuildingSet.Side.B, player, Hand.NONE, 4, 5);
@@ -295,8 +288,6 @@ public abstract class PlayerBuilding extends Building {
 
     static class Building7B extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building7B(Player player) {
             super(7, BuildingSet.Side.B, player, Hand.BOTH, 5, 6);
         }
@@ -308,8 +299,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     private static class Building8B extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building8B(Player player) {
             super(8, BuildingSet.Side.B, player, Hand.NONE, 6, 8);
@@ -323,8 +312,6 @@ public abstract class PlayerBuilding extends Building {
 
     private static class Building9B extends PlayerBuilding {
 
-        private static final long serialVersionUID = 1L;
-
         Building9B(Player player) {
             super(9, BuildingSet.Side.B, player, Hand.NONE, 6, 8);
         }
@@ -336,8 +323,6 @@ public abstract class PlayerBuilding extends Building {
     }
 
     static class Building10B extends PlayerBuilding {
-
-        private static final long serialVersionUID = 1L;
 
         Building10B(Player player) {
             super(10, BuildingSet.Side.B, player, Hand.BLACK, 8, 11);

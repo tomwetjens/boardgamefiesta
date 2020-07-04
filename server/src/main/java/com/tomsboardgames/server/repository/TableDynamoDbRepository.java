@@ -5,17 +5,14 @@ import com.tomsboardgames.api.Options;
 import com.tomsboardgames.api.PlayerColor;
 import com.tomsboardgames.api.State;
 import com.tomsboardgames.server.domain.*;
+import com.tomsboardgames.server.repository.json.DynamoDbJson;
 import lombok.NonNull;
-import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -306,7 +303,7 @@ public class TableDynamoDbRepository implements Tables {
         var attributeValue = response.item().get("State");
 
         if (attributeValue != null) {
-            return games.get(gameId).deserialize(attributeValue.b().asInputStream());
+            return DynamoDbJson.fromJson(attributeValue, games.get(gameId)::deserialize);
         }
         return null;
     }
@@ -328,13 +325,7 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     private AttributeValue mapFromState(State state) {
-        try (var byteArrayOutputStream = new ByteArrayOutputStream()) {
-            state.serialize(byteArrayOutputStream);
-
-            return AttributeValue.builder().b(SdkBytes.fromByteArray(byteArrayOutputStream.toByteArray())).build();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return DynamoDbJson.toJson(state::serialize);
     }
 
     private AttributeValue mapFromPlayer(Player player) {
