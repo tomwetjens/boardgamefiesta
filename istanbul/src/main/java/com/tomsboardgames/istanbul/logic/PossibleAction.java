@@ -67,7 +67,7 @@ public abstract class PossibleAction {
 
         var choice = jsonObject.getJsonObject("choice");
         if (choice != null) {
-            return Choice.deserialize(jsonObject);
+            return Choice.deserialize(choice);
         }
 
         var repeat = jsonObject.getJsonObject("repeat");
@@ -253,12 +253,19 @@ public abstract class PossibleAction {
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (!canPerform(action)) {
-                throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
-            }
+            var choice = choices.stream()
+                    .filter(possibleAction -> possibleAction.canPerform(action))
+                    .findFirst()
+                    .orElseThrow(() -> new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION));
 
-            // Choice has been made
-            choices.clear();
+            choice.perform(action);
+
+            if (choice.isCompleted()) {
+                choices.clear();
+            } else {
+                // Choice has been made, others are not an option anymore
+                choices.removeIf(possibleAction -> possibleAction != choice);
+            }
         }
 
         @Override

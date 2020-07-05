@@ -16,11 +16,11 @@ import java.util.stream.Stream;
 public class ActionQueue {
 
     private final List<PossibleAction> anyTime;
-    private final LinkedList<PossibleAction> inOrder;
+    private final LinkedList<PossibleAction> queue;
     private PossibleAction current;
 
     ActionQueue() {
-        inOrder = new LinkedList<>();
+        queue = new LinkedList<>();
         anyTime = new LinkedList<>();
     }
 
@@ -28,23 +28,31 @@ public class ActionQueue {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
                 .add("anyTime", serializer.fromCollection(anyTime, PossibleAction::serialize))
-                .add("inOrder", serializer.fromCollection(inOrder, PossibleAction::serialize))
-                .add("current", current != null ? current.serialize(factory) : null)
+                .add("queue", serializer.fromCollection(queue, PossibleAction::serialize))
+                .add("current", current != null ? factory.createObjectBuilder()
+                        .add("anyTime", anyTime.indexOf(current))
+                        .add("queue", queue.indexOf(current)) : null)
                 .build();
     }
 
     static ActionQueue deserialize(JsonObject jsonObject) {
+        var anyTime = jsonObject.getJsonArray("anyTime").stream()
+                .map(JsonValue::asJsonObject)
+                .map(PossibleAction::deserialize)
+                .collect(Collectors.toList());
+
+        var queue = jsonObject.getJsonArray("queue").stream()
+                .map(JsonValue::asJsonObject)
+                .map(PossibleAction::deserialize)
+                .collect(Collectors.toCollection(LinkedList::new));
+
         var current = jsonObject.getJsonObject("current");
-        return new ActionQueue(
-                jsonObject.getJsonArray("anyTime").stream()
-                        .map(JsonValue::asJsonObject)
-                        .map(PossibleAction::deserialize)
-                        .collect(Collectors.toList()),
-                jsonObject.getJsonArray("inOrder").stream()
-                        .map(JsonValue::asJsonObject)
-                        .map(PossibleAction::deserialize)
-                        .collect(Collectors.toCollection(LinkedList::new)),
-                current != null ? PossibleAction.deserialize(current) : null);
+
+        return new ActionQueue(anyTime, queue, current != null
+                ? current.getInt("anyTime") != -1
+                ? anyTime.get(current.getInt("anyTime"))
+                : queue.get(current.getInt("queue"))
+                : null);
     }
 
     void perform(@NonNull Class<? extends Action> action) {
@@ -53,12 +61,12 @@ public class ActionQueue {
 
             if (current.isCompleted()) {
                 if (!anyTime.remove(current)) {
-                    this.inOrder.remove(current);
+                    this.queue.remove(current);
                 }
                 current = null;
             }
         } else {
-            var possibleAction = getAnyTimeAction(action).orElse(inOrder.peek());
+            var possibleAction = getAnyTimeAction(action).orElse(queue.peek());
 
             if (possibleAction == null) {
                 throw new IstanbulException(IstanbulError.NO_ACTION);
@@ -68,7 +76,7 @@ public class ActionQueue {
 
             if (possibleAction.isCompleted()) {
                 if (!anyTime.remove(possibleAction)) {
-                    this.inOrder.remove(possibleAction);
+                    this.queue.remove(possibleAction);
                 }
             } else {
                 current = possibleAction;
@@ -90,7 +98,7 @@ public class ActionQueue {
     }
 
     private boolean canPerformInOrder(@NonNull Class<? extends Action> action) {
-        var possibleAction = inOrder.peek();
+        var possibleAction = queue.peek();
         return possibleAction != null && possibleAction.canPerform(action);
     }
 
@@ -99,11 +107,11 @@ public class ActionQueue {
     }
 
     public void addFirst(@NonNull PossibleAction possibleAction) {
-        inOrder.addFirst(possibleAction);
+        queue.addFirst(possibleAction);
     }
 
     public void addFirst(@NonNull Collection<PossibleAction> possibleActions) {
-        inOrder.addAll(0, possibleActions);
+        queue.addAll(0, possibleActions);
     }
 
     public void skip() {
@@ -112,14 +120,14 @@ public class ActionQueue {
             current = null;
         }
 
-        var possibleAction = inOrder.peek();
+        var possibleAction = queue.peek();
 
         if (possibleAction == null) {
             throw new IstanbulException(IstanbulError.NO_ACTION);
         }
 
         possibleAction.skip();
-        inOrder.poll();
+        queue.poll();
     }
 
     public void skipAll() {
@@ -128,23 +136,23 @@ public class ActionQueue {
         }
 
         PossibleAction possibleAction;
-        while ((possibleAction = inOrder.peek()) != null) {
+        while ((possibleAction = queue.peek()) != null) {
             possibleAction.skip();
-            inOrder.poll();
+            queue.poll();
         }
 
         anyTime.clear();
     }
 
     public boolean isEmpty() {
-        return anyTime.isEmpty() && inOrder.isEmpty();
+        return anyTime.isEmpty() && queue.isEmpty();
     }
 
     public Set<Class<? extends Action>> getPossibleActions() {
         if (current != null) {
             return current.getPossibleActions().collect(Collectors.toSet());
         }
-        return Stream.concat(this.anyTime.stream(), this.inOrder.stream().limit(1))
+        return Stream.concat(this.anyTime.stream(), this.queue.stream().limit(1))
                 .flatMap(PossibleAction::getPossibleActions)
                 .collect(Collectors.toSet());
     }
@@ -154,7 +162,7 @@ public class ActionQueue {
     }
 
     public void clear() {
-        inOrder.clear();
+        queue.clear();
         anyTime.clear();
     }
 
