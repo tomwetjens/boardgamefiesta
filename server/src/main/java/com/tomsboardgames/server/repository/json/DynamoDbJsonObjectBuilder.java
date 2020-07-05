@@ -76,13 +76,13 @@ class DynamoDbJsonObjectBuilder implements JsonObjectBuilder {
 
     @Override
     public JsonObjectBuilder add(String key, JsonObjectBuilder jsonObjectBuilder) {
-        attributeValues.put(key, ((DynamoDbJsonObject) jsonObjectBuilder.build()).getAttributeValue());
+        attributeValues.put(key, jsonObjectBuilder != null ? ((DynamoDbJsonObject) jsonObjectBuilder.build()).getAttributeValue() : null);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(String key, JsonArrayBuilder jsonArrayBuilder) {
-        attributeValues.put(key, ((DynamoDbJsonArray) jsonArrayBuilder.build()).getAttributeValue());
+        attributeValues.put(key, jsonArrayBuilder != null ? ((DynamoDbJsonArray) jsonArrayBuilder.build()).getAttributeValue() : null);
         return this;
     }
 
