@@ -32,6 +32,16 @@ public class RatingAdjuster {
         try {
             var table = tables.findById(event.getTableId());
 
+            if (table.getStatus() != Table.Status.ENDED) {
+                // Ignore
+                return;
+            }
+
+            if (table.getMode() == Table.Mode.NORMAL) {
+                // Ignore training mode
+                return;
+            }
+
             var playerRatings = table.getPlayers().stream()
                     // Only users can have ratings
                     .flatMap(player -> player.getUserId().stream())

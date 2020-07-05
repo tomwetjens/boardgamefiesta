@@ -74,7 +74,11 @@ public class TableResource {
                 .collect(Collectors.toSet())
                 : Collections.<User>emptySet();
 
-        Table table = Table.create(games.get(Game.Id.of(request.getGame())), currentUser, invitedUsers,
+        Table table = Table.create(
+                games.get(Game.Id.of(request.getGame())),
+                request.getMode(),
+                currentUser,
+                invitedUsers,
                 new Options(request.getOptions() != null ? request.getOptions() : Collections.emptyMap()));
 
         tables.add(table);

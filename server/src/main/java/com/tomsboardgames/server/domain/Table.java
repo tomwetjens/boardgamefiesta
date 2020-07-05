@@ -8,6 +8,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,6 +35,10 @@ public class Table {
     @Getter
     @NonNull
     private final Type type;
+
+    @Getter
+    @NonNull
+    private final Mode mode;
 
     @Getter
     @NonNull
@@ -61,7 +68,10 @@ public class Table {
     private User.Id ownerId;
 
     @Getter
-    private Lazy<State> state;
+    private CurrentState state;
+
+    @Getter
+    private HistoricStates historicStates;
 
     @Getter
     @NonNull
@@ -77,6 +87,7 @@ public class Table {
     private Instant ended;
 
     public static Table create(@NonNull Game<State> game,
+                               @NonNull Mode mode,
                                @NonNull User owner,
                                @NonNull Set<User> inviteUsers,
                                @NonNull Options options) {
@@ -102,6 +113,7 @@ public class Table {
                 .id(Id.generate())
                 .gameId(game.getId())
                 .type(Type.REALTIME)
+                .mode(mode)
                 .status(Status.NEW)
                 .options(options)
                 .created(created)
@@ -139,16 +151,17 @@ public class Table {
 
         players.forEach(player -> player.assignColor(randomColors.remove(randomColors.size() - 1)));
 
-        state = Lazy.of(game.start(players.stream()
-                .map(player -> new com.tomsboardgames.api.Player(player.getId().getId(), player.getColor()))
-                .collect(Collectors.toSet()), options, RANDOM));
-
-        afterStateChange();
-
         status = Status.STARTED;
         started = Instant.now();
         updated = started;
         expires = started.plus(ACTION_TIMEOUT);
+
+        state = CurrentState.of(game.start(players.stream()
+                .map(player -> new com.tomsboardgames.api.Player(player.getId().getId(), player.getColor()))
+                .collect(Collectors.toSet()), options, RANDOM));
+        historicStates = HistoricStates.initial();
+
+        afterStateChange();
 
         log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.START));
 
@@ -364,6 +377,9 @@ public class Table {
         } else {
             expires = updated.plus(ACTION_TIMEOUT);
         }
+
+        // TODO Determine correct expiry for historic states
+        historicStates.add(new HistoricState(updated, state.get(), expires));
     }
 
     public void acceptInvite(@NonNull User.Id userId) {
@@ -522,6 +538,23 @@ public class Table {
         new OptionsChanged(id).fire();
     }
 
+    public void revertTo(Instant timestamp) {
+        if (status != Status.STARTED) {
+            throw APIException.badRequest(APIError.GAME_NOT_STARTED);
+        }
+
+        if (mode != Mode.TRAINING) {
+            throw APIException.badRequest(APIError.NOT_TRAINING_MODE);
+        }
+
+        var historicState = historicStates.get(timestamp)
+                .orElseThrow(() -> APIException.badRequest(APIError.HISTORY_NOT_AVAILABLE));
+
+        state = CurrentState.of(historicState.getState());
+
+        afterStateChange();
+    }
+
     public enum Status {
         NEW,
         STARTED,
@@ -531,6 +564,11 @@ public class Table {
 
     public enum Type {
         REALTIME
+    }
+
+    public enum Mode {
+        NORMAL,
+        TRAINING
     }
 
     @Value(staticConstructor = "of")
@@ -624,4 +662,80 @@ public class Table {
     public static class OptionsChanged implements DomainEvent {
         @NonNull Table.Id tableId;
     }
+
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class CurrentState {
+
+        private final Supplier<State> supplier;
+        private State current;
+
+        public static CurrentState of(State state) {
+            return new CurrentState(null, state);
+        }
+
+        public static CurrentState defer(Supplier<State> supplier) {
+            return new CurrentState(supplier, null);
+        }
+
+        public State get() {
+            if (current == null) {
+                current = supplier.get();
+            }
+            return current;
+        }
+
+        public boolean isPresent() {
+            return current != null;
+        }
+
+    }
+
+    @Value
+    public static class HistoricState {
+        Instant timestamp;
+        State state;
+        Instant expires;
+    }
+
+    @RequiredArgsConstructor(staticName = "defer")
+    public static class HistoricStates {
+
+        private final Function<Instant, Optional<HistoricState>> supplier;
+
+        private final NavigableMap<Instant, HistoricState> states = new TreeMap<>();
+        private final Set<HistoricState> pending = new HashSet<>();
+
+        public static HistoricStates initial() {
+            return new HistoricStates(timestamp -> Optional.empty());
+        }
+
+        public void add(HistoricState historicState) {
+            states.put(historicState.getTimestamp(), historicState);
+            pending.add(historicState);
+        }
+
+        public Set<HistoricState> getPending() {
+            return Collections.unmodifiableSet(pending);
+        }
+
+        public void commit() {
+            pending.clear();
+        }
+
+        public boolean hasPending() {
+            return !pending.isEmpty();
+        }
+
+        public Optional<HistoricState> get(Instant timestamp) {
+            var historicState = states.get(timestamp);
+            if (historicState == null) {
+                historicState = supplier.apply(timestamp).orElse(null);
+                if (historicState != null) {
+                    states.put(historicState.getTimestamp(), historicState);
+                }
+            }
+            return Optional.ofNullable(historicState);
+        }
+    }
+
 }

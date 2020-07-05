@@ -24,6 +24,7 @@ public class TableDynamoDbRepository implements Tables {
 
     private static final String TABLE_NAME = "gwt-games";
     private static final String LOG_TABLE_NAME = "gwt-log";
+    private static final String STATE_TABLE_NAME = "gwt-state";
 
     private static final String USER_ID_ID_INDEX = "UserId-Id-index";
 
@@ -31,6 +32,7 @@ public class TableDynamoDbRepository implements Tables {
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
     private final String logTableName;
+    private final String historicStateTableName;
 
     @Inject
     public TableDynamoDbRepository(@NonNull Games games,
@@ -40,6 +42,7 @@ public class TableDynamoDbRepository implements Tables {
         this.dynamoDbClient = dynamoDbClient;
         this.tableName = TABLE_NAME + config.getTableSuffix().orElse("");
         this.logTableName = LOG_TABLE_NAME + config.getTableSuffix().orElse("");
+        this.historicStateTableName = STATE_TABLE_NAME + config.getTableSuffix().orElse("");
     }
 
     @Override
@@ -86,7 +89,32 @@ public class TableDynamoDbRepository implements Tables {
                                 .collect(Collectors.toList())))
                 .build());
 
+        addPendingHistoricStates(table, table.getState() != null && table.getState().isPresent()
+                ? Map.of(table.getState().get(), item.get("State"))
+                : Collections.emptyMap());
+
         addLogEntries(table);
+    }
+
+    private void addPendingHistoricStates(Table table, Map<State, AttributeValue> serializedCache) {
+        if (table.getHistoricStates() != null && table.getHistoricStates().hasPending()) {
+            dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
+                    .requestItems(Map.of(historicStateTableName, table.getHistoricStates().getPending().stream()
+                            .map(historicState -> WriteRequest.builder()
+                                    .putRequest(PutRequest.builder()
+                                            .item(Map.of(
+                                                    "TableId", AttributeValue.builder().s(table.getId().getId()).build(),
+                                                    "Timestamp", AttributeValue.builder().n(Long.toString(historicState.getTimestamp().toEpochMilli())).build(),
+                                                    "GameId", AttributeValue.builder().s(table.getGameId().getId()).build(),
+                                                    "Expires", AttributeValue.builder().n(Long.toString(historicState.getExpires().getEpochSecond())).build(),
+                                                    "State", Optional.ofNullable(serializedCache.get(historicState.getState())).orElseGet(() -> mapFromState(historicState.getState()))))
+                                            .build())
+                                    .build())
+                            .collect(Collectors.toList())))
+                    .build());
+
+            table.getHistoricStates().commit();
+        }
     }
 
     private void addLogEntries(Table table) {
@@ -115,12 +143,17 @@ public class TableDynamoDbRepository implements Tables {
 
     @Override
     public void update(Table table) {
+        var attributeUpdates = mapFromTableUpdate(table);
+
         dynamoDbClient.updateItem(UpdateItemRequest.builder()
                 .tableName(tableName)
                 .key(key(table.getId()))
-                .attributeUpdates(mapFromTableUpdate(table))
+                .attributeUpdates(attributeUpdates)
                 .build());
 
+        addPendingHistoricStates(table, table.getState() != null && table.getState().isPresent()
+                ? Map.of(table.getState().get(), attributeUpdates.get("State").value())
+                : Collections.emptyMap());
         addLogEntries(table);
 
         updateLookupItems(table);
@@ -187,6 +220,7 @@ public class TableDynamoDbRepository implements Tables {
                 .consistentRead(true)
                 .attributesToGet("Id",
                         "Type",
+                        "Mode",
                         "GameId",
                         "Status",
                         "Options",
@@ -229,6 +263,7 @@ public class TableDynamoDbRepository implements Tables {
         var map = new HashMap<String, AttributeValue>();
         map.put("GameId", AttributeValue.builder().s(table.getGameId().getId()).build());
         map.put("Type", AttributeValue.builder().s(table.getType().name()).build());
+        map.put("Mode", AttributeValue.builder().s(table.getMode().name()).build());
         map.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
         map.put("Options", mapFromOptions(table.getOptions()));
         map.put("Created", AttributeValue.builder().n(Long.toString(table.getCreated().getEpochSecond())).build());
@@ -266,6 +301,7 @@ public class TableDynamoDbRepository implements Tables {
         return Table.builder()
                 .id(id)
                 .type(Table.Type.valueOf(item.get("Type").s()))
+                .mode(Table.Mode.valueOf(item.get("Mode").s()))
                 .gameId(gameId)
                 .status(Table.Status.valueOf(item.get("Status").s()))
                 .options(new Options(item.get("Options").m().entrySet().stream()
@@ -287,7 +323,8 @@ public class TableDynamoDbRepository implements Tables {
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
                         .collect(Collectors.toSet()))
-                .state(Lazy.defer(() -> getState(gameId, id)))
+                .state(Table.CurrentState.defer(() -> getState(gameId, id)))
+                .historicStates(Table.HistoricStates.defer(timestamp -> getHistoricState(id, timestamp)))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
     }
@@ -306,6 +343,11 @@ public class TableDynamoDbRepository implements Tables {
             return DynamoDbJson.fromJson(attributeValue, games.get(gameId)::deserialize);
         }
         return null;
+    }
+
+    private Optional<Table.HistoricState> getHistoricState(Table.Id id, Instant timestamp) {
+        // TODO
+        return Optional.empty();
     }
 
     private Player mapToPlayer(AttributeValue attributeValue) {
@@ -373,7 +415,7 @@ public class TableDynamoDbRepository implements Tables {
         map.put("Players", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build()).build());
         map.put("Options", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromOptions(table.getOptions())).build());
 
-        if (table.getState().isResolved()) {
+        if (table.getState() != null && table.getState().isPresent()) {
             map.put("State", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromState(table.getState().get())).build());
         }
 

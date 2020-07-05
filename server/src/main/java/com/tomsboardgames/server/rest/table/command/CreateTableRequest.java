@@ -16,6 +16,9 @@ public class CreateTableRequest {
     @NotNull
     Table.Type type;
 
+    @NotNull
+    Table.Mode mode;
+
     Set<String> inviteUserIds;
 
     Map<String, Object> options;
