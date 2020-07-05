@@ -2,6 +2,7 @@ package com.tomsboardgames.server.repository;
 
 import com.tomsboardgames.api.Game;
 import com.tomsboardgames.api.Options;
+import com.tomsboardgames.api.State;
 import com.tomsboardgames.server.domain.Games;
 import com.tomsboardgames.server.domain.Table;
 import com.tomsboardgames.server.domain.User;
@@ -27,7 +28,7 @@ class TableDynamoDbRepositoryTest {
     Games games;
 
     @Mock
-    Game game;
+    Game<State> game;
 
     @Mock
     DynamoDbConfiguration config;
@@ -48,7 +49,7 @@ class TableDynamoDbRepositoryTest {
         User sharon = mock(User.class);
         when(sharon.getId()).thenReturn(User.Id.of("34efb2e1-8ef6-47e3-a1d1-3f986d2d7c1d"));
 
-        Table table = Table.create(game, tom, Collections.singleton(sharon), new Options(Collections.emptyMap()));
+        Table table = Table.create(game, Table.Mode.NORMAL, tom, Collections.singleton(sharon), new Options(Collections.emptyMap()));
         table.acceptInvite(sharon.getId());
         table.start();
 
