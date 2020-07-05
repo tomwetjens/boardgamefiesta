@@ -290,7 +290,9 @@ public abstract class PossibleAction {
 
         @Override
         protected PossibleAction clone() {
-            return new Choice(choices);
+            return new Choice(choices.stream()
+                    .map(PossibleAction::clone)
+                    .collect(Collectors.toSet()));
         }
 
         @Override
@@ -350,9 +352,8 @@ public abstract class PossibleAction {
 
             if (current.isCompleted()) {
                 current = null;
+                count++;
             }
-
-            count++;
         }
 
         @Override
@@ -380,7 +381,10 @@ public abstract class PossibleAction {
 
         @Override
         Stream<Class<? extends Action>> getPossibleActions() {
-            return current != null ? current.getPossibleActions() : repeatingAction.getPossibleActions();
+            return current != null
+                    ? current.getPossibleActions()
+                    : count < atMost ? repeatingAction.getPossibleActions()
+                    : Stream.empty();
         }
 
         @Override

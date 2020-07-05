@@ -100,17 +100,20 @@ class PlaceTest {
 
             var actionResult = sultansPalace.deliverToSultan(playerState);
 
-            assertThat(actionResult.getFollowUpActions())
-                    .hasOnlyOneElementSatisfying(possibleAction -> {
-                        assertThat(possibleAction.getPossibleActions()).containsExactlyInAnyOrder(
-                                Action.Pay1Fabric.class, Action.Pay1Blue.class, Action.Pay1Fruit.class, Action.Pay1Spice.class);
+            assertThat(actionResult.getFollowUpActions()).hasSize(1);
+            var followUpAction = actionResult.getFollowUpActions().get(0);
 
-                        possibleAction.perform(Action.Pay1Fabric.class);
+            assertThat(followUpAction.getPossibleActions()).containsExactlyInAnyOrder(
+                    Action.Pay1Fabric.class, Action.Pay1Blue.class, Action.Pay1Fruit.class, Action.Pay1Spice.class);
 
-                        assertThat(possibleAction.getPossibleActions()).containsExactlyInAnyOrder(
-                                Action.Pay1Fabric.class, Action.Pay1Blue.class, Action.Pay1Fruit.class, Action.Pay1Spice.class);
-                    });
+            followUpAction.perform(Action.Pay1Fabric.class);
 
+            assertThat(followUpAction.getPossibleActions()).containsExactlyInAnyOrder(
+                    Action.Pay1Fabric.class, Action.Pay1Blue.class, Action.Pay1Fruit.class, Action.Pay1Spice.class);
+
+            followUpAction.perform(Action.Pay1Fabric.class);
+
+            assertThat(followUpAction.getPossibleActions()).isEmpty();
 
             verify(playerState).gainRubies(1);
             assertThat(sultansPalace.getUncovered()).isEqualTo(11);
