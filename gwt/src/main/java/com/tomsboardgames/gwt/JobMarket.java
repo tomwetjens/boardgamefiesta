@@ -51,7 +51,7 @@ public class JobMarket {
 
     JsonObject serialize(JsonBuilderFactory factory) {
         return factory.createObjectBuilder()
-                .add("currentRowIndex", rowLimit)
+                .add("currentRowIndex", currentRowIndex)
                 .add("rows", JsonSerializer.forFactory(factory).fromCollection(rows, Row::serialize))
                 .build();
     }

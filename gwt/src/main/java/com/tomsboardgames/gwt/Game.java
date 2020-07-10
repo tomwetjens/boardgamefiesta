@@ -321,6 +321,7 @@ public class Game implements State {
                 .add("cattleMarket", cattleMarket.serialize(factory))
                 .add("objectiveCards", objectiveCards.serialize(factory))
                 .add("actionStack", actionStack.serialize(factory))
+                .add("ended", ended)
                 .build();
     }
 
@@ -346,6 +347,7 @@ public class Game implements State {
                 .cattleMarket(CattleMarket.deserialize(players.size(), jsonObject.getJsonObject("cattleMarket")))
                 .objectiveCards(ObjectiveCards.deserialize(jsonObject.getJsonObject("objectiveCards")))
                 .actionStack(ActionStack.deserialize(jsonObject.getJsonObject("actionStack")))
+                .ended(jsonObject.getBoolean("ended", false))
                 .build();
     }
 

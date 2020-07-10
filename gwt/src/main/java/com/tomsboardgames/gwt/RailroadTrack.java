@@ -73,7 +73,8 @@ public class RailroadTrack {
             previous.next.add(turnout);
             next.previous.add(turnout);
 
-            this.turnouts.add(turnout);
+            turnouts.add(turnout);
+            spaces.put(turnout.getName(), turnout);
         }
     }
 
