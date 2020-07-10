@@ -9,7 +9,8 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * {@link JsonArrayBuilder} that builds into a {@link AttributeValue}.
@@ -18,8 +19,6 @@ import java.util.*;
 class DynamoDbJsonArrayBuilder implements JsonArrayBuilder {
 
     private final List<AttributeValue> attributeValues = new ArrayList<>();
-    private final Set<String> strings = new LinkedHashSet<>();
-    private final Set<String> numbers = new LinkedHashSet<>();
 
     @Override
     public JsonArrayBuilder add(JsonValue value) {
@@ -29,11 +28,7 @@ class DynamoDbJsonArrayBuilder implements JsonArrayBuilder {
 
     @Override
     public JsonArrayBuilder add(String value) {
-        if (attributeValues.isEmpty() && !strings.contains(value)) {
-            strings.add(value);
-        } else {
-            attributeValues.add(value != null ? AttributeValue.builder().s(value).build() : null);
-        }
+        attributeValues.add(value != null ? AttributeValue.builder().s(value).build() : null);
         return this;
     }
 
@@ -48,11 +43,7 @@ class DynamoDbJsonArrayBuilder implements JsonArrayBuilder {
     }
 
     private DynamoDbJsonArrayBuilder addNumber(String n) {
-        if (attributeValues.isEmpty() && !numbers.contains(n)) {
-            numbers.add(n);
-        } else {
-            attributeValues.add(n != null ? AttributeValue.builder().n(n).build() : null);
-        }
+        attributeValues.add(n != null ? AttributeValue.builder().n(n).build() : null);
         return this;
     }
 
@@ -97,23 +88,6 @@ class DynamoDbJsonArrayBuilder implements JsonArrayBuilder {
 
     @Override
     public JsonArray build() {
-        // Optimize into String Set or Number Set if possible
-        if (attributeValues.isEmpty()) {
-            if (numbers.isEmpty() && !strings.isEmpty()) {
-                return new DynamoDbJsonArray(AttributeValue.builder().ss(strings).build());
-            } else if (strings.isEmpty() && !numbers.isEmpty()) {
-                return new DynamoDbJsonArray(AttributeValue.builder().ns(numbers).build());
-            }
-        }
-
-        // Else add everything into a normal List
-        if (!strings.isEmpty()) {
-            strings.forEach(value -> attributeValues.add(AttributeValue.builder().s(value).build()));
-        }
-        if (!numbers.isEmpty()) {
-            numbers.forEach(value -> attributeValues.add(AttributeValue.builder().n(value).build()));
-        }
-
         return new DynamoDbJsonArray(AttributeValue.builder().l(attributeValues).build());
     }
 }
