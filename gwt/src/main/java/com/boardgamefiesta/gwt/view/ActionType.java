@@ -55,6 +55,7 @@ public enum ActionType {
     MOVE_3_FORWARD(Action.Move3Forward.class),
     MOVE_3_FORWARD_WITHOUT_FEES(Action.Move3ForwardWithoutFees.class),
     MOVE_4_FORWARD(Action.Move4Forward.class),
+    MOVE_5_FORWARD(Action.Move5Forward.class),
     MOVE_ENGINE_1_FORWARD(Action.MoveEngine1Forward.class),
     MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS(Action.MoveEngine1BackwardsToGain3Dollars.class),
     MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD(Action.MoveEngine1BackwardsToRemove1Card.class),
@@ -64,7 +65,6 @@ public enum ActionType {
     MOVE_ENGINE_AT_MOST_2_FORWARD(Action.MoveEngineAtMost2Forward.class),
     MOVE_ENGINE_AT_MOST_3_FORWARD(Action.MoveEngineAtMost3Forward.class),
     MOVE_ENGINE_AT_MOST_4_FORWARD(Action.MoveEngineAtMost4Forward.class),
-    MOVE_ENGINE_AT_MOST_5_FORWARD(Action.MoveEngineAtMost5Forward.class),
     MOVE_ENGINE_FORWARD(Action.MoveEngineForward.class),
     MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS(Action.MoveEngineForwardUpToNumberOfBuildingsInWoods.class),
     PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class),
@@ -196,6 +196,8 @@ public enum ActionType {
                 return new Action.Move3ForwardWithoutFees(getSteps(jsonObject, game));
             case MOVE_4_FORWARD:
                 return new Action.Move4Forward(getSteps(jsonObject, game));
+            case MOVE_5_FORWARD:
+                return new Action.Move5Forward(getSteps(jsonObject, game));
             case MOVE_ENGINE_1_FORWARD:
                 return new Action.MoveEngine1Forward(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)));
             case MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS:
@@ -214,8 +216,6 @@ public enum ActionType {
                 return new Action.MoveEngineAtMost3Forward(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)));
             case MOVE_ENGINE_AT_MOST_4_FORWARD:
                 return new Action.MoveEngineAtMost4Forward(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)));
-            case MOVE_ENGINE_AT_MOST_5_FORWARD:
-                return new Action.MoveEngineAtMost5Forward(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)));
             case MOVE_ENGINE_FORWARD:
                 return new Action.MoveEngineForward(findSpace(game, jsonObject.getJsonObject(JsonProperties.TO)));
             case MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS:

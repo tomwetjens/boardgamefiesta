@@ -210,7 +210,7 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(Game game) {
-            return PossibleAction.any(Action.MaxCertificates.class, Action.MoveEngineAtMost5Forward.class);
+            return PossibleAction.any(Action.MaxCertificates.class, Action.Move5Forward.class);
         }
     }
 

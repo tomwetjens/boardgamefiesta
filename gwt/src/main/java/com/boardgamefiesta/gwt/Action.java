@@ -1000,6 +1000,13 @@ public abstract class Action implements com.boardgamefiesta.api.Action {
         }
     }
 
+    public static final class Move5Forward extends Move {
+
+        public Move5Forward(List<Location> steps) {
+            super(steps, 5, true);
+        }
+    }
+
     public static final class RemoveHazardFor5Dollars extends RemoveHazard {
 
         public RemoveHazardFor5Dollars(Hazard hazard) {
@@ -1094,17 +1101,6 @@ public abstract class Action implements com.boardgamefiesta.api.Action {
             game.currentPlayerState().gainDollars(pairs * 2);
 
             return ImmediateActions.none();
-        }
-    }
-
-    @Value
-    @EqualsAndHashCode(callSuper = false)
-    public static final class MoveEngineAtMost5Forward extends Action {
-        @NonNull RailroadTrack.Space to;
-
-        @Override
-        public ImmediateActions perform(Game game, Random random) {
-            return game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 5).getImmediateActions();
         }
     }
 
