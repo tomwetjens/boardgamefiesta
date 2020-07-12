@@ -47,7 +47,6 @@ public class User {
     @NonNull
     private String email;
 
-    @Getter
     private String location;
 
     @Getter
