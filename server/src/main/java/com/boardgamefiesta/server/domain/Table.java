@@ -376,6 +376,14 @@ public class Table {
             new Ended(id).fire();
         } else {
             expires = updated.plus(ACTION_TIMEOUT);
+
+            for (Player player : players) {
+                var playerInState = state.get().getPlayerByName(player.getId().getId());
+
+                var score = state.get().score(playerInState);
+
+                player.assignScore(score, false);
+            }
         }
 
         // TODO Determine correct expiry for historic states
