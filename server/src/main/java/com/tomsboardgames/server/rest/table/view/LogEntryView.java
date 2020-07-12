@@ -1,10 +1,10 @@
-package com.tomsboardgames.server.rest.table.view;
+package com.boardgamefiesta.server.rest.table.view;
 
-import com.tomsboardgames.server.domain.LogEntry;
-import com.tomsboardgames.server.domain.Table;
-import com.tomsboardgames.server.domain.User;
-import com.tomsboardgames.server.domain.rating.Rating;
-import com.tomsboardgames.server.rest.user.view.UserView;
+import com.boardgamefiesta.server.domain.LogEntry;
+import com.boardgamefiesta.server.domain.Table;
+import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.rating.Rating;
+import com.boardgamefiesta.server.rest.user.view.UserView;
 import lombok.NonNull;
 import lombok.Value;
 

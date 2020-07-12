@@ -1,9 +1,9 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
-import com.tomsboardgames.api.EventListener;
-import com.tomsboardgames.api.*;
-import com.tomsboardgames.json.JsonSerializer;
-import com.tomsboardgames.gwt.view.ActionType;
+import com.boardgamefiesta.api.EventListener;
+import com.boardgamefiesta.api.*;
+import com.boardgamefiesta.json.JsonSerializer;
+import com.boardgamefiesta.gwt.view.ActionType;
 import lombok.*;
 
 import javax.json.JsonBuilderFactory;
@@ -119,7 +119,7 @@ public class Game implements State {
     }
 
     @Override
-    public void perform(@NonNull com.tomsboardgames.api.Action action, @NonNull Random random) {
+    public void perform(@NonNull com.boardgamefiesta.api.Action action, @NonNull Random random) {
         perform((Action) action, random);
     }
 

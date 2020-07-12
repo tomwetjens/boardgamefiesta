@@ -1,4 +1,4 @@
-package com.tomsboardgames;
+package com.boardgamefiesta;
 
 import java.io.*;
 import java.util.List;

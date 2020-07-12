@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.tomsboardgames</groupId>
-    <artifactId>tomsboardgames</artifactId>
+    <groupId>com.boardgamefiesta</groupId>
+    <artifactId>boardgamefiesta</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
 
@@ -35,17 +35,17 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.tomsboardgames</groupId>
+                <groupId>com.boardgamefiesta</groupId>
                 <artifactId>api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tomsboardgames</groupId>
+                <groupId>com.boardgamefiesta</groupId>
                 <artifactId>gwt</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tomsboardgames</groupId>
+                <groupId>com.boardgamefiesta</groupId>
                 <artifactId>istanbul</artifactId>
                 <version>${project.version}</version>
             </dependency>

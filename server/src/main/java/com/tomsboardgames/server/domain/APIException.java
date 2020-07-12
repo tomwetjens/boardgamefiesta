@@ -1,6 +1,6 @@
-package com.tomsboardgames.server.domain;
+package com.boardgamefiesta.server.domain;
 
-import com.tomsboardgames.api.InGameException;
+import com.boardgamefiesta.api.InGameException;
 import lombok.Value;
 
 import javax.ws.rs.WebApplicationException;

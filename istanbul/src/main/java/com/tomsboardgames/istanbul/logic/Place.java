@@ -1,9 +1,9 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.api.PlayerColor;
-import com.tomsboardgames.json.JsonDeserializer;
-import com.tomsboardgames.json.JsonSerializer;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.json.JsonDeserializer;
+import com.boardgamefiesta.json.JsonSerializer;
 import lombok.*;
 
 import javax.json.*;

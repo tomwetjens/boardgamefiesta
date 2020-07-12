@@ -1,9 +1,9 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.api.PlayerColor;
-import com.tomsboardgames.gwt.Location;
-import com.tomsboardgames.gwt.Teepee;
-import com.tomsboardgames.gwt.Trail;
+import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.gwt.Location;
+import com.boardgamefiesta.gwt.Teepee;
+import com.boardgamefiesta.gwt.Trail;
 import lombok.Value;
 
 import java.util.Map;

@@ -1,6 +1,6 @@
-package com.tomsboardgames.server.domain;
+package com.boardgamefiesta.server.domain;
 
-import com.tomsboardgames.api.InGameEvent;
+import com.boardgamefiesta.api.InGameEvent;
 import lombok.*;
 
 import java.time.Duration;

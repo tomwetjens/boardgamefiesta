@@ -1,7 +1,7 @@
-package com.tomsboardgames.server.cognito;
+package com.boardgamefiesta.server.cognito;
 
-import com.tomsboardgames.server.domain.User;
-import com.tomsboardgames.server.domain.Users;
+import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.Users;
 import lombok.NonNull;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminUpdateUserAttributesRequest;

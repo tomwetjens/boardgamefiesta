@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.domain;
+package com.boardgamefiesta.server.domain;
 
 import java.time.Instant;
 import java.util.Comparator;

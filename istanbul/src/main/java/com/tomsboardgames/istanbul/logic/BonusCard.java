@@ -1,4 +1,4 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
 import java.io.DataInput;
 import java.io.IOException;

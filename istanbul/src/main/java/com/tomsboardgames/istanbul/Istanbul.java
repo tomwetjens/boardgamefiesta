@@ -1,9 +1,9 @@
-package com.tomsboardgames.istanbul;
+package com.boardgamefiesta.istanbul;
 
-import com.tomsboardgames.api.*;
-import com.tomsboardgames.istanbul.logic.LayoutType;
-import com.tomsboardgames.istanbul.view.ActionView;
-import com.tomsboardgames.istanbul.view.IstanbulView;
+import com.boardgamefiesta.api.*;
+import com.boardgamefiesta.istanbul.logic.LayoutType;
+import com.boardgamefiesta.istanbul.view.ActionView;
+import com.boardgamefiesta.istanbul.view.IstanbulView;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.JsonObject;
@@ -13,7 +13,7 @@ import java.util.Random;
 import java.util.Set;
 
 @ApplicationScoped
-public class Istanbul implements Game<com.tomsboardgames.istanbul.logic.Game> {
+public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
 
     public static final Id ID = Id.of("istanbul");
 
@@ -26,7 +26,7 @@ public class Istanbul implements Game<com.tomsboardgames.istanbul.logic.Game> {
 
     @Override
     public Set<PlayerColor> getSupportedColors() {
-        return com.tomsboardgames.istanbul.logic.Game.SUPPORTED_COLORS;
+        return com.boardgamefiesta.istanbul.logic.Game.SUPPORTED_COLORS;
     }
 
     @Override
@@ -60,24 +60,24 @@ public class Istanbul implements Game<com.tomsboardgames.istanbul.logic.Game> {
     }
 
     @Override
-    public com.tomsboardgames.istanbul.logic.Game start(Set<Player> players, Options options, Random random) {
+    public com.boardgamefiesta.istanbul.logic.Game start(Set<Player> players, Options options, Random random) {
         var layoutType = options.getEnum("layoutType", LayoutType.class, LayoutType.RANDOM);
-        return com.tomsboardgames.istanbul.logic.Game.start(players, layoutType, random);
+        return com.boardgamefiesta.istanbul.logic.Game.start(players, layoutType, random);
     }
 
     @Override
-    public void executeAutoma(com.tomsboardgames.istanbul.logic.Game state, Random random) {
+    public void executeAutoma(com.boardgamefiesta.istanbul.logic.Game state, Random random) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object toView(com.tomsboardgames.istanbul.logic.Game state, Player viewer) {
+    public Object toView(com.boardgamefiesta.istanbul.logic.Game state, Player viewer) {
         return new IstanbulView(state, viewer);
     }
 
     @Override
-    public com.tomsboardgames.istanbul.logic.Game deserialize(JsonObject jsonObject) {
-        return com.tomsboardgames.istanbul.logic.Game.deserialize(jsonObject);
+    public com.boardgamefiesta.istanbul.logic.Game deserialize(JsonObject jsonObject) {
+        return com.boardgamefiesta.istanbul.logic.Game.deserialize(jsonObject);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class Istanbul implements Game<com.tomsboardgames.istanbul.logic.Game> {
     }
 
     @Override
-    public com.tomsboardgames.istanbul.logic.Action toAction(JsonObject jsonObject, com.tomsboardgames.istanbul.logic.Game state) {
+    public com.boardgamefiesta.istanbul.logic.Action toAction(JsonObject jsonObject, com.boardgamefiesta.istanbul.logic.Game state) {
         var type = ActionView.valueOf(jsonObject.getString("type"));
         return type.toAction(jsonObject, state);
     }

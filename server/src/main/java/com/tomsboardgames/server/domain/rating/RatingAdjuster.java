@@ -1,8 +1,8 @@
-package com.tomsboardgames.server.domain.rating;
+package com.boardgamefiesta.server.domain.rating;
 
-import com.tomsboardgames.server.domain.Player;
-import com.tomsboardgames.server.domain.Table;
-import com.tomsboardgames.server.domain.Tables;
+import com.boardgamefiesta.server.domain.Player;
+import com.boardgamefiesta.server.domain.Table;
+import com.boardgamefiesta.server.domain.Tables;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

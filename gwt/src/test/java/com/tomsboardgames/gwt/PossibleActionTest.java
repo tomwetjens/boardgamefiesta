@@ -1,4 +1,4 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

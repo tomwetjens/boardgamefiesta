@@ -1,6 +1,6 @@
-package com.tomsboardgames.server.domain;
+package com.boardgamefiesta.server.domain;
 
-import com.tomsboardgames.ResourceLoader;
+import com.boardgamefiesta.ResourceLoader;
 import lombok.*;
 import org.apache.commons.codec.binary.Hex;
 

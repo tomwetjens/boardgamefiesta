@@ -1,7 +1,7 @@
-package com.tomsboardgames.server.repository;
+package com.boardgamefiesta.server.repository;
 
-import com.tomsboardgames.server.domain.User;
-import com.tomsboardgames.server.domain.Users;
+import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.Users;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;

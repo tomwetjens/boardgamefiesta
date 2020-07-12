@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.api.PlayerColor;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.PlayerColor;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

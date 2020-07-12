@@ -1,10 +1,10 @@
-package com.tomsboardgames.server.rest.table.view;
+package com.boardgamefiesta.server.rest.table.view;
 
-import com.tomsboardgames.api.PlayerColor;
-import com.tomsboardgames.server.domain.Player;
-import com.tomsboardgames.server.domain.User;
-import com.tomsboardgames.server.domain.rating.Rating;
-import com.tomsboardgames.server.rest.user.view.UserView;
+import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.server.domain.Player;
+import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.rating.Rating;
+import com.boardgamefiesta.server.rest.user.view.UserView;
 import lombok.NonNull;
 import lombok.Value;
 

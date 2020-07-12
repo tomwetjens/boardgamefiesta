@@ -1,7 +1,7 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
-import com.tomsboardgames.json.JsonDeserializer;
-import com.tomsboardgames.json.JsonSerializer;
+import com.boardgamefiesta.json.JsonDeserializer;
+import com.boardgamefiesta.json.JsonSerializer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;

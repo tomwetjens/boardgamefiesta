@@ -1,15 +1,15 @@
-package com.tomsboardgames.server.rest.table;
+package com.boardgamefiesta.server.rest.table;
 
-import com.tomsboardgames.api.Game;
-import com.tomsboardgames.api.Options;
-import com.tomsboardgames.server.domain.*;
-import com.tomsboardgames.server.domain.rating.Rating;
-import com.tomsboardgames.server.domain.rating.Ratings;
-import com.tomsboardgames.server.rest.table.command.ActionRequest;
-import com.tomsboardgames.server.rest.table.command.CreateTableRequest;
-import com.tomsboardgames.server.rest.table.command.InviteRequest;
-import com.tomsboardgames.server.rest.table.view.LogEntryView;
-import com.tomsboardgames.server.rest.table.view.TableView;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.Options;
+import com.boardgamefiesta.server.domain.*;
+import com.boardgamefiesta.server.domain.rating.Rating;
+import com.boardgamefiesta.server.domain.rating.Ratings;
+import com.boardgamefiesta.server.rest.table.command.ActionRequest;
+import com.boardgamefiesta.server.rest.table.command.CreateTableRequest;
+import com.boardgamefiesta.server.rest.table.command.InviteRequest;
+import com.boardgamefiesta.server.rest.table.view.LogEntryView;
+import com.boardgamefiesta.server.rest.table.view.TableView;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;

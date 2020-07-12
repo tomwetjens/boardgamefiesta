@@ -1,6 +1,6 @@
-package com.tomsboardgames.server.rest.user.view;
+package com.boardgamefiesta.server.rest.user.view;
 
-import com.tomsboardgames.server.domain.User;
+import com.boardgamefiesta.server.domain.User;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;

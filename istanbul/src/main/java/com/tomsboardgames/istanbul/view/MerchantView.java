@@ -1,7 +1,7 @@
-package com.tomsboardgames.istanbul.view;
+package com.boardgamefiesta.istanbul.view;
 
-import com.tomsboardgames.api.PlayerColor;
-import com.tomsboardgames.istanbul.logic.Merchant;
+import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.istanbul.logic.Merchant;
 import lombok.Getter;
 
 @Getter

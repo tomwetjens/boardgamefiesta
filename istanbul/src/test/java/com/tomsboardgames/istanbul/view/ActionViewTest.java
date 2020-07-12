@@ -1,6 +1,6 @@
-package com.tomsboardgames.istanbul.view;
+package com.boardgamefiesta.istanbul.view;
 
-import com.tomsboardgames.istanbul.logic.Action;
+import com.boardgamefiesta.istanbul.logic.Action;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

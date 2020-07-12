@@ -1,4 +1,4 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
 public enum Worker {
     COWBOY,

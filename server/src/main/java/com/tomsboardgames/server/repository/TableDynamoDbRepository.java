@@ -1,11 +1,11 @@
-package com.tomsboardgames.server.repository;
+package com.boardgamefiesta.server.repository;
 
-import com.tomsboardgames.api.Game;
-import com.tomsboardgames.api.Options;
-import com.tomsboardgames.api.PlayerColor;
-import com.tomsboardgames.api.State;
-import com.tomsboardgames.server.domain.*;
-import com.tomsboardgames.server.repository.json.DynamoDbJson;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.Options;
+import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.api.State;
+import com.boardgamefiesta.server.domain.*;
+import com.boardgamefiesta.server.repository.json.DynamoDbJson;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;

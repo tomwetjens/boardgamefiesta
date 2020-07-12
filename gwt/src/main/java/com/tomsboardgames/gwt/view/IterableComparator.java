@@ -1,4 +1,4 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
 import lombok.RequiredArgsConstructor;
 

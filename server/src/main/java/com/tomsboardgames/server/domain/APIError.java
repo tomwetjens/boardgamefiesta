@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.domain;
+package com.boardgamefiesta.server.domain;
 
 public enum APIError {
     NO_SUCH_USER,

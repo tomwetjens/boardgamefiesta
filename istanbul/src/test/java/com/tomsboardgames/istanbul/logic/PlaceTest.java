@@ -1,4 +1,4 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

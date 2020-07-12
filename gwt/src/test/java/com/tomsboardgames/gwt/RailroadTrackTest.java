@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.api.PlayerColor;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.PlayerColor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.tomsboardgames.gwt.RailroadTrack.*;
+import static com.boardgamefiesta.gwt.RailroadTrack.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;

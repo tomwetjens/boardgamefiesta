@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.rest.user;
+package com.boardgamefiesta.server.rest.user;
 
 import lombok.Data;
 

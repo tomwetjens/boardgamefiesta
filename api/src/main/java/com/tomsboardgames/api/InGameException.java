@@ -1,4 +1,4 @@
-package com.tomsboardgames.api;
+package com.boardgamefiesta.api;
 
 import lombok.Getter;
 

@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.repository.json;
+package com.boardgamefiesta.server.repository.json;
 
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;

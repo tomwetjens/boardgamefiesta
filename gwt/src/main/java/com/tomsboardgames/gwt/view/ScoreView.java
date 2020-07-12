@@ -1,6 +1,6 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.api.Score;
+import com.boardgamefiesta.api.Score;
 import lombok.Value;
 
 import java.util.Map;

@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.gwt.Game;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.gwt.Game;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;

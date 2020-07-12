@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.repository;
+package com.boardgamefiesta.server.repository;
 
 import io.quarkus.arc.config.ConfigProperties;
 import lombok.Data;

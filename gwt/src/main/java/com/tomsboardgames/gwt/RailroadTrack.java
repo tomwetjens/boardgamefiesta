@@ -1,9 +1,9 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.api.Score;
-import com.tomsboardgames.json.JsonDeserializer;
-import com.tomsboardgames.json.JsonSerializer;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.Score;
+import com.boardgamefiesta.json.JsonDeserializer;
+import com.boardgamefiesta.json.JsonSerializer;
 import lombok.*;
 
 import javax.json.JsonBuilderFactory;

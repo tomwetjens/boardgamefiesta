@@ -1,7 +1,7 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.api.PlayerColor;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.PlayerColor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.gwt.*;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.gwt.*;
 import lombok.NonNull;
 import lombok.Value;
 

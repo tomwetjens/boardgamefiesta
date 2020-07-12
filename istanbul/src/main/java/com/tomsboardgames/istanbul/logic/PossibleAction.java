@@ -1,6 +1,6 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
-import com.tomsboardgames.json.JsonSerializer;
+import com.boardgamefiesta.json.JsonSerializer;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;

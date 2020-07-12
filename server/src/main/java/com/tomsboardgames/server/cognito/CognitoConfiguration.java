@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.cognito;
+package com.boardgamefiesta.server.cognito;
 
 import io.quarkus.arc.config.ConfigProperties;
 import lombok.Data;

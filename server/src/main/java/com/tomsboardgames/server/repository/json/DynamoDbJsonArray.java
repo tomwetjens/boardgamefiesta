@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.repository.json;
+package com.boardgamefiesta.server.repository.json;
 
 import lombok.AccessLevel;
 import lombok.Getter;

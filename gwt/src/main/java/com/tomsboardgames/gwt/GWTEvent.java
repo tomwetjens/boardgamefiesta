@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
-import com.tomsboardgames.api.InGameEvent;
-import com.tomsboardgames.api.Player;
+import com.boardgamefiesta.api.InGameEvent;
+import com.boardgamefiesta.api.Player;
 import lombok.Value;
 
 import java.util.List;

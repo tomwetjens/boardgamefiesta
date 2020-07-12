@@ -1,10 +1,10 @@
-package com.tomsboardgames.server.rest.user;
+package com.boardgamefiesta.server.rest.user;
 
-import com.tomsboardgames.server.domain.APIError;
-import com.tomsboardgames.server.domain.APIException;
-import com.tomsboardgames.server.domain.User;
-import com.tomsboardgames.server.domain.Users;
-import com.tomsboardgames.server.rest.user.view.UserView;
+import com.boardgamefiesta.server.domain.APIError;
+import com.boardgamefiesta.server.domain.APIException;
+import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.Users;
+import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;

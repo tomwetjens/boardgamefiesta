@@ -1,8 +1,8 @@
-package com.tomsboardgames.istanbul.view;
+package com.boardgamefiesta.istanbul.view;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.api.PlayerColor;
-import com.tomsboardgames.istanbul.logic.Place;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.istanbul.logic.Place;
 import lombok.Getter;
 
 import java.util.Collection;

@@ -3,19 +3,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>tomsboardgames</artifactId>
-        <groupId>com.tomsboardgames</groupId>
+        <artifactId>boardgamefiesta</artifactId>
+        <groupId>com.boardgamefiesta</groupId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.tomsboardgames</groupId>
+    <groupId>com.boardgamefiesta</groupId>
     <artifactId>gwt</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.tomsboardgames</groupId>
+            <groupId>com.boardgamefiesta</groupId>
             <artifactId>api</artifactId>
         </dependency>
 

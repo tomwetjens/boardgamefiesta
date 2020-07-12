@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.event;
+package com.boardgamefiesta.server.event;
 
 import io.quarkus.oidc.IdTokenCredential;
 import io.quarkus.oidc.runtime.OidcIdentityProvider;

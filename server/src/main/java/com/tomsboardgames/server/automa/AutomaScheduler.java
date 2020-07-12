@@ -1,7 +1,7 @@
-package com.tomsboardgames.server.automa;
+package com.boardgamefiesta.server.automa;
 
-import com.tomsboardgames.server.domain.DomainService;
-import com.tomsboardgames.server.domain.Table;
+import com.boardgamefiesta.server.domain.DomainService;
+import com.boardgamefiesta.server.domain.Table;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 

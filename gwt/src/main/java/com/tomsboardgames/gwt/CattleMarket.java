@@ -1,6 +1,6 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
-import com.tomsboardgames.json.JsonSerializer;
+import com.boardgamefiesta.json.JsonSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Value;

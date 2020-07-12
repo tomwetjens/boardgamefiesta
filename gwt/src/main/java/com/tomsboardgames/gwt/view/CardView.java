@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.Card;
-import com.tomsboardgames.gwt.ObjectiveCard;
+import com.boardgamefiesta.gwt.Card;
+import com.boardgamefiesta.gwt.ObjectiveCard;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 

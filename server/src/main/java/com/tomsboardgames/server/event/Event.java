@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.event;
+package com.boardgamefiesta.server.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

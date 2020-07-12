@@ -1,6 +1,6 @@
-package com.tomsboardgames.server.domain;
+package com.boardgamefiesta.server.domain;
 
-import com.tomsboardgames.api.PlayerColor;
+import com.boardgamefiesta.api.PlayerColor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;

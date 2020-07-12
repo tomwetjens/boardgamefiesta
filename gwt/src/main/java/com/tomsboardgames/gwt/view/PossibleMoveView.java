@@ -1,8 +1,8 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.gwt.Location;
-import com.tomsboardgames.gwt.PossibleMove;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.gwt.Location;
+import com.boardgamefiesta.gwt.PossibleMove;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 

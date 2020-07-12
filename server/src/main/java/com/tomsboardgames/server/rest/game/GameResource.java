@@ -1,8 +1,8 @@
-package com.tomsboardgames.server.rest.game;
+package com.boardgamefiesta.server.rest.game;
 
-import com.tomsboardgames.api.Game;
-import com.tomsboardgames.server.domain.Games;
-import com.tomsboardgames.server.rest.game.view.GameView;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.server.domain.Games;
+import com.boardgamefiesta.server.rest.game.view.GameView;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;

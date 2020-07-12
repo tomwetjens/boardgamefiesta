@@ -1,4 +1,4 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

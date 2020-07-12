@@ -1,6 +1,6 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.CattleType;
+import com.boardgamefiesta.gwt.CattleType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

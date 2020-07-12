@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.Card;
-import com.tomsboardgames.gwt.CattleType;
+import com.boardgamefiesta.gwt.Card;
+import com.boardgamefiesta.gwt.CattleType;
 import lombok.*;
 
 import java.util.Comparator;

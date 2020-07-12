@@ -1,7 +1,7 @@
-package com.tomsboardgames.server.domain;
+package com.boardgamefiesta.server.domain;
 
-import com.tomsboardgames.api.Game;
-import com.tomsboardgames.api.State;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.State;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;

@@ -1,6 +1,6 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.ObjectiveCards;
+import com.boardgamefiesta.gwt.ObjectiveCards;
 import lombok.Value;
 
 import java.util.List;

@@ -1,8 +1,8 @@
-package com.tomsboardgames.server.domain.rating;
+package com.boardgamefiesta.server.domain.rating;
 
-import com.tomsboardgames.api.Game;
-import com.tomsboardgames.server.domain.Table;
-import com.tomsboardgames.server.domain.User;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.server.domain.Table;
+import com.boardgamefiesta.server.domain.User;
 import org.assertj.core.data.Offset;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

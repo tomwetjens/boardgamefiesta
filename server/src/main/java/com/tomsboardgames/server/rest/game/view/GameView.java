@@ -1,6 +1,6 @@
-package com.tomsboardgames.server.rest.game.view;
+package com.boardgamefiesta.server.rest.game.view;
 
-import com.tomsboardgames.api.Game;
+import com.boardgamefiesta.api.Game;
 import lombok.Value;
 
 @Value

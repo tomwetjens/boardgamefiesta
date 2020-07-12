@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.JobMarket;
-import com.tomsboardgames.gwt.Worker;
+import com.boardgamefiesta.gwt.JobMarket;
+import com.boardgamefiesta.gwt.Worker;
 import lombok.Value;
 
 import java.util.List;

@@ -1,7 +1,7 @@
-package com.tomsboardgames.server.auth;
+package com.boardgamefiesta.server.auth;
 
-import com.tomsboardgames.server.domain.User;
-import com.tomsboardgames.server.domain.Users;
+import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.Users;
 import io.quarkus.security.identity.SecurityIdentity;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 

@@ -1,6 +1,6 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
-import com.tomsboardgames.api.Player;
+import com.boardgamefiesta.api.Player;
 import lombok.*;
 import lombok.experimental.NonFinal;
 
@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
-public abstract class Action implements com.tomsboardgames.api.Action {
+public abstract class Action implements com.boardgamefiesta.api.Action {
 
     @SuppressWarnings("unchecked")
     static Class<? extends Action> deserializeClass(String str) {

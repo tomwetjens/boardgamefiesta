@@ -1,7 +1,7 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.Building;
-import com.tomsboardgames.gwt.PlayerBuilding;
+import com.boardgamefiesta.gwt.Building;
+import com.boardgamefiesta.gwt.PlayerBuilding;
 import lombok.Value;
 
 @Value

@@ -1,11 +1,11 @@
-package com.tomsboardgames.server.repository;
+package com.boardgamefiesta.server.repository;
 
-import com.tomsboardgames.api.Game;
-import com.tomsboardgames.api.Options;
-import com.tomsboardgames.api.State;
-import com.tomsboardgames.server.domain.Games;
-import com.tomsboardgames.server.domain.Table;
-import com.tomsboardgames.server.domain.User;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.Options;
+import com.boardgamefiesta.api.State;
+import com.boardgamefiesta.server.domain.Games;
+import com.boardgamefiesta.server.domain.Table;
+import com.boardgamefiesta.server.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

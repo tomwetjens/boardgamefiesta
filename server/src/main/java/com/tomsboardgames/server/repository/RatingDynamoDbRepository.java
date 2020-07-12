@@ -1,10 +1,10 @@
-package com.tomsboardgames.server.repository;
+package com.boardgamefiesta.server.repository;
 
-import com.tomsboardgames.api.Game;
-import com.tomsboardgames.server.domain.Table;
-import com.tomsboardgames.server.domain.User;
-import com.tomsboardgames.server.domain.rating.Rating;
-import com.tomsboardgames.server.domain.rating.Ratings;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.server.domain.Table;
+import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.rating.Rating;
+import com.boardgamefiesta.server.domain.rating.Ratings;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;

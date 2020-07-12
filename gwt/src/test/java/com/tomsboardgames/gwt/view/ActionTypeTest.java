@@ -1,9 +1,9 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.Action;
-import com.tomsboardgames.gwt.Game;
-import com.tomsboardgames.gwt.ObjectiveCard;
-import com.tomsboardgames.gwt.PlayerState;
+import com.boardgamefiesta.gwt.Action;
+import com.boardgamefiesta.gwt.Game;
+import com.boardgamefiesta.gwt.ObjectiveCard;
+import com.boardgamefiesta.gwt.PlayerState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;

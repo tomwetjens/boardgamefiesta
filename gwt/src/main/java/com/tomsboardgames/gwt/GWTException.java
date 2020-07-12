@@ -1,6 +1,6 @@
-package com.tomsboardgames.gwt;
+package com.boardgamefiesta.gwt;
 
-import com.tomsboardgames.api.InGameException;
+import com.boardgamefiesta.api.InGameException;
 import lombok.Getter;
 
 @Getter

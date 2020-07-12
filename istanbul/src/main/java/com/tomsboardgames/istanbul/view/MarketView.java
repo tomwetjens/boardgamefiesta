@@ -1,7 +1,7 @@
-package com.tomsboardgames.istanbul.view;
+package com.boardgamefiesta.istanbul.view;
 
-import com.tomsboardgames.istanbul.logic.GoodsType;
-import com.tomsboardgames.istanbul.logic.Place;
+import com.boardgamefiesta.istanbul.logic.GoodsType;
+import com.boardgamefiesta.istanbul.logic.Place;
 import lombok.Getter;
 
 import java.util.List;

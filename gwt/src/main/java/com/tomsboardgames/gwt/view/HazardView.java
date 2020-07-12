@@ -1,8 +1,8 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.Hand;
-import com.tomsboardgames.gwt.Hazard;
-import com.tomsboardgames.gwt.HazardType;
+import com.boardgamefiesta.gwt.Hand;
+import com.boardgamefiesta.gwt.Hazard;
+import com.boardgamefiesta.gwt.HazardType;
 import lombok.Value;
 
 @Value

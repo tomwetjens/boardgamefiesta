@@ -1,12 +1,12 @@
 
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
-import com.tomsboardgames.api.EventListener;
-import com.tomsboardgames.api.Player;
-import com.tomsboardgames.api.PlayerColor;
-import com.tomsboardgames.api.State;
-import com.tomsboardgames.json.JsonDeserializer;
-import com.tomsboardgames.json.JsonSerializer;
+import com.boardgamefiesta.api.EventListener;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.api.State;
+import com.boardgamefiesta.json.JsonDeserializer;
+import com.boardgamefiesta.json.JsonSerializer;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -160,7 +160,7 @@ public class Game implements State {
     }
 
     @Override
-    public void perform(com.tomsboardgames.api.Action action, Random random) {
+    public void perform(com.boardgamefiesta.api.Action action, Random random) {
         perform((Action) action, random);
     }
 

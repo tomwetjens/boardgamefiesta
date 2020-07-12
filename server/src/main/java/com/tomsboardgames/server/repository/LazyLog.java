@@ -1,7 +1,7 @@
-package com.tomsboardgames.server.repository;
+package com.boardgamefiesta.server.repository;
 
-import com.tomsboardgames.server.domain.Log;
-import com.tomsboardgames.server.domain.LogEntry;
+import com.boardgamefiesta.server.domain.Log;
+import com.boardgamefiesta.server.domain.LogEntry;
 
 import java.time.Instant;
 import java.util.ArrayList;

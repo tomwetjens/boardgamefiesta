@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.rest.table.command;
+package com.boardgamefiesta.server.rest.table.command;
 
 import lombok.Data;
 

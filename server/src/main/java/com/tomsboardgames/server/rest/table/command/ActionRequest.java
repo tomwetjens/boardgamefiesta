@@ -1,8 +1,8 @@
-package com.tomsboardgames.server.rest.table.command;
+package com.boardgamefiesta.server.rest.table.command;
 
-import com.tomsboardgames.api.Action;
-import com.tomsboardgames.api.Game;
-import com.tomsboardgames.api.State;
+import com.boardgamefiesta.api.Action;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.State;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 

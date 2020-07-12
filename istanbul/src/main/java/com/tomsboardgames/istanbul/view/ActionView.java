@@ -1,6 +1,6 @@
-package com.tomsboardgames.istanbul.view;
+package com.boardgamefiesta.istanbul.view;
 
-import com.tomsboardgames.istanbul.logic.*;
+import com.boardgamefiesta.istanbul.logic.*;
 import lombok.AllArgsConstructor;
 
 import javax.json.JsonObject;

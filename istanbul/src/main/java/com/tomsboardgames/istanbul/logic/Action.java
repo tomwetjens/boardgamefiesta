@@ -1,4 +1,4 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -11,7 +11,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class Action implements com.tomsboardgames.api.Action {
+public abstract class Action implements com.boardgamefiesta.api.Action {
 
     abstract ActionResult perform(Game game, Random random);
 

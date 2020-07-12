@@ -1,6 +1,6 @@
-package com.tomsboardgames.istanbul.view;
+package com.boardgamefiesta.istanbul.view;
 
-import com.tomsboardgames.istanbul.logic.Place;
+import com.boardgamefiesta.istanbul.logic.Place;
 import lombok.Getter;
 
 @Getter

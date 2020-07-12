@@ -1,4 +1,4 @@
-package com.tomsboardgames.server.cognito;
+package com.boardgamefiesta.server.cognito;
 
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 

@@ -1,7 +1,7 @@
-package com.tomsboardgames.istanbul.logic;
+package com.boardgamefiesta.istanbul.logic;
 
-import com.tomsboardgames.api.InGameException;
-import com.tomsboardgames.istanbul.Istanbul;
+import com.boardgamefiesta.api.InGameException;
+import com.boardgamefiesta.istanbul.Istanbul;
 
 public class IstanbulException extends InGameException {
 

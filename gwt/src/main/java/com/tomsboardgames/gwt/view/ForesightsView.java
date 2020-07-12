@@ -1,9 +1,9 @@
-package com.tomsboardgames.gwt.view;
+package com.boardgamefiesta.gwt.view;
 
-import com.tomsboardgames.gwt.Foresights;
-import com.tomsboardgames.gwt.KansasCitySupply;
-import com.tomsboardgames.gwt.Teepee;
-import com.tomsboardgames.gwt.Worker;
+import com.boardgamefiesta.gwt.Foresights;
+import com.boardgamefiesta.gwt.KansasCitySupply;
+import com.boardgamefiesta.gwt.Teepee;
+import com.boardgamefiesta.gwt.Worker;
 import lombok.Getter;
 import lombok.Value;
 
