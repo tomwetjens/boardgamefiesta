@@ -237,11 +237,11 @@ public enum ActionType {
             case REMOVE_CARD:
                 return new Action.RemoveCard(findCardInHand(game.currentPlayerState().getHand(), jsonObject.getJsonObject(JsonProperties.CARD)));
             case REMOVE_HAZARD:
-                return new Action.RemoveHazard(findHazard(game, jsonObject.getJsonObject(JsonProperties.HAZARD)));
+                return new Action.RemoveHazard((Location.HazardLocation) game.getTrail().getLocation(jsonObject.getString(JsonProperties.LOCATION)));
             case REMOVE_HAZARD_FOR_5_DOLLARS:
-                return new Action.RemoveHazardFor5Dollars(findHazard(game, jsonObject.getJsonObject(JsonProperties.HAZARD)));
+                return new Action.RemoveHazardFor5Dollars((Location.HazardLocation) game.getTrail().getLocation(jsonObject.getString(JsonProperties.LOCATION)));
             case REMOVE_HAZARD_FOR_FREE:
-                return new Action.RemoveHazardForFree(findHazard(game, jsonObject.getJsonObject(JsonProperties.HAZARD)));
+                return new Action.RemoveHazardForFree((Location.HazardLocation) game.getTrail().getLocation(jsonObject.getString(JsonProperties.LOCATION)));
             case SINGLE_AUXILIARY_ACTION:
                 return new Action.SingleAuxiliaryAction();
             case SINGLE_OR_DOUBLE_AUXILIARY_ACTION:
@@ -297,14 +297,6 @@ public enum ActionType {
                 .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
                 .findAny()
                 .orElseThrow(() -> new GWTException(GWTError.OBJECTIVE_CARD_NOT_AVAILABLE));
-    }
-
-    private static Hazard findHazard(Game game, JsonObject jsonObject) {
-        HazardType hazardType = HazardType.valueOf(jsonObject.getString(JsonProperties.TYPE));
-        return game.getTrail().getHazardLocations(hazardType).stream()
-                .flatMap(hazardLocation -> hazardLocation.getHazard().stream())
-                .max(Comparator.comparingInt(Hazard::getPoints))
-                .orElseThrow(() -> new GWTException(GWTError.HAZARD_NOT_ON_TRAIL));
     }
 
     private static PlayerBuilding findPlayerBuilding(Game game, String building) {

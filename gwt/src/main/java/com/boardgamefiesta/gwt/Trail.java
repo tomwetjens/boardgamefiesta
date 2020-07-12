@@ -236,16 +236,6 @@ public class Trail {
         playerLocations.put(player, to);
     }
 
-    public void removeHazard(Hazard hazard) {
-        Location.HazardLocation hazardLocation = getHazardLocations(hazard.getType()).stream()
-                .filter(location -> hazard == location.getHazard().orElse(null))
-                .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.HAZARD_NOT_ON_TRAIL));
-
-        hazardLocation.removeHazard();
-
-    }
-
     public Location getLocation(String name) {
         return getLocations().stream()
                 .filter(location -> location.getName().equals(name))

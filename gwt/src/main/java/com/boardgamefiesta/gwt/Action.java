@@ -194,7 +194,7 @@ public abstract class Action implements com.boardgamefiesta.api.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class TradeWithIndians extends Action {
+    public static class TradeWithIndians extends Action {
 
         int reward;
 
@@ -238,14 +238,10 @@ public abstract class Action implements com.boardgamefiesta.api.Action {
 
     public static final class RemoveHazardForFree extends RemoveHazard {
 
-        public RemoveHazardForFree(Hazard hazard) {
-            super(hazard, 0);
+        public RemoveHazardForFree(Location.HazardLocation location) {
+            super(location, 0);
         }
 
-        @Override
-        List<String> toEventParams(Game game) {
-            return List.of(getHazard().getType().name(), Integer.toString(getHazard().getPoints()));
-        }
     }
 
     public static final class Discard1Guernsey extends Action {
@@ -773,23 +769,31 @@ public abstract class Action implements com.boardgamefiesta.api.Action {
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class RemoveHazard extends Action {
 
-        @NonNull Hazard hazard;
+        @NonNull Location.HazardLocation location;
         int cost;
 
-        public RemoveHazard(Hazard hazard) {
-            this(hazard, 7);
+        public RemoveHazard(Location.HazardLocation location) {
+            this(location, 7);
         }
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
+            if (game.getTrail().getLocation(location.getName()) != location) {
+                throw new GWTException(GWTError.NO_SUCH_LOCATION);
+            }
+
+            var hazard = location.getHazard().orElseThrow(() -> new GWTException(GWTError.LOCATION_EMPTY));
+
             game.currentPlayerState().payDollars(cost);
             game.currentPlayerState().addHazard(hazard);
-            game.getTrail().removeHazard(hazard);
+            location.removeHazard();
+
             return ImmediateActions.none();
         }
 
         @Override
         List<String> toEventParams(Game game) {
+            var hazard = location.getHazard().orElseThrow(() -> new GWTException(GWTError.LOCATION_EMPTY));
             return List.of(hazard.getType().name(), Integer.toString(hazard.getPoints()), Integer.toString(cost));
         }
     }
@@ -1009,8 +1013,8 @@ public abstract class Action implements com.boardgamefiesta.api.Action {
 
     public static final class RemoveHazardFor5Dollars extends RemoveHazard {
 
-        public RemoveHazardFor5Dollars(Hazard hazard) {
-            super(hazard, 5);
+        public RemoveHazardFor5Dollars(Location.HazardLocation location) {
+            super(location, 5);
         }
     }
 
