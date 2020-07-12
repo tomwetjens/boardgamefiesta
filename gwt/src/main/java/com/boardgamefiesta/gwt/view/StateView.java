@@ -84,6 +84,8 @@ public class StateView {
                 possibleMoves = getPossibleMoves(state, 3);
             } else if (actions.contains(ActionType.MOVE_4_FORWARD)) {
                 possibleMoves = getPossibleMoves(state, 4);
+            } else if (actions.contains(ActionType.MOVE_5_FORWARD)) {
+                possibleMoves = getPossibleMoves(state, 5);
             }
 
             if (actions.contains(ActionType.BUY_CATTLE)) {
@@ -120,9 +122,6 @@ public class StateView {
             } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_4_FORWARD)) {
                 possibleSpaces.put(ActionType.MOVE_ENGINE_AT_MOST_4_FORWARD,
                         getPossibleSpacesForward(state, viewingPlayer, 1, 4));
-            } else if (actions.contains(ActionType.MOVE_ENGINE_AT_MOST_5_FORWARD)) {
-                possibleSpaces.put(ActionType.MOVE_ENGINE_AT_MOST_5_FORWARD,
-                        getPossibleSpacesForward(state, viewingPlayer, 1, 5));
             } else if (actions.contains(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS)) {
                 possibleSpaces.put(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS,
                         getPossibleSpacesForward(state, viewingPlayer, 1, state.getTrail().buildingsInWoods(viewingPlayer)));
