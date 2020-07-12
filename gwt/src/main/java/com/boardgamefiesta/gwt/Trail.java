@@ -293,10 +293,6 @@ public class Trail {
     }
 
     Set<PossibleMove> possibleMoves(Location from, Location to, Player player, int balance, int stepLimit, int playerCount) {
-        if (from.isEmpty()) {
-            throw new GWTException(GWTError.LOCATION_EMPTY);
-        }
-
         if (to.isEmpty()) {
             throw new GWTException(GWTError.LOCATION_EMPTY);
         }
