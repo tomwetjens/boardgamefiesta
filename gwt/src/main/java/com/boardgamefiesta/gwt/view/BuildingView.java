@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.Building;
-import com.boardgamefiesta.gwt.PlayerBuilding;
+import com.boardgamefiesta.gwt.logic.Building;
+import com.boardgamefiesta.gwt.logic.PlayerBuilding;
 import lombok.Value;
 
 @Value

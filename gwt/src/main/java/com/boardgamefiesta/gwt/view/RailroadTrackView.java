@@ -2,7 +2,7 @@ package com.boardgamefiesta.gwt.view;
 
 import com.boardgamefiesta.api.Player;
 import com.boardgamefiesta.api.PlayerColor;
-import com.boardgamefiesta.gwt.*;
+import com.boardgamefiesta.gwt.logic.*;
 import lombok.Value;
 
 import java.util.List;

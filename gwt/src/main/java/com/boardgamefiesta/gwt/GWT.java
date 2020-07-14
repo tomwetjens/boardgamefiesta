@@ -3,6 +3,7 @@ package com.boardgamefiesta.gwt;
 import com.boardgamefiesta.api.Action;
 import com.boardgamefiesta.api.Game;
 import com.boardgamefiesta.api.*;
+import com.boardgamefiesta.gwt.logic.Automa;
 import com.boardgamefiesta.gwt.view.ActionType;
 import com.boardgamefiesta.gwt.view.StateView;
 
@@ -15,7 +16,7 @@ import java.util.Random;
 import java.util.Set;
 
 @ApplicationScoped
-public class GWT implements Game<com.boardgamefiesta.gwt.Game> {
+public class GWT implements Game<com.boardgamefiesta.gwt.logic.Game> {
 
     public static final Id ID = Id.of("gwt");
 
@@ -42,28 +43,28 @@ public class GWT implements Game<com.boardgamefiesta.gwt.Game> {
     }
 
     @Override
-    public com.boardgamefiesta.gwt.Game start(Set<Player> players, Options options, Random random) {
-        return com.boardgamefiesta.gwt.Game.start(players, options.getBoolean("beginner", false), random);
+    public com.boardgamefiesta.gwt.logic.Game start(Set<Player> players, Options options, Random random) {
+        return com.boardgamefiesta.gwt.logic.Game.start(players, options.getBoolean("beginner", false), random);
     }
 
     @Override
-    public void executeAutoma(com.boardgamefiesta.gwt.Game state, Random random) {
+    public void executeAutoma(com.boardgamefiesta.gwt.logic.Game state, Random random) {
         new Automa().execute(state, random);
     }
 
     @Override
-    public Action toAction(JsonObject jsonObject, com.boardgamefiesta.gwt.Game state) {
+    public Action toAction(JsonObject jsonObject, com.boardgamefiesta.gwt.logic.Game state) {
         return ActionType.toAction(jsonObject, state);
     }
 
     @Override
-    public Object toView(com.boardgamefiesta.gwt.Game state, Player viewer) {
+    public Object toView(com.boardgamefiesta.gwt.logic.Game state, Player viewer) {
         return new StateView(state, viewer);
     }
 
     @Override
-    public com.boardgamefiesta.gwt.Game deserialize(JsonObject jsonObject) {
-        return com.boardgamefiesta.gwt.Game.deserialize(jsonObject);
+    public com.boardgamefiesta.gwt.logic.Game deserialize(JsonObject jsonObject) {
+        return com.boardgamefiesta.gwt.logic.Game.deserialize(jsonObject);
     }
 
     @Override

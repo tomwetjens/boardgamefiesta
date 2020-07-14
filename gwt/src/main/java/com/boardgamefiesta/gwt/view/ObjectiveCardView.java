@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.ObjectiveCard;
+import com.boardgamefiesta.gwt.logic.ObjectiveCard;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;

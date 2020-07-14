@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.ObjectiveCard;
+import com.boardgamefiesta.gwt.logic.ObjectiveCard;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

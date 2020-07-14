@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.Card;
-import com.boardgamefiesta.gwt.ObjectiveCard;
+import com.boardgamefiesta.gwt.logic.Card;
+import com.boardgamefiesta.gwt.logic.ObjectiveCard;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 

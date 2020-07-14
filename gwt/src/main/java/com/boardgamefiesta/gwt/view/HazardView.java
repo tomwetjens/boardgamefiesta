@@ -1,8 +1,8 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.Hand;
-import com.boardgamefiesta.gwt.Hazard;
-import com.boardgamefiesta.gwt.HazardType;
+import com.boardgamefiesta.gwt.logic.Hand;
+import com.boardgamefiesta.gwt.logic.Hazard;
+import com.boardgamefiesta.gwt.logic.HazardType;
 import lombok.Value;
 
 @Value

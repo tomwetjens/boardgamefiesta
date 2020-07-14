@@ -1,8 +1,8 @@
 package com.boardgamefiesta.gwt.view;
 
 import com.boardgamefiesta.api.Player;
-import com.boardgamefiesta.gwt.Location;
-import com.boardgamefiesta.gwt.PossibleMove;
+import com.boardgamefiesta.gwt.logic.Location;
+import com.boardgamefiesta.gwt.logic.PossibleMove;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 

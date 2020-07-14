@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.CattleType;
+import com.boardgamefiesta.gwt.logic.CattleType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.CattleMarket;
+import com.boardgamefiesta.gwt.logic.CattleMarket;
 import lombok.Value;
 
 import java.util.List;

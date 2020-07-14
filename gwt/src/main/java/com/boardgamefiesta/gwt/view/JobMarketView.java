@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.JobMarket;
-import com.boardgamefiesta.gwt.Worker;
+import com.boardgamefiesta.gwt.logic.JobMarket;
+import com.boardgamefiesta.gwt.logic.Worker;
 import lombok.Value;
 
 import java.util.List;

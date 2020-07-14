@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.City;
-import com.boardgamefiesta.gwt.RailroadTrack;
+import com.boardgamefiesta.gwt.logic.City;
+import com.boardgamefiesta.gwt.logic.RailroadTrack;
 import lombok.Value;
 
 @Value

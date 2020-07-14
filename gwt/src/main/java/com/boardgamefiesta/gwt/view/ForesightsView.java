@@ -1,9 +1,9 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.Foresights;
-import com.boardgamefiesta.gwt.KansasCitySupply;
-import com.boardgamefiesta.gwt.Teepee;
-import com.boardgamefiesta.gwt.Worker;
+import com.boardgamefiesta.gwt.logic.Foresights;
+import com.boardgamefiesta.gwt.logic.KansasCitySupply;
+import com.boardgamefiesta.gwt.logic.Teepee;
+import com.boardgamefiesta.gwt.logic.Worker;
 import lombok.Getter;
 import lombok.Value;
 

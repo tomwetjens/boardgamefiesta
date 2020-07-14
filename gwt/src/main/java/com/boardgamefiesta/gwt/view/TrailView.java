@@ -1,9 +1,9 @@
 package com.boardgamefiesta.gwt.view;
 
 import com.boardgamefiesta.api.PlayerColor;
-import com.boardgamefiesta.gwt.Location;
-import com.boardgamefiesta.gwt.Teepee;
-import com.boardgamefiesta.gwt.Trail;
+import com.boardgamefiesta.gwt.logic.Location;
+import com.boardgamefiesta.gwt.logic.Teepee;
+import com.boardgamefiesta.gwt.logic.Trail;
 import lombok.Value;
 
 import java.util.Map;

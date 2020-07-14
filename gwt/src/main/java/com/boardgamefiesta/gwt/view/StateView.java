@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.view;
 
 import com.boardgamefiesta.api.Player;
-import com.boardgamefiesta.gwt.Game;
+import com.boardgamefiesta.gwt.logic.Game;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;

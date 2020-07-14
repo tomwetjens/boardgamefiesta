@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.gwt.*;
+import com.boardgamefiesta.gwt.logic.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
