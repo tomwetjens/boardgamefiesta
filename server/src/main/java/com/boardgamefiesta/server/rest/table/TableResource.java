@@ -276,7 +276,7 @@ public class TableResource {
 
         var viewingPlayer = determinePlayer(table);
 
-        return table.getGame().toView(state, state.getPlayerByName(viewingPlayer.getId().getId()));
+        return table.getGame().getViewMapper().toView(state, state.getPlayerByName(viewingPlayer.getId().getId()));
     }
 
     @GET

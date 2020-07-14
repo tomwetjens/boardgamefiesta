@@ -55,8 +55,8 @@ public class GWT implements Game<com.boardgamefiesta.gwt.logic.Game> {
     }
 
     @Override
-    public Object toView(com.boardgamefiesta.gwt.logic.Game state, Player viewer) {
-        return new StateView(state, viewer);
+    public ViewMapper<com.boardgamefiesta.gwt.logic.Game> getViewMapper() {
+        return StateView::new;
     }
 
     @Override

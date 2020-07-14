@@ -50,8 +50,8 @@ public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
     }
 
     @Override
-    public Object toView(com.boardgamefiesta.istanbul.logic.Game state, Player viewer) {
-        return new IstanbulView(state, viewer);
+    public ViewMapper<com.boardgamefiesta.istanbul.logic.Game> getViewMapper() {
+        return IstanbulView::new;
     }
 
     @Override

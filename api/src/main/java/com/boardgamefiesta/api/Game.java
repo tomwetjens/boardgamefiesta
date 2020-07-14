@@ -20,7 +20,7 @@ public interface Game<T extends State> {
 
     ActionMapper<T> getActionMapper();
 
-    Object toView(T state, Player viewer);
+    ViewMapper<T> getViewMapper();
 
     Id getId();
 
