@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.api.Player;
-import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
 import lombok.NonNull;
 import lombok.Value;
 

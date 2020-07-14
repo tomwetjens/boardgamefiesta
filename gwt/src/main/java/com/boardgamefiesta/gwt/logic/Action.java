@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 import lombok.experimental.NonFinal;
 
@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
-public abstract class Action implements com.boardgamefiesta.api.Action {
+public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @SuppressWarnings("unchecked")
     static Class<? extends Action> deserializeClass(String str) {

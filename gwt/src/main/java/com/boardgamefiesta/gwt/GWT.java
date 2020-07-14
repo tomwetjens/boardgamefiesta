@@ -1,7 +1,14 @@
 package com.boardgamefiesta.gwt;
 
-import com.boardgamefiesta.api.*;
+import com.boardgamefiesta.api.command.ActionMapper;
+import com.boardgamefiesta.api.domain.Options;
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
+import com.boardgamefiesta.api.query.ViewMapper;
+import com.boardgamefiesta.api.repository.StateDeserializer;
+import com.boardgamefiesta.api.repository.StateSerializer;
 import com.boardgamefiesta.gwt.logic.Automa;
+import com.boardgamefiesta.gwt.logic.Game;
 import com.boardgamefiesta.gwt.view.ActionType;
 import com.boardgamefiesta.gwt.view.StateView;
 
@@ -13,14 +20,14 @@ import java.util.Random;
 import java.util.Set;
 
 @ApplicationScoped
-public class GWT implements Game<com.boardgamefiesta.gwt.logic.Game> {
+public class GWT implements com.boardgamefiesta.api.domain.Game<Game> {
 
     public static final Id ID = Id.of("gwt");
 
     private static final Duration DEFAULT_TIME_LIMIT = Duration.of(3, ChronoUnit.MINUTES);
 
     @Override
-    public Game.Id getId() {
+    public com.boardgamefiesta.api.domain.Game.Id getId() {
         return ID;
     }
 
@@ -50,12 +57,12 @@ public class GWT implements Game<com.boardgamefiesta.gwt.logic.Game> {
     }
 
     @Override
-    public ActionMapper<com.boardgamefiesta.gwt.logic.Game> getActionMapper() {
+    public ActionMapper<Game> getActionMapper() {
         return ActionType::toAction;
     }
 
     @Override
-    public ViewMapper<com.boardgamefiesta.gwt.logic.Game> getViewMapper() {
+    public ViewMapper<Game> getViewMapper() {
         return StateView::new;
     }
 

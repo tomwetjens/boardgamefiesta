@@ -1,4 +1,7 @@
-package com.boardgamefiesta.api;
+package com.boardgamefiesta.api.command;
+
+import com.boardgamefiesta.api.domain.Action;
+import com.boardgamefiesta.api.domain.State;
 
 import javax.json.JsonObject;
 

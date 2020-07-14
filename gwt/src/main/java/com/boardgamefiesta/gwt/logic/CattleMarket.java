@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.json.JsonSerializer;
+import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Value;

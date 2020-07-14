@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.gwt.logic.Location;
 import com.boardgamefiesta.gwt.logic.Teepee;
 import com.boardgamefiesta.gwt.logic.Trail;

@@ -1,7 +1,7 @@
 package com.boardgamefiesta.server.domain;
 
-import com.boardgamefiesta.api.Game;
-import com.boardgamefiesta.api.State;
+import com.boardgamefiesta.api.domain.Game;
+import com.boardgamefiesta.api.domain.State;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;

@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.rest.game.view;
 
-import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.domain.Game;
 import lombok.Value;
 
 @Value

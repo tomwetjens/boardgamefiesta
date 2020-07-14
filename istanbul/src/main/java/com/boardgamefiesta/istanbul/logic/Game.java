@@ -1,12 +1,12 @@
 
 package com.boardgamefiesta.istanbul.logic;
 
-import com.boardgamefiesta.api.EventListener;
-import com.boardgamefiesta.api.Player;
-import com.boardgamefiesta.api.PlayerColor;
-import com.boardgamefiesta.api.State;
-import com.boardgamefiesta.json.JsonDeserializer;
-import com.boardgamefiesta.json.JsonSerializer;
+import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
+import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.api.repository.JsonDeserializer;
+import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -159,7 +159,7 @@ public class Game implements State {
     }
 
     @Override
-    public void perform(com.boardgamefiesta.api.Action action, Random random) {
+    public void perform(com.boardgamefiesta.api.domain.Action action, Random random) {
         perform((Action) action, random);
     }
 

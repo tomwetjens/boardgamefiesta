@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.json.JsonSerializer;
+import com.boardgamefiesta.api.repository.JsonSerializer;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;

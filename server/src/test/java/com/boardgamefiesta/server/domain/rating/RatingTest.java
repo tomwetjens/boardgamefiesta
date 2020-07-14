@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.domain.rating;
 
-import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.domain.Game;
 import com.boardgamefiesta.server.domain.Table;
 import com.boardgamefiesta.server.domain.User;
 import org.assertj.core.data.Offset;

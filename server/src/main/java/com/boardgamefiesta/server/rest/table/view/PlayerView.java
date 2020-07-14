@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.rest.table.view;
 
-import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.server.domain.Player;
 import com.boardgamefiesta.server.domain.User;
 import com.boardgamefiesta.server.domain.rating.Rating;

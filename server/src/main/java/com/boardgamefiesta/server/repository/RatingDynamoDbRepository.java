@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.domain.Game;
 import com.boardgamefiesta.server.domain.Table;
 import com.boardgamefiesta.server.domain.User;
 import com.boardgamefiesta.server.domain.rating.Rating;

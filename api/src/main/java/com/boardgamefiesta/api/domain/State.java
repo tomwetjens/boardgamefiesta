@@ -1,9 +1,7 @@
-package com.boardgamefiesta.api;
+package com.boardgamefiesta.api.domain;
 
 import lombok.NonNull;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;

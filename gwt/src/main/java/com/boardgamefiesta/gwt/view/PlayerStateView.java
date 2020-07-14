@@ -1,6 +1,6 @@
 package com.boardgamefiesta.gwt.view;
 
-import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.gwt.logic.*;
 import lombok.NonNull;
 import lombok.Value;

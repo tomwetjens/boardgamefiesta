@@ -1,7 +1,7 @@
 package com.boardgamefiesta.istanbul.logic;
 
-import com.boardgamefiesta.api.InGameEvent;
-import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.domain.InGameEvent;
+import com.boardgamefiesta.api.domain.Player;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;

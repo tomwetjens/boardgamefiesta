@@ -1,7 +1,7 @@
 package com.boardgamefiesta.istanbul.view;
 
-import com.boardgamefiesta.api.Player;
-import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.istanbul.logic.Place;
 import lombok.Getter;
 

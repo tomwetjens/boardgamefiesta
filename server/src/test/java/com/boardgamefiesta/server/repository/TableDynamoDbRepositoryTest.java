@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.api.Game;
-import com.boardgamefiesta.api.Options;
-import com.boardgamefiesta.api.State;
+import com.boardgamefiesta.api.domain.Game;
+import com.boardgamefiesta.api.domain.Options;
+import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.server.domain.Games;
 import com.boardgamefiesta.server.domain.Table;
 import com.boardgamefiesta.server.domain.User;

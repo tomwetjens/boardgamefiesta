@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.rest.game;
 
-import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.domain.Game;
 import com.boardgamefiesta.server.domain.Games;
 import com.boardgamefiesta.server.rest.game.view.GameView;
 

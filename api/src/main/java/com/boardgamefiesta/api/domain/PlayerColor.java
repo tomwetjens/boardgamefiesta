@@ -1,4 +1,4 @@
-package com.boardgamefiesta.api;
+package com.boardgamefiesta.api.domain;
 
 public enum PlayerColor {
     RED,

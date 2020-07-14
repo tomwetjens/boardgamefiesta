@@ -1,8 +1,10 @@
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.api.EventListener;
-import com.boardgamefiesta.api.*;
-import com.boardgamefiesta.json.JsonSerializer;
+import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.Score;
+import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.api.repository.JsonSerializer;
 import com.boardgamefiesta.gwt.view.ActionType;
 import lombok.*;
 
@@ -119,7 +121,7 @@ public class Game implements State {
     }
 
     @Override
-    public void perform(@NonNull com.boardgamefiesta.api.Action action, @NonNull Random random) {
+    public void perform(@NonNull com.boardgamefiesta.api.domain.Action action, @NonNull Random random) {
         perform((Action) action, random);
     }
 

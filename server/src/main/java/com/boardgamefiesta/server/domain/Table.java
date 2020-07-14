@@ -1,7 +1,7 @@
 package com.boardgamefiesta.server.domain;
 
-import com.boardgamefiesta.api.EventListener;
-import com.boardgamefiesta.api.*;
+import com.boardgamefiesta.api.domain.*;
+import com.boardgamefiesta.api.domain.EventListener;
 import lombok.*;
 
 import java.time.Duration;
@@ -154,7 +154,7 @@ public class Table {
         expires = started.plus(ACTION_TIMEOUT);
 
         state = CurrentState.of(game.start(players.stream()
-                .map(player -> new com.boardgamefiesta.api.Player(player.getId().getId(), player.getColor()))
+                .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor()))
                 .collect(Collectors.toSet()), options, RANDOM));
         historicStates = HistoricStates.initial();
 

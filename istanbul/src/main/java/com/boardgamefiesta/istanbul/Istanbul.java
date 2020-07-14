@@ -1,6 +1,13 @@
 package com.boardgamefiesta.istanbul;
 
-import com.boardgamefiesta.api.*;
+import com.boardgamefiesta.api.command.ActionMapper;
+import com.boardgamefiesta.api.domain.Options;
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
+import com.boardgamefiesta.api.query.ViewMapper;
+import com.boardgamefiesta.api.repository.StateDeserializer;
+import com.boardgamefiesta.api.repository.StateSerializer;
+import com.boardgamefiesta.istanbul.logic.Game;
 import com.boardgamefiesta.istanbul.logic.LayoutType;
 import com.boardgamefiesta.istanbul.view.ActionView;
 import com.boardgamefiesta.istanbul.view.IstanbulView;
@@ -12,7 +19,7 @@ import java.util.Random;
 import java.util.Set;
 
 @ApplicationScoped
-public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
+public class Istanbul implements com.boardgamefiesta.api.domain.Game<Game> {
 
     public static final Id ID = Id.of("istanbul");
 
@@ -50,7 +57,7 @@ public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
     }
 
     @Override
-    public ViewMapper<com.boardgamefiesta.istanbul.logic.Game> getViewMapper() {
+    public ViewMapper<Game> getViewMapper() {
         return IstanbulView::new;
     }
 
@@ -75,7 +82,7 @@ public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
     }
 
     @Override
-    public ActionMapper<com.boardgamefiesta.istanbul.logic.Game> getActionMapper() {
+    public ActionMapper<Game> getActionMapper() {
         return this::toAction;
     }
 

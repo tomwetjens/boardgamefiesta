@@ -1,8 +1,8 @@
 package com.boardgamefiesta.istanbul.logic;
 
-import com.boardgamefiesta.api.Player;
-import com.boardgamefiesta.api.PlayerColor;
-import com.boardgamefiesta.json.JsonSerializer;
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
+import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

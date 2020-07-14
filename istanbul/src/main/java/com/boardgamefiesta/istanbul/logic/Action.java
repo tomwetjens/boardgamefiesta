@@ -11,7 +11,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class Action implements com.boardgamefiesta.api.Action {
+public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     abstract ActionResult perform(Game game, Random random);
 

@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.json.JsonSerializer;
-import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.repository.JsonSerializer;
+import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 
 import javax.json.JsonBuilderFactory;

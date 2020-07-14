@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.rest.table.command;
 
-import com.boardgamefiesta.api.Action;
-import com.boardgamefiesta.api.Game;
-import com.boardgamefiesta.api.State;
+import com.boardgamefiesta.api.domain.Action;
+import com.boardgamefiesta.api.domain.Game;
+import com.boardgamefiesta.api.domain.State;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 

@@ -1,4 +1,4 @@
-package com.boardgamefiesta.json;
+package com.boardgamefiesta.api.repository;
 
 import lombok.AccessLevel;
 import lombok.NonNull;
