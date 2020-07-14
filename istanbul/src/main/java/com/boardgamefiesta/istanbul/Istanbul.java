@@ -1,13 +1,15 @@
 package com.boardgamefiesta.istanbul;
 
-import com.boardgamefiesta.api.*;
+import com.boardgamefiesta.api.Game;
+import com.boardgamefiesta.api.Options;
+import com.boardgamefiesta.api.Player;
+import com.boardgamefiesta.api.PlayerColor;
 import com.boardgamefiesta.istanbul.logic.LayoutType;
 import com.boardgamefiesta.istanbul.view.ActionView;
 import com.boardgamefiesta.istanbul.view.IstanbulView;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.JsonObject;
-import java.io.InputStream;
 import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
@@ -37,26 +39,6 @@ public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
     @Override
     public int getMaxNumberOfPlayers() {
         return 5;
-    }
-
-    @Override
-    public String getPublishers() {
-        return "Pegasus Spiele";
-    }
-
-    @Override
-    public String getDesigners() {
-        return "Rüdiger Dorn";
-    }
-
-    @Override
-    public String getArtists() {
-        return "Andreas Resch, Hans-Georg Schneider";
-    }
-
-    @Override
-    public String getWebsite() {
-        return "https://boardgamegeek.com/boardgame/148949/istanbul/";
     }
 
     @Override

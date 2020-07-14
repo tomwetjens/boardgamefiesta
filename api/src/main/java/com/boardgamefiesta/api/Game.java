@@ -15,14 +15,6 @@ public interface Game<T extends State> {
 
     int getMaxNumberOfPlayers();
 
-    String getPublishers();
-
-    String getDesigners();
-
-    String getArtists();
-
-    String getWebsite();
-
     T start(Set<Player> players, Options options, Random random);
 
     void executeAutoma(T state, Random random);
