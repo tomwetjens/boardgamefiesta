@@ -1,7 +1,6 @@
 package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.domain.Score;
 import com.boardgamefiesta.api.repository.JsonDeserializer;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.*;
@@ -364,8 +363,8 @@ public class RailroadTrack {
     }
 
     Score score(Player player) {
-        return new Score(Map.of(ScoreCategory.CITIES.name(), scoreDeliveries(player),
-                ScoreCategory.STATIONS.name(), scoreStations(player)));
+        return new Score(Map.of(ScoreCategory.CITIES, scoreDeliveries(player),
+                ScoreCategory.STATIONS, scoreStations(player)));
     }
 
     private int scoreStations(Player player) {

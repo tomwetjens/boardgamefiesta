@@ -1,4 +1,4 @@
-package com.boardgamefiesta.api.domain;
+package com.boardgamefiesta.gwt.logic;
 
 import lombok.Value;
 
@@ -9,7 +9,7 @@ import java.util.Map;
 @Value
 public class Score {
 
-    Map<String, Integer> categories;
+    Map<ScoreCategory, Integer> categories;
 
     public Score add(Score other) {
         var map = new HashMap<>(categories);
@@ -18,7 +18,7 @@ public class Score {
         return new Score(map);
     }
 
-    public Map<String, Integer> getCategories() {
+    public Map<ScoreCategory, Integer> getCategories() {
         return Collections.unmodifiableMap(categories);
     }
 

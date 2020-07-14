@@ -2,7 +2,6 @@ package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.EventListener;
 import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.domain.Score;
 import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import com.boardgamefiesta.gwt.view.ActionType;

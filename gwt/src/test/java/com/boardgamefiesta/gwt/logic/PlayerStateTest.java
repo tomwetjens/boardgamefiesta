@@ -427,7 +427,7 @@ class PlayerStateTest {
             when(game.playerState(player)).thenReturn(playerState);
 
             assertThat(playerState.score(game).getTotal()).isEqualTo(4);
-            assertThat(playerState.score(game).getCategories()).containsEntry(ScoreCategory.DOLLARS.name(), 4);
+            assertThat(playerState.score(game).getCategories()).containsEntry(ScoreCategory.DOLLARS, 4);
         }
     }
 

@@ -1,7 +1,6 @@
 package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.domain.Score;
 import com.boardgamefiesta.api.repository.JsonDeserializer;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.*;
@@ -523,14 +522,14 @@ public class PlayerState {
 
     Score score(Game game) {
         return new Score(Map.of(
-                ScoreCategory.DOLLARS.name(), balance / 5,
-                ScoreCategory.CATTLE_CARDS.name(), scoreCattleCards(),
-                ScoreCategory.OBJECTIVE_CARDS.name(), scoreObjectiveCards(game),
-                ScoreCategory.STATION_MASTERS.name(), scoreStationMasters(),
-                ScoreCategory.WORKERS.name(), scoreWorkers(),
-                ScoreCategory.HAZARDS.name(), scoreHazards(),
-                ScoreCategory.EXTRA_STEP_POINTS.name(), hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0,
-                ScoreCategory.JOB_MARKET_TOKEN.name(), jobMarketToken ? 2 : 0));
+                ScoreCategory.DOLLARS, balance / 5,
+                ScoreCategory.CATTLE_CARDS, scoreCattleCards(),
+                ScoreCategory.OBJECTIVE_CARDS, scoreObjectiveCards(game),
+                ScoreCategory.STATION_MASTERS, scoreStationMasters(),
+                ScoreCategory.WORKERS, scoreWorkers(),
+                ScoreCategory.HAZARDS, scoreHazards(),
+                ScoreCategory.EXTRA_STEP_POINTS, hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0,
+                ScoreCategory.JOB_MARKET_TOKEN, jobMarketToken ? 2 : 0));
     }
 
     private int scoreHazards() {

@@ -434,7 +434,7 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.KANSAS_CITY, game);
 
             assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(-12);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES.name(), -12);
+            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, -12);
         }
 
         @Test
@@ -444,7 +444,7 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.WICHITA, game);
 
             assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(-3);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES.name(), -3);
+            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, -3);
         }
 
         @Test
@@ -454,7 +454,7 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.COLORADO_SPRINGS, game);
 
             assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(-1);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES.name(), -1);
+            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, -1);
         }
 
         @Test
@@ -464,7 +464,7 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.EL_PASO, game);
 
             assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(6);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES.name(), 6);
+            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 6);
         }
 
         @Test
@@ -474,7 +474,7 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.SAN_DIEGO, game);
 
             assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(8);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES.name(), 8);
+            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 8);
         }
 
         @Test
@@ -484,7 +484,7 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.SACRAMENTO, game);
 
             assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(10);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES.name(), 10);
+            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 10);
         }
 
         @Test
@@ -494,7 +494,7 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.SAN_FRANCISCO, game);
 
             assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(18);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES.name(), 18);
+            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 18);
         }
     }
 }

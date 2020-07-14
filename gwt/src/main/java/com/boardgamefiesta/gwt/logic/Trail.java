@@ -1,7 +1,6 @@
 package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.domain.Score;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.Getter;
 import lombok.NonNull;
@@ -336,7 +335,7 @@ public class Trail {
     }
 
     Score score(Player player) {
-        return new Score(Map.of(ScoreCategory.BUILDINGS.name(), getBuildings(player).stream()
+        return new Score(Map.of(ScoreCategory.BUILDINGS, getBuildings(player).stream()
                 .mapToInt(PlayerBuilding::getPoints)
                 .sum()));
     }
