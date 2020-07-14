@@ -122,7 +122,6 @@ public class Game implements State {
         });
     }
 
-    @Override
     public JsonObject serialize(JsonBuilderFactory factory) {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()

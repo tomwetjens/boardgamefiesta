@@ -140,8 +140,7 @@ public class TableResource {
 
         checkTurn(table);
 
-        var game = Games.instance().get(table.getGameId());
-        table.perform(request.toAction(game, table.getState().get()));
+        table.perform(request.toAction(table.getGame(), table.getState().get()));
 
         tables.update(table);
     }
@@ -277,7 +276,7 @@ public class TableResource {
 
         var viewingPlayer = determinePlayer(table);
 
-        return games.get(table.getGameId()).toView(state, state.getPlayerByName(viewingPlayer.getId().getId()));
+        return table.getGame().toView(state, state.getPlayerByName(viewingPlayer.getId().getId()));
     }
 
     @GET
@@ -348,7 +347,7 @@ public class TableResource {
     private Map<User.Id, Rating> getRatingMap(Table table) {
         return table.getPlayers().stream()
                 .flatMap(player -> player.getUserId().stream())
-                .map(userId -> ratings.findLatest(userId, table.getGameId()))
+                .map(userId -> ratings.findLatest(userId, table.getGame().getId()))
                 .collect(Collectors.toMap(Rating::getUserId, Function.identity()));
     }
 }

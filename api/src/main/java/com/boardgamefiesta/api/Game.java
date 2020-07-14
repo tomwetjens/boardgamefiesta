@@ -29,6 +29,7 @@ public interface Game<T extends State> {
 
     Duration getTimeLimit(Options options);
 
+    StateSerializer<T> getStateSerializer();
     StateDeserializer<T> getStateDeserializer();
 
     @Value(staticConstructor = "of")

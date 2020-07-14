@@ -23,8 +23,6 @@ public interface State {
 
     int score(Player player);
 
-    JsonObject serialize(JsonBuilderFactory factory);
-
     Set<Player> winners();
 
     boolean isEnded();

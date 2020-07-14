@@ -103,9 +103,9 @@ public class TableDynamoDbRepository implements Tables {
                                             .item(Map.of(
                                                     "TableId", AttributeValue.builder().s(table.getId().getId()).build(),
                                                     "Timestamp", AttributeValue.builder().n(Long.toString(historicState.getTimestamp().toEpochMilli())).build(),
-                                                    "GameId", AttributeValue.builder().s(table.getGameId().getId()).build(),
+                                                    "GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build(),
                                                     "Expires", AttributeValue.builder().n(Long.toString(historicState.getExpires().getEpochSecond())).build(),
-                                                    "State", Optional.ofNullable(serializedCache.get(historicState.getState())).orElseGet(() -> mapFromState(historicState.getState()))))
+                                                    "State", Optional.ofNullable(serializedCache.get(historicState.getState())).orElseGet(() -> mapFromState(table.getGame(), historicState.getState()))))
                                             .build())
                                     .build())
                             .collect(Collectors.toList())))
@@ -259,7 +259,7 @@ public class TableDynamoDbRepository implements Tables {
 
     private Map<String, AttributeValue> createAttributeValues(Table table) {
         var map = new HashMap<String, AttributeValue>();
-        map.put("GameId", AttributeValue.builder().s(table.getGameId().getId()).build());
+        map.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
         map.put("Type", AttributeValue.builder().s(table.getType().name()).build());
         map.put("Mode", AttributeValue.builder().s(table.getMode().name()).build());
         map.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
@@ -272,7 +272,7 @@ public class TableDynamoDbRepository implements Tables {
         map.put("OwnerId", AttributeValue.builder().s(table.getOwnerId().getId()).build());
         map.put("Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
         if (table.getState() != null) {
-            map.put("State", mapFromState(table.getState().get()));
+            map.put("State", mapFromState(table.getGame(), table.getState().get()));
         }
         return map;
     }
@@ -295,12 +295,13 @@ public class TableDynamoDbRepository implements Tables {
         var id = Table.Id.of(item.get("Id").s());
 
         var gameId = Game.Id.of(item.get("GameId").s());
+        var game = Games.instance().get(gameId);
 
         return Table.builder()
                 .id(id)
                 .type(Table.Type.valueOf(item.get("Type").s()))
                 .mode(Table.Mode.valueOf(item.get("Mode").s()))
-                .gameId(gameId)
+                .game(game)
                 .status(Table.Status.valueOf(item.get("Status").s()))
                 .options(new Options(item.get("Options").m().entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
@@ -366,8 +367,9 @@ public class TableDynamoDbRepository implements Tables {
                 .build();
     }
 
-    private AttributeValue mapFromState(State state) {
-        return DynamoDbJson.toJson(state::serialize);
+    private AttributeValue mapFromState(Game<State> game, State state) {
+        var serializer = game.getStateSerializer();
+        return DynamoDbJson.toJson(jsonBuilderFactory -> serializer.serialize(state, jsonBuilderFactory));
     }
 
     private AttributeValue mapFromPlayer(Player player) {
@@ -416,7 +418,7 @@ public class TableDynamoDbRepository implements Tables {
         map.put("Options", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromOptions(table.getOptions())).build());
 
         if (table.getState() != null && table.getState().isPresent()) {
-            map.put("State", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromState(table.getState().get())).build());
+            map.put("State", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromState(table.getGame(), table.getState().get())).build());
         }
 
         return map;

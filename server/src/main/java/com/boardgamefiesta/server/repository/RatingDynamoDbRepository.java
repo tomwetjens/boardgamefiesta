@@ -62,7 +62,7 @@ public class RatingDynamoDbRepository implements Ratings {
                 .keyConditionExpression("UserIdGameId = :UserIdGameId AND Timestamp BETWEEN :From AND :To")
                 .filterExpression("TableId = :TableId")
                 .expressionAttributeValues(Map.of(
-                        ":UserIdGameId", AttributeValue.builder().s(partitionKey(userId, table.getGameId())).build(),
+                        ":UserIdGameId", AttributeValue.builder().s(partitionKey(userId, table.getGame().getId())).build(),
                         ":From", AttributeValue.builder().n(Long.toString(from.toEpochMilli())).build(),
                         ":To", AttributeValue.builder().n(Long.toString(to.toEpochMilli())).build()))
                 .limit(1)

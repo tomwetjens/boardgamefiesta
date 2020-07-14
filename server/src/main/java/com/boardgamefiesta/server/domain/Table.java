@@ -8,7 +8,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -42,7 +41,7 @@ public class Table {
 
     @Getter
     @NonNull
-    private final Game.Id gameId;
+    private final Game<State> game;
 
     @Getter
     @NonNull
@@ -111,7 +110,7 @@ public class Table {
         var created = Instant.now();
         Table table = Table.builder()
                 .id(Id.generate())
-                .gameId(game.getId())
+                .game(game)
                 .type(Type.REALTIME)
                 .mode(mode)
                 .status(Status.NEW)
@@ -139,8 +138,6 @@ public class Table {
         }
 
         players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
-
-        var game = Games.instance().get(gameId);
 
         if (players.size() < game.getMinNumberOfPlayers()) {
             throw APIException.badRequest(APIError.MIN_PLAYERS);
@@ -192,7 +189,6 @@ public class Table {
             throw new IllegalStateException("Current player is not computer");
         }
 
-        var game = Games.instance().get(gameId);
         runStateChange(() -> game.executeAutoma(state.get(), RANDOM));
     }
 
@@ -217,7 +213,6 @@ public class Table {
                 currentPlayer.endTurn();
 
                 if (newCurrentPlayer != null) {
-                    var game = Games.instance().get(gameId);
                     newCurrentPlayer.beginTurn(game.getTimeLimit(options));
                 }
             }
@@ -285,7 +280,6 @@ public class Table {
         updated = Instant.now();
 
         if (status == Status.STARTED) {
-            var game = Games.instance().get(gameId);
             if (players.size() > game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
                 runStateChange(() -> state.get().leave(state.get().getPlayerByName(player.getId().getId())));
@@ -481,7 +475,6 @@ public class Table {
             throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
-        var game = Games.instance().get(gameId);
         if (players.size() == game.getMaxNumberOfPlayers()) {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
@@ -522,7 +515,6 @@ public class Table {
             throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
         }
 
-        var game = Games.instance().get(gameId);
         if (players.size() == game.getMaxNumberOfPlayers()) {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }

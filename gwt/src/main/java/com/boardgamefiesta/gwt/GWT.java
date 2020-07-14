@@ -63,6 +63,11 @@ public class GWT implements Game<com.boardgamefiesta.gwt.logic.Game> {
     }
 
     @Override
+    public StateSerializer<com.boardgamefiesta.gwt.logic.Game> getStateSerializer() {
+        return com.boardgamefiesta.gwt.logic.Game::serialize;
+    }
+
+    @Override
     public StateDeserializer<com.boardgamefiesta.gwt.logic.Game> getStateDeserializer() {
         return com.boardgamefiesta.gwt.logic.Game::deserialize;
     }

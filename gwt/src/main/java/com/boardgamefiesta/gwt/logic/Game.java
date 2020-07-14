@@ -306,7 +306,6 @@ public class Game implements State {
         return scoreDetails(player).getTotal();
     }
 
-    @Override
     public JsonObject serialize(JsonBuilderFactory factory) {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()

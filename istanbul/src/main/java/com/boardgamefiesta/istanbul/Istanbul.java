@@ -55,6 +55,11 @@ public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
     }
 
     @Override
+    public StateSerializer<com.boardgamefiesta.istanbul.logic.Game> getStateSerializer() {
+        return com.boardgamefiesta.istanbul.logic.Game::serialize;
+    }
+
+    @Override
     public StateDeserializer<com.boardgamefiesta.istanbul.logic.Game> getStateDeserializer() {
         return com.boardgamefiesta.istanbul.logic.Game::deserialize;
     }
