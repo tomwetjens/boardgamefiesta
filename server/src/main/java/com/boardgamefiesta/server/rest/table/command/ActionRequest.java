@@ -27,7 +27,7 @@ public class ActionRequest {
     }
 
     public <T extends State> Action toAction(Game<T> game, T state) {
-        return game.toAction(jsonObject, state);
+        return game.getActionMapper().toAction(jsonObject, state);
     }
 
 }

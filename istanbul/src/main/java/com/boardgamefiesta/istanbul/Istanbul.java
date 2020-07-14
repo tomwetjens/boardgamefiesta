@@ -75,7 +75,11 @@ public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
     }
 
     @Override
-    public com.boardgamefiesta.istanbul.logic.Action toAction(JsonObject jsonObject, com.boardgamefiesta.istanbul.logic.Game state) {
+    public ActionMapper<com.boardgamefiesta.istanbul.logic.Game> getActionMapper() {
+        return this::toAction;
+    }
+
+    private com.boardgamefiesta.istanbul.logic.Action toAction(JsonObject jsonObject, com.boardgamefiesta.istanbul.logic.Game state) {
         var type = ActionView.valueOf(jsonObject.getString("type"));
         return type.toAction(jsonObject, state);
     }

@@ -2,7 +2,6 @@ package com.boardgamefiesta.api;
 
 import lombok.Value;
 
-import javax.json.JsonObject;
 import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
@@ -19,7 +18,7 @@ public interface Game<T extends State> {
 
     void executeAutoma(T state, Random random);
 
-    Action toAction(JsonObject jsonObject, T state);
+    ActionMapper<T> getActionMapper();
 
     Object toView(T state, Player viewer);
 
@@ -30,6 +29,7 @@ public interface Game<T extends State> {
     Duration getTimeLimit(Options options);
 
     StateSerializer<T> getStateSerializer();
+
     StateDeserializer<T> getStateDeserializer();
 
     @Value(staticConstructor = "of")

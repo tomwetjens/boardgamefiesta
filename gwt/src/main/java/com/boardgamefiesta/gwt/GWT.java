@@ -1,14 +1,11 @@
 package com.boardgamefiesta.gwt;
 
-import com.boardgamefiesta.api.Action;
-import com.boardgamefiesta.api.Game;
 import com.boardgamefiesta.api.*;
 import com.boardgamefiesta.gwt.logic.Automa;
 import com.boardgamefiesta.gwt.view.ActionType;
 import com.boardgamefiesta.gwt.view.StateView;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.json.JsonObject;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
@@ -53,8 +50,8 @@ public class GWT implements Game<com.boardgamefiesta.gwt.logic.Game> {
     }
 
     @Override
-    public Action toAction(JsonObject jsonObject, com.boardgamefiesta.gwt.logic.Game state) {
-        return ActionType.toAction(jsonObject, state);
+    public ActionMapper<com.boardgamefiesta.gwt.logic.Game> getActionMapper() {
+        return ActionType::toAction;
     }
 
     @Override
