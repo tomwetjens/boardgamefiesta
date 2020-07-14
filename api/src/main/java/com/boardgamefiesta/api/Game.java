@@ -25,11 +25,11 @@ public interface Game<T extends State> {
 
     Id getId();
 
-    T deserialize(JsonObject jsonObject);
-
     boolean hasAutoma();
 
     Duration getTimeLimit(Options options);
+
+    StateDeserializer<T> getStateDeserializer();
 
     @Value(staticConstructor = "of")
     class Id {

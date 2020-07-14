@@ -1,10 +1,8 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.api.Game;
-import com.boardgamefiesta.api.Options;
-import com.boardgamefiesta.api.PlayerColor;
-import com.boardgamefiesta.api.State;
+import com.boardgamefiesta.api.*;
 import com.boardgamefiesta.server.domain.*;
+import com.boardgamefiesta.server.domain.Player;
 import com.boardgamefiesta.server.repository.json.DynamoDbJson;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -340,7 +338,9 @@ public class TableDynamoDbRepository implements Tables {
         var attributeValue = response.item().get("State");
 
         if (attributeValue != null) {
-            return DynamoDbJson.fromJson(attributeValue, games.get(gameId)::deserialize);
+            var game = games.get(gameId);
+            var deserializer = game.getStateDeserializer();
+            return DynamoDbJson.fromJson(attributeValue, deserializer::deserialize);
         }
         return null;
     }

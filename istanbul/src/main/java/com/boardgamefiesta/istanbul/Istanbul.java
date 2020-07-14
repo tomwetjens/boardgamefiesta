@@ -1,9 +1,6 @@
 package com.boardgamefiesta.istanbul;
 
-import com.boardgamefiesta.api.Game;
-import com.boardgamefiesta.api.Options;
-import com.boardgamefiesta.api.Player;
-import com.boardgamefiesta.api.PlayerColor;
+import com.boardgamefiesta.api.*;
 import com.boardgamefiesta.istanbul.logic.LayoutType;
 import com.boardgamefiesta.istanbul.view.ActionView;
 import com.boardgamefiesta.istanbul.view.IstanbulView;
@@ -58,8 +55,8 @@ public class Istanbul implements Game<com.boardgamefiesta.istanbul.logic.Game> {
     }
 
     @Override
-    public com.boardgamefiesta.istanbul.logic.Game deserialize(JsonObject jsonObject) {
-        return com.boardgamefiesta.istanbul.logic.Game.deserialize(jsonObject);
+    public StateDeserializer<com.boardgamefiesta.istanbul.logic.Game> getStateDeserializer() {
+        return com.boardgamefiesta.istanbul.logic.Game::deserialize;
     }
 
     @Override
