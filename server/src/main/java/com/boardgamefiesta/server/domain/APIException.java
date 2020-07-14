@@ -1,5 +1,6 @@
 package com.boardgamefiesta.server.domain;
 
+import com.boardgamefiesta.api.domain.Game;
 import com.boardgamefiesta.api.domain.InGameException;
 import lombok.Value;
 
@@ -9,8 +10,8 @@ import javax.ws.rs.core.Response;
 
 public class APIException extends WebApplicationException {
 
-    public static APIException inGame(InGameException e) {
-        return new APIException(Response.Status.BAD_REQUEST, new Error(APIError.IN_GAME_ERROR, e.getGameId().getId(), e.getError()));
+    public static APIException inGame(InGameException e, Game.Id gameId) {
+        return new APIException(Response.Status.BAD_REQUEST, new Error(APIError.IN_GAME_ERROR, gameId.getId(), e.getErrorCode()));
     }
 
     public static APIException badRequest(APIError apiError) {

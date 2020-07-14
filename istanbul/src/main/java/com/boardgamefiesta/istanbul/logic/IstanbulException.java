@@ -6,7 +6,7 @@ import com.boardgamefiesta.istanbul.Istanbul;
 public class IstanbulException extends InGameException {
 
     IstanbulException(IstanbulError error) {
-        super(Istanbul.ID, error.name());
+        super(error.name());
     }
 
 }

@@ -394,7 +394,6 @@ public enum ActionType {
         private static final String CERTIFICATES = "certificates";
         private static final String CITY = "city";
         private static final String TO = "to";
-        private static final String HAZARD = "hazard";
         private static final String REWARD = "reward";
         private static final String LOCATION = "location";
         private static final String BUILDING = "building";

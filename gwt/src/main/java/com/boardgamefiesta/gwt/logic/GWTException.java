@@ -8,6 +8,6 @@ import lombok.Getter;
 public class GWTException extends InGameException {
 
     public GWTException(GWTError error) {
-        super(GWT.ID, error.toString());
+        super(error.name());
     }
 }
