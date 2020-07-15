@@ -1,18 +1,21 @@
-package com.boardgamefiesta.api.domain;
+package com.boardgamefiesta.api.spi;
 
 import com.boardgamefiesta.api.command.ActionMapper;
+import com.boardgamefiesta.api.domain.Options;
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
+import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.api.query.ViewMapper;
 import com.boardgamefiesta.api.repository.StateDeserializer;
 import com.boardgamefiesta.api.repository.StateSerializer;
-import lombok.Value;
 
 import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
 
-public interface Game<T extends State> {
+public interface GameProvider<T extends State> {
 
-    Id getId();
+    String getId();
 
     int getMinNumberOfPlayers();
 
@@ -36,8 +39,5 @@ public interface Game<T extends State> {
 
     Duration getTimeLimit(Options options);
 
-    @Value(staticConstructor = "of")
-    class Id {
-        String id;
-    }
+
 }

@@ -7,32 +7,32 @@ import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.api.query.ViewMapper;
 import com.boardgamefiesta.api.repository.StateDeserializer;
 import com.boardgamefiesta.api.repository.StateSerializer;
+import com.boardgamefiesta.api.spi.GameProvider;
+import com.boardgamefiesta.istanbul.logic.Action;
 import com.boardgamefiesta.istanbul.logic.Game;
 import com.boardgamefiesta.istanbul.logic.LayoutType;
 import com.boardgamefiesta.istanbul.view.ActionView;
 import com.boardgamefiesta.istanbul.view.IstanbulView;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.json.JsonObject;
 import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
 
-@ApplicationScoped
-public class Istanbul implements com.boardgamefiesta.api.domain.Game<Game> {
+public class Istanbul implements GameProvider<Game> {
 
-    public static final Id ID = Id.of("istanbul");
+    public static final String ID = "istanbul";
 
     private static final Duration DEFAULT_TIME_LIMIT = Duration.ofSeconds(90);
 
     @Override
-    public Id getId() {
+    public String getId() {
         return ID;
     }
 
     @Override
     public Set<PlayerColor> getSupportedColors() {
-        return com.boardgamefiesta.istanbul.logic.Game.SUPPORTED_COLORS;
+        return Game.SUPPORTED_COLORS;
     }
 
     @Override
@@ -46,13 +46,13 @@ public class Istanbul implements com.boardgamefiesta.api.domain.Game<Game> {
     }
 
     @Override
-    public com.boardgamefiesta.istanbul.logic.Game start(Set<Player> players, Options options, Random random) {
+    public Game start(Set<Player> players, Options options, Random random) {
         var layoutType = options.getEnum("layoutType", LayoutType.class, LayoutType.RANDOM);
-        return com.boardgamefiesta.istanbul.logic.Game.start(players, layoutType, random);
+        return Game.start(players, layoutType, random);
     }
 
     @Override
-    public void executeAutoma(com.boardgamefiesta.istanbul.logic.Game state, Random random) {
+    public void executeAutoma(Game state, Random random) {
         throw new UnsupportedOperationException();
     }
 
@@ -62,13 +62,13 @@ public class Istanbul implements com.boardgamefiesta.api.domain.Game<Game> {
     }
 
     @Override
-    public StateSerializer<com.boardgamefiesta.istanbul.logic.Game> getStateSerializer() {
-        return com.boardgamefiesta.istanbul.logic.Game::serialize;
+    public StateSerializer<Game> getStateSerializer() {
+        return Game::serialize;
     }
 
     @Override
-    public StateDeserializer<com.boardgamefiesta.istanbul.logic.Game> getStateDeserializer() {
-        return com.boardgamefiesta.istanbul.logic.Game::deserialize;
+    public StateDeserializer<Game> getStateDeserializer() {
+        return Game::deserialize;
     }
 
     @Override
@@ -86,7 +86,7 @@ public class Istanbul implements com.boardgamefiesta.api.domain.Game<Game> {
         return this::toAction;
     }
 
-    private com.boardgamefiesta.istanbul.logic.Action toAction(JsonObject jsonObject, com.boardgamefiesta.istanbul.logic.Game state) {
+    private Action toAction(JsonObject jsonObject, Game state) {
         var type = ActionView.valueOf(jsonObject.getString("type"));
         return type.toAction(jsonObject, state);
     }

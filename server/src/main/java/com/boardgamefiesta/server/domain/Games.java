@@ -1,44 +1,35 @@
 package com.boardgamefiesta.server.domain;
 
-import com.boardgamefiesta.api.domain.Game;
-import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.api.spi.GameProviders;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
 public class Games implements DomainService {
 
-    private final Map<Game.Id, Game<State>> map;
-
-    @Inject
-    public Games(Instance<Game<?>> instance) {
-        map = instance.stream()
-                .collect(Collectors.toMap(Game::getId, game -> (Game<State>) game));
-    }
+    private final Map<Game.Id, Game> games = new ConcurrentHashMap<>();
 
     public static Games instance() {
         return DomainService.instance(Games.class);
     }
 
-    public Game<State> get(Game.Id gameId) {
-        var implementation = map.get(gameId);
-        if (implementation == null) {
-            throw new IllegalArgumentException("Unknown game: " + gameId.getId());
-        }
-        return implementation;
+    public Game get(Game.Id id) {
+        return games.computeIfAbsent(id, key -> Game.builder()
+                .id(key)
+                .provider(GameProviders.instance().get(id.getId()))
+                .build());
     }
 
-    public Stream<Game<State>> findAll() {
-        return map.values().stream();
-    }
-
-    public Optional<Game<State>> findById(Game.Id id) {
-        return Optional.ofNullable(map.get(id));
+    public Optional<Game> findById(Game.Id id) {
+        return Optional.ofNullable(games.computeIfAbsent(id, key ->
+                GameProviders.instance().find(id.getId())
+                        .map(provider -> Game.builder()
+                                .id(key)
+                                .provider(provider)
+                                .build())
+                        .orElse(null)));
     }
 }

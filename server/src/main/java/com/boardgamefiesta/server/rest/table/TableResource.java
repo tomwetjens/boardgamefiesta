@@ -1,6 +1,5 @@
 package com.boardgamefiesta.server.rest.table;
 
-import com.boardgamefiesta.api.domain.Game;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.server.domain.*;
 import com.boardgamefiesta.server.domain.rating.Rating;
@@ -276,7 +275,7 @@ public class TableResource {
 
         var viewingPlayer = determinePlayer(table);
 
-        return table.getGame().getViewMapper().toView(state, state.getPlayerByName(viewingPlayer.getId().getId()));
+        return table.getGame().getProvider().getViewMapper().toView(state, state.getPlayerByName(viewingPlayer.getId().getId()));
     }
 
     @GET

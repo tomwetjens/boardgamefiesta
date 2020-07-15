@@ -2,6 +2,7 @@ package com.boardgamefiesta.server.domain;
 
 import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.spi.GameProvider;
 import lombok.*;
 
 import java.time.Duration;
@@ -41,7 +42,7 @@ public class Table {
 
     @Getter
     @NonNull
-    private final Game<State> game;
+    private final Game game;
 
     @Getter
     @NonNull
@@ -85,7 +86,7 @@ public class Table {
     @Getter
     private Instant ended;
 
-    public static Table create(@NonNull Game<State> game,
+    public static Table create(@NonNull Game game,
                                @NonNull Mode mode,
                                @NonNull User owner,
                                @NonNull Set<User> inviteUsers,

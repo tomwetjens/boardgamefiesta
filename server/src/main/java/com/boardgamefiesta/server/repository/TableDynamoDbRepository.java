@@ -1,11 +1,9 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.api.domain.Game;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.server.domain.*;
-import com.boardgamefiesta.server.domain.Player;
 import com.boardgamefiesta.server.repository.json.DynamoDbJson;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -325,13 +323,13 @@ public class TableDynamoDbRepository implements Tables {
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
                         .collect(Collectors.toSet()))
-                .state(Table.CurrentState.defer(() -> getState(gameId, id)))
+                .state(Table.CurrentState.defer(() -> getState(game, id)))
                 .historicStates(Table.HistoricStates.defer(timestamp -> getHistoricState(id, timestamp)))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
     }
 
-    private State getState(Game.Id gameId, Table.Id tableId) {
+    private State getState(Game game, Table.Id tableId) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(tableName)
                 .key(key(tableId))
@@ -342,8 +340,7 @@ public class TableDynamoDbRepository implements Tables {
         var attributeValue = response.item().get("State");
 
         if (attributeValue != null) {
-            var game = games.get(gameId);
-            var deserializer = game.getStateDeserializer();
+            var deserializer = game.getProvider().getStateDeserializer();
             return DynamoDbJson.fromJson(attributeValue, deserializer::deserialize);
         }
         return null;
@@ -370,8 +367,8 @@ public class TableDynamoDbRepository implements Tables {
                 .build();
     }
 
-    private AttributeValue mapFromState(Game<State> game, State state) {
-        var serializer = game.getStateSerializer();
+    private AttributeValue mapFromState(Game game, State state) {
+        var serializer = game.getProvider().getStateSerializer();
         return DynamoDbJson.toJson(jsonBuilderFactory -> serializer.serialize(state, jsonBuilderFactory));
     }
 

@@ -1,6 +1,5 @@
 package com.boardgamefiesta.server.domain;
 
-import com.boardgamefiesta.api.domain.Game;
 import com.boardgamefiesta.api.domain.InGameException;
 import lombok.Value;
 

@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.rest.table.command;
 
 import com.boardgamefiesta.api.domain.Action;
-import com.boardgamefiesta.api.domain.Game;
 import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.server.domain.Game;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -26,8 +26,8 @@ public class ActionRequest {
         }
     }
 
-    public <T extends State> Action toAction(Game<T> game, T state) {
-        return game.getActionMapper().toAction(jsonObject, state);
+    public <T extends State> Action toAction(Game game, T state) {
+        return game.getProvider().getActionMapper().toAction(jsonObject, state);
     }
 
 }

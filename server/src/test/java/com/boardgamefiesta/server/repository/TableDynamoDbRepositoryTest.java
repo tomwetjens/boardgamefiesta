@@ -1,8 +1,9 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.api.domain.Game;
+import com.boardgamefiesta.api.spi.GameProvider;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.server.domain.Game;
 import com.boardgamefiesta.server.domain.Games;
 import com.boardgamefiesta.server.domain.Table;
 import com.boardgamefiesta.server.domain.User;
@@ -28,7 +29,7 @@ class TableDynamoDbRepositoryTest {
     Games games;
 
     @Mock
-    Game<State> game;
+    Game game;
 
     @Mock
     DynamoDbConfiguration config;

@@ -7,27 +7,26 @@ import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.api.query.ViewMapper;
 import com.boardgamefiesta.api.repository.StateDeserializer;
 import com.boardgamefiesta.api.repository.StateSerializer;
+import com.boardgamefiesta.api.spi.GameProvider;
 import com.boardgamefiesta.gwt.logic.Automa;
 import com.boardgamefiesta.gwt.logic.Game;
 import com.boardgamefiesta.gwt.view.ActionType;
 import com.boardgamefiesta.gwt.view.StateView;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.Random;
 import java.util.Set;
 
-@ApplicationScoped
-public class GWT implements com.boardgamefiesta.api.domain.Game<Game> {
+public class GWT implements GameProvider<Game> {
 
-    public static final Id ID = Id.of("gwt");
+    public static final String ID = "gwt";
 
     private static final Duration DEFAULT_TIME_LIMIT = Duration.of(3, ChronoUnit.MINUTES);
 
     @Override
-    public com.boardgamefiesta.api.domain.Game.Id getId() {
+    public String getId() {
         return ID;
     }
 
@@ -47,12 +46,12 @@ public class GWT implements com.boardgamefiesta.api.domain.Game<Game> {
     }
 
     @Override
-    public com.boardgamefiesta.gwt.logic.Game start(Set<Player> players, Options options, Random random) {
-        return com.boardgamefiesta.gwt.logic.Game.start(players, options.getBoolean("beginner", false), random);
+    public Game start(Set<Player> players, Options options, Random random) {
+        return Game.start(players, options.getBoolean("beginner", false), random);
     }
 
     @Override
-    public void executeAutoma(com.boardgamefiesta.gwt.logic.Game state, Random random) {
+    public void executeAutoma(Game state, Random random) {
         new Automa().execute(state, random);
     }
 
@@ -67,13 +66,13 @@ public class GWT implements com.boardgamefiesta.api.domain.Game<Game> {
     }
 
     @Override
-    public StateSerializer<com.boardgamefiesta.gwt.logic.Game> getStateSerializer() {
-        return com.boardgamefiesta.gwt.logic.Game::serialize;
+    public StateSerializer<Game> getStateSerializer() {
+        return Game::serialize;
     }
 
     @Override
-    public StateDeserializer<com.boardgamefiesta.gwt.logic.Game> getStateDeserializer() {
-        return com.boardgamefiesta.gwt.logic.Game::deserialize;
+    public StateDeserializer<Game> getStateDeserializer() {
+        return Game::deserialize;
     }
 
     @Override
