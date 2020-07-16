@@ -56,6 +56,9 @@ class ActionTest {
     @Mock
     Trail trail;
 
+    @Mock
+    ActionStack actionStack;
+
     @BeforeEach
     void setUp() {
         lenient().when(game.getCurrentPlayer()).thenReturn(currentPlayer);
@@ -65,6 +68,7 @@ class ActionTest {
         lenient().when(game.getPlayers()).thenReturn(List.of(currentPlayer, otherPlayer));
         lenient().when(game.playerState(currentPlayer)).thenReturn(currentPlayerState);
         lenient().when(game.playerState(otherPlayer)).thenReturn(otherPlayerState);
+        lenient().when(game.getActionStack()).thenReturn(actionStack);
     }
 
     @Nested
