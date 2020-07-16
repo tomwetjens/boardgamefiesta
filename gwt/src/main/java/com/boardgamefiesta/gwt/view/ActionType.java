@@ -84,7 +84,7 @@ public enum ActionType {
     SINGLE_AUXILIARY_ACTION(Action.SingleAuxiliaryAction.class),
     SINGLE_OR_DOUBLE_AUXILIARY_ACTION(Action.SingleOrDoubleAuxiliaryAction.class),
     TAKE_OBJECTIVE_CARD(Action.TakeObjectiveCard.class),
-    TRADE_WITH_INDIANS(Action.TradeWithIndians.class),
+    TRADE_WITH_TRIBES(Action.TradeWithTribes.class),
     UPGRADE_ANY_STATION_BEHIND_ENGINE(Action.UpgradeAnyStationBehindEngine.class),
     UPGRADE_STATION(Action.UpgradeStation.class),
     USE_ADJACENT_BUILDING(Action.UseAdjacentBuilding.class),
@@ -253,8 +253,8 @@ public enum ActionType {
                 return jsonObject.containsKey(JsonProperties.OBJECTIVE_CARD)
                         ? new Action.TakeObjectiveCard(findObjectiveCard(game, getJsonObject(jsonObject, JsonProperties.OBJECTIVE_CARD)))
                         : new Action.TakeObjectiveCard();
-            case TRADE_WITH_INDIANS:
-                return new Action.TradeWithIndians(getInt(jsonObject, JsonProperties.REWARD));
+            case TRADE_WITH_TRIBES:
+                return new Action.TradeWithTribes(getInt(jsonObject, JsonProperties.REWARD));
             case UPGRADE_ANY_STATION_BEHIND_ENGINE:
                 return new Action.UpgradeAnyStationBehindEngine(game.getRailroadTrack().getStations().get(getInt(jsonObject, JsonProperties.STATION)));
             case UPGRADE_STATION:

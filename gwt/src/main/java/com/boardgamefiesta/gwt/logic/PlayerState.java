@@ -198,8 +198,8 @@ public class PlayerState {
                 game.fireEvent(player, GWTEvent.Type.MAY_REMOVE_HAZARD_FOR_FREE, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.optional(Action.RemoveHazardForFree.class));
             } else if (count == 6) {
-                game.fireEvent(player, GWTEvent.Type.MAY_TRADE_WITH_INDIANS, Collections.emptyList());
-                return ImmediateActions.of(PossibleAction.optional(Action.TradeWithIndians.class));
+                game.fireEvent(player, GWTEvent.Type.MAY_TRADE_WITH_TRIBES, Collections.emptyList());
+                return ImmediateActions.of(PossibleAction.optional(Action.TradeWithTribes.class));
             }
         } else if (worker == Worker.CRAFTSMAN) {
             if (count == 4 || count == 6) {

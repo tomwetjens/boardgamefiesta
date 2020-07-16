@@ -66,7 +66,7 @@ public abstract class NeutralBuilding extends Building {
         @Override
         public PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(
-                    PossibleAction.choice(Action.TradeWithIndians.class, Action.Pay2DollarsToMoveEngine2Forward.class),
+                    PossibleAction.choice(Action.TradeWithTribes.class, Action.Pay2DollarsToMoveEngine2Forward.class),
                     Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }

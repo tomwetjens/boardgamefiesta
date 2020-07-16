@@ -184,7 +184,7 @@ public abstract class PlayerBuilding extends Building {
         @Override
         PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(
-                    PossibleAction.choice(Action.TradeWithIndians.class, Action.SingleOrDoubleAuxiliaryAction.class),
+                    PossibleAction.choice(Action.TradeWithTribes.class, Action.SingleOrDoubleAuxiliaryAction.class),
                     Action.MoveEngineAtMost2Forward.class);
         }
     }
