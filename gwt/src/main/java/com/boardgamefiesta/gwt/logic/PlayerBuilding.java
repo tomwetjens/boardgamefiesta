@@ -31,27 +31,48 @@ public abstract class PlayerBuilding extends Building {
 
     static PlayerBuilding forName(String name, Player player) {
         switch (name) {
-            case "1a": return new PlayerBuilding.Building1A(player);
-            case "2a": return new PlayerBuilding.Building2A(player);
-            case "3a": return new PlayerBuilding.Building3A(player);
-            case "4a": return new PlayerBuilding.Building4A(player);
-            case "5a": return new PlayerBuilding.Building5A(player);
-            case "6a": return new PlayerBuilding.Building6A(player);
-            case "7a": return new PlayerBuilding.Building7A(player);
-            case "8a": return new PlayerBuilding.Building8A(player);
-            case "9a": return new PlayerBuilding.Building9A(player);
-            case "10a": return new PlayerBuilding.Building10A(player);
-            case "1b": return new PlayerBuilding.Building1B(player);
-            case "2b": return new PlayerBuilding.Building2B(player);
-            case "3b": return new PlayerBuilding.Building3B(player);
-            case "4b": return new PlayerBuilding.Building4B(player);
-            case "5b": return new PlayerBuilding.Building5B(player);
-            case "6b": return new PlayerBuilding.Building6B(player);
-            case "7b": return new PlayerBuilding.Building7B(player);
-            case "8b": return new PlayerBuilding.Building8B(player);
-            case "9b": return new PlayerBuilding.Building9B(player);
-            case "10b": return new PlayerBuilding.Building10B(player);
-            default: throw new IllegalArgumentException("Unknown player building: " + name);
+            case "1a":
+                return new PlayerBuilding.Building1A(player);
+            case "2a":
+                return new PlayerBuilding.Building2A(player);
+            case "3a":
+                return new PlayerBuilding.Building3A(player);
+            case "4a":
+                return new PlayerBuilding.Building4A(player);
+            case "5a":
+                return new PlayerBuilding.Building5A(player);
+            case "6a":
+                return new PlayerBuilding.Building6A(player);
+            case "7a":
+                return new PlayerBuilding.Building7A(player);
+            case "8a":
+                return new PlayerBuilding.Building8A(player);
+            case "9a":
+                return new PlayerBuilding.Building9A(player);
+            case "10a":
+                return new PlayerBuilding.Building10A(player);
+            case "1b":
+                return new PlayerBuilding.Building1B(player);
+            case "2b":
+                return new PlayerBuilding.Building2B(player);
+            case "3b":
+                return new PlayerBuilding.Building3B(player);
+            case "4b":
+                return new PlayerBuilding.Building4B(player);
+            case "5b":
+                return new PlayerBuilding.Building5B(player);
+            case "6b":
+                return new PlayerBuilding.Building6B(player);
+            case "7b":
+                return new PlayerBuilding.Building7B(player);
+            case "8b":
+                return new PlayerBuilding.Building8B(player);
+            case "9b":
+                return new PlayerBuilding.Building9B(player);
+            case "10b":
+                return new PlayerBuilding.Building10B(player);
+            default:
+                throw new IllegalArgumentException("Unknown player building: " + name);
         }
     }
 
@@ -257,7 +278,27 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(Game game) {
-            return PossibleAction.any(PossibleAction.whenThen(0, game.currentPlayerState().getNumberOfCowboys(), Action.DrawCard.class, Action.DiscardCard.class), Action.Move3Forward.class);
+            var numberOfCowboys = game.currentPlayerState().getNumberOfCowboys();
+
+            var drawCardsUpToNumberOfCowboys = new HashSet<PossibleAction>();
+            drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.DrawCard.class));
+            if (numberOfCowboys > 1) {
+                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw2Cards.class));
+            }
+            if (numberOfCowboys > 2) {
+                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw3Cards.class));
+            }
+            if (numberOfCowboys > 3) {
+                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw4Cards.class));
+            }
+            if (numberOfCowboys > 4) {
+                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw5Cards.class));
+            }
+            if (numberOfCowboys > 5) {
+                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw6Cards.class));
+            }
+
+            return PossibleAction.any(PossibleAction.choice(drawCardsUpToNumberOfCowboys), Action.Move3Forward.class);
         }
     }
 

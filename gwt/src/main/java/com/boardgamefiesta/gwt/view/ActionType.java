@@ -38,6 +38,11 @@ public enum ActionType {
     DISCARD_PAIR_TO_GAIN_3_DOLLARS(Action.DiscardPairToGain3Dollars.class),
     DISCARD_PAIR_TO_GAIN_4_DOLLARS(Action.DiscardPairToGain4Dollars.class),
     DRAW_CARD(Action.DrawCard.class),
+    DRAW_2_CARDS(Action.Draw2Cards.class),
+    DRAW_3_CARDS(Action.Draw3Cards.class),
+    DRAW_4_CARDS(Action.Draw4Cards.class),
+    DRAW_5_CARDS(Action.Draw5Cards.class),
+    DRAW_6_CARDS(Action.Draw6Cards.class),
     DRAW_2_CATTLE_CARDS(Action.Draw2CattleCards.class),
     EXTRAORDINARY_DELIVERY(Action.ExtraordinaryDelivery.class),
     GAIN_1_CERTIFICATE(Action.Gain1Certificate.class),
@@ -159,6 +164,16 @@ public enum ActionType {
                 return new Action.DiscardPairToGain4Dollars(getEnum(jsonObject, JsonProperties.CATTLE_TYPE, CattleType.class));
             case DRAW_CARD:
                 return new Action.DrawCard();
+            case DRAW_2_CARDS:
+                return new Action.Draw2Cards();
+            case DRAW_3_CARDS:
+                return new Action.Draw3Cards();
+            case DRAW_4_CARDS:
+                return new Action.Draw4Cards();
+            case DRAW_5_CARDS:
+                return new Action.Draw5Cards();
+            case DRAW_6_CARDS:
+                return new Action.Draw6Cards();
             case DRAW_2_CATTLE_CARDS:
                 return new Action.Draw2CattleCards();
             case EXTRAORDINARY_DELIVERY:

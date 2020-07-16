@@ -137,6 +137,12 @@ public class PlayerState {
         }
     }
 
+    void drawCards(int count, Random random) {
+        for (int n = 0; n < count; n++) {
+            drawCard(random);
+        }
+    }
+
     void drawUpToHandLimit(Random random) {
         int handLimit = getHandLimit();
         while (hand.size() < handLimit && drawStack.size() + discardPile.size() > 0) {
@@ -413,7 +419,7 @@ public class PlayerState {
         Set<PossibleAction> actions = new HashSet<>();
 
         actions.add(PossibleAction.optional(Action.Gain1Dollar.class));
-        actions.add(PossibleAction.whenThen(0, 1, Action.DrawCard.class, Action.DiscardCard.class));
+        actions.add(PossibleAction.optional(Action.DrawCard.class));
 
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {
             actions.add(PossibleAction.optional(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class));
@@ -438,9 +444,9 @@ public class PlayerState {
         }
 
         if (hasAllUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-            actions.add(PossibleAction.whenThen(0, 2, Action.DrawCard.class, Action.DiscardCard.class));
+            actions.add(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class));
         } else if (hasUnlocked(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
-            actions.add(PossibleAction.whenThen(0, 1, Action.DrawCard.class, Action.DiscardCard.class));
+            actions.add(PossibleAction.optional(Action.DrawCard.class));
         }
 
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_GAIN_CERT)) {

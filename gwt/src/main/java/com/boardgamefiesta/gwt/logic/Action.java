@@ -124,7 +124,52 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         @Override
         public ImmediateActions perform(Game game, Random random) {
             game.currentPlayerState().drawCard(random);
-            return ImmediateActions.none();
+            return ImmediateActions.of(PossibleAction.mandatory(Action.DiscardCard.class));
+        }
+    }
+
+    public static final class Draw2Cards extends Action {
+
+        @Override
+        public ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().drawCards(2, random);
+            return ImmediateActions.of(PossibleAction.repeat(2, 2, Action.DiscardCard.class));
+        }
+    }
+
+    public static final class Draw3Cards extends Action {
+
+        @Override
+        public ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().drawCards(3, random);
+            return ImmediateActions.of(PossibleAction.repeat(3, 3, Action.DiscardCard.class));
+        }
+    }
+
+    public static final class Draw4Cards extends Action {
+
+        @Override
+        public ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().drawCards(4, random);
+            return ImmediateActions.of(PossibleAction.repeat(4, 4, Action.DiscardCard.class));
+        }
+    }
+
+    public static final class Draw5Cards extends Action {
+
+        @Override
+        public ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().drawCards(5, random);
+            return ImmediateActions.of(PossibleAction.repeat(5, 5, Action.DiscardCard.class));
+        }
+    }
+
+    public static final class Draw6Cards extends Action {
+
+        @Override
+        public ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().drawCards(6, random);
+            return ImmediateActions.of(PossibleAction.repeat(6, 6, Action.DiscardCard.class));
         }
     }
 

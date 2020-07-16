@@ -65,6 +65,7 @@ class StateViewTest {
                     Action.Gain1Dollar.class,
                     Action.Gain2Dollars.class,
                     Action.DrawCard.class,
+                    Action.Draw2Cards.class,
                     Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class,
                     Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates.class,
                     Action.Pay1DollarToMoveEngine1Forward.class,
