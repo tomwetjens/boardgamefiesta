@@ -2,13 +2,13 @@ package com.boardgamefiesta.gwt.view;
 
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.gwt.logic.*;
+import lombok.Getter;
 import lombok.NonNull;
-import lombok.Value;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Value
+@Getter
 public class PlayerStateView {
 
     PlayerView player;
@@ -83,12 +83,9 @@ public class PlayerStateView {
                 .sorted()
                 .collect(Collectors.toList());
 
+        score = new ScoreView(state.scoreDetails(playerState.getPlayer()));
         if (state.isEnded()) {
-            this.score = new ScoreView(state.scoreDetails(playerState.getPlayer()));
-            this.winner = state.winners().contains(playerState.getPlayer());
-        } else {
-            this.score = null;
-            this.winner = null;
+            winner = state.winners().contains(playerState.getPlayer());
         }
     }
 }
