@@ -951,7 +951,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.getTrail().movePlayer(player, to);
 
-            return payFeesAndActivate ? to.activate(game) : ImmediateActions.none();
+            if (payFeesAndActivate) {
+                // Actions from previous locations cannot be performed anymore
+                game.getActionStack().clear();
+
+                // Actions of new location are now possible
+                return to.getPossibleAction(game)
+                        .map(ImmediateActions::of)
+                        .orElse(ImmediateActions.none());
+            } else {
+                // From Objective Card action
+                return ImmediateActions.none();
+            }
         }
 
         @Override

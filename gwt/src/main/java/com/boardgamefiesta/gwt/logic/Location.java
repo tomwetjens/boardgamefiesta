@@ -24,8 +24,8 @@ public abstract class Location {
         return Collections.unmodifiableSet(next);
     }
 
-    ImmediateActions activate(Game game) {
-        return ImmediateActions.none();
+    Optional<PossibleAction> getPossibleAction(Game game) {
+        return Optional.empty();
     }
 
     public Hand getHand() {
@@ -104,7 +104,7 @@ public abstract class Location {
         }
 
         @Override
-        ImmediateActions activate(Game game) {
+        Optional<PossibleAction> getPossibleAction(Game game) {
             if (building != null) {
                 if (building instanceof NeutralBuilding || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer()) {
                     var buildingAction = building.getPossibleAction(game);
@@ -114,26 +114,26 @@ public abstract class Location {
 
                         if (buildingAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class)) {
                             // Leave out the SingleAuxiliaryAction, because it is useless when you can choose SingleOrDoubleAuxiliaryAction
-                            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction))));
+                            return Optional.of(PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction))));
                         } else {
-                            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction), Action.SingleAuxiliaryAction.class)));
+                            return Optional.of(PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction), Action.SingleAuxiliaryAction.class)));
                         }
                     } else {
                         // No risk action
 
                         if (buildingAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class)) {
                             // Leave out the SingleAuxiliaryAction, because it is useless when you can choose SingleOrDoubleAuxiliaryAction
-                            return ImmediateActions.of(buildingAction);
+                            return Optional.of(buildingAction);
                         } else {
-                            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(buildingAction, Action.SingleAuxiliaryAction.class)));
+                            return Optional.of(PossibleAction.optional(PossibleAction.choice(buildingAction, Action.SingleAuxiliaryAction.class)));
                         }
                     }
                 } else {
                     // Other player's building, only allowed to use aux action
-                    return ImmediateActions.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
+                    return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
                 }
             }
-            return ImmediateActions.none();
+            return Optional.empty();
         }
 
         @Override
@@ -203,11 +203,11 @@ public abstract class Location {
         }
 
         @Override
-        ImmediateActions activate(Game game) {
+        Optional<PossibleAction> getPossibleAction(Game game) {
             if (hazard != null) {
-                return ImmediateActions.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
+                return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }
-            return ImmediateActions.none();
+            return Optional.empty();
         }
 
         @Override
@@ -250,8 +250,8 @@ public abstract class Location {
         }
 
         @Override
-        ImmediateActions activate(Game game) {
-            return ImmediateActions.of(PossibleAction.mandatory(Action.ChooseForesights.class));
+        Optional<PossibleAction> getPossibleAction(Game game) {
+            return Optional.of(PossibleAction.mandatory(Action.ChooseForesights.class));
         }
 
         @Override
@@ -272,11 +272,11 @@ public abstract class Location {
         }
 
         @Override
-        public ImmediateActions activate(Game game) {
+        public Optional<PossibleAction> getPossibleAction(Game game) {
             if (teepee != null) {
-                return ImmediateActions.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
+                return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }
-            return ImmediateActions.none();
+            return Optional.empty();
         }
 
         @Override

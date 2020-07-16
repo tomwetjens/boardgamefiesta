@@ -45,6 +45,7 @@ public class Game implements State {
     @Getter
     private final ObjectiveCards objectiveCards;
 
+    @Getter(value = AccessLevel.PACKAGE)
     private final ActionStack actionStack;
 
     private transient Set<EventListener> eventListeners;
@@ -148,8 +149,11 @@ public class Game implements State {
 
             fireEvent(action);
 
-            ImmediateActions immediateActions = action.perform(this, random);
+            // Action can possibly modify the action queue, so first get this action off the queue
+            // before executing it
             actionStack.perform(action.getClass());
+
+            ImmediateActions immediateActions = action.perform(this, random);
 
             if (!immediateActions.isEmpty()) {
                 actionStack.push(immediateActions.getActions());
