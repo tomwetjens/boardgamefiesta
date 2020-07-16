@@ -75,7 +75,7 @@ public class Game implements State {
 
         var playerStates = new HashMap<Player, PlayerState>();
         int startBalance = 6;
-        for (Player player : players) {
+        for (Player player : playerOrder) {
             playerStates.put(player, new PlayerState(player, startBalance++, startingObjectiveCards.poll(), random, buildings));
         }
 
