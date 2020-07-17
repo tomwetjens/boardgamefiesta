@@ -24,7 +24,7 @@ public abstract class Location {
         return Collections.unmodifiableSet(next);
     }
 
-    Optional<PossibleAction> getPossibleAction(Game game) {
+    Optional<PossibleAction> activate(Game game) {
         return Optional.empty();
     }
 
@@ -104,10 +104,10 @@ public abstract class Location {
         }
 
         @Override
-        Optional<PossibleAction> getPossibleAction(Game game) {
+        Optional<PossibleAction> activate(Game game) {
             if (building != null) {
                 if (building instanceof NeutralBuilding || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer()) {
-                    var buildingAction = building.getPossibleAction(game);
+                    var buildingAction = building.activate(game);
 
                     if (riskAction != null) {
                         // There is an optional risk action
@@ -203,7 +203,7 @@ public abstract class Location {
         }
 
         @Override
-        Optional<PossibleAction> getPossibleAction(Game game) {
+        Optional<PossibleAction> activate(Game game) {
             if (hazard != null) {
                 return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }
@@ -250,7 +250,7 @@ public abstract class Location {
         }
 
         @Override
-        Optional<PossibleAction> getPossibleAction(Game game) {
+        Optional<PossibleAction> activate(Game game) {
             return Optional.of(PossibleAction.mandatory(Action.ChooseForesights.class));
         }
 
@@ -272,7 +272,7 @@ public abstract class Location {
         }
 
         @Override
-        public Optional<PossibleAction> getPossibleAction(Game game) {
+        public Optional<PossibleAction> activate(Game game) {
             if (teepee != null) {
                 return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
             }

@@ -26,7 +26,6 @@ public class GWTEvent implements InGameEvent {
         ACTION,
         PAY_FEE_PLAYER,
         PAY_FEE_BANK,
-        MAY_DRAW_CATTLE_CARDS,
         MAY_APPOINT_STATION_MASTER,
         MUST_TAKE_OBJECTIVE_CARD,
         MAY_REMOVE_BLACK_DISC_INSTEAD_OF_WHITE,

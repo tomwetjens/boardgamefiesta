@@ -1,5 +1,7 @@
 package com.boardgamefiesta.gwt.logic;
 
+import java.util.stream.Stream;
+
 public abstract class NeutralBuilding extends Building {
 
     NeutralBuilding(String name) {
@@ -8,14 +10,22 @@ public abstract class NeutralBuilding extends Building {
 
     public static NeutralBuilding forName(String name) {
         switch (name) {
-            case "A": return new NeutralBuilding.A();
-            case "B": return new NeutralBuilding.B();
-            case "C": return new NeutralBuilding.C();
-            case "D": return new NeutralBuilding.D();
-            case "E": return new NeutralBuilding.E();
-            case "F": return new NeutralBuilding.F();
-            case "G": return new NeutralBuilding.G();
-            default: throw new IllegalArgumentException("Unsupported neutral building: " + name);
+            case "A":
+                return new NeutralBuilding.A();
+            case "B":
+                return new NeutralBuilding.B();
+            case "C":
+                return new NeutralBuilding.C();
+            case "D":
+                return new NeutralBuilding.D();
+            case "E":
+                return new NeutralBuilding.E();
+            case "F":
+                return new NeutralBuilding.F();
+            case "G":
+                return new NeutralBuilding.G();
+            default:
+                throw new IllegalArgumentException("Unsupported neutral building: " + name);
         }
     }
 
@@ -26,7 +36,7 @@ public abstract class NeutralBuilding extends Building {
         }
 
         @Override
-        public PossibleAction getPossibleAction(Game game) {
+        public PossibleAction activate(Game game) {
             return PossibleAction.any(Action.Discard1Guernsey.class, Action.HireWorker.class, Action.HireWorkerPlus2.class);
         }
     }
@@ -38,7 +48,7 @@ public abstract class NeutralBuilding extends Building {
         }
 
         @Override
-        public PossibleAction getPossibleAction(Game game) {
+        public PossibleAction activate(Game game) {
             return PossibleAction.any(Action.Discard1DutchBeltToGain2Dollars.class, Action.PlaceBuilding.class);
         }
     }
@@ -50,7 +60,7 @@ public abstract class NeutralBuilding extends Building {
         }
 
         @Override
-        public PossibleAction getPossibleAction(Game game) {
+        public PossibleAction activate(Game game) {
             return PossibleAction.any(
                     PossibleAction.choice(Action.Gain1Certificate.class, Action.TakeObjectiveCard.class),
                     Action.MoveEngineForward.class);
@@ -64,7 +74,7 @@ public abstract class NeutralBuilding extends Building {
         }
 
         @Override
-        public PossibleAction getPossibleAction(Game game) {
+        public PossibleAction activate(Game game) {
             return PossibleAction.any(
                     PossibleAction.choice(Action.TradeWithTribes.class, Action.Pay2DollarsToMoveEngine2Forward.class),
                     Action.SingleOrDoubleAuxiliaryAction.class);
@@ -78,8 +88,12 @@ public abstract class NeutralBuilding extends Building {
         }
 
         @Override
-        public PossibleAction getPossibleAction(Game game) {
-            return PossibleAction.any(Action.Discard1BlackAngusToGain2Dollars.class, Action.BuyCattle.class);
+        public PossibleAction activate(Game game) {
+            game.currentPlayerState().resetUsedCowboys();
+            return PossibleAction.any(Stream.of(
+                    PossibleAction.optional(Action.Discard1BlackAngusToGain2Dollars.class),
+                    PossibleAction.repeat(0, game.currentPlayerState().getNumberOfCowboys(),
+                            PossibleAction.choice(Action.Draw2CattleCards.class, Action.BuyCattle.class))));
         }
     }
 
@@ -90,7 +104,7 @@ public abstract class NeutralBuilding extends Building {
         }
 
         @Override
-        public PossibleAction getPossibleAction(Game game) {
+        public PossibleAction activate(Game game) {
             return PossibleAction.any(Action.DiscardPairToGain4Dollars.class, Action.RemoveHazard.class);
         }
     }
@@ -102,7 +116,7 @@ public abstract class NeutralBuilding extends Building {
         }
 
         @Override
-        public PossibleAction getPossibleAction(Game game) {
+        public PossibleAction activate(Game game) {
             return PossibleAction.any(Action.MoveEngineForward.class, Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }

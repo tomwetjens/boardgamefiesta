@@ -33,10 +33,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class BuyCattle extends Action {
+    public static class BuyCattle extends Action {
 
         @NonNull
-        private Set<Card.CattleCard> cattleCards;
+        Set<Card.CattleCard> cattleCards;
 
         public BuyCattle(@NonNull Set<Card.CattleCard> cattleCards) {
             if (cattleCards.isEmpty()) {
@@ -48,20 +48,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            int cost = calculateCost(game);
+            var playerState = game.currentPlayerState();
 
-            game.currentPlayerState().payDollars(cost);
+            var cost = calculateCost(game);
+            playerState.payDollars(cost);
 
-            int unusedCowboys = game.getCattleMarket().buy(cattleCards, game.currentPlayerState().getNumberOfCowboys());
+            var cowboys = game.getCattleMarket().buy(cattleCards, usableCowboys(playerState));
+            playerState.useCowboys(cowboys);
+            playerState.gainCards(cattleCards);
 
-            game.currentPlayerState().gainCards(cattleCards);
-
-            if (unusedCowboys > 0) {
-                //Any of the cowboys that you do not put to use buying a cattle card during this action may instead
-                //be used to draw 2 cards from the market cattle stack and add them face up to the cattle market
-                game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.MAY_DRAW_CATTLE_CARDS, Collections.emptyList());
-                return ImmediateActions.of(PossibleAction.repeat(0, unusedCowboys, Action.Draw2CattleCards.class));
-            }
             return ImmediateActions.none();
         }
 
@@ -74,7 +69,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         private int calculateCost(Game game) {
-            return game.getCattleMarket().cost(cattleCards, game.currentPlayerState().getNumberOfCowboys());
+            return game.getCattleMarket().cost(cattleCards, usableCowboys(game.currentPlayerState()));
+        }
+
+        private int usableCowboys(PlayerState playerState) {
+            return playerState.getNumberOfCowboys() - playerState.getUsedCowboys();
         }
     }
 
@@ -878,6 +877,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
+            game.currentPlayerState().useCowboys(1);
+
             game.getCattleMarket().draw();
             game.getCattleMarket().draw();
 
@@ -897,7 +898,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class DiscardPairToGain3Dollars extends Action {
+    public static class DiscardPairToGain3Dollars extends Action {
 
         @NonNull
         private final CattleType type;
@@ -956,7 +957,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.getActionStack().clear();
 
                 // Actions of new location are now possible
-                return to.getPossibleAction(game)
+                return to.activate(game)
                         .map(ImmediateActions::of)
                         .orElse(ImmediateActions.none());
             } else {
@@ -1270,7 +1271,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                     .filter(adjacentLocation -> adjacentLocation instanceof Location.BuildingLocation)
                     .map(adjacentLocation -> (Location.BuildingLocation) adjacentLocation)
                     .flatMap(adjacentBuildingLocation -> adjacentBuildingLocation.getBuilding().stream())
-                    .map(building -> building.getPossibleAction(game)))));
+                    .map(building -> building.activate(game)))));
         }
     }
 

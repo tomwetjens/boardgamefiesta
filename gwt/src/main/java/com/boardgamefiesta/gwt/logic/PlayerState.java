@@ -42,6 +42,8 @@ public class PlayerState {
     private int balance;
     @Getter
     private boolean jobMarketToken;
+    @Getter
+    private int usedCowboys;
 
     PlayerState(@NonNull Player player, int balance, @NonNull ObjectiveCard startingObjectiveCard, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
         this.player = player;
@@ -90,6 +92,7 @@ public class PlayerState {
                 .add("tempCertificates", tempCertificates)
                 .add("balance", balance)
                 .add("jobMarketToken", jobMarketToken)
+                .add("usedCowboys", usedCowboys)
                 .build();
     }
 
@@ -119,10 +122,11 @@ public class PlayerState {
         var tempCertificates = jsonObject.getInt("tempCertificates", 0);
         var balance = jsonObject.getInt("balance", 0);
         var jobMarketToken = jsonObject.getBoolean("jobMarketToken", false);
+        var usedCowboys = jsonObject.getInt("usedCowboys", 0);
 
         return new PlayerState(player, drawStack, hand, discardPile, workers,
                 buildings, unlocked, objectives, stationMasters, teepees, hazards,
-                tempCertificates, balance, jobMarketToken);
+                tempCertificates, balance, jobMarketToken, usedCowboys);
     }
 
     void drawCard(Random random) {
@@ -619,4 +623,14 @@ public class PlayerState {
                 && balance >= unlockable.getCost();
     }
 
+    void resetUsedCowboys() {
+        usedCowboys = 0;
+    }
+
+    void useCowboys(int amount) {
+        if (getNumberOfCowboys() - usedCowboys < amount) {
+            throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
+        }
+        usedCowboys += amount;
+    }
 }

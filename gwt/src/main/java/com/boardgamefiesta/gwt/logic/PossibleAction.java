@@ -74,7 +74,11 @@ abstract class PossibleAction {
     }
 
     static PossibleAction repeat(int atLeast, int atMost, Class<? extends Action> action) {
-        return new Repeat(atLeast, atMost, action);
+        return new Repeat(atLeast, atMost, PossibleAction.optional(action), null);
+    }
+
+    static PossibleAction repeat(int atLeast, int atMost, PossibleAction action) {
+        return new Repeat(atLeast, atMost, action, null);
     }
 
     /**
@@ -412,12 +416,14 @@ abstract class PossibleAction {
 
     private static final class WhenThen extends Repeat {
 
+        private final Class<? extends Action> when;
         private final Class<? extends Action> then;
 
         private int thens;
 
         private WhenThen(int atLeast, int atMost, Class<? extends Action> when, Class<? extends Action> then, int thens) {
-            super(atLeast, atMost, when);
+            super(atLeast, atMost, PossibleAction.optional(when), null);
+            this.when = when;
             this.then = then;
             this.thens = thens;
         }
@@ -426,7 +432,7 @@ abstract class PossibleAction {
         JsonObject serialize(JsonBuilderFactory factory) {
             return factory.createObjectBuilder()
                     .add("whenThen", factory.createObjectBuilder()
-                            .add("when", Action.serializeClass(action))
+                            .add("when", Action.serializeClass(when))
                             .add("then", Action.serializeClass(then))
                             .add("thens", thens)
                             .add("atLeast", atLeast)
@@ -444,7 +450,7 @@ abstract class PossibleAction {
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (this.action == action) {
+            if (this.when == action) {
                 super.perform(action);
 
                 thens++;
@@ -493,60 +499,84 @@ abstract class PossibleAction {
 
         @Override
         public PossibleAction clone() {
-            return new WhenThen(atLeast, atMost, action, then, thens);
+            return new WhenThen(atLeast, atMost, when, then, thens);
         }
     }
 
     private static class Repeat extends PossibleAction {
 
-        protected final Class<? extends Action> action;
+        protected final PossibleAction repeatingAction;
 
+        private PossibleAction current;
         protected int atLeast;
         protected int atMost;
 
-        private Repeat(int atLeast, int atMost, Class<? extends Action> action) {
+        private Repeat(int atLeast, int atMost, PossibleAction action, PossibleAction current) {
             this.atLeast = atLeast;
             this.atMost = atMost;
-            this.action = action;
+            this.repeatingAction = action;
+            this.current = current;
         }
 
         @Override
         JsonObject serialize(JsonBuilderFactory factory) {
             return factory.createObjectBuilder()
                     .add("repeat", factory.createObjectBuilder()
-                            .add("action", Action.serializeClass(action))
+                            .add("repeatingAction", repeatingAction.serialize(factory))
+                            .add("current", current != null ? current.serialize(factory) : null)
                             .add("atLeast", atLeast)
                             .add("atMost", atMost))
                     .build();
         }
 
         static Repeat deserialize(JsonObject jsonObject) {
-            return new Repeat(jsonObject.getInt("atLeast"),
-                    jsonObject.getInt("atMost"),
-                    Action.deserializeClass(jsonObject.getString("action")));
+            if (jsonObject.containsKey("repeatingAction")) {
+                var current = jsonObject.getJsonObject("current");
+                return new Repeat(jsonObject.getInt("atLeast"),
+                        jsonObject.getInt("atMost"),
+                        PossibleAction.deserialize(jsonObject.getJsonObject("repeatingAction")),
+                        current != null ? PossibleAction.deserialize(current) : null);
+            } else {
+                // Deprecated
+                return new Repeat(jsonObject.getInt("atLeast"),
+                        jsonObject.getInt("atMost"),
+                        PossibleAction.optional(Action.deserializeClass(jsonObject.getString("action"))),
+                        null);
+            }
         }
 
         @Override
         public PossibleAction clone() {
-            return new Repeat(atLeast, atMost, action);
+            return new Repeat(atLeast, atMost, repeatingAction, current);
         }
 
         @Override
         void perform(Class<? extends Action> action) {
-            if (this.action != action) {
-                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
+            if (current == null) {
+                if (atMost == 0) {
+                    throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
+                }
+
+                atLeast = Math.max(0, atLeast - 1);
+                atMost--;
+
+                current = repeatingAction.clone();
             }
 
-            if (atMost == 0) {
-                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
-            }
+            current.perform(action);
 
-            atLeast = Math.max(0, atLeast - 1);
-            atMost--;
+            if (current.isFinal()) {
+                current = null;
+            }
         }
 
         @Override
         void skip() {
+            if (current != null) {
+                current.skip();
+                current = null;
+            }
+
             if (atLeast > 0) {
                 throw new GWTException(GWTError.CANNOT_SKIP_ACTION);
             }
@@ -556,17 +586,18 @@ abstract class PossibleAction {
 
         @Override
         boolean isFinal() {
-            return atMost == 0;
+            return current == null && atMost == 0;
         }
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            return this.action == action && atMost > 0;
+            return current != null ? current.canPerform(action) : (repeatingAction.canPerform(action) && atMost > 0);
         }
 
         @Override
         Set<Class<? extends Action>> getPossibleActions() {
-            return atMost > 0 ? Collections.singleton(action) : Collections.emptySet();
+            return current != null ? current.getPossibleActions()
+                    : (atMost > 0 ? repeatingAction.getPossibleActions() : Collections.emptySet());
         }
     }
 }
