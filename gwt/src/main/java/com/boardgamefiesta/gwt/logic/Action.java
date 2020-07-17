@@ -643,7 +643,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class UnlockWhite extends Action {
+    public static class UnlockWhite extends Action {
 
         @NonNull Unlockable unlock;
 
@@ -664,7 +664,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class UnlockBlackOrWhite extends Action {
+    public static class UnlockBlackOrWhite extends Action {
 
         @NonNull Unlockable unlock;
 
@@ -682,7 +682,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class MoveEngineAtLeast1BackwardsAndGain3Dollars extends Action {
+    public static class MoveEngineAtLeast1BackwardsAndGain3Dollars extends Action {
 
         @NonNull RailroadTrack.Space to;
 
@@ -698,7 +698,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates extends Action {
+    public static class Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates extends Action {
 
         @NonNull RailroadTrack.Space to;
 
@@ -713,7 +713,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class MoveEngine2BackwardsToRemove2Cards extends Action {
+    public static class MoveEngine2BackwardsToRemove2Cards extends Action {
 
         @NonNull RailroadTrack.Space to;
 
@@ -721,13 +721,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ImmediateActions perform(Game game, Random random) {
             return game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2)
                     .getImmediateActions()
-                    .andThen(PossibleAction.mandatory(RemoveCard.class), PossibleAction.mandatory(RemoveCard.class));
+                    .andThen(PossibleAction.repeat(2, 2, RemoveCard.class));
         }
     }
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class MoveEngine2Or3Forward extends Action {
+    public static class MoveEngine2Or3Forward extends Action {
 
         @NonNull RailroadTrack.Space to;
 

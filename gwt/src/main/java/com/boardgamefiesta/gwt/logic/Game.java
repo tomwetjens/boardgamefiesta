@@ -140,7 +140,7 @@ public class Game implements State {
             ImmediateActions immediateActions = action.perform(this, random);
 
             if (!immediateActions.isEmpty()) {
-                actionStack.push(immediateActions.getActions());
+                actionStack.addFirst(immediateActions.getActions());
             }
         } else {
             if (!actionStack.canPerform(action.getClass())) {
@@ -156,7 +156,7 @@ public class Game implements State {
             ImmediateActions immediateActions = action.perform(this, random);
 
             if (!immediateActions.isEmpty()) {
-                actionStack.push(immediateActions.getActions());
+                actionStack.addFirst(immediateActions.getActions());
             }
         }
 
@@ -234,7 +234,7 @@ public class Game implements State {
         currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
 
         if (!currentPlayerState().hasJobMarketToken()) {
-            actionStack.push(Collections.singleton(PossibleAction.mandatory(Action.Move.class)));
+            actionStack.addFirst(Collections.singletonList(PossibleAction.mandatory(Action.Move.class)));
 
             fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
         } else {

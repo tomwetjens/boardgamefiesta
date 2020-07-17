@@ -29,8 +29,13 @@ class ActionStack {
                 .collect(Collectors.toList()));
     }
 
-    void push(Collection<? extends PossibleAction> possibleActions) {
-        possibleActions.forEach(actions::addFirst);
+    /**
+     * Pushes on top of stack, but keeps relative order.
+     */
+    void addFirst(List<PossibleAction> possibleActions) {
+        for (int i = possibleActions.size() - 1; i >= 0; i--) {
+            actions.addFirst(possibleActions.get(i));
+        }
     }
 
     void perform(Class<? extends Action> action) {

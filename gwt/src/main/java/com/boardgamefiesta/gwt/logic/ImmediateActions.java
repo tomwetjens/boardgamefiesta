@@ -14,8 +14,8 @@ class ImmediateActions {
         this.actions = actions;
     }
 
-    static ImmediateActions of(PossibleAction... possibleAction) {
-        return new ImmediateActions(Arrays.stream(possibleAction).collect(Collectors.toList()));
+    static ImmediateActions of(PossibleAction possibleAction) {
+        return new ImmediateActions(Arrays.asList(possibleAction));
     }
 
     static ImmediateActions none() {
@@ -26,8 +26,8 @@ class ImmediateActions {
         return Collections.unmodifiableList(actions);
     }
 
-    ImmediateActions andThen(PossibleAction... possibleAction) {
-        return new ImmediateActions(Stream.concat(actions.stream(), Arrays.stream(possibleAction))
+    ImmediateActions andThen(PossibleAction possibleAction) {
+        return new ImmediateActions(Stream.concat(actions.stream(), Stream.of(possibleAction))
                 .collect(Collectors.toUnmodifiableList()));
     }
 
