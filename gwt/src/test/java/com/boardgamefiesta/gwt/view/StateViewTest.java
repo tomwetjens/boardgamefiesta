@@ -80,7 +80,7 @@ class StateViewTest {
             when(space2.getNumber()).thenReturn(2);
 
             when(railroadTrack.reachableSpacesForward(any(), eq(1), eq(1))).thenReturn(Set.of(space1));
-            when(railroadTrack.reachableSpacesForward(any(), eq(2), eq(2))).thenReturn(Set.of(space1, space2));
+            when(railroadTrack.reachableSpacesForward(any(), eq(1), eq(2))).thenReturn(Set.of(space1, space2));
             when(railroadTrack.reachableSpacesBackwards(any(), eq(1), eq(1))).thenReturn(Set.of(space1));
             when(railroadTrack.reachableSpacesBackwards(any(), eq(2), eq(2))).thenReturn(Set.of(space1, space2));
 
