@@ -142,7 +142,7 @@ public class StateView {
                 }
                 if (actions.contains(ActionType.PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD)) {
                     possibleSpaces.put(ActionType.PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD,
-                            getPossibleSpacesForward(state, viewingPlayer, 2, 2));
+                            getPossibleSpacesForward(state, viewingPlayer, 1, 2));
                 }
 
                 if (actions.contains(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD)) {
