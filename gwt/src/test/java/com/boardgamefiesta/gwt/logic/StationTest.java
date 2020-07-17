@@ -6,7 +6,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.bind.JsonbBuilder;
 import java.util.Collections;
+import java.util.HashSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -37,5 +41,37 @@ class StationTest {
         assertThat(immediateActions.getActions()).hasSize(2);
         assertThat(immediateActions.getActions().get(0).canPerform(Action.UnlockWhite.class)).isTrue();
         assertThat(immediateActions.getActions().get(1).canPerform(Action.AppointStationMaster.class)).isTrue();
+    }
+
+    @Test
+    void serializeStationMaster() {
+        var station = Station.builder()
+                .cost(3)
+                .points(1)
+                .discColors(Collections.singleton(DiscColor.WHITE))
+                .stationMaster(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS)
+                .players(Collections.emptySet())
+                .build();
+
+        var jsonObject = station.serialize(Json.createBuilderFactory(Collections.emptyMap()));
+
+        var deserialized = Station.deserialize(Collections.emptyMap(), jsonObject);
+        assertThat(deserialized.getStationMaster()).hasValue(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS);
+    }
+
+    @Test
+    void serializeWorker() {
+        var station = Station.builder()
+                .cost(3)
+                .points(1)
+                .discColors(Collections.singleton(DiscColor.WHITE))
+                .worker(Worker.COWBOY)
+                .players(Collections.emptySet())
+                .build();
+
+        var jsonObject = station.serialize(Json.createBuilderFactory(Collections.emptyMap()));
+
+        var deserialized = Station.deserialize(Collections.emptyMap(), jsonObject);
+        assertThat(deserialized.getWorker()).hasValue(Worker.COWBOY);
     }
 }

@@ -2,9 +2,7 @@ package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.repository.JsonSerializer;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.ToString;
+import lombok.*;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -12,29 +10,27 @@ import javax.json.JsonString;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Builder
 @ToString
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Station {
 
     private final int cost;
+
     @Getter
     private final int points;
+
+    @NonNull
     private final Set<DiscColor> discColors;
+
+    @NonNull
+    private final Set<Player> players;
 
     private StationMaster stationMaster;
     private Worker worker;
 
-    private final Set<Player> players;
-
-    private Station(int cost, int points, @NonNull Collection<DiscColor> discColors, StationMaster stationMaster, Set<Player> players) {
-        this.cost = cost;
-        this.points = points;
-        this.discColors = new HashSet<>(discColors);
-        this.stationMaster = stationMaster;
-        this.players = players;
-    }
-
     static Station initial(int cost, int points, @NonNull Collection<DiscColor> discColors, StationMaster stationMaster) {
-        return new Station(cost, points, discColors, stationMaster, new HashSet<>());
+        return new Station(cost, points, new HashSet<>(discColors), new HashSet<>(), stationMaster, null);
     }
 
     public Optional<StationMaster> getStationMaster() {
@@ -95,13 +91,20 @@ public class Station {
     }
 
     JsonObject serialize(JsonBuilderFactory factory) {
-        return factory.createObjectBuilder()
+        var builder = factory.createObjectBuilder()
                 .add("cost", cost)
                 .add("points", points)
                 .add("discColors", JsonSerializer.forFactory(factory).fromStrings(discColors, DiscColor::name))
-                .add("stationMaster", stationMaster != null ? stationMaster.name() : null)
-                .add("players", JsonSerializer.forFactory(factory).fromStrings(players, Player::getName))
-                .build();
+                .add("players", JsonSerializer.forFactory(factory).fromStrings(players, Player::getName));
+
+        if (stationMaster != null) {
+            builder.add("stationMaster", stationMaster.name());
+        }
+        if (worker != null) {
+            builder.add("worker", worker.name());
+        }
+
+        return builder.build();
     }
 
     static Station deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
@@ -110,9 +113,10 @@ public class Station {
                 jsonObject.getInt("points"),
                 jsonObject.getJsonArray("discColors").getValuesAs(JsonString::getString).stream()
                         .map(DiscColor::valueOf).collect(Collectors.toSet()),
-                jsonObject.getString("stationMaster") != null ? StationMaster.valueOf(jsonObject.getString("stationMaster")) : null,
                 jsonObject.getJsonArray("players").getValuesAs(JsonString::getString).stream().
-                        map(playerMap::get).collect(Collectors.toSet()));
+                        map(playerMap::get).collect(Collectors.toSet()),
+                jsonObject.containsKey("stationMaster") ? StationMaster.valueOf( jsonObject.getString("stationMaster")) : null,
+                jsonObject.containsKey("worker") ? Worker.valueOf(jsonObject.getString("worker")) : null);
     }
 
 }
