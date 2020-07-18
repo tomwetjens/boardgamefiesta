@@ -506,7 +506,7 @@ public class PlayerState {
     int numberOfCattleCards(int breedingValue) {
         return (int) getCattleCards()
                 .stream()
-                .map(card -> card.getType().getValue() == breedingValue)
+                .filter(card -> card.getType().getValue() == breedingValue)
                 .count();
     }
 
