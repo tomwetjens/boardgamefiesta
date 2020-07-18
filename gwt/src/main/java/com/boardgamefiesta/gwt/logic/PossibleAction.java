@@ -88,21 +88,21 @@ abstract class PossibleAction {
     static PossibleAction choice(Class<? extends Action>... actions) {
         return new Choice(Arrays.stream(actions)
                 .map(PossibleAction::optional)
-                .collect(Collectors.toCollection(HashSet::new)));
+                .collect(Collectors.toList()));
     }
 
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
     static PossibleAction choice(Collection<PossibleAction> actions) {
-        return new Choice(new HashSet<>(actions));
+        return new Choice(new ArrayList<>(actions));
     }
 
     /**
      * Player MUST perform EXACTLY ONE of the options.
      */
     static PossibleAction choice(Stream<PossibleAction> possibleActions) {
-        return new Choice(possibleActions.collect(Collectors.toCollection(HashSet::new)));
+        return new Choice(possibleActions.collect(Collectors.toList()));
     }
 
     /**
@@ -112,7 +112,7 @@ abstract class PossibleAction {
     static PossibleAction choice(PossibleAction possibleAction, Class<? extends Action>... actions) {
         return new Choice(Stream.concat(Stream.of(possibleAction), Arrays.stream(actions)
                 .map(PossibleAction::optional))
-                .collect(Collectors.toCollection(HashSet::new)));
+                .collect(Collectors.toList()));
     }
 
     static PossibleAction deserialize(JsonObject jsonObject) {
@@ -331,9 +331,9 @@ abstract class PossibleAction {
 
     private static final class Choice extends PossibleAction {
 
-        private final Set<PossibleAction> actions;
+        private final List<PossibleAction> actions;
 
-        private Choice(Set<PossibleAction> actions) {
+        private Choice(List<PossibleAction> actions) {
             this.actions = actions;
         }
 
@@ -349,7 +349,7 @@ abstract class PossibleAction {
             return new Choice(jsonObject.getJsonArray("actions").stream()
                     .map(JsonValue::asJsonObject)
                     .map(PossibleAction::deserialize)
-                    .collect(Collectors.toSet()));
+                    .collect(Collectors.toList()));
         }
 
         @Override
@@ -410,7 +410,7 @@ abstract class PossibleAction {
 
         @Override
         public PossibleAction clone() {
-            return new Choice(actions.stream().map(PossibleAction::clone).collect(Collectors.toSet()));
+            return new Choice(actions.stream().map(PossibleAction::clone).collect(Collectors.toList()));
         }
     }
 
