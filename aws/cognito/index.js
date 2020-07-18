@@ -20,7 +20,7 @@ exports.handler = (event, context, callback) => {
 
             if (res.statusCode >= 400) {
                 console.error('Error response:', res.statusCode, body);
-                callback(body.message || body || res.statusCode, event);
+                callback(body.errorCode || body || res.statusCode, event);
                 return;
             }
 
