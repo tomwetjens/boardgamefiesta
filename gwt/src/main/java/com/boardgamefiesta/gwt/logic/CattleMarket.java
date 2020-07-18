@@ -241,7 +241,7 @@ public class CattleMarket {
 
         market.removeAll(cattleCards);
 
-        return numberOfCowboys - cost.getCowboys();
+        return cost.getCowboys();
     }
 
     void fillUp() {
