@@ -9,6 +9,7 @@ import lombok.*;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import java.util.*;
 import java.util.function.Function;
@@ -20,7 +21,8 @@ import java.util.stream.Stream;
 @Builder(access = AccessLevel.PRIVATE)
 public class Game implements State {
 
-    private final List<Player> players;
+    private final Set<Player> players;
+    private final List<Player> playerOrder;
 
     private final Map<Player, PlayerState> playerStates;
 
@@ -83,7 +85,8 @@ public class Game implements State {
         var kansasCitySupply = new KansasCitySupply(random);
 
         var game = builder()
-                .players(playerOrder)
+                .players(players)
+                .playerOrder(playerOrder)
                 .playerStates(playerStates)
                 .currentPlayer(playerOrder.get(0))
                 .railroadTrack(new RailroadTrack(players, random))
@@ -106,7 +109,7 @@ public class Game implements State {
                 .mapToObj(i -> kansasCitySupply.draw(0))
                 .forEach(this::placeInitialTile);
 
-        IntStream.range(0, players.size() == 2 ? 3 : jobMarket.getRowLimit() * 2 - 1)
+        IntStream.range(0, playerOrder.size() == 2 ? 3 : jobMarket.getRowLimit() * 2 - 1)
                 .mapToObj(i -> kansasCitySupply.draw(1))
                 .map(KansasCitySupply.Tile::getWorker)
                 .forEach(this.jobMarket::addWorker);
@@ -231,7 +234,7 @@ public class Game implements State {
         }
 
         // next player
-        currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
+        currentPlayer = playerOrder.get((playerOrder.indexOf(currentPlayer) + 1) % playerOrder.size());
 
         if (!currentPlayerState().hasJobMarketToken()) {
             actionStack.addFirst(Collections.singletonList(PossibleAction.mandatory(Action.Move.class)));
@@ -251,9 +254,13 @@ public class Game implements State {
         return playerStates.get(player);
     }
 
+    List<Player> getPlayerOrder() {
+        return Collections.unmodifiableList(playerOrder);
+    }
+
     @Override
     public List<Player> getPlayers() {
-        return Collections.unmodifiableList(players);
+        return Collections.unmodifiableList(playerOrder);
     }
 
     public Set<Class<? extends Action>> possibleActions() {
@@ -280,13 +287,13 @@ public class Game implements State {
 
     public Set<PossibleMove> possibleMoves(@NonNull Player player, int atMost) {
         var playerState = playerState(player);
-        var stepLimit = playerState.getStepLimit(players.size());
+        var stepLimit = playerState.getStepLimit(playerOrder.size());
 
         if (atMost > stepLimit) {
             throw new IllegalArgumentException("Can move at most " + stepLimit);
         }
 
-        return trail.possibleMoves(player, playerState.getBalance(), atMost, players.size());
+        return trail.possibleMoves(player, playerState.getBalance(), atMost, playerOrder.size());
     }
 
     public Set<PossibleMove> possibleMoves(Player player, Location to) {
@@ -299,7 +306,7 @@ public class Game implements State {
 
         var playerState = playerState(player);
 
-        return trail.possibleMoves(from, to, player, playerState.getBalance(), playerState.getStepLimit(players.size()), players.size());
+        return trail.possibleMoves(from, to, player, playerState.getBalance(), playerState.getStepLimit(playerOrder.size()), playerOrder.size());
     }
 
     public Score scoreDetails(Player player) {
@@ -314,7 +321,8 @@ public class Game implements State {
     public JsonObject serialize(JsonBuilderFactory factory) {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
-                .add("players", serializer.fromCollection(players, Player::serialize))
+                .add("players", serializer.fromCollection(playerOrder, Player::serialize))
+                .add("playerOrder", serializer.fromStrings(playerOrder.stream().map(Player::getName)))
                 .add("playerStates", serializer.fromMap(playerStates, Player::getName, PlayerState::serialize))
                 .add("currentPlayer", currentPlayer.getName())
                 .add("railroadTrack", railroadTrack.serialize(factory))
@@ -330,17 +338,40 @@ public class Game implements State {
     }
 
     public static Game deserialize(JsonObject jsonObject) {
-        var players = jsonObject.getJsonArray("players").stream()
-                .map(JsonValue::asJsonObject)
-                .map(Player::deserialize)
-                .collect(Collectors.toList());
+        Set<Player> players;
+        List<Player> playerOrder;
+        Map<String, Player> playerMap;
 
-        var playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
+        if (jsonObject.containsKey("playerOrder")) {
+            players = jsonObject.getJsonArray("players").stream()
+                    .map(JsonValue::asJsonObject)
+                    .map(Player::deserialize)
+                    .collect(Collectors.toSet());
+
+            playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
+
+            playerOrder = jsonObject.getJsonArray("playerOrder").stream()
+                    .map(jsonValue -> (JsonString) jsonValue)
+                    .map(JsonString::getString)
+                    .map(playerMap::get)
+                    .collect(Collectors.toList());
+        } else {
+            // Deprecated (kept for backwards compatibility)
+            playerOrder = jsonObject.getJsonArray("players").stream()
+                    .map(JsonValue::asJsonObject)
+                    .map(Player::deserialize)
+                    .collect(Collectors.toList());
+
+            players = new HashSet<>(playerOrder);
+
+            playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
+        }
 
         var kansasCitySupply = KansasCitySupply.deserialize(jsonObject.getJsonObject("kansasCitySupply"));
 
         return builder()
                 .players(players)
+                .playerOrder(playerOrder)
                 .playerStates(deserializePlayerStates(playerMap, jsonObject.getJsonObject("playerStates")))
                 .currentPlayer(playerMap.get(jsonObject.getString("currentPlayer")))
                 .railroadTrack(RailroadTrack.deserialize(playerMap, jsonObject.getJsonObject("railroadTrack")))
@@ -362,7 +393,7 @@ public class Game implements State {
 
     @Override
     public Set<Player> winners() {
-        Map<Player, Integer> scores = players.stream()
+        Map<Player, Integer> scores = playerOrder.stream()
                 .collect(Collectors.toMap(Function.identity(), this::score));
 
         int maxScore = scores.values().stream().max(Integer::compare).orElse(0);
@@ -381,9 +412,11 @@ public class Game implements State {
             afterEndTurn();
         }
 
-        players.remove(player);
+        playerOrder.remove(player);
+        // Do not remove player from "players" set since there may be buildings, railroad track etc. referring to the player still,
+        // and these are deserialized back from that single set which must therefore not be modified after game has started
 
-        jobMarket.adjustRowLimit(players.size());
+        jobMarket.adjustRowLimit(playerOrder.size());
         // TODO Adjust cattle market?
     }
 

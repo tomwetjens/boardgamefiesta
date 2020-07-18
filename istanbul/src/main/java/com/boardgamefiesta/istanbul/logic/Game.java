@@ -27,9 +27,11 @@ public class Game implements State {
 
     public static final Set<PlayerColor> SUPPORTED_COLORS = Set.of(PlayerColor.WHITE, PlayerColor.YELLOW, PlayerColor.RED, PlayerColor.GREEN, PlayerColor.BLUE);
 
-    @Getter
     @NonNull
-    private final List<Player> players;
+    private final Set<Player> players;
+
+    @NonNull
+    private final List<Player> playerOrder;
 
     @NonNull
     private final Map<Player, PlayerState> playerStates;
@@ -80,6 +82,7 @@ public class Game implements State {
         actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
 
         var game = new Game(
+                players,
                 playerOrder,
                 playerStates,
                 layout,
@@ -110,7 +113,7 @@ public class Game implements State {
         var gemstoneDealer = layout.getGemstoneDealer();
 
         var availableColors = SUPPORTED_COLORS.stream()
-                .filter(color -> players.stream().noneMatch(player -> player.getColor() == color))
+                .filter(color -> playerOrder.stream().noneMatch(player -> player.getColor() == color))
                 .collect(Collectors.toCollection(LinkedList::new));
         Collections.shuffle(availableColors);
 
@@ -126,6 +129,7 @@ public class Game implements State {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
                 .add("players", serializer.fromCollection(players, Player::serialize))
+                .add("playerOrder", serializer.fromStrings(playerOrder.stream().map(Player::getName)))
                 .add("playerStates", serializer.fromMap(playerStates, Player::getName, PlayerState::serialize))
                 .add("layout", layout.serialize(factory))
                 .add("startPlayer", startPlayer.getName())
@@ -139,12 +143,20 @@ public class Game implements State {
     public static Game deserialize(JsonObject jsonObject) {
         var players = jsonObject.getJsonArray("players").stream()
                 .map(JsonValue::asJsonObject)
-                .map(Player::deserialize).collect(Collectors.toList());
+                .map(Player::deserialize)
+                .collect(Collectors.toSet());
 
         var playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
 
+        var playerOrder = jsonObject.getJsonArray("playerOrder").stream()
+                .map(jsonValue -> (JsonString) jsonValue)
+                .map(JsonString::getString)
+                .map(playerMap::get)
+                .collect(Collectors.toList());
+
         return new Game(
                 players,
+                playerOrder,
                 JsonDeserializer.forObject(jsonObject.getJsonObject("playerStates")).asObjectMap(playerMap::get, PlayerState::deserialize),
                 Layout.deserialize(playerMap, jsonObject.getJsonObject("layout")),
                 playerMap.get(jsonObject.getString("startPlayer")),
@@ -251,13 +263,13 @@ public class Game implements State {
     }
 
     private void nextPlayer() {
-        if (status == Status.STARTED && currentPlayerState().hasMaxRubies(players.size())) {
+        if (status == Status.STARTED && currentPlayerState().hasMaxRubies(playerOrder.size())) {
             // Triggers end of game, finish the round
             status = Status.LAST_ROUND;
         }
 
-        var currentPlayerIndex = players.indexOf(this.currentPlayer);
-        var nextPlayer = players.get((currentPlayerIndex + 1) % players.size());
+        var currentPlayerIndex = playerOrder.indexOf(this.currentPlayer);
+        var nextPlayer = playerOrder.get((currentPlayerIndex + 1) % playerOrder.size());
         var nextPlayerState = getPlayerState(nextPlayer);
 
         this.currentPlayer = nextPlayer;
@@ -298,13 +310,16 @@ public class Game implements State {
 
     @Override
     public void leave(Player player) {
-        if (players.contains(player)) {
+        if (playerOrder.contains(player)) {
             if (currentPlayer == player) {
                 actionQueue.clear();
                 nextPlayer();
             }
 
-            players.remove(player);
+            playerOrder.remove(player);
+
+            // Do not remove player from "players" set since there may be buildings, railroad track etc. referring to the player still,
+            // and these are deserialized back from that single set which must therefore not be modified after game has started
         }
     }
 
@@ -472,6 +487,11 @@ public class Game implements State {
 
     public Place.PoliceStation getPoliceStation() {
         return layout.getPoliceStation();
+    }
+
+    @Override
+    public List<Player> getPlayers() {
+        return Collections.unmodifiableList(playerOrder);
     }
 
     Merchant getCurrentMerchant() {

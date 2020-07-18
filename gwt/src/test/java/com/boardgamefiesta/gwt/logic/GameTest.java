@@ -34,7 +34,7 @@ class GameTest {
         void beginner() {
             Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
-            assertThat(game.getPlayers()).containsExactly(playerA, playerB);
+            assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
 
             // Neutral buildings should not be randomized
@@ -56,7 +56,7 @@ class GameTest {
         void randomized() {
             Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), false, new Random(0));
 
-            assertThat(game.getPlayers()).containsExactly(playerA, playerB);
+            assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
 
