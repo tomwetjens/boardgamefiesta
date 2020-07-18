@@ -59,26 +59,19 @@ public class ObjectiveCard extends Card {
 
     private static int scoreCards(Set<ObjectiveCard> objectiveCards, Set<ObjectiveCard> required, Counts counts) {
         return objectiveCards.stream()
-                .mapToInt(objectiveCard -> scoreCard(objectiveCard, required.contains(objectiveCard), counts)
-                        + scoreCards(remove(objectiveCards, objectiveCard), required, counts))
+                .mapToInt(objectiveCard -> {
+                    Counts remaining = counts.subtract(objectiveCard.getTasks());
+
+                    int score;
+                    if (remaining.isNegative()) {
+                        score = required.contains(objectiveCard) ? objectiveCard.getPenalty() : 0;
+                    } else {
+                        score = objectiveCard.getPoints();
+                    }
+                    return score + scoreCards(remove(objectiveCards, objectiveCard), required, remaining);
+                })
                 .max()
                 .orElse(0);
-    }
-
-    private static int scoreCard(ObjectiveCard objectiveCard, boolean required, Counts counts) {
-        Counts c = counts;
-
-        for (Task task : objectiveCard.getTasks()) {
-            c = c.subtract(task);
-            if (c.isNegative()) {
-                break;
-            }
-        }
-
-        if (c.isNegative()) {
-            return required ? objectiveCard.getPenalty() : 0;
-        }
-        return objectiveCard.getPoints();
     }
 
     private static Counts counts(Game game, Player player) {
@@ -118,6 +111,14 @@ public class ObjectiveCard extends Card {
 
         boolean isNegative() {
             return counts.values().stream().anyMatch(v -> v < 0);
+        }
+
+        public Counts subtract(List<Task> tasks) {
+            Counts results = this;
+            for (Task task : tasks) {
+                results = results.subtract(task);
+            }
+            return results;
         }
     }
 
