@@ -1247,7 +1247,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class MoveEngineForwardUpToNumberOfBuildingsInWoods extends Action {
+    public static class MoveEngineForwardUpToNumberOfBuildingsInWoods extends Action {
 
         @NonNull RailroadTrack.Space to;
 
@@ -1258,20 +1258,27 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
-    public static final class UseAdjacentBuilding extends Action {
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class UseAdjacentBuilding extends Action {
+
+        Location.BuildingLocation adjacentLocation;
 
         @Override
         public ImmediateActions perform(Game game, Random random) {
-            Location currentLocation = game.getTrail().getCurrentLocation(game.getCurrentPlayer())
+            var currentLocation = game.getTrail().getCurrentLocation(game.getCurrentPlayer())
                     .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION));
 
-            Set<Location> adjacentLocations = game.getTrail().getAdjacentLocations(currentLocation);
+            var adjacentLocations = game.getTrail().getAdjacentLocations(currentLocation);
 
-            return ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(adjacentLocations.stream()
-                    .filter(adjacentLocation -> adjacentLocation instanceof Location.BuildingLocation)
-                    .map(adjacentLocation -> (Location.BuildingLocation) adjacentLocation)
-                    .flatMap(adjacentBuildingLocation -> adjacentBuildingLocation.getBuilding().stream())
-                    .map(building -> building.activate(game)))));
+            if (!adjacentLocations.contains(adjacentLocation)) {
+                throw new GWTException(GWTError.LOCATION_NOT_ADJACENT);
+            }
+
+            var building = adjacentLocation.getBuilding()
+                    .orElseThrow(() -> new GWTException(GWTError.LOCATION_EMPTY));
+
+            return ImmediateActions.of(building.activate(game));
         }
     }
 

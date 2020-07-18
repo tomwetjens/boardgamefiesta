@@ -242,6 +242,14 @@ public class Trail {
                 .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION));
     }
 
+    public Optional<Location.BuildingLocation> getBuildingLocation(String name) {
+        return getLocations().stream()
+                .filter(location -> location.getName().equals(name))
+                .filter(location -> location instanceof Location.BuildingLocation)
+                .map(location -> (Location.BuildingLocation) location)
+                .findAny();
+    }
+
     public Location.TeepeeLocation getTeepeeLocation(int reward) {
         return teepeeLocations.stream()
                 .filter(teepeeLocation -> teepeeLocation.getReward() == reward).findAny()
@@ -361,4 +369,5 @@ public class Trail {
     void moveToStart(Player player) {
         playerLocations.put(player, start);
     }
+
 }

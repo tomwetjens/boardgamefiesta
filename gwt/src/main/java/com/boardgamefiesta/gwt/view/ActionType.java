@@ -275,7 +275,9 @@ public enum ActionType {
             case UPGRADE_STATION:
                 return new Action.UpgradeStation();
             case USE_ADJACENT_BUILDING:
-                return new Action.UseAdjacentBuilding();
+                return new Action.UseAdjacentBuilding(game.getTrail()
+                        .getBuildingLocation(getString(jsonObject, JsonProperties.LOCATION))
+                        .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION)));
             case CHOOSE_FORESIGHTS:
                 return new Action.ChooseForesights(getJsonArray(jsonObject, JsonProperties.CHOICES).stream()
                         .map(jsonValue -> (JsonNumber) jsonValue)

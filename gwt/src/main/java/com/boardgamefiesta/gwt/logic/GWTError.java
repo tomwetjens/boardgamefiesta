@@ -54,5 +54,6 @@ public enum GWTError {
     STEPS_EXCEED_LIMIT, // stepLimit
     WORKERS_EXCEED_LIMIT,
     NO_SUCH_PLAYER,
+    LOCATION_NOT_ADJACENT,
     WORKER_NOT_AVAILABLE // worker
 }
