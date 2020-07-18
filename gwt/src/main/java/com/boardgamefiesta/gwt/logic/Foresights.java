@@ -10,6 +10,7 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Foresights {
@@ -40,7 +41,7 @@ public class Foresights {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
                 .add("spaces", serializer.fromStream(Arrays.stream(spaces),
-                        tiles -> serializer.fromStream(Arrays.stream(tiles), KansasCitySupply.Tile::serialize)))
+                        tiles -> serializer.fromStream(Arrays.stream(tiles).filter(Objects::nonNull), KansasCitySupply.Tile::serialize)))
                 .build();
     }
 
@@ -52,8 +53,8 @@ public class Foresights {
                         .map(tiles -> tiles
                                 .map(JsonValue::asJsonObject)
                                 .map(KansasCitySupply.Tile::deserialize)
-                                .toArray(KansasCitySupply.Tile[]::new))
-                        .toArray(KansasCitySupply.Tile[][]::new));
+                                .toArray(len -> new KansasCitySupply.Tile[2]))
+                        .toArray(len -> new KansasCitySupply.Tile[3][2]));
     }
 
     KansasCitySupply.Tile take(int columnIndex, int rowIndex) {
