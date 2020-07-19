@@ -123,21 +123,21 @@ class GameTest {
         void needWhite() {
             Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
-            assertThat(game.placeDisc(Collections.singletonList(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
+            assertThat(game.removeDisc(Collections.singletonList(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
         }
 
         @Test
         void needBlackOrWhite() {
             Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
-            assertThat(game.placeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
+            assertThat(game.removeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
         }
 
         @Test
         void needWhiteButCanOnlyUnlockBlack() {
             Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
 
-            assertThat(game.placeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
+            assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
 
             // Remove all white discs
             game.currentPlayerState().unlock(Unlockable.AUX_GAIN_DOLLAR);
@@ -151,9 +151,9 @@ class GameTest {
             game.currentPlayerState().unlock(Unlockable.AUX_PAY_TO_MOVE_ENGINE_FORWARD);
 
             // Should allow removal of black by exception
-            assertThat(game.placeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
+            assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
             // Normal case to allow black
-            assertThat(game.placeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
+            assertThat(game.removeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
         }
 
         @Test
@@ -182,8 +182,8 @@ class GameTest {
             game.getRailroadTrack().getStations().get(0).upgrade(game);
 
             // Player is forced to remove disc from station
-            assertThat(game.placeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.DowngradeStation.class);
-            assertThat(game.placeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.DowngradeStation.class);
+            assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.DowngradeStation.class);
+            assertThat(game.removeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.DowngradeStation.class);
         }
 
         @Test
@@ -192,8 +192,8 @@ class GameTest {
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 
-            assertThat(game.placeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
-            assertThat(game.placeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
+            assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
+            assertThat(game.removeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
 
             // Remove all discs
             game.currentPlayerState().unlock(Unlockable.AUX_GAIN_DOLLAR);
@@ -213,8 +213,8 @@ class GameTest {
 
             // Player has no discs on stations
             // So player cannot do anything = exception case -> no immediate actions
-            assertThat(game.placeDisc(Collections.singleton(DiscColor.WHITE)).getActions()).isEmpty();
-            assertThat(game.placeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions()).isEmpty();
+            assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions()).isEmpty();
+            assertThat(game.removeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions()).isEmpty();
         }
     }
 }

@@ -62,7 +62,7 @@ public class Station {
 
         players.add(game.getCurrentPlayer());
 
-        ImmediateActions placeDiscActions = game.placeDisc(discColors);
+        ImmediateActions placeDiscActions = game.removeDisc(discColors);
 
         if (stationMaster != null) {
             game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.MAY_APPOINT_STATION_MASTER, List.of(stationMaster.name()));

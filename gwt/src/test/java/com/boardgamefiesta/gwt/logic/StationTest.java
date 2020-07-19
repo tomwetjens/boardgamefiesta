@@ -7,10 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.bind.JsonbBuilder;
 import java.util.Collections;
-import java.util.HashSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -34,7 +31,7 @@ class StationTest {
     @Test
     void upgrade() {
         var station = Station.initial(3, 1, Collections.singleton(DiscColor.WHITE), StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS);
-        when(game.placeDisc(anyCollection())).thenReturn(ImmediateActions.of(PossibleAction.mandatory(Action.UnlockWhite.class)));
+        when(game.removeDisc(anyCollection())).thenReturn(ImmediateActions.of(PossibleAction.mandatory(Action.UnlockWhite.class)));
 
         var immediateActions = station.upgrade(game);
 

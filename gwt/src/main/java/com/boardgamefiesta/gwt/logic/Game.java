@@ -421,11 +421,11 @@ public class Game implements State {
     }
 
     ImmediateActions deliverToCity(City city) {
-        return railroadTrack.deliverToCity(currentPlayer, city, this)
-                .andThen(placeDisc(city.getDiscColors()));
+        var immediateActions = railroadTrack.deliverToCity(currentPlayer, city, this);
+        return removeDisc(city.getDiscColors()).andThen(immediateActions);
     }
 
-    ImmediateActions placeDisc(Collection<DiscColor> discColors) {
+    ImmediateActions removeDisc(Collection<DiscColor> discColors) {
         if (currentPlayerState().canRemoveDisc(discColors)) {
             return ImmediateActions.of(PossibleAction.mandatory(discColors.contains(DiscColor.BLACK) ? Action.UnlockBlackOrWhite.class : Action.UnlockWhite.class));
         } else {
