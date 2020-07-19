@@ -1,11 +1,15 @@
 package com.boardgamefiesta.api.domain;
 
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.ToString;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
-@Value
+@Getter
+@ToString
+@AllArgsConstructor
 public class Player {
 
     String name;

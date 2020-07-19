@@ -62,13 +62,15 @@ public class ObjectiveCard extends Card {
                 .mapToInt(objectiveCard -> {
                     Counts remaining = counts.subtract(objectiveCard.getTasks());
 
-                    int score;
                     if (remaining.isNegative()) {
-                        score = required.contains(objectiveCard) ? objectiveCard.getPenalty() : 0;
+                        if (required.contains(objectiveCard)) {
+                            return -objectiveCard.getPenalty() + scoreCards(remove(objectiveCards, objectiveCard), required, remaining);
+                        } else {
+                            return scoreCards(remove(objectiveCards, objectiveCard), required, counts);
+                        }
                     } else {
-                        score = objectiveCard.getPoints();
+                        return objectiveCard.getPoints() + scoreCards(remove(objectiveCards, objectiveCard), required, remaining);
                     }
-                    return score + scoreCards(remove(objectiveCards, objectiveCard), required, remaining);
                 })
                 .max()
                 .orElse(0);

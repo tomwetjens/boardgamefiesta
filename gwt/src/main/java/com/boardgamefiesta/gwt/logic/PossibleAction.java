@@ -226,6 +226,11 @@ abstract class PossibleAction {
         public PossibleAction clone() {
             return new Mandatory(action);
         }
+
+        @Override
+        public String toString() {
+            return action.getSimpleName().toString();
+        }
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -326,6 +331,11 @@ abstract class PossibleAction {
         @Override
         public PossibleAction clone() {
             return new Any(actions.stream().map(PossibleAction::clone).collect(Collectors.toList()), current);
+        }
+
+        @Override
+        public String toString() {
+            return "Any(actions=" + actions + ", current=" + current + ")";
         }
     }
 
