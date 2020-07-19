@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 @WebFilter("/events")
@@ -45,7 +46,7 @@ public class EventsAuthFilter implements Filter {
                     .toCompletableFuture().get();
 
             filterChain.doFilter(new AuthenticatedRequest(httpServletRequest, securityIdentity.getPrincipal()), servletResponse);
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | CompletionException e) {
             if (e.getCause() instanceof AuthenticationFailedException) {
                 log.debug("Authentication failed", e);
                 httpServletResponse.sendError(401);
