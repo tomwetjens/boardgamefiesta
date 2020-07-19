@@ -922,11 +922,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class Move extends Action {
 
         @NonNull List<Location> steps;
-        int atMost;
+        Integer atMost;
         boolean payFeesAndActivate;
 
         public Move(List<Location> steps) {
-            this(steps, Integer.MAX_VALUE, true);
+            this(steps, null, true);
         }
 
         @Override
@@ -936,9 +936,12 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             }
 
             PlayerState currentPlayerState = game.currentPlayerState();
-
-            int stepLimit = currentPlayerState.getStepLimit(game.getPlayers().size());
-            if (steps.size() > Math.min(atMost, stepLimit)) {
+            if (atMost == null) {
+                var stepLimit = currentPlayerState.getStepLimit(game.getPlayerOrder().size());
+                if (steps.size() > stepLimit) {
+                    throw new GWTException(GWTError.STEPS_EXCEED_LIMIT);
+                }
+            } else if (steps.size() > atMost) {
                 throw new GWTException(GWTError.STEPS_EXCEED_LIMIT);
             }
 
