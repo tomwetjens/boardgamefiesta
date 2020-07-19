@@ -13,10 +13,10 @@
     <artifactId>server</artifactId>
 
     <properties>
-        <quarkus-plugin.version>1.3.1.Final</quarkus-plugin.version>
+        <quarkus-plugin.version>1.6.0.Final</quarkus-plugin.version>
         <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>1.3.1.Final</quarkus.platform.version>
+        <quarkus.platform.version>1.6.0.Final</quarkus.platform.version>
         <commons-codec.version>1.14</commons-codec.version>
         <awssdk.version>2.10.70</awssdk.version>
         <cognitoidentityprovider.version>2.13.19</cognitoidentityprovider.version>
