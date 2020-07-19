@@ -5,6 +5,7 @@ import io.quarkus.oidc.runtime.OidcIdentityProvider;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.TokenAuthenticationRequest;
+import io.smallrye.mutiny.Uni;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -15,9 +16,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 
 @WebFilter("/events")
 @Slf4j
@@ -42,11 +41,12 @@ public class EventsAuthFilter implements Filter {
             IdTokenCredential idTokenCredential = new IdTokenCredential(token, null);
             TokenAuthenticationRequest tokenAuthenticationRequest = new TokenAuthenticationRequest(idTokenCredential);
 
-            SecurityIdentity securityIdentity = oidcIdentityProvider.authenticate(tokenAuthenticationRequest, function -> CompletableFuture.completedFuture(function.get()))
-                    .toCompletableFuture().get();
+            SecurityIdentity securityIdentity = oidcIdentityProvider.authenticate(tokenAuthenticationRequest, function -> Uni.createFrom().item(function.get()))
+                    .await()
+                    .indefinitely();
 
             filterChain.doFilter(new AuthenticatedRequest(httpServletRequest, securityIdentity.getPrincipal()), servletResponse);
-        } catch (ExecutionException | CompletionException e) {
+        } catch (CompletionException e) {
             if (e.getCause() instanceof AuthenticationFailedException) {
                 log.debug("Authentication failed", e);
                 httpServletResponse.sendError(401);
@@ -54,9 +54,6 @@ public class EventsAuthFilter implements Filter {
                 log.error("Unexpected error during authentication", e);
                 httpServletResponse.sendError(500);
             }
-        } catch (InterruptedException e) {
-            log.debug("Interrupted while authenticating", e);
-            httpServletResponse.sendError(401);
         }
     }
 
