@@ -57,7 +57,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             playerState.useCowboys(cowboys);
             playerState.gainCards(cattleCards);
 
-            return ImmediateActions.none();
+            return game.getCattleMarket().possibleAction(game)
+                    .map(ImmediateActions::of)
+                    .orElse(ImmediateActions.none());
         }
 
         @Override
@@ -882,7 +884,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.getCattleMarket().draw();
             game.getCattleMarket().draw();
 
-            return ImmediateActions.none();
+            return game.getCattleMarket().possibleAction(game)
+                    .map(ImmediateActions::of)
+                    .orElse(ImmediateActions.none());
         }
     }
 

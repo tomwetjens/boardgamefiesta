@@ -133,10 +133,9 @@ public abstract class PlayerBuilding extends Building {
         @Override
         PossibleAction activate(Game game) {
             game.currentPlayerState().resetUsedCowboys();
-            return PossibleAction.any(Stream.of(
-                    PossibleAction.optional(Action.Discard1GuernseyToGain4Dollars.class),
-                    PossibleAction.repeat(0, game.currentPlayerState().getNumberOfCowboys(),
-                            PossibleAction.choice(Action.Draw2CattleCards.class, Action.BuyCattle.class))));
+            return PossibleAction.any(Stream.concat(
+                    Stream.of(PossibleAction.optional(Action.Discard1GuernseyToGain4Dollars.class)),
+                    game.getCattleMarket().possibleAction(game).stream()));
         }
     }
 
