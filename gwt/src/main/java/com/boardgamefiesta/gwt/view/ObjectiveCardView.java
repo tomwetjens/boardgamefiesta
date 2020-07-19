@@ -17,16 +17,20 @@ public class ObjectiveCardView extends CardView {
             .thenComparingInt(ObjectiveCardView::getPoints)
             .thenComparing(ObjectiveCardView::getTasks, new IterableComparator<>(Comparator.nullsLast(Comparator.naturalOrder())));
 
-    private final int points;
-    private final int penalty;
-    private final List<ObjectiveCard.Task> tasks;
-    private final ActionType action;
+    int points;
+    int penalty;
+    List<ObjectiveCard.Task> tasks;
+    ActionType action;
 
     ObjectiveCardView(ObjectiveCard objectiveCard) {
         points = objectiveCard.getPoints();
         penalty = objectiveCard.getPenalty();
         tasks = objectiveCard.getTasks();
-        action = objectiveCard.getAction().map(ActionType::of).orElse(null);
+        action = objectiveCard.getPossibleActions().stream()
+                // In case of multiple choices, always -reliably- take the first one
+                .min(Comparator.comparing(Class::getSimpleName))
+                .map(ActionType::of)
+                .orElse(null);
     }
 
     @Override

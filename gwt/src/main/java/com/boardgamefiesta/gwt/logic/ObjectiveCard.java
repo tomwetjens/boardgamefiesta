@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.api.repository.JsonSerializer;
 import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.*;
 
 import javax.json.JsonBuilderFactory;
@@ -45,8 +45,8 @@ public class ObjectiveCard extends Card {
                 jsonObject.getInt("penalty"));
     }
 
-    public Optional<Class<? extends Action>> getAction() {
-        return possibleAction != null ? possibleAction.getPossibleActions().stream().findFirst() : Optional.empty();
+    public Set<Class<? extends Action>> getPossibleActions() {
+        return possibleAction != null ? possibleAction.getPossibleActions() : Collections.emptySet();
     }
 
     static int score(Set<ObjectiveCard> required, Set<ObjectiveCard> optional, Game game, Player player) {
