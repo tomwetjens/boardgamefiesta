@@ -1,5 +1,6 @@
 package com.boardgamefiesta.gwt.view;
 
+import com.boardgamefiesta.gwt.logic.Action;
 import com.boardgamefiesta.gwt.logic.ObjectiveCard;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -28,7 +29,8 @@ public class ObjectiveCardView extends CardView {
         tasks = objectiveCard.getTasks();
         action = objectiveCard.getPossibleActions().stream()
                 // In case of multiple choices, always -reliably- take the first one
-                .min(Comparator.comparing(Class::getSimpleName))
+                .min(Comparator.<Class<? extends Action>>comparingInt(c -> c.getSimpleName().length())
+                        .thenComparing(Class::getSimpleName))
                 .map(ActionType::of)
                 .orElse(null);
     }
