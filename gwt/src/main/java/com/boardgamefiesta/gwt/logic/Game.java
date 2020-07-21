@@ -286,14 +286,7 @@ public class Game implements State {
     }
 
     public Set<PossibleMove> possibleMoves(@NonNull Player player, int atMost) {
-        var playerState = playerState(player);
-        var stepLimit = playerState.getStepLimit(playerOrder.size());
-
-        if (atMost > stepLimit) {
-            throw new IllegalArgumentException("Can move at most " + stepLimit);
-        }
-
-        return trail.possibleMoves(player, playerState.getBalance(), atMost, playerOrder.size());
+        return trail.possibleMoves(player, playerState(player).getBalance(), atMost, playerOrder.size());
     }
 
     public Set<PossibleMove> possibleMoves(Player player, Location to) {
