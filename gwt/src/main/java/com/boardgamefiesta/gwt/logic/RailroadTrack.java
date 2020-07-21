@@ -440,8 +440,8 @@ public class RailroadTrack {
             return signal;
         }
 
-        public boolean isBefore(Space space) {
-            return previous.stream().anyMatch(prev -> prev == space || prev.isBefore(space));
+        public boolean isAfter(Space space) {
+            return previous.stream().anyMatch(prev -> prev == space || prev.isAfter(space));
         }
 
         public abstract String getName();

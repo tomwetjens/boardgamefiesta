@@ -1300,7 +1300,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             RailroadTrack.Space stationSpace = game.getRailroadTrack().getSpace(station);
             RailroadTrack.Space currentSpace = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
 
-            if (!stationSpace.isBefore(currentSpace)) {
+            if (!currentSpace.isAfter(stationSpace)) {
                 throw new GWTException(GWTError.STATION_MUST_BE_BEHIND_ENGINE);
             }
 
