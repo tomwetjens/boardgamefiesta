@@ -32,7 +32,7 @@ public class GWT implements GameProvider<Game> {
 
     @Override
     public Set<PlayerColor> getSupportedColors() {
-        return EnumSet.of(PlayerColor.RED, PlayerColor.BLUE, PlayerColor.YELLOW, PlayerColor.WHITE);
+        return EnumSet.of(PlayerColor.RED, PlayerColor.BLUE, PlayerColor.YELLOW, PlayerColor.GREEN);
     }
 
     @Override
