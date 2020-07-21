@@ -209,18 +209,10 @@ public class RailroadTrack {
     }
 
     public Space getSpace(Station station) {
-        return getSpaces()
+        return getTurnouts().stream()
                 .filter(space -> space.getStation().map(s -> s == station).orElse(false))
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("Station not on track"));
-    }
-
-    private Stream<Space> getSpaces() {
-        return getSpacesAfter(start);
-    }
-
-    private Stream<Space> getSpacesAfter(Space from) {
-        return Stream.concat(Stream.of(from), from.getNext().stream());
+                .orElseThrow(() -> new GWTException(GWTError.STATION_NOT_ON_TRACK));
     }
 
     int numberOfUpgradedStations(Player player) {

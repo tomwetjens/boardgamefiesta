@@ -1291,7 +1291,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static final class UpgradeAnyStationBehindEngine extends Action {
+    public static class UpgradeAnyStationBehindEngine extends Action {
 
         @NonNull Station station;
 
