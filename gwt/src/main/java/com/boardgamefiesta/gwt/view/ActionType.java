@@ -277,7 +277,7 @@ public enum ActionType {
             case USE_ADJACENT_BUILDING:
                 return new Action.UseAdjacentBuilding(game.getTrail()
                         .getBuildingLocation(getString(jsonObject, JsonProperties.LOCATION))
-                        .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION)));
+                        .orElseThrow(() -> new JsonException("No such location")));
             case CHOOSE_FORESIGHTS:
                 return new Action.ChooseForesights(getJsonArray(jsonObject, JsonProperties.CHOICES).stream()
                         .map(jsonValue -> (JsonNumber) jsonValue)
@@ -316,14 +316,14 @@ public enum ActionType {
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
                 .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
                 .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.OBJECTIVE_CARD_NOT_AVAILABLE));
+                .orElseThrow(() -> new JsonException("Objective card not available"));
     }
 
     private static PlayerBuilding findPlayerBuilding(Game game, String building) {
         return game.currentPlayerState().getBuildings().stream()
                 .filter(playerBuilding -> playerBuilding.getName().equals(building))
                 .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.BUILDING_NOT_AVAILABLE));
+                .orElseThrow(() -> new JsonException("Building not available"));
     }
 
     private static RailroadTrack.Space findSpace(Game game, JsonObject jsonObject) {
@@ -343,7 +343,7 @@ public enum ActionType {
                 .map(card -> (Card.CattleCard) card)
                 .filter(cattleCard -> cattleCard.getType() == type)
                 .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.CARD_NOT_IN_HAND));
+                .orElseThrow(() -> new JsonException("Cattle card not in hand"));
     }
 
     private static Card findCardInHand(Collection<Card> hand, JsonObject jsonObject) {
@@ -367,7 +367,7 @@ public enum ActionType {
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
                 .filter(objectiveCard -> containsExactlyInAnyOrder(objectiveCard.getTasks(), tasks))
                 .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.CARD_NOT_IN_HAND));
+                .orElseThrow(() -> new JsonException("Objective card not in hand"));
     }
 
     private static <T> boolean containsExactlyInAnyOrder(Collection<T> actual, Collection<T> values) {
@@ -392,7 +392,7 @@ public enum ActionType {
                     return game.getCattleMarket().getMarket().stream()
                             .filter(cattleCard -> cattleCard.getType() == type)
                             .filter(cattleCard -> cattleCard.getPoints() == points)
-                            .findAny().orElseThrow(() -> new GWTException(GWTError.CATTLE_CARD_NOT_AVAILABLE));
+                            .findAny().orElseThrow(() -> new JsonException("Cattle card not available"));
                 })
                 .collect(Collectors.toSet());
     }

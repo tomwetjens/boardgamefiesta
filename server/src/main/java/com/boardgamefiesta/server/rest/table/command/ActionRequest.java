@@ -2,10 +2,13 @@ package com.boardgamefiesta.server.rest.table.command;
 
 import com.boardgamefiesta.api.domain.Action;
 import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.server.domain.APIError;
+import com.boardgamefiesta.server.domain.APIException;
 import com.boardgamefiesta.server.domain.Game;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.bind.annotation.JsonbTypeDeserializer;
 import javax.json.bind.serializer.DeserializationContext;
@@ -27,7 +30,11 @@ public class ActionRequest {
     }
 
     public <T extends State> Action toAction(Game game, T state) {
-        return game.getProvider().getActionMapper().toAction(jsonObject, state);
+        try {
+            return game.getProvider().getActionMapper().toAction(jsonObject, state);
+        } catch (JsonException e) {
+            throw APIException.badRequest(APIError.INVALID_ACTION);
+        }
     }
 
 }

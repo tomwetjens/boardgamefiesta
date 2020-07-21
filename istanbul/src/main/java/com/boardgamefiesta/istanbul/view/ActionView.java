@@ -3,8 +3,8 @@ package com.boardgamefiesta.istanbul.view;
 import com.boardgamefiesta.istanbul.logic.*;
 import lombok.AllArgsConstructor;
 
-import javax.json.JsonObject;
-import javax.json.JsonString;
+import javax.json.*;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -47,7 +47,7 @@ public enum ActionView {
     TAKE_1_BLUE(Action.Take1Blue.class, (jsonObject, game) -> new Action.Take1Blue()),
     TAKE_2_BONUS_CARDS(Action.Take2BonusCards.class, (jsonObject, game) -> new Action.Take2BonusCards(jsonObject.getBoolean("caravansary"))),
     BONUS_CARD_TAKE_5_LIRA(Action.BonusCardTake5Lira.class, (jsonObject, game) -> new Action.BonusCardTake5Lira()),
-    TAKE_MOSQUE_TILE(Action.TakeMosqueTile.class, (jsonObject, game) -> new Action.TakeMosqueTile(MosqueTile.valueOf(jsonObject.getString("mosqueTile")))),
+    TAKE_MOSQUE_TILE(Action.TakeMosqueTile.class, (jsonObject, game) -> new Action.TakeMosqueTile(getEnum(jsonObject, "mosqueTile", MosqueTile.class))),
     USE_POST_OFFICE(Action.UsePostOffice.class, (jsonObject, game) -> new Action.UsePostOffice()),
     BONUS_CARD_USE_POST_OFFICE(Action.BonusCardUsePostOffice.class, (jsonObject, game) -> new Action.BonusCardUsePostOffice()),
     BONUS_CARD_GAIN_1_GOOD(Action.BonusCardGain1Good.class, (jsonObject, game) -> new Action.BonusCardGain1Good()),
@@ -88,7 +88,67 @@ public enum ActionView {
                 return value;
             }
         }
-        throw new IllegalArgumentException("Unknown action: " + actionClass);
+        throw new JsonException("Unknown action: " + actionClass);
+    }
+
+    private static String getString(JsonObject jsonObject, String key) {
+        JsonValue jsonValue = getValue(jsonObject, key);
+
+        if (jsonValue.getValueType() != JsonValue.ValueType.STRING) {
+            throw new JsonException("Property '" + key + "' expected to be string, but was: " + jsonValue.getValueType() + " in JSON object: " + jsonObject);
+        }
+
+        return ((JsonString) jsonValue).getString();
+    }
+
+    private static int getInt(JsonObject jsonObject, String key) {
+        JsonValue jsonValue = getValue(jsonObject, key);
+
+        if (jsonValue.getValueType() != JsonValue.ValueType.NUMBER) {
+            throw new JsonException("Property '" + key + "' expected to be number, but was: " + jsonValue.getValueType() + " in JSON object: " + jsonObject);
+        }
+
+        return ((JsonNumber) jsonValue).intValue();
+    }
+
+    private static <E extends Enum<E>> E getEnum(JsonObject jsonObject, String key, Class<E> enumType) {
+        try {
+            return Enum.valueOf(enumType, getString(jsonObject, key));
+        } catch (IllegalArgumentException e) {
+            throw new JsonException("Property '" + key + "' invalid in JSON object: " + jsonObject);
+        }
+    }
+
+    private static List<JsonString> getJsonStrings(JsonObject jsonObject, String key) {
+        return getJsonArray(jsonObject, key).getValuesAs(JsonString.class);
+    }
+
+    private static JsonArray getJsonArray(JsonObject jsonObject, String key) {
+        JsonValue jsonValue = getValue(jsonObject, key);
+
+        if (jsonValue.getValueType() != JsonValue.ValueType.ARRAY) {
+            throw new JsonException("Property '" + key + "' expected to be array, but was: " + jsonValue.getValueType() + " in JSON object: " + jsonObject);
+        }
+
+        return jsonValue.asJsonArray();
+    }
+
+    private static JsonObject getJsonObject(JsonObject jsonObject, String key) {
+        JsonValue jsonValue = getValue(jsonObject, key);
+
+        if (jsonValue.getValueType() != JsonValue.ValueType.OBJECT) {
+            throw new JsonException("Property '" + key + "' expected to be object, but was: " + jsonValue.getValueType() + " in JSON object: " + jsonObject);
+        }
+
+        return jsonValue.asJsonObject();
+    }
+
+    private static JsonValue getValue(JsonObject jsonObject, String key) {
+        var jsonValue = jsonObject.get(key);
+        if (jsonValue == null) {
+            throw new JsonException("Property '" + key + "' missing in JSON object: " + jsonObject);
+        }
+        return jsonValue;
     }
 
 }
