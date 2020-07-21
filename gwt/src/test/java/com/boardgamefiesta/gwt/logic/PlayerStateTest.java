@@ -41,7 +41,7 @@ class PlayerStateTest {
             assertThat(playerState.getHazards()).isEmpty();
             assertThat(playerState.getTeepees()).isEmpty();
             assertThat(playerState.getStationMasters()).isEmpty();
-            assertThat(playerState.getObjectives()).containsExactly(startingObjectiveCard);
+            assertThat(playerState.getCommittedObjectives()).containsExactly(startingObjectiveCard);
             assertThat(playerState.getBuildings()).hasSize(10);
             assertThat(playerState.getHand()).hasSize(4);
             assertThat(playerState.getDiscardPile()).isEmpty();

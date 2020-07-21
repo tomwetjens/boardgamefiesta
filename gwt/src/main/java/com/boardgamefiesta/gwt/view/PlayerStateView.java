@@ -7,6 +7,7 @@ import lombok.NonNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Getter
 public class PlayerStateView {
@@ -34,7 +35,7 @@ public class PlayerStateView {
     Set<StationMaster> stationMasters;
     List<HazardView> hazards;
     List<Teepee> teepees;
-    List<ObjectiveCardView> objectives;
+    List<ObjectiveView> objectives;
 
     PlayerStateView(@NonNull Game state, @NonNull PlayerState playerState, @NonNull Player viewingPlayer) {
         player = new PlayerView(playerState.getPlayer());
@@ -78,12 +79,13 @@ public class PlayerStateView {
 
         teepees = playerState.getTeepees();
 
-        objectives = playerState.getObjectives().stream()
-                .map(ObjectiveCardView::new)
+        var objectivesScores = playerState.scoreObjectives(state);
+        objectives = Stream.concat(playerState.getCommittedObjectives().stream(), playerState.getOptionalObjectives())
+                .map(objectiveCard -> new ObjectiveView(new ObjectiveCardView(objectiveCard), objectivesScores.get(objectiveCard)))
                 .sorted()
                 .collect(Collectors.toList());
 
-        score = new ScoreView(state.scoreDetails(playerState.getPlayer()));
+        this.score = new ScoreView(state.scoreDetails(playerState.getPlayer()));
         if (state.isEnded()) {
             winner = state.winners().contains(playerState.getPlayer());
         }

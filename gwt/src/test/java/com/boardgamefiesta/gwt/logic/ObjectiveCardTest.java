@@ -51,7 +51,7 @@ class ObjectiveCardTest {
             when(playerState.getTeepees()).thenReturn(List.of(Teepee.BLUE));
             when(trail.numberOfBuildings(player)).thenReturn(3);
 
-            assertThat(ObjectiveCard.score(Set.of(start, a, b), Collections.emptySet(), game, player)).isEqualTo(8);
+            assertThat(ObjectiveCard.score(Set.of(start, a, b), Collections.emptySet(), game, player).getTotal()).isEqualTo(8);
         }
     }
 

@@ -49,7 +49,7 @@ public class ObjectiveCard extends Card {
         return possibleAction != null ? possibleAction.getPossibleActions() : Collections.emptySet();
     }
 
-    static int score(Set<ObjectiveCard> required, Set<ObjectiveCard> optional, Game game, Player player) {
+    static Score score(Set<ObjectiveCard> required, Set<ObjectiveCard> optional, Game game, Player player) {
         Counts counts = counts(game, player);
 
         Set<ObjectiveCard> objectiveCards = Stream.concat(required.stream(), optional.stream()).collect(Collectors.toSet());
@@ -57,23 +57,40 @@ public class ObjectiveCard extends Card {
         return scoreCards(objectiveCards, required, counts);
     }
 
-    private static int scoreCards(Set<ObjectiveCard> objectiveCards, Set<ObjectiveCard> required, Counts counts) {
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class Score {
+        @Getter
+        int total;
+        Map<ObjectiveCard, Integer> scores;
+
+        private Score add(ObjectiveCard objectiveCard, int score) {
+            var map = new HashMap<>(scores);
+            map.put(objectiveCard, score);
+            return new Score(total + score, map);
+        }
+
+        public int get(ObjectiveCard objectiveCard) {
+            return scores.getOrDefault(objectiveCard, 0);
+        }
+    }
+
+    private static Score scoreCards(Set<ObjectiveCard> objectiveCards, Set<ObjectiveCard> required, Counts counts) {
         return objectiveCards.stream()
-                .mapToInt(objectiveCard -> {
+                .map(objectiveCard -> {
                     Counts remaining = counts.subtract(objectiveCard.getTasks());
 
                     if (remaining.isNegative()) {
                         if (required.contains(objectiveCard)) {
-                            return -objectiveCard.getPenalty() + scoreCards(remove(objectiveCards, objectiveCard), required, remaining);
+                            return scoreCards(remove(objectiveCards, objectiveCard), required, remaining).add(objectiveCard, -objectiveCard.getPenalty());
                         } else {
                             return scoreCards(remove(objectiveCards, objectiveCard), required, counts);
                         }
                     } else {
-                        return objectiveCard.getPoints() + scoreCards(remove(objectiveCards, objectiveCard), required, remaining);
+                        return scoreCards(remove(objectiveCards, objectiveCard), required, remaining).add(objectiveCard, objectiveCard.getPoints());
                     }
                 })
-                .max()
-                .orElse(0);
+                .max(Comparator.comparing(Score::getTotal))
+                .orElse(new Score(0, Collections.emptyMap()));
     }
 
     private static Counts counts(Game game, Player player) {

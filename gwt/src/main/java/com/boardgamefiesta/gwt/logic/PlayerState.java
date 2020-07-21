@@ -369,7 +369,7 @@ public class PlayerState {
         return Collections.unmodifiableSet(hazards);
     }
 
-    public Set<ObjectiveCard> getObjectives() {
+    public Set<ObjectiveCard> getCommittedObjectives() {
         return Collections.unmodifiableSet(objectives);
     }
 
@@ -534,12 +534,16 @@ public class PlayerState {
         return new Score(Map.of(
                 ScoreCategory.DOLLARS, balance / 5,
                 ScoreCategory.CATTLE_CARDS, scoreCattleCards(),
-                ScoreCategory.OBJECTIVE_CARDS, scoreObjectiveCards(game),
+                ScoreCategory.OBJECTIVE_CARDS, scoreObjectives(game).getTotal(),
                 ScoreCategory.STATION_MASTERS, scoreStationMasters(),
                 ScoreCategory.WORKERS, scoreWorkers(),
                 ScoreCategory.HAZARDS, scoreHazards(),
                 ScoreCategory.EXTRA_STEP_POINTS, hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0,
                 ScoreCategory.JOB_MARKET_TOKEN, jobMarketToken ? 2 : 0));
+    }
+
+    public ObjectiveCard.Score scoreObjectives(Game game) {
+        return ObjectiveCard.score(objectives, getOptionalObjectives().collect(Collectors.toSet()), game, player);
     }
 
     private int scoreHazards() {
@@ -577,15 +581,6 @@ public class PlayerState {
         return getCattleCards().stream()
                 .mapToInt(Card.CattleCard::getPoints)
                 .sum();
-    }
-
-    private int scoreObjectiveCards(Game game) {
-        Set<ObjectiveCard> otherObjectiveCards = Stream.concat(Stream.concat(hand.stream(), discardPile.stream()), drawStack.stream())
-                .filter(card -> card instanceof ObjectiveCard)
-                .map(card -> (ObjectiveCard) card)
-                .collect(Collectors.toSet());
-
-        return ObjectiveCard.score(objectives, otherObjectiveCards, game, player);
     }
 
     private static LinkedList<Card> createDrawStack(@NonNull Random random) {
@@ -632,5 +627,11 @@ public class PlayerState {
             throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
         }
         usedCowboys += amount;
+    }
+
+    public Stream<ObjectiveCard> getOptionalObjectives() {
+        return Stream.concat(Stream.concat(hand.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card),
+                discardPile.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card)),
+                drawStack.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card));
     }
 }
