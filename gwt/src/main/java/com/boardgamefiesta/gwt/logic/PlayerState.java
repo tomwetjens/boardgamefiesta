@@ -495,8 +495,8 @@ public class PlayerState {
         }
     }
 
-    public int getDrawStackSize() {
-        return drawStack.size();
+    public Collection<Card> getDrawStack() {
+        return Collections.unmodifiableCollection(drawStack);
     }
 
     boolean hasObjectiveCardInHand() {

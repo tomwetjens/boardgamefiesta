@@ -28,6 +28,7 @@ public class PlayerStateView {
     Integer handValue;
     List<CardView> discardPile;
     Integer drawStackSize;
+    List<CardView> drawStack;
     Integer handSize;
 
     Map<Unlockable, Integer> unlocked;
@@ -52,7 +53,7 @@ public class PlayerStateView {
                 .collect(Collectors.toList());
         Collections.reverse(discardPile);
 
-        drawStackSize = playerState.getDrawStackSize();
+        drawStackSize = playerState.getDrawStack().size();
         handSize = playerState.getHand().size();
 
         if (viewingPlayer == playerState.getPlayer()) {
@@ -61,6 +62,12 @@ public class PlayerStateView {
                     .sorted()
                     .collect(Collectors.toList());
             handValue = playerState.handValue();
+
+            drawStack = playerState.getDrawStack().stream()
+                    .map(CardView::of)
+                    .collect(Collectors.toList());
+            // Randomize so player cannot know which cards are coming
+            Collections.shuffle(drawStack);
         } else {
             hand = null;
             handValue = null;
