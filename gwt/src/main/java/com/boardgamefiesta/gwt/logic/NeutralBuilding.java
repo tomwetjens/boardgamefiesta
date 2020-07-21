@@ -90,9 +90,9 @@ public abstract class NeutralBuilding extends Building {
         @Override
         public PossibleAction activate(Game game) {
             game.currentPlayerState().resetUsedCowboys();
-            return PossibleAction.any(Stream.concat(
-                    Stream.of(PossibleAction.optional(Action.Discard1BlackAngusToGain2Dollars.class)),
-                    game.getCattleMarket().possibleAction(game).stream()));
+            return PossibleAction.any(Stream.of(
+                    PossibleAction.optional(Action.Discard1BlackAngusToGain2Dollars.class),
+                    PossibleAction.choice(Action.BuyCattle.class, Action.Draw2CattleCards.class)));
         }
 
     }
