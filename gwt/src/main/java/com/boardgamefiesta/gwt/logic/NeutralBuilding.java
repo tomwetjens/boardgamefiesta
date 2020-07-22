@@ -92,7 +92,8 @@ public abstract class NeutralBuilding extends Building {
             game.currentPlayerState().resetUsedCowboys();
             return PossibleAction.any(Stream.of(
                     PossibleAction.optional(Action.Discard1BlackAngusToGain2Dollars.class),
-                    PossibleAction.choice(Action.BuyCattle.class, Action.Draw2CattleCards.class)));
+                    PossibleAction.repeat(0, game.currentPlayerState().getNumberOfCowboys(), Action.BuyCattle.class),
+                    PossibleAction.repeat(0, game.currentPlayerState().getNumberOfCowboys(), Action.Draw2CattleCards.class)));
         }
 
     }
