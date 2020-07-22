@@ -146,26 +146,6 @@ public class CattleMarket {
         return drawStack.size();
     }
 
-    Optional<PossibleAction> possibleAction(Game game) {
-        var playerState = game.currentPlayerState();
-
-        var usableCowboys = playerState.getNumberOfCowboys() - playerState.getUsedCowboys();
-
-        if (usableCowboys > 0) {
-            if (canBuy(playerState.getBalance(), usableCowboys)) {
-                return Optional.of(PossibleAction.choice(Action.BuyCattle.class, Action.Draw2CattleCards.class));
-            } else {
-                return Optional.of(PossibleAction.choice(Action.Draw2CattleCards.class));
-            }
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private boolean canBuy(int balance, int usableCowboys) {
-        return usableCowboys > 0 && !possibleBuys(usableCowboys, balance).isEmpty();
-    }
-
     @Value
     public static class Cost {
         int dollars;

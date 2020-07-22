@@ -305,52 +305,6 @@ class PossibleActionTest {
 // TODO
         }
 
-        @Test
-        void shouldFinalizeCurrentBeforePerformingOthers() {
-            when(a.canPerform(A.class)).thenReturn(true);
-            when(a.isFinal()).thenReturn(false);
-            when(a.getPossibleActions()).thenReturn(Set.of(A.class));
-
-            when(b.canPerform(B.class)).thenReturn(true);
-            when(b.isFinal()).thenReturn(false);
-            when(b.getPossibleActions()).thenReturn(Set.of(B.class));
-
-            var possibleAction = PossibleAction.any(Stream.of(a, b));
-
-            assertThat(possibleAction.getPossibleActions()).containsExactlyInAnyOrder(A.class, B.class);
-            assertThat(possibleAction.canPerform(A.class)).isTrue();
-            assertThat(possibleAction.canPerform(B.class)).isTrue();
-            assertThat(possibleAction.isFinal()).isFalse();
-
-            possibleAction.perform(A.class);
-
-            assertThat(possibleAction.getPossibleActions()).containsExactly(A.class);
-            assertThat(possibleAction.canPerform(A.class)).isTrue();
-            assertThat(possibleAction.canPerform(B.class)).isFalse();
-            assertThat(possibleAction.isFinal()).isFalse();
-
-            possibleAction.skip();
-
-            assertThat(possibleAction.getPossibleActions()).containsExactly(B.class);
-            assertThat(possibleAction.canPerform(A.class)).isFalse();
-            assertThat(possibleAction.canPerform(B.class)).isTrue();
-            assertThat(possibleAction.isFinal()).isFalse();
-
-            possibleAction.perform(B.class);
-
-            assertThat(possibleAction.getPossibleActions()).containsExactly(B.class);
-            assertThat(possibleAction.canPerform(A.class)).isFalse();
-            assertThat(possibleAction.canPerform(B.class)).isTrue();
-            assertThat(possibleAction.isFinal()).isFalse();
-
-            possibleAction.skip();
-
-            assertThat(possibleAction.getPossibleActions()).isEmpty();
-            assertThat(possibleAction.canPerform(A.class)).isFalse();
-            assertThat(possibleAction.canPerform(B.class)).isFalse();
-            assertThat(possibleAction.isFinal()).isTrue();
-        }
-
     }
 
     abstract class A extends Action {
