@@ -68,17 +68,8 @@ abstract class PossibleAction {
                 Arrays.stream(actions).map(PossibleAction::mandatory))
                 .collect(Collectors.toCollection(ArrayList::new)));
     }
-
-    static PossibleAction whenThen(int atLeast, int atMost, Class<? extends Action> when, Class<? extends Action> then) {
-        return new WhenThen(atLeast, atMost, when, then, 0);
-    }
-
     static PossibleAction repeat(int atLeast, int atMost, Class<? extends Action> action) {
         return new Repeat(atLeast, atMost, PossibleAction.optional(action), null);
-    }
-
-    static PossibleAction repeat(int atLeast, int atMost, PossibleAction action) {
-        return new Repeat(atLeast, atMost, action, null);
     }
 
     /**
@@ -96,13 +87,6 @@ abstract class PossibleAction {
      */
     static PossibleAction choice(Collection<PossibleAction> actions) {
         return new Choice(new ArrayList<>(actions));
-    }
-
-    /**
-     * Player MUST perform EXACTLY ONE of the options.
-     */
-    static PossibleAction choice(Stream<PossibleAction> possibleActions) {
-        return new Choice(possibleActions.collect(Collectors.toList()));
     }
 
     /**
@@ -229,7 +213,7 @@ abstract class PossibleAction {
 
         @Override
         public String toString() {
-            return action.getSimpleName().toString();
+            return action.getSimpleName();
         }
     }
 
@@ -237,18 +221,12 @@ abstract class PossibleAction {
     private static final class Any extends PossibleAction {
 
         private final List<PossibleAction> actions;
-        private PossibleAction current;
-
-        private Any(List<PossibleAction> actions) {
-            this.actions = actions;
-        }
 
         @Override
         JsonObject serialize(JsonBuilderFactory factory) {
             return factory.createObjectBuilder()
                     .add("any", factory.createObjectBuilder()
-                            .add("actions", JsonSerializer.forFactory(factory).fromCollection(actions, PossibleAction::serialize))
-                            .add("current", actions.indexOf(current)))
+                            .add("actions", JsonSerializer.forFactory(factory).fromCollection(actions, PossibleAction::serialize)))
                     .build();
         }
 
@@ -257,42 +235,23 @@ abstract class PossibleAction {
                     .map(JsonValue::asJsonObject)
                     .map(PossibleAction::deserialize)
                     .collect(Collectors.toList());
-            var current = jsonObject.getInt("current");
-            return new Any(actions, current != -1 ? actions.get(current) : null);
+            return new Any(actions);
         }
 
         @Override
         void perform(Class<? extends Action> action) {
-            PossibleAction element;
-
-            if (current != null) {
-                if (!current.canPerform(action)) {
-                    throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
-                }
-                element = current;
-            } else {
-                element = check(action);
-            }
+            PossibleAction element = check(action);
 
             element.perform(action);
 
             if (element.isFinal()) {
                 actions.remove(element);
-                current = null;
-            } else {
-                current = element;
             }
         }
 
         @Override
         void skip() {
-            if (current != null) {
-                current.skip();
-                actions.remove(current);
-                current = null;
-            } else {
-                actions.clear();
-            }
+            actions.clear();
         }
 
         private PossibleAction check(Class<? extends Action> action) {
@@ -309,33 +268,24 @@ abstract class PossibleAction {
 
         @Override
         boolean canPerform(Class<? extends Action> action) {
-            if (current != null) {
-                return current.canPerform(action);
-            } else {
-                return actions.stream() // Else just return if any can be performed
-                        .anyMatch(possibleAction -> possibleAction.canPerform(action));
-            }
+            return actions.stream().anyMatch(possibleAction -> possibleAction.canPerform(action));
         }
 
         @Override
         Set<Class<? extends Action>> getPossibleActions() {
-            if (current != null) {
-                return current.getPossibleActions();
-            } else {
-                return actions.stream()
-                        .flatMap(action -> action.getPossibleActions().stream())
-                        .collect(Collectors.toUnmodifiableSet());
-            }
+            return actions.stream()
+                    .flatMap(action -> action.getPossibleActions().stream())
+                    .collect(Collectors.toUnmodifiableSet());
         }
 
         @Override
         public PossibleAction clone() {
-            return new Any(actions.stream().map(PossibleAction::clone).collect(Collectors.toList()), current);
+            return new Any(actions.stream().map(PossibleAction::clone).collect(Collectors.toList()));
         }
 
         @Override
         public String toString() {
-            return "Any(actions=" + actions + ", current=" + current + ")";
+            return "Any(actions=" + actions + ")";
         }
     }
 

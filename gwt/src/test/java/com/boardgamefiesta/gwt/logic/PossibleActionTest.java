@@ -233,69 +233,6 @@ class PossibleActionTest {
         }
     }
 
-    @Nested
-    class WhenThen {
-
-        @Test
-        void skip() {
-            PossibleAction possibleAction = PossibleAction.whenThen(0, 3, A.class, B.class);
-            possibleAction.skip();
-        }
-
-        @Test
-        void skipAfterThen() {
-            PossibleAction possibleAction = PossibleAction.whenThen(0, 3, A.class, B.class);
-            assertThat(possibleAction.canPerform(A.class)).isTrue();
-            assertThat(possibleAction.canPerform(B.class)).isFalse();
-
-            possibleAction.skip();
-            assertThat(possibleAction.isFinal()).isTrue();
-            assertThat(possibleAction.canPerform(A.class)).isFalse();
-            assertThat(possibleAction.canPerform(B.class)).isFalse();
-        }
-
-        @Test
-        void skipThenNotAllowed() {
-            PossibleAction possibleAction = PossibleAction.whenThen(0, 3, A.class, B.class);
-            possibleAction.perform(A.class);
-
-            assertThatThrownBy(possibleAction::skip).isInstanceOf(RuntimeException.class);
-        }
-
-        @Test
-        void skipAtLeastNotMet() {
-            PossibleAction possibleAction = PossibleAction.whenThen(1, 3, A.class, B.class);
-
-            assertThatThrownBy(possibleAction::skip).isInstanceOf(RuntimeException.class);
-        }
-
-        @Test
-        void firstWhensThenThens() {
-            PossibleAction possibleAction = PossibleAction.whenThen(0, 3, A.class, B.class);
-
-            possibleAction.perform(A.class);
-            possibleAction.perform(A.class);
-            possibleAction.perform(A.class);
-
-            possibleAction.perform(B.class);
-            possibleAction.perform(B.class);
-            possibleAction.perform(B.class);
-        }
-
-        @Test
-        void whenThenAlternating() {
-            PossibleAction possibleAction = PossibleAction.whenThen(0, 3, A.class, B.class);
-
-            possibleAction.perform(A.class);
-            possibleAction.perform(B.class);
-
-            possibleAction.perform(A.class);
-            possibleAction.perform(B.class);
-
-            possibleAction.perform(A.class);
-            possibleAction.perform(B.class);
-        }
-    }
 
     @Nested
     class Repeat {
