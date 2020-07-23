@@ -108,16 +108,6 @@ class ActionTest {
             // TODO
         }
 
-        @Test
-        void toEventParams() {
-            when(currentPlayerState.handValue()).thenReturn(11);
-            when(railroadTrack.signalsPassed(currentPlayer)).thenReturn(4);
-
-            Action.DeliverToCity deliverToCity = new Action.DeliverToCity(City.EL_PASO, 1);
-            List<String> eventParams = deliverToCity.toEventParams(game);
-
-            assertThat(eventParams).containsExactly("EL_PASO", "1", "9");
-        }
     }
 
     @Nested
@@ -126,6 +116,7 @@ class ActionTest {
         @Test
         void move() {
             Location b = mock(Location.class);
+            when(b.getName()).thenReturn("B");
             when(b.getHand()).thenReturn(Hand.NONE);
 
             Location a = mock(Location.class);
@@ -188,6 +179,7 @@ class ActionTest {
         @Test
         void notPayFeeToSelf() {
             Location b = mock(Location.class);
+            when(b.getName()).thenReturn("B");
             when(b.getHand()).thenReturn(Hand.NONE);
 
             PlayerBuilding playerBuilding = mock(PlayerBuilding.class);
@@ -216,6 +208,7 @@ class ActionTest {
         @Test
         void payFeeToBank() {
             Location b = mock(Location.class);
+            when(b.getName()).thenReturn("B");
             when(b.getHand()).thenReturn(Hand.NONE);
 
             Location flood1 = mock(Location.class);
@@ -241,6 +234,7 @@ class ActionTest {
         @Test
         void payFeeToOtherPlayer() {
             Location b = mock(Location.class);
+            when(b.getName()).thenReturn("B");
             when(b.getHand()).thenReturn(Hand.NONE);
 
             PlayerBuilding otherPlayerBuilding = mock(PlayerBuilding.class);

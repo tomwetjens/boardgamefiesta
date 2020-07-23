@@ -3,12 +3,14 @@ package com.boardgamefiesta.gwt.logic;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Value;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -18,6 +20,11 @@ public class CattleMarket {
     private final int limit;
     private final Queue<Card.CattleCard> drawStack;
     private final Set<Card.CattleCard> market;
+
+    private static final Map<Integer, Set<Cost>> COSTS = Map.of(
+            3, Set.of(new Cost(6, 1, false), new Cost(3, 2, false), new Cost(5, 3, true)),
+            4, Set.of(new Cost(12, 1, false), new Cost(6, 3, false), new Cost(8, 5, true)),
+            5, Set.of(new Cost(12, 2, false), new Cost(6, 4, false), new Cost(18, 6, true)));
 
     CattleMarket(int playerCount, Random random) {
         this(playerCount, createDrawStack(random), new HashSet<>());
@@ -55,91 +62,55 @@ public class CattleMarket {
     }
 
     /**
-     * Calculates the options the player has for buying a single card or a pair of cards from the market.
+     * Calculates the options for buying a single card or a pair of cards.
      *
-     * @param numberOfCowboys Number of cowboys the player has available.
+     * @param breedingValue   The breeding value to buy.
+     * @param pair            Buying 1 or a pair.
+     * @param numberOfCowboys The number of cowboys available.
      * @param balance         The balance the player has.
-     * @return Possibilities for buying a single card or a pair.
+     * @param costPreference  The cost preference.
+     * @return Cost for buying a single card or a pair of cards.
      */
-    public Set<PossibleBuy> possibleBuys(int numberOfCowboys, int balance) {
-        return possibleBuys(new ArrayList<>(market), numberOfCowboys, balance);
-    }
-
-    private static Set<PossibleBuy> possibleBuys(List<Card.CattleCard> market, int numberOfCowboys, int balance) {
+    public static Cost cost(int breedingValue, boolean pair, int numberOfCowboys, int balance, CostPreference costPreference) {
         if (numberOfCowboys == 0) {
-            return Collections.emptySet();
+            throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
         }
 
-        Stream<PossibleBuy> result = Stream.empty();
-        if (numberOfCowboys >= 5) {
-            result = Stream.concat(result, pairPossibleBuys(market, 4, 8, 5));
-        }
-        if (numberOfCowboys >= 4) {
-            result = Stream.concat(result, singlePossibleBuys(market, 5, 6, 4));
-        }
-        if (numberOfCowboys >= 3) {
-            result = Stream.concat(result, Stream.concat(
-                    pairPossibleBuys(market, 3, 5, 3),
-                    singlePossibleBuys(market, 4, 6, 3)));
-        }
-        if (numberOfCowboys >= 2) {
-            result = Stream.concat(result, Stream.concat(
-                    singlePossibleBuys(market, 3, 3, 2),
-                    singlePossibleBuys(market, 5, 12, 2)));
-        }
-        if (numberOfCowboys >= 1) {
-            result = Stream.concat(result, Stream.concat(
-                    singlePossibleBuys(market, 3, 6, 1),
-                    singlePossibleBuys(market, 4, 12, 1)));
+        var costs = COSTS.get(breedingValue).stream()
+                .filter(cost -> !cost.isPair() || pair)
+                .map(cost -> pair && !cost.isPair() ? cost.twice() : cost)
+                .filter(cost -> cost.getCowboys() <= numberOfCowboys)
+                .collect(Collectors.toSet());
+
+        if (costs.isEmpty()) {
+            throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
         }
 
-        return result.filter(possibleBuy -> possibleBuy.cost <= balance).collect(Collectors.toSet());
-    }
-
-    private static Stream<PossibleBuy> singlePossibleBuys(List<Card.CattleCard> market, int breedingValue, int cost, int cowboysNeeded) {
-        return market.stream()
-                .filter(cattleCard -> cattleCard.getType().getValue() == breedingValue)
-                .map(cattleCard -> new PossibleBuy(Collections.singletonList(cattleCard.getType().getValue()), cost, cowboysNeeded));
-    }
-
-    private static Stream<PossibleBuy> pairPossibleBuys(List<Card.CattleCard> market, int breedingValue, int cost, int cowboysNeeded) {
-        return findPairs(market, breedingValue)
-                .limit(1) // Since the result only indicates the breeding value, there is no need to return each pair
-                .map(pair -> new PossibleBuy(Arrays.asList(pair.a.getType().getValue(), pair.b.getType().getValue()), cost, cowboysNeeded));
+        return costs.stream()
+                .filter(cost -> cost.getDollars() <= balance)
+                .min(costPreference.getComparator())
+                .orElseThrow(() -> new GWTException(GWTError.NOT_ENOUGH_BALANCE_TO_PAY));
     }
 
 
-    private static Stream<Pair<Card.CattleCard>> findPairs(List<Card.CattleCard> market, int breedingValue) {
-        return market.stream()
-                .filter(cattleCard -> cattleCard.getType().getValue() == breedingValue)
-                .flatMap(a -> market.stream() // Find pair
-                        .dropWhile(b -> b != a) // Starting from card A to find pair, to prevent a single pair appearing twice in the output
-                        .skip(1) // Skip card A itself
-                        .filter(cattleCard -> cattleCard.getType().getValue() == a.getType().getValue()) // Find pair of matching breeding value
-                        .map(b -> new Pair<>(a, b)));
-    }
+    public Stream<PossibleBuy> possibleBuys(int numberOfCowboys, int balance) {
+        if (numberOfCowboys == 0 || balance < 3) {
+            return Stream.empty();
+        }
 
-    /**
-     * Calculates the minimum amount of dollars needed to buy specified cards with the specified number of cowboys.
-     *
-     * @param cattleCards     The cards to buy.
-     * @param numberOfCowboys The number of cowboys available.
-     * @return Minimum amount of dollars.
-     */
-    public int cost(Collection<Card.CattleCard> cattleCards, int numberOfCowboys) {
-        return cost(cattleCards, numberOfCowboys, CostPreference.CHEAPER_COST).getDollars();
-    }
+        var counts = market.stream()
+                .map(Card.CattleCard::getType)
+                .mapToInt(CattleType::getValue)
+                .boxed()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-    /**
-     * Calculates the minimum cost needed to buy the specified cards with the specified number of cowboys, based on the cost preference.
-     *
-     * @param cattleCards     The cards to buy.
-     * @param numberOfCowboys The number of cowboys available.
-     * @param preference      The cost preference: either calculate the minimum amount of dollars or the minimum amount of cowboys.
-     * @return The minimum cost based on the specified cost preference.
-     */
-    public Cost cost(Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
-        return cost(new ArrayList<>(market), cattleCards, numberOfCowboys, preference);
+        return COSTS.entrySet().stream()
+                .filter(entry -> counts.containsKey(entry.getKey()))
+                .flatMap(entry -> entry.getValue().stream()
+                        .filter(cost -> cost.getCowboys() <= numberOfCowboys)
+                        .filter(cost -> cost.getDollars() <= balance)
+                        .filter(cost -> !cost.isPair() || counts.getOrDefault(entry.getKey(), 0L) >= 2)
+                        .map(cost -> new PossibleBuy(entry.getKey(), cost.isPair(), cost.getDollars(), cost.getCowboys())));
     }
 
     public int getDrawStackSize() {
@@ -150,98 +121,41 @@ public class CattleMarket {
     public static class Cost {
         int dollars;
         int cowboys;
+        boolean pair;
+
+        public Cost twice() {
+            return new Cost(dollars * 2, cowboys * 2, true);
+        }
     }
 
     @AllArgsConstructor
     public enum CostPreference {
 
-        CHEAPER_COST(Comparator.comparingInt(Cost::getDollars)),
+        CHEAPEST(Comparator.comparingInt(Cost::getDollars)),
         LESS_COWBOYS(Comparator.comparingInt(Cost::getCowboys));
 
         @Getter
         private final Comparator<Cost> comparator;
+
     }
 
-    private static Cost cost(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
-        return costIfEnoughCowboys(cattleCardsRemaining, cattleCards, numberOfCowboys, preference)
-                .orElseThrow(() -> new GWTException(GWTError.NOT_ENOUGH_COWBOYS));
-    }
+    Cost buy(@NonNull Card.CattleCard card, Card.CattleCard secondCard, int numberOfCowboys, int balance, CostPreference costPreference) {
+        if (secondCard != null && (secondCard == card || secondCard.getType().getValue() != card.getType().getValue())) {
+            throw new GWTException(GWTError.NOT_PAIR);
+        }
 
-    private static Optional<Cost> costIfEnoughCowboys(List<Card.CattleCard> cattleCardsRemaining, Collection<Card.CattleCard> cattleCards, int numberOfCowboys, CostPreference preference) {
-        Map<Integer, List<Card.CattleCard>> groupedByBreedingValue = cattleCards.stream()
-                .distinct()
-                .collect(Collectors.groupingBy(cattleCard -> cattleCard.getType().getValue()));
-
-        return groupedByBreedingValue.keySet().stream()
-                .findFirst()
-                .flatMap(breedingValue -> {
-                    List<Card.CattleCard> cardsOfSameBreedingValue = groupedByBreedingValue.get(breedingValue);
-                    boolean considerPair = cardsOfSameBreedingValue.size() > 1;
-
-                    Set<PossibleBuy> possibleBuys = possible(cattleCardsRemaining, breedingValue, considerPair, numberOfCowboys).collect(Collectors.toSet());
-
-                    return possibleBuys.stream()
-                            .flatMap(possibleBuy -> {
-                                boolean moreCardsToBuy = cattleCards.size() > possibleBuy.getBreedingValues().size();
-
-                                if (moreCardsToBuy) {
-                                    List<Card.CattleCard> cardsBuying = cardsOfSameBreedingValue.subList(0, possibleBuy.getBreedingValues().size());
-                                    List<Card.CattleCard> marketAfterBuy = removeAll(cattleCardsRemaining, cardsBuying);
-                                    List<Card.CattleCard> cardsRemainingToBuy = removeAll(cattleCards, cardsBuying);
-                                    int cowboysRemaining = numberOfCowboys - possibleBuy.getCowboysNeeded();
-
-                                    Optional<Cost> cost = costIfEnoughCowboys(marketAfterBuy, cardsRemainingToBuy, cowboysRemaining, preference)
-                                            .map(furtherCost -> new Cost(furtherCost.getDollars() + possibleBuy.getCost(), furtherCost.getCowboys() + possibleBuy.getCowboysNeeded()));
-
-                                    return cost.stream();
-                                }
-
-                                return Stream.of(new Cost(possibleBuy.getCost(), possibleBuy.getCowboysNeeded()));
-                            })
-                            .min(preference.getComparator());
-                });
-    }
-
-    private static List<Card.CattleCard> removeAll(Collection<Card.CattleCard> market, Collection<Card.CattleCard> buy) {
-        if (!market.containsAll(buy)) {
+        if (!market.contains(card) || (secondCard != null && !market.contains(secondCard))) {
             throw new GWTException(GWTError.CATTLE_CARD_NOT_AVAILABLE);
         }
-        return market.stream().filter(e -> !buy.contains(e)).collect(Collectors.toList());
-    }
 
-    private static Stream<PossibleBuy> possible(List<Card.CattleCard> available, Integer breedingValue, boolean considerPair, int numberOfCowboys) {
-        Set<PossibleBuy> possibleBuys = possibleBuys(available, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        Cost cost = cost(card.getType().getValue(), secondCard != null, numberOfCowboys, balance, costPreference);
 
-        Set<PossibleBuy> possibleSingles = possibleBuys.stream()
-                .filter(pb -> pb.getBreedingValues().size() == 1)
-                .filter(pb -> pb.getBreedingValues().get(0).equals(breedingValue))
-                .collect(Collectors.toSet());
-
-        if (possibleSingles.isEmpty()) {
-            throw new GWTException(GWTError.NOT_ENOUGH_CATTLE_CARDS_OF_BREEDING_VALUE_AVAILABLE);
+        market.remove(card);
+        if (secondCard != null) {
+            market.remove(secondCard);
         }
 
-        Set<PossibleBuy> possiblePairs = Collections.emptySet();
-
-        if (considerPair) {
-            possiblePairs = possibleBuys.stream()
-                    .filter(pb -> pb.getBreedingValues().size() == 2)
-                    .filter(pb -> pb.getBreedingValues().get(0).equals(breedingValue) && pb.getBreedingValues().get(1).equals(breedingValue))
-                    .filter(pb -> pb.getCowboysNeeded() <= numberOfCowboys)
-                    .collect(Collectors.toSet());
-        }
-
-        return Stream.concat(possiblePairs.stream(), possibleSingles.stream())
-                .filter(pb -> pb.getCowboysNeeded() <= numberOfCowboys);
-    }
-
-    int buy(Set<Card.CattleCard> cattleCards, int numberOfCowboys) {
-        // Assume player wants cheaper instead of less cowboys
-        Cost cost = cost(cattleCards, numberOfCowboys, CostPreference.CHEAPER_COST);
-
-        market.removeAll(cattleCards);
-
-        return cost.getCowboys();
+        return cost;
     }
 
     void fillUp() {
@@ -278,25 +192,10 @@ public class CattleMarket {
 
     @Value
     public static class PossibleBuy {
-        List<Integer> breedingValues;
+        int breedingValue;
+        boolean pair;
         int cost;
         int cowboysNeeded;
-
-        public PossibleBuy(List<Integer> breedingValues, int cost, int cowboysNeeded) {
-            this.breedingValues = new ArrayList<>(breedingValues);
-
-            // [3,3,4] and [4,3,3] should be considered equal, however duplicates are allowed
-            // Therefore sort the list
-            this.breedingValues.sort(Integer::compareTo);
-
-            this.cost = cost;
-            this.cowboysNeeded = cowboysNeeded;
-        }
     }
 
-    @Value
-    private static class Pair<T> {
-        T a;
-        T b;
-    }
 }

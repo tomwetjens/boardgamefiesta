@@ -7,8 +7,8 @@ import lombok.Getter;
 import javax.json.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -117,7 +117,7 @@ public enum ActionType {
             case APPOINT_STATION_MASTER:
                 return new Action.AppointStationMaster(getEnum(jsonObject, JsonProperties.WORKER, Worker.class));
             case BUY_CATTLE:
-                return new Action.BuyCattle(findCattleCards(game, getJsonArray(jsonObject, JsonProperties.CATTLE_CARDS)));
+                return new Action.BuyCattle(findCattleCards(game, getJsonArray(jsonObject, JsonProperties.CATTLE_CARDS)), getEnum(jsonObject, "costPreference", CattleMarket.CostPreference.class));
             case DELIVER_TO_CITY:
                 return new Action.DeliverToCity(getEnum(jsonObject, JsonProperties.CITY, City.class), getInt(jsonObject, JsonProperties.CERTIFICATES));
             case DISCARD_1_BLACK_ANGUS_TO_GAIN_2_CERTIFICATES:
@@ -382,19 +382,26 @@ public enum ActionType {
         return notExpected.isEmpty();
     }
 
-    private static Set<Card.CattleCard> findCattleCards(Game game, JsonArray cattleCards) {
+    private static List<Card.CattleCard> findCattleCards(Game game, JsonArray cattleCards) {
+        var available = new HashSet<>(game.getCattleMarket().getMarket());
+
         return cattleCards.stream()
                 .map(JsonValue::asJsonObject)
                 .map(jsonObject -> {
                     CattleType type = getEnum(jsonObject, JsonProperties.TYPE, CattleType.class);
                     int points = getInt(jsonObject, JsonProperties.POINTS);
 
-                    return game.getCattleMarket().getMarket().stream()
+                    var card = available.stream()
                             .filter(cattleCard -> cattleCard.getType() == type)
                             .filter(cattleCard -> cattleCard.getPoints() == points)
-                            .findAny().orElseThrow(() -> new JsonException("Cattle card not available"));
+                            .findAny()
+                            .orElseThrow(() -> new JsonException("Cattle card not available"));
+
+                    available.remove(card);
+
+                    return card;
                 })
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     private static String getString(JsonObject jsonObject, String key) {

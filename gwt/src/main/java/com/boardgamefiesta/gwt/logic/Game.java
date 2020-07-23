@@ -138,8 +138,6 @@ public class Game implements State {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
-            fireEvent(action);
-
             ImmediateActions immediateActions = action.perform(this, random);
 
             if (!immediateActions.isEmpty()) {
@@ -149,8 +147,6 @@ public class Game implements State {
             if (!actionStack.canPerform(action.getClass())) {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
-
-            fireEvent(action);
 
             // Action can possibly modify the action queue, so first get this action off the queue
             // before executing it
@@ -186,9 +182,12 @@ public class Game implements State {
         }
     }
 
-    private void fireEvent(Action action) {
-        fireEvent(currentPlayer, GWTEvent.Type.ACTION, Stream.concat(Stream.of(ActionType.of(action.getClass()).name()),
-                action.toEventParams(this).stream()).collect(Collectors.toList()));
+    void fireActionEvent(Action action, List<String> params) {
+        fireActionEvent(ActionType.of(action.getClass()).name(), params);
+    }
+
+    void fireActionEvent(String name, List<String> params) {
+        fireEvent(currentPlayer, GWTEvent.Type.ACTION, Stream.concat(Stream.of(name), params.stream()).collect(Collectors.toList()));
     }
 
     private void endTurnIfNoMoreActions(@NonNull Random random) {

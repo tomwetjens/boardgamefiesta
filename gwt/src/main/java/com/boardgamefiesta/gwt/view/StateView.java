@@ -180,7 +180,7 @@ public class StateView {
 
     private Set<PossibleBuyView> getPossibleBuys(Game game, Player player) {
         var playerState = game.playerState(player);
-        return game.getCattleMarket().possibleBuys(playerState.getNumberOfCowboys(), playerState.getBalance()).stream()
+        return game.getCattleMarket().possibleBuys(playerState.getNumberOfCowboys(), playerState.getBalance())
                 .map(PossibleBuyView::new)
                 .collect(Collectors.toSet());
     }
