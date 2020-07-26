@@ -1,8 +1,6 @@
 package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.repository.JsonSerializer;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
@@ -22,9 +20,31 @@ public class CattleMarket {
     private final Set<Card.CattleCard> market;
 
     private static final Map<Integer, Set<Cost>> COSTS = Map.of(
-            3, Set.of(new Cost(6, 1, false), new Cost(3, 2, false), new Cost(5, 3, true)),
-            4, Set.of(new Cost(12, 1, false), new Cost(6, 3, false), new Cost(8, 5, true)),
-            5, Set.of(new Cost(12, 2, false), new Cost(6, 4, false), new Cost(18, 6, true)));
+            3, Set.of(
+                    Cost.single(6, 1),
+                    Cost.single(3, 2),
+                    Cost.pair(5, 3),
+                    // 2 singles:
+                    Cost.pair(12, 2),
+                    Cost.pair(9, 3),
+                    Cost.pair(6, 4)
+            ),
+            4, Set.of(
+                    Cost.single(12, 1),
+                    Cost.single(6, 3),
+                    Cost.pair(8, 5),
+                    // 2 singles:
+                    Cost.pair(24, 2),
+                    Cost.pair(18, 4),
+                    Cost.pair(6, 6)
+            ),
+            5, Set.of(
+                    Cost.single(12, 2),
+                    Cost.single(6, 4),
+                    // 2 singles:
+                    Cost.pair(18, 6),
+                    Cost.pair(24, 4)
+            ));
 
     CattleMarket(int playerCount, Random random) {
         this(playerCount, createDrawStack(random), new HashSet<>());
@@ -61,56 +81,23 @@ public class CattleMarket {
         return Collections.unmodifiableSet(market);
     }
 
-    /**
-     * Calculates the options for buying a single card or a pair of cards.
-     *
-     * @param breedingValue   The breeding value to buy.
-     * @param pair            Buying 1 or a pair.
-     * @param numberOfCowboys The number of cowboys available.
-     * @param balance         The balance the player has.
-     * @param costPreference  The cost preference.
-     * @return Cost for buying a single card or a pair of cards.
-     */
-    public static Cost cost(int breedingValue, boolean pair, int numberOfCowboys, int balance, CostPreference costPreference) {
-        if (numberOfCowboys == 0) {
-            throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
-        }
-
-        var costs = COSTS.get(breedingValue).stream()
-                .filter(cost -> !cost.isPair() || pair)
-                .map(cost -> pair && !cost.isPair() ? cost.twice() : cost)
-                .filter(cost -> cost.getCowboys() <= numberOfCowboys)
-                .collect(Collectors.toSet());
-
-        if (costs.isEmpty()) {
-            throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
-        }
-
-        return costs.stream()
-                .filter(cost -> cost.getDollars() <= balance)
-                .min(costPreference.getComparator())
-                .orElseThrow(() -> new GWTException(GWTError.NOT_ENOUGH_BALANCE_TO_PAY));
-    }
-
-
     public Stream<PossibleBuy> possibleBuys(int numberOfCowboys, int balance) {
         if (numberOfCowboys == 0 || balance < 3) {
             return Stream.empty();
         }
 
-        var counts = market.stream()
+        return market.stream()
                 .map(Card.CattleCard::getType)
                 .mapToInt(CattleType::getValue)
                 .boxed()
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-        return COSTS.entrySet().stream()
-                .filter(entry -> counts.containsKey(entry.getKey()))
-                .flatMap(entry -> entry.getValue().stream()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet().stream()
+                .filter(count -> count.getValue() > 0)
+                .flatMap(count -> COSTS.get(count.getKey()).stream()
                         .filter(cost -> cost.getCowboys() <= numberOfCowboys)
                         .filter(cost -> cost.getDollars() <= balance)
-                        .filter(cost -> !cost.isPair() || counts.getOrDefault(entry.getKey(), 0L) >= 2)
-                        .map(cost -> new PossibleBuy(entry.getKey(), cost.isPair(), cost.getDollars(), cost.getCowboys())));
+                        .filter(cost -> !cost.isPair() || count.getValue() >= 2)
+                        .map(cost -> new PossibleBuy(count.getKey(), cost.isPair(), cost.getDollars(), cost.getCowboys())));
     }
 
     public int getDrawStackSize() {
@@ -123,23 +110,16 @@ public class CattleMarket {
         int cowboys;
         boolean pair;
 
-        public Cost twice() {
-            return new Cost(dollars * 2, cowboys * 2, true);
+        static Cost pair(int dollars, int cowboys) {
+            return new Cost(dollars, cowboys, true);
+        }
+
+        static Cost single(int dollars, int cowboys) {
+            return new Cost(dollars, cowboys, false);
         }
     }
 
-    @AllArgsConstructor
-    public enum CostPreference {
-
-        CHEAPEST(Comparator.comparingInt(Cost::getDollars)),
-        LESS_COWBOYS(Comparator.comparingInt(Cost::getCowboys));
-
-        @Getter
-        private final Comparator<Cost> comparator;
-
-    }
-
-    Cost buy(@NonNull Card.CattleCard card, Card.CattleCard secondCard, int numberOfCowboys, int balance, CostPreference costPreference) {
+    Cost buy(@NonNull Card.CattleCard card, Card.CattleCard secondCard, int cowboys, int dollars) {
         if (secondCard != null && (secondCard == card || secondCard.getType().getValue() != card.getType().getValue())) {
             throw new GWTException(GWTError.NOT_PAIR);
         }
@@ -148,14 +128,19 @@ public class CattleMarket {
             throw new GWTException(GWTError.CATTLE_CARD_NOT_AVAILABLE);
         }
 
-        Cost cost = cost(card.getType().getValue(), secondCard != null, numberOfCowboys, balance, costPreference);
+        var result = COSTS.get(card.getType().getValue()).stream()
+                .filter(cost -> cost.isPair() == (secondCard != null))
+                .filter(cost -> cost.getCowboys() == cowboys)
+                .filter(cost -> cost.getDollars() == dollars)
+                .findAny()
+                .orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
 
         market.remove(card);
         if (secondCard != null) {
             market.remove(secondCard);
         }
 
-        return cost;
+        return result;
     }
 
     void fillUp() {
@@ -194,8 +179,8 @@ public class CattleMarket {
     public static class PossibleBuy {
         int breedingValue;
         boolean pair;
-        int cost;
-        int cowboysNeeded;
+        int dollars;
+        int cowboys;
     }
 
 }

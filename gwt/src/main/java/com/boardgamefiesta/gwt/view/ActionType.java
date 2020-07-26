@@ -117,7 +117,7 @@ public enum ActionType {
             case APPOINT_STATION_MASTER:
                 return new Action.AppointStationMaster(getEnum(jsonObject, JsonProperties.WORKER, Worker.class));
             case BUY_CATTLE:
-                return new Action.BuyCattle(findCattleCards(game, getJsonArray(jsonObject, JsonProperties.CATTLE_CARDS)), getEnum(jsonObject, "costPreference", CattleMarket.CostPreference.class));
+                return new Action.BuyCattle(findCattleCards(game, getJsonArray(jsonObject, JsonProperties.CATTLE_CARDS)), getInt(jsonObject, JsonProperties.COWBOYS), getInt(jsonObject, JsonProperties.DOLLARS));
             case DELIVER_TO_CITY:
                 return new Action.DeliverToCity(getEnum(jsonObject, JsonProperties.CITY, City.class), getInt(jsonObject, JsonProperties.CERTIFICATES));
             case DISCARD_1_BLACK_ANGUS_TO_GAIN_2_CERTIFICATES:
@@ -465,6 +465,8 @@ public enum ActionType {
     }
 
     private static class JsonProperties {
+        private static final String DOLLARS = "dollars";
+        private static final String COWBOYS = "cowboys";
         private static final String CATTLE_TYPE = "cattleType";
         private static final String WORKER = "worker";
         private static final String CARD = "card";

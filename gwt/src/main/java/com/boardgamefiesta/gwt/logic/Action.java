@@ -27,6 +27,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     abstract ImmediateActions perform(@NonNull Game game, @NonNull Random random);
 
     @Value
+    @AllArgsConstructor
     @EqualsAndHashCode(callSuper = false)
     public static class BuyCattle extends Action {
 
@@ -35,19 +36,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         Card.CattleCard secondCard;
 
-        @NonNull
-        CattleMarket.CostPreference costPreference;
+        int cowboys;
+        int dollars;
 
-        public BuyCattle(@NonNull List<Card.CattleCard> cards,
-                         @NonNull CattleMarket.CostPreference costPreference) {
-            this(cards.get(0), cards.size() > 1 ? cards.get(1) : null, costPreference);
-        }
-
-        public BuyCattle(@NonNull Card.CattleCard card, Card.CattleCard secondCard,
-                         @NonNull CattleMarket.CostPreference costPreference) {
-            this.card = card;
-            this.secondCard = secondCard;
-            this.costPreference = costPreference;
+        public BuyCattle(@NonNull List<Card.CattleCard> cards, int cowboys, int dollars) {
+            this(cards.get(0), cards.size() > 1 ? cards.get(1) : null, cowboys, dollars);
         }
 
         @Override
@@ -55,7 +48,12 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var playerState = game.currentPlayerState();
 
             var usableCowboys = playerState.getNumberOfCowboys() - playerState.getUsedCowboys();
-            var cost = game.getCattleMarket().buy(card, secondCard, usableCowboys, playerState.getBalance(), costPreference);
+
+            if (cowboys > usableCowboys) {
+                throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
+            }
+
+            var cost = game.getCattleMarket().buy(card, secondCard, cowboys, dollars);
 
             playerState.payDollars(cost.getDollars());
             playerState.useCowboys(cost.getCowboys());

@@ -8,13 +8,13 @@ public class PossibleBuyView {
 
     int breedingValue;
     boolean pair;
-    int cost;
-    int cowboysNeeded;
+    int dollars;
+    int cowboys;
 
     public PossibleBuyView(CattleMarket.PossibleBuy possibleBuy) {
         breedingValue = possibleBuy.getBreedingValue();
         pair = possibleBuy.isPair();
-        cost = possibleBuy.getCost();
-        cowboysNeeded = possibleBuy.getCowboysNeeded();
+        dollars = possibleBuy.getDollars();
+        cowboys = possibleBuy.getCowboys();
     }
 }
