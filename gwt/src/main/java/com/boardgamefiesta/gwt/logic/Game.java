@@ -330,34 +330,18 @@ public class Game implements State {
     }
 
     public static Game deserialize(JsonObject jsonObject) {
-        Set<Player> players;
-        List<Player> playerOrder;
-        Map<String, Player> playerMap;
+        var players = jsonObject.getJsonArray("players").stream()
+                .map(JsonValue::asJsonObject)
+                .map(Player::deserialize)
+                .collect(Collectors.toSet());
 
-        if (jsonObject.containsKey("playerOrder")) {
-            players = jsonObject.getJsonArray("players").stream()
-                    .map(JsonValue::asJsonObject)
-                    .map(Player::deserialize)
-                    .collect(Collectors.toSet());
+        var playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
 
-            playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
-
-            playerOrder = jsonObject.getJsonArray("playerOrder").stream()
-                    .map(jsonValue -> (JsonString) jsonValue)
-                    .map(JsonString::getString)
-                    .map(playerMap::get)
-                    .collect(Collectors.toList());
-        } else {
-            // Deprecated (kept for backwards compatibility)
-            playerOrder = jsonObject.getJsonArray("players").stream()
-                    .map(JsonValue::asJsonObject)
-                    .map(Player::deserialize)
-                    .collect(Collectors.toList());
-
-            players = new HashSet<>(playerOrder);
-
-            playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
-        }
+        var playerOrder = jsonObject.getJsonArray("playerOrder").stream()
+                .map(jsonValue -> (JsonString) jsonValue)
+                .map(JsonString::getString)
+                .map(playerMap::get)
+                .collect(Collectors.toList());
 
         var kansasCitySupply = KansasCitySupply.deserialize(jsonObject.getJsonObject("kansasCitySupply"));
 
