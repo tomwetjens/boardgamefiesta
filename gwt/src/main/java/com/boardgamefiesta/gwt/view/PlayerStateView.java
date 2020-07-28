@@ -88,7 +88,7 @@ public class PlayerStateView {
 
         var objectivesScores = playerState.scoreObjectives(state);
         objectives = Stream.concat(playerState.getCommittedObjectives().stream(), playerState.getOptionalObjectives())
-                .map(objectiveCard -> new ObjectiveView(new ObjectiveCardView(objectiveCard), objectivesScores.get(objectiveCard)))
+                .map(objectiveCard -> new ObjectiveView(new ObjectiveCardView(objectiveCard), objectivesScores.getScore(objectiveCard)))
                 .sorted()
                 .collect(Collectors.toList());
 

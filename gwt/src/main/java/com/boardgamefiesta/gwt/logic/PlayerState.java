@@ -531,11 +531,12 @@ public class PlayerState {
     }
 
     Score score(Game game) {
+        var objectives = scoreObjectives(game);
         return new Score(Map.of(
                 ScoreCategory.DOLLARS, balance / 5,
                 ScoreCategory.CATTLE_CARDS, scoreCattleCards(),
-                ScoreCategory.OBJECTIVE_CARDS, scoreObjectives(game).getTotal(),
-                ScoreCategory.STATION_MASTERS, scoreStationMasters(),
+                ScoreCategory.OBJECTIVE_CARDS, objectives.getTotal(),
+                ScoreCategory.STATION_MASTERS, scoreStationMasters(objectives.getCommitted()),
                 ScoreCategory.WORKERS, scoreWorkers(),
                 ScoreCategory.HAZARDS, scoreHazards(),
                 ScoreCategory.EXTRA_STEP_POINTS, hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0,
@@ -543,7 +544,8 @@ public class PlayerState {
     }
 
     public ObjectiveCard.Score scoreObjectives(Game game) {
-        return ObjectiveCard.score(objectives, getOptionalObjectives().collect(Collectors.toSet()), game, player);
+        return ObjectiveCard.score(objectives, getOptionalObjectives().collect(Collectors.toSet()), game, player,
+                stationMasters.contains(StationMaster.REMOVE_HAZARD_OR_TEEPEE_POINTS_FOR_EACH_2_OBJECTIVE_CARDS));
     }
 
     private int scoreHazards() {
@@ -573,8 +575,24 @@ public class PlayerState {
                 .collect(Collectors.toSet());
     }
 
-    private int scoreStationMasters() {
-        return stationMasters.stream().mapToInt(stationMaster -> stationMaster.score(this)).sum();
+    private int scoreStationMasters(Set<ObjectiveCard> committed) {
+        int result = 0;
+        if (stationMasters.contains(StationMaster.GAIN_2_DOLLARS_POINT_FOR_EACH_WORKER)) {
+            result += getNumberOfCowboys() + getNumberOfCraftsmen() + getNumberOfEngineers();
+        }
+        if (stationMasters.contains(StationMaster.REMOVE_HAZARD_OR_TEEPEE_POINTS_FOR_EACH_2_OBJECTIVE_CARDS)) {
+            result += (committed.size() / 2) * 3;
+        }
+        if (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_HAZARDS)) {
+            result += (hazards.size() / 2) * 3;
+        }
+        if (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_TEEPEE_PAIRS)) {
+            result += numberOfTeepeePairs() * 3;
+        }
+        if (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS)) {
+            result += ((tempCertificates + permanentCertificates()) / 2) * 3;
+        }
+        return result;
     }
 
     private int scoreCattleCards() {
@@ -633,5 +651,17 @@ public class PlayerState {
         return Stream.concat(Stream.concat(hand.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card),
                 discardPile.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card)),
                 drawStack.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card));
+    }
+
+    public int numberOfTeepees() {
+        return teepees.size();
+    }
+
+    public int numberOfGreenTeepees() {
+        return (int) teepees.stream().filter(teepee -> teepee == Teepee.GREEN).count();
+    }
+
+    public int numberOfHazards() {
+        return hazards.size();
     }
 }

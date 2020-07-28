@@ -2,7 +2,10 @@ package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.repository.JsonSerializer;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.ToString;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -49,16 +52,25 @@ public class ObjectiveCard extends Card {
         return possibleAction != null ? possibleAction.getPossibleActions() : Collections.emptySet();
     }
 
-    static Score score(Set<ObjectiveCard> required, Set<ObjectiveCard> optional, Game game, Player player) {
+    static Score score(Set<ObjectiveCard> committed, Set<ObjectiveCard> uncommitted, Game game, Player player, boolean committedPairs3Points) {
         Counts counts = counts(game, player);
 
-        Set<ObjectiveCard> objectiveCards = Stream.concat(required.stream(), optional.stream()).collect(Collectors.toSet());
+        List<ObjectiveCard> objectiveCards = Stream.concat(committed.stream(), uncommitted.stream())
+                .sorted(Comparator.comparingInt(ObjectiveCard::getPoints).reversed())
+                .collect(Collectors.toList());
 
-        return scoreCards(objectiveCards, required, counts);
+        return scoreCards(objectiveCards, committed, counts, Score.EMPTY)
+                .max(committedPairs3Points
+                        ? Comparator.comparingInt(score -> score.getTotal() + (score.getCommitted().size() / 2) * 3)
+                        : Comparator.comparing(Score::getTotal))
+                .orElse(Score.EMPTY);
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class Score {
+
+        static final Score EMPTY = new Score(0, Collections.emptyMap());
+
         @Getter
         int total;
         Map<ObjectiveCard, Integer> scores;
@@ -69,75 +81,116 @@ public class ObjectiveCard extends Card {
             return new Score(total + score, map);
         }
 
-        public int get(ObjectiveCard objectiveCard) {
+        public int getScore(ObjectiveCard objectiveCard) {
             return scores.getOrDefault(objectiveCard, 0);
+        }
+
+        public Set<ObjectiveCard> getCommitted() {
+            return scores.keySet();
         }
     }
 
-    private static Score scoreCards(Set<ObjectiveCard> objectiveCards, Set<ObjectiveCard> required, Counts counts) {
-        return objectiveCards.stream()
-                .map(objectiveCard -> {
-                    Counts remaining = counts.subtract(objectiveCard.getTasks());
+    /**
+     * @param objectiveCards sorted by points desc
+     */
+    private static Stream<Score> scoreCards(List<ObjectiveCard> objectiveCards, Set<ObjectiveCard> committed, Counts counts, Score score) {
+        if (objectiveCards.isEmpty()) {
+            return Stream.of(score);
+        }
 
-                    if (remaining.isNegative()) {
-                        if (required.contains(objectiveCard)) {
-                            return scoreCards(remove(objectiveCards, objectiveCard), required, remaining).add(objectiveCard, -objectiveCard.getPenalty());
-                        } else {
-                            return scoreCards(remove(objectiveCards, objectiveCard), required, counts);
-                        }
-                    } else {
-                        return scoreCards(remove(objectiveCards, objectiveCard), required, remaining).add(objectiveCard, objectiveCard.getPoints());
-                    }
-                })
-                .max(Comparator.comparing(Score::getTotal))
-                .orElse(new Score(0, Collections.emptyMap()));
+        var head = objectiveCards.get(0);
+        var tail = objectiveCards.subList(1, objectiveCards.size());
+
+        Counts remaining = counts.subtract(head.getTasks());
+
+        if (remaining.hasNegative()) {
+            if (committed.contains(head)) {
+                return scoreCards(tail, committed, counts, score.add(head, -head.getPenalty()));
+            } else {
+                // If the player has the "3 points per pair of committed objective cards" station master tile,
+                // it could make sense to commit to failed objective cards, if the penalty is less than the points for a pair
+                return Stream.concat(
+                        // Normal case, skipping it
+                        scoreCards(tail, committed, counts, score),
+                        // Or see what happens when committing to it
+                        scoreCards(tail, committed, counts, score.add(head, -head.getPenalty())));
+            }
+        } else {
+            return scoreCards(tail, committed, remaining, score.add(head, head.getPoints()));
+        }
     }
 
     private static Counts counts(Game game, Player player) {
         var playerState = game.playerState(player);
 
-        var teepees = playerState.getTeepees();
-        var greenTeepees = (int) teepees.stream().filter(teepee -> teepee == Teepee.GREEN).count();
+        var teepees = playerState.numberOfTeepees();
+        var greenTeepees = playerState.numberOfGreenTeepees();
+        var blueTeepees = teepees - greenTeepees;
 
-        return Counts.builder()
-                .count(Task.BUILDING, game.getTrail().numberOfBuildings(player))
-                .count(Task.GREEN_TEEPEE, greenTeepees)
-                .count(Task.BLUE_TEEPEE, teepees.size() - greenTeepees)
-                .count(Task.HAZARD, playerState.getHazards().size())
-                .count(Task.STATION, game.getRailroadTrack().numberOfUpgradedStations(player))
-                .count(Task.BREEDING_VALUE_3, playerState.numberOfCattleCards(3))
-                .count(Task.BREEDING_VALUE_4, playerState.numberOfCattleCards(4))
-                .count(Task.BREEDING_VALUE_5, playerState.numberOfCattleCards(5))
-                .count(Task.SAN_FRANCISCO, game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO))
-                .build();
+        return new Counts(
+                game.getTrail().numberOfBuildings(player),
+                greenTeepees,
+                blueTeepees,
+                playerState.numberOfHazards(),
+                game.getRailroadTrack().numberOfUpgradedStations(player),
+                playerState.numberOfCattleCards(3),
+                playerState.numberOfCattleCards(4),
+                playerState.numberOfCattleCards(5),
+                game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO));
     }
 
-    private static <T> Set<T> remove(Set<T> set, T elem) {
-        return set.stream().filter(b -> b != elem).collect(Collectors.toSet());
-    }
-
-    @Value
-    @Builder
+    @AllArgsConstructor
     private static class Counts {
-        @Singular
-        Map<Task, Integer> counts;
+        int buildings;
+        int greenTeepees;
+        int blueTeepees;
+        int hazards;
+        int stations;
+        int breedingValue3;
+        int breedingValue4;
+        int breedingValue5;
+        int sanFrancisco;
 
-        Counts subtract(Task task) {
-            Map<Task, Integer> result = new EnumMap<>(counts);
-            result.compute(task, (k, v) -> (v != null ? v : 0) - 1);
-            return new Counts(result);
+        boolean hasNegative() {
+            return buildings < 0 || greenTeepees < 0 || blueTeepees < 0 || hazards < 0 || stations < 0 || breedingValue3 < 0 || breedingValue4 < 0 || breedingValue5 < 0 || sanFrancisco < 0;
         }
 
-        boolean isNegative() {
-            return counts.values().stream().anyMatch(v -> v < 0);
-        }
+        Counts subtract(List<Task> tasks) {
+            Counts result = new Counts(buildings, greenTeepees, blueTeepees, hazards, stations, breedingValue3, breedingValue4, breedingValue5, sanFrancisco);
 
-        public Counts subtract(List<Task> tasks) {
-            Counts results = this;
             for (Task task : tasks) {
-                results = results.subtract(task);
+                switch (task) {
+                    case BUILDING:
+                        result.buildings--;
+                        break;
+                    case GREEN_TEEPEE:
+                        result.greenTeepees--;
+                        break;
+                    case BLUE_TEEPEE:
+                        result.blueTeepees--;
+                        break;
+                    case HAZARD:
+                        result.hazards--;
+                        break;
+                    case STATION:
+                        result.stations--;
+                        break;
+                    case BREEDING_VALUE_3:
+                        result.breedingValue3--;
+                        break;
+                    case BREEDING_VALUE_4:
+                        result.breedingValue4--;
+                        break;
+                    case BREEDING_VALUE_5:
+                        result.breedingValue5--;
+                        break;
+                    case SAN_FRANCISCO:
+                        result.sanFrancisco--;
+                        break;
+                }
             }
-            return results;
+
+            return result;
         }
     }
 
