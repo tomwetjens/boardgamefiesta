@@ -12,8 +12,14 @@ public interface Tables {
 
     void add(Table table);
 
-    void update(Table table);
+    void update(Table table) throws TableConcurrentlyModifiedException;
 
     Stream<Table> findByUserId(User.Id id);
+
+    class TableConcurrentlyModifiedException extends Exception {
+        public TableConcurrentlyModifiedException(Throwable cause) {
+            super(cause);
+        }
+    }
 
 }

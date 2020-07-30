@@ -25,6 +25,10 @@ public class APIException extends WebApplicationException {
         return new APIException(Response.Status.INTERNAL_SERVER_ERROR, new Error(apiError, null, null));
     }
 
+    public static APIException conflict(APIError apiError) {
+        return new APIException(Response.Status.CONFLICT, new Error(apiError, null, null));
+    }
+
     private APIException(Response.Status status, Error error) {
         super(error.getErrorCode().name(), Response.status(status)
                 .type(MediaType.APPLICATION_JSON)

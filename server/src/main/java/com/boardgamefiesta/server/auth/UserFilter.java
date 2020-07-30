@@ -40,28 +40,12 @@ public class UserFilter implements ContainerRequestFilter {
     }
 
     private void updateUser(User user, JsonWebToken jwt) {
-        // TODO Move claim names to configuration properties
-        var username = (String) jwt.getClaim("cognito:username");
-        var email = (String) jwt.getClaim("email");
-
-        boolean changed = false;
-
-        if (!user.getUsername().equals(username)) {
-            user.changeUsername(username);
-            changed = true;
-        }
-
-        if (!user.getEmail().equals(email)) {
-            user.confirmEmail(jwt.getClaim("email"));
-            changed = true;
-        }
-
         user.lastSeen(Instant.now());
 
-        if (changed) {
-            users.update(user);
-        } else {
+        try {
             users.updateLastSeen(user);
+        } catch (Users.UserConcurrentlyModifiedException e) {
+            // Too bad, ignore
         }
     }
 

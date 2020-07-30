@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -99,165 +100,131 @@ public class TableResource {
     @Path("/{id}/start")
     @Transactional
     public TableView start(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
+        var result = handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
 
-        checkOwner(table);
-
-        table.start();
-
-        tables.update(table);
-
-        return new TableView(table, getUserMap(table), getRatingMap(table), currentUserId());
+            table.start();
+        });
+        return new TableView(result, getUserMap(result), getRatingMap(result), currentUserId());
     }
 
     @POST
     @Path("/{id}/accept")
     @Transactional
     public void accept(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
-
-        table.acceptInvite(currentUserId());
-
-        tables.update(table);
+        handleConcurrentModification(Table.Id.of(id), table ->
+                table.acceptInvite(currentUserId()));
     }
 
     @POST
     @Path("/{id}/reject")
     @Transactional
     public void reject(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
-
-        table.rejectInvite(currentUserId());
-
-        tables.update(table);
+        handleConcurrentModification(Table.Id.of(id), table ->
+                table.rejectInvite(currentUserId()));
     }
 
     @POST
     @Path("/{id}/perform")
     public void perform(@PathParam("id") String id, ActionRequest request) {
-        var table = tables.findById(Table.Id.of(id));
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkTurn(table);
 
-        checkTurn(table);
-
-        table.perform(request.toAction(table.getGame(), table.getState().get()));
-
-        tables.update(table);
+            table.perform(request.toAction(table.getGame(), table.getState().get()));
+        });
     }
 
     @POST
     @Path("/{id}/skip")
     public void skip(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkTurn(table);
 
-        checkTurn(table);
-
-        table.skip();
-
-        tables.update(table);
+            table.skip();
+        });
     }
 
     @POST
     @Path("/{id}/end-turn")
     public void endTurn(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkTurn(table);
 
-        checkTurn(table);
-
-        table.endTurn();
-
-        tables.update(table);
+            table.endTurn();
+        });
     }
 
     @POST
     @Path("/{id}/propose-to-leave")
     public void proposeToLeave(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
-
-        table.proposeToLeave(currentUserId());
-
-        tables.update(table);
+        handleConcurrentModification(Table.Id.of(id), table ->
+                table.proposeToLeave(currentUserId()));
     }
 
     @POST
     @Path("/{id}/agree-to-leave")
     public void agreeToLeave(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
-
-        table.agreeToLeave(currentUserId());
-
-        tables.update(table);
+        handleConcurrentModification(Table.Id.of(id), table ->
+                table.agreeToLeave(currentUserId()));
     }
 
     @POST
     @Path("/{id}/leave")
     public void leave(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
-
-        table.leave(currentUserId());
-
-        tables.update(table);
+        handleConcurrentModification(Table.Id.of(id), table ->
+                table.leave(currentUserId()));
     }
 
     @POST
     @Path("/{id}/abandon")
     public void abandon(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
 
-        checkOwner(table);
-
-        table.abandon();
-
-        tables.update(table);
+            table.abandon();
+        });
     }
 
     @POST
     @Path("/{id}/invite")
     public void invite(@PathParam("id") String id, @NotNull @Valid InviteRequest request) {
-        var table = tables.findById(Table.Id.of(id));
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
 
-        checkOwner(table);
-
-        table.invite(users.findOptionallyById(User.Id.of(request.getUserId()))
-                .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER)));
-
-        tables.update(table);
+            table.invite(users.findOptionallyById(User.Id.of(request.getUserId()))
+                    .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER)));
+        });
     }
 
     @POST
     @Path("/{id}/add-computer")
     public void addComputer(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
 
-        checkOwner(table);
-
-        table.addComputer();
-
-        tables.update(table);
+            table.addComputer();
+        });
     }
 
     @POST
     @Path("/{id}/players/{playerId}/kick")
     public void kick(@PathParam("id") String id, @PathParam("playerId") String playerId) {
-        var table = tables.findById(Table.Id.of(id));
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
 
-        checkOwner(table);
-
-        table.kick(table.getPlayerById(Player.Id.of(playerId))
-                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME)));
-
-        tables.update(table);
+            table.kick(table.getPlayerById(Player.Id.of(playerId))
+                    .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME)));
+        });
     }
 
     @POST
     @Path("/{id}/change-options")
     public void changeOptions(@PathParam("id") String id, @NotNull @Valid ChangeOptionsRequest request) {
-        var table = tables.findById(Table.Id.of(id));
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
 
-        checkOwner(table);
-
-        table.changeOptions(new Options(request.getOptions()));
-
-        tables.update(table);
+            table.changeOptions(new Options(request.getOptions()));
+        });
     }
 
     @GET
@@ -293,6 +260,26 @@ public class TableResource {
                         userId -> userMap.computeIfAbsent(userId, this.users::findById),
                         ratingMap))
                 .collect(Collectors.toList());
+    }
+
+    private Table handleConcurrentModification(Table.Id id, Consumer<Table> modifier) {
+        int retries = 0;
+        do {
+            var table = tables.findById(id);
+
+            modifier.accept(table);
+
+            try {
+                tables.update(table);
+
+                return table;
+            } catch (Tables.TableConcurrentlyModifiedException e) {
+                if (retries >= 1) {
+                    throw APIException.conflict(APIError.CONCURRENT_MODIFICATION);
+                }
+                retries++;
+            }
+        } while (true);
     }
 
     private void checkOwner(Table table) {

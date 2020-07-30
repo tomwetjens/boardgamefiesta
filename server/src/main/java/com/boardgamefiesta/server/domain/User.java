@@ -36,6 +36,9 @@ public class User {
     private final Id id;
 
     @Getter
+    private final Integer version;
+
+    @Getter
     @NonNull
     private final Instant created;
 
@@ -72,6 +75,7 @@ public class User {
 
         return User.builder()
                 .id(id)
+                .version(1)
                 .created(created)
                 .updated(created)
                 .lastSeen(created)

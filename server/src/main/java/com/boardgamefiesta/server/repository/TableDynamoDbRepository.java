@@ -26,6 +26,7 @@ public class TableDynamoDbRepository implements Tables {
     private static final String STATE_TABLE_NAME = "gwt-state";
 
     private static final String USER_ID_ID_INDEX = "UserId-Id-index";
+    public static final int FIRST_VERSION = 1;
 
     private final Games games;
     private final DynamoDbClient dynamoDbClient;
@@ -141,17 +142,69 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public void update(Table table) {
-        var attributeUpdates = mapFromTableUpdate(table);
+    public void update(Table table) throws TableConcurrentlyModifiedException {
+        var expressionAttributeValues = new HashMap<String, AttributeValue>();
+        var expressionAttributeNames = new HashMap<String, String>();
+        expressionAttributeNames.put("#Status", "Status");
 
-        dynamoDbClient.updateItem(UpdateItemRequest.builder()
+        var updateExpression = "SET Version=:Version" +
+                ",#Status=:Status" +
+                ",Updated=:Updated" +
+                ",Expires=:Expires" +
+                ",OwnerId=:OwnerId" +
+                ",Players=:Players" +
+                ",Options=:Options";
+
+        expressionAttributeValues.put(":Version", AttributeValue.builder().n(
+                // TODO Version can become required after backwards compatibility period
+                Integer.toString(table.getVersion() != null ? table.getVersion() + 1 : FIRST_VERSION)).build());
+        expressionAttributeValues.put(":Status", AttributeValue.builder().s(table.getStatus().name()).build());
+        expressionAttributeValues.put(":Updated", AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build());
+        expressionAttributeValues.put(":Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+        expressionAttributeValues.put(":OwnerId", AttributeValue.builder().s(table.getOwnerId().getId()).build());
+        expressionAttributeValues.put(":Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
+        expressionAttributeValues.put(":Options", mapFromOptions(table.getOptions()));
+
+        if (table.getStarted() != null) {
+            updateExpression += ",Started=:Started";
+            expressionAttributeValues.put(":Started", AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build());
+        }
+
+        if (table.getEnded() != null) {
+            updateExpression += ",Ended=:Ended";
+            expressionAttributeValues.put(":Ended", AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build());
+        }
+
+        if (table.getState() != null && table.getState().isPresent()) {
+            updateExpression += ",#State=:State";
+            expressionAttributeValues.put(":State", mapFromState(table.getGame(), table.getState().get()));
+            expressionAttributeNames.put("#State", "State");
+        }
+
+        var requestBuilder = UpdateItemRequest.builder()
                 .tableName(tableName)
                 .key(key(table.getId()))
-                .attributeUpdates(attributeUpdates)
-                .build());
+                .updateExpression(updateExpression)
+                .expressionAttributeNames(expressionAttributeNames);
+
+        // TODO Version can become required after backwards compatibility period
+        if (table.getVersion() != null) {
+            requestBuilder = requestBuilder.conditionExpression("Version=:ExpectedVersion");
+            expressionAttributeValues.put(":ExpectedVersion", AttributeValue.builder().n(table.getVersion().toString()).build());
+        }
+
+        var request = requestBuilder
+                .expressionAttributeValues(expressionAttributeValues)
+                .build();
+
+        try {
+            dynamoDbClient.updateItem(request);
+        } catch (ConditionalCheckFailedException e) {
+            throw new TableConcurrentlyModifiedException(e);
+        }
 
         addPendingHistoricStates(table, table.getState() != null && table.getState().isPresent()
-                ? Map.of(table.getState().get(), attributeUpdates.get("State").value())
+                ? Map.of(table.getState().get(), expressionAttributeValues.get(":State"))
                 : Collections.emptyMap());
         addLogEntries(table);
 
@@ -218,6 +271,7 @@ public class TableDynamoDbRepository implements Tables {
                 .key(key(id))
                 .consistentRead(true)
                 .attributesToGet("Id",
+                        "Version",
                         "Type",
                         "Mode",
                         "GameId",
@@ -260,6 +314,7 @@ public class TableDynamoDbRepository implements Tables {
 
     private Map<String, AttributeValue> createAttributeValues(Table table) {
         var map = new HashMap<String, AttributeValue>();
+        map.put("Version", AttributeValue.builder().n(Integer.toString(table.getVersion())).build());
         map.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
         map.put("Type", AttributeValue.builder().s(table.getType().name()).build());
         map.put("Mode", AttributeValue.builder().s(table.getMode().name()).build());
@@ -296,10 +351,12 @@ public class TableDynamoDbRepository implements Tables {
         var id = Table.Id.of(item.get("Id").s());
 
         var gameId = Game.Id.of(item.get("GameId").s());
-        var game = Games.instance().get(gameId);
+        var game = games.get(gameId);
 
         return Table.builder()
                 .id(id)
+                // TODO Version can become required after backwards compatibility period
+                .version(item.get("Version") != null ? Integer.valueOf(item.get("Version").n()) : null)
                 .type(Table.Type.valueOf(item.get("Type").s()))
                 .mode(Table.Mode.valueOf(item.get("Mode").s()))
                 .game(game)
@@ -399,29 +456,6 @@ public class TableDynamoDbRepository implements Tables {
         key.put("Id", AttributeValue.builder().s(gameId.getId()).build());
         key.put("UserId", AttributeValue.builder().s("User-" + userId.getId()).build());
         return key;
-    }
-
-    private Map<String, AttributeValueUpdate> mapFromTableUpdate(Table table) {
-        var map = new HashMap<String, AttributeValueUpdate>();
-
-        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getStatus().name()).build()).build());
-        map.put("Updated", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build()).build());
-        if (table.getStarted() != null) {
-            map.put("Started", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build()).build());
-        }
-        if (table.getEnded() != null) {
-            map.put("Ended", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build()).build());
-        }
-        map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
-        map.put("OwnerId", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getOwnerId().getId()).build()).build());
-        map.put("Players", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build()).build());
-        map.put("Options", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromOptions(table.getOptions())).build());
-
-        if (table.getState() != null && table.getState().isPresent()) {
-            map.put("State", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(mapFromState(table.getGame(), table.getState().get())).build());
-        }
-
-        return map;
     }
 
     private Map<String, AttributeValue> mapFromLogEntry(Table.Id gameId, LogEntry logEntry) {

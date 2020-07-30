@@ -1,6 +1,5 @@
 package com.boardgamefiesta.server.domain;
 
-import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -20,8 +19,13 @@ public interface Users extends DomainService {
 
     void add(User user);
 
-    void update(User user);
+    void update(User user) throws UserConcurrentlyModifiedException;
 
-    void updateLastSeen(User user);
+    void updateLastSeen(User user) throws UserConcurrentlyModifiedException;
 
+    class UserConcurrentlyModifiedException extends Exception {
+        public UserConcurrentlyModifiedException(Throwable cause) {
+            super(cause);
+        }
+    }
 }

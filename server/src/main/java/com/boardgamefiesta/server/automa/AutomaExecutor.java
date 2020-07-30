@@ -28,17 +28,29 @@ class AutomaExecutor {
         try {
             var table = request.getTable();
 
-            if (table.getStatus() != Table.Status.STARTED) {
-                return;
-            }
+            var retries = 0;
+            do {
+                if (table.getStatus() != Table.Status.STARTED) {
+                    return;
+                }
 
-            if (table.getCurrentPlayer().getType() != Player.Type.COMPUTER) {
-                return;
-            }
+                if (table.getCurrentPlayer().getType() != Player.Type.COMPUTER) {
+                    return;
+                }
 
-            table.executeAutoma();
+                table.executeAutoma();
 
-            tables.update(table);
+                try {
+                    tables.update(table);
+                } catch (Tables.TableConcurrentlyModifiedException e) {
+                    if (retries >= 5) {
+                        throw new RuntimeException("Executor failed after " + retries + " retries", e);
+                    }
+
+                    retries++;
+                    table = tables.findById(request.getTable().getId());
+                }
+            } while (true);
         } catch (RuntimeException e) {
             log.error("Error executing request", e);
             throw e;

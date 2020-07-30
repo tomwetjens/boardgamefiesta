@@ -14,6 +14,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Path("/users")
@@ -63,10 +64,8 @@ public class UserResource {
 
         checkCurrentUser(userId);
 
-        var user = users.findById(userId);
-        user.changeLocation(request.getLocation());
-
-        users.update(user);
+        handleConcurrentModification(userId, user ->
+                user.changeLocation(request.getLocation()));
     }
 
     @POST
@@ -76,10 +75,8 @@ public class UserResource {
 
         checkCurrentUser(userId);
 
-        var user = users.findById(userId);
-        user.changeLanguage(request.getLanguage());
-
-        users.update(user);
+        handleConcurrentModification(userId, user ->
+                user.changeLanguage(request.getLanguage()));
     }
 
     private void checkCurrentUser(User.Id userId) {
@@ -93,6 +90,26 @@ public class UserResource {
             throw new NotAuthorizedException("");
         }
         return User.Id.of(securityContext.getUserPrincipal().getName());
+    }
+
+    private User handleConcurrentModification(User.Id id, Consumer<User> modifier) {
+        int retries = 0;
+        do {
+            var table = users.findById(id);
+
+            modifier.accept(table);
+
+            try {
+                users.update(table);
+
+                return table;
+            } catch (Users.UserConcurrentlyModifiedException e) {
+                if (retries >= 1) {
+                    throw APIException.conflict(APIError.CONCURRENT_MODIFICATION);
+                }
+                retries++;
+            }
+        } while (true);
     }
 
 }

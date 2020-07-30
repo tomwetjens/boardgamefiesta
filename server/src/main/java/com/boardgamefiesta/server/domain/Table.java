@@ -1,8 +1,7 @@
 package com.boardgamefiesta.server.domain;
 
-import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.domain.EventListener;
-import com.boardgamefiesta.api.spi.GameProvider;
+import com.boardgamefiesta.api.domain.*;
 import lombok.*;
 
 import java.time.Duration;
@@ -31,6 +30,10 @@ public class Table {
     @Getter
     @NonNull
     private final Id id;
+
+    // TODO Nullable for backwards compatibility, make int
+    @Getter
+    private final Integer version;
 
     @Getter
     @NonNull
@@ -111,6 +114,7 @@ public class Table {
         var created = Instant.now();
         Table table = Table.builder()
                 .id(Id.generate())
+                .version(1)
                 .game(game)
                 .type(Type.REALTIME)
                 .mode(mode)
