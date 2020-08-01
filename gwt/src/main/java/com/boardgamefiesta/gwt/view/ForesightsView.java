@@ -18,9 +18,9 @@ public class ForesightsView {
 
     ForesightsView(Foresights foresights) {
         choices = Arrays.asList(
-                foresights.choices(0).stream().map(TileView::new).collect(Collectors.toList()),
-                foresights.choices(1).stream().map(TileView::new).collect(Collectors.toList()),
-                foresights.choices(2).stream().map(TileView::new).collect(Collectors.toList())
+                foresights.choices(0).stream().map(TileView::of).collect(Collectors.toList()),
+                foresights.choices(1).stream().map(TileView::of).collect(Collectors.toList()),
+                foresights.choices(2).stream().map(TileView::of).collect(Collectors.toList())
         );
     }
 
@@ -39,6 +39,13 @@ public class ForesightsView {
             } else {
                 teepee = tile.getTeepee();
             }
+        }
+
+        public static TileView of(KansasCitySupply.Tile tile) {
+            if (tile == null) {
+                return null;
+            }
+            return new TileView(tile);
         }
     }
 }

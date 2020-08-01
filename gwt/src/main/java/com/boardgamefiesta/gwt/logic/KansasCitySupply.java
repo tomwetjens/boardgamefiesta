@@ -98,7 +98,7 @@ public class KansasCitySupply {
         private final Hazard hazard;
         private final Teepee teepee;
 
-        Tile(Worker worker) {
+        public Tile(Worker worker) {
             this.worker = worker;
             this.hazard = null;
             this.teepee = null;
