@@ -296,11 +296,11 @@ public class TableResource {
     }
 
     private void checkViewAllowed(Table table) {
-        var currentUserId = currentUserId();
+//        var currentUserId = currentUserId();
 
-        if (table.getPlayers().stream().noneMatch(player -> currentUserId.equals(player.getUserId().orElse(null)))) {
-            throw APIException.forbidden(APIError.NOT_PLAYER_IN_GAME);
-        }
+//        if (table.getPlayers().stream().noneMatch(player -> currentUserId.equals(player.getUserId().orElse(null)))) {
+//            throw APIException.forbidden(APIError.NOT_PLAYER_IN_GAME);
+//        }
     }
 
     private User.Id currentUserId() {
