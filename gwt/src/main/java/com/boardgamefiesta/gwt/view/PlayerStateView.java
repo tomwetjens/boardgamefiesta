@@ -38,7 +38,7 @@ public class PlayerStateView {
     List<Teepee> teepees;
     List<ObjectiveView> objectives;
 
-    PlayerStateView(@NonNull Game state, @NonNull PlayerState playerState, @NonNull Player viewingPlayer) {
+    PlayerStateView(@NonNull Game state, @NonNull PlayerState playerState, Player viewingPlayer) {
         player = new PlayerView(playerState.getPlayer());
 
         balance = playerState.getBalance();
