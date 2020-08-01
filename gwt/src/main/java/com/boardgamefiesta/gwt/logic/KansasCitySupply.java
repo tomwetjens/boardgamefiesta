@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 @ToString
 @Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class KansasCitySupply {
+public class KansasCitySupply {
 
     private final List<Queue<Tile>> drawPiles;
 
@@ -98,33 +98,31 @@ public final class KansasCitySupply {
         private final Hazard hazard;
         private final Teepee teepee;
 
-        private Tile(Worker worker) {
+        Tile(Worker worker) {
             this.worker = worker;
             this.hazard = null;
             this.teepee = null;
         }
 
-        private Tile(Hazard hazard) {
+        Tile(Hazard hazard) {
             this.hazard = hazard;
             this.worker = null;
             this.teepee = null;
         }
 
-        private Tile(Teepee teepee) {
+        Tile(Teepee teepee) {
             this.teepee = teepee;
             this.hazard = null;
             this.worker = null;
         }
 
         static Tile deserialize(JsonObject jsonObject) {
-            var worker = jsonObject.getString("worker");
-            if (worker != null) {
-                return new Tile(Worker.valueOf(worker));
+            if (jsonObject.containsKey("worker")) {
+                return new Tile(Worker.valueOf(jsonObject.getString("worker")));
             }
 
-            var teepee = jsonObject.getString("teepee");
-            if (teepee != null) {
-                return new Tile(Teepee.valueOf(teepee));
+            if (jsonObject.containsKey("teepee")) {
+                return new Tile(Teepee.valueOf(jsonObject.getString("teepee")));
             }
 
             return new Tile(Hazard.deserialize(jsonObject.getJsonObject("hazard")));
