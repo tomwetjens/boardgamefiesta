@@ -21,10 +21,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -242,7 +239,11 @@ public class TableResource {
 
         var viewingPlayer = determinePlayer(table);
 
-        return table.getGame().getProvider().getViewMapper().toView(state, state.getPlayerByName(viewingPlayer.getId().getId()));
+        return table.getGame().getProvider().getViewMapper().toView(state, viewingPlayer
+                .map(Player::getId)
+                .map(Player.Id::getId)
+                .map(state::getPlayerByName)
+                .orElse(null));
     }
 
     @GET
@@ -288,11 +289,10 @@ public class TableResource {
         }
     }
 
-    private Player determinePlayer(Table table) {
+    private Optional<Player> determinePlayer(Table table) {
         var currentUserId = currentUserId();
 
-        return table.getPlayerByUserId(currentUserId)
-                .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
+        return table.getPlayerByUserId(currentUserId);
     }
 
     private void checkViewAllowed(Table table) {
@@ -319,7 +319,7 @@ public class TableResource {
         var performingPlayer = determinePlayer(table);
         var currentPlayer = table.getCurrentPlayer();
 
-        if (!currentPlayer.equals(performingPlayer)) {
+        if (currentPlayer == null || !currentPlayer.equals(performingPlayer.orElse(null))) {
             throw APIException.forbidden(APIError.NOT_YOUR_TURN);
         }
     }
