@@ -9,6 +9,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,15 +47,16 @@ public class Foresights {
     }
 
     static Foresights deserialize(KansasCitySupply kansasCitySupply, JsonObject jsonObject) {
-        return new Foresights(kansasCitySupply,
+        return new Foresights(kansasCitySupply, Arrays.copyOf(
                 jsonObject.getJsonArray("spaces").stream()
                         .map(JsonValue::asJsonArray)
                         .map(JsonArray::stream)
-                        .map(tiles -> tiles
-                                .map(JsonValue::asJsonObject)
-                                .map(KansasCitySupply.Tile::deserialize)
-                                .toArray(len -> new KansasCitySupply.Tile[2]))
-                        .toArray(len -> new KansasCitySupply.Tile[3][2]));
+                        .map(tiles -> Arrays.copyOf(tiles
+                                .map(jsonValue -> jsonValue.getValueType() != JsonValue.ValueType.NULL
+                                        ? KansasCitySupply.Tile.deserialize(jsonValue.asJsonObject())
+                                        : null)
+                                .toArray(KansasCitySupply.Tile[]::new), 2))
+                        .toArray(KansasCitySupply.Tile[][]::new), 3));
     }
 
     KansasCitySupply.Tile take(int columnIndex, int rowIndex) {
@@ -67,7 +69,7 @@ public class Foresights {
     }
 
     public List<KansasCitySupply.Tile> choices(int columnIndex) {
-        return List.of(spaces[columnIndex]);
+        return Collections.unmodifiableList(Arrays.asList(spaces[columnIndex]));
     }
 
 }
