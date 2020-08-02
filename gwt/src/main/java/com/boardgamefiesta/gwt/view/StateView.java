@@ -72,20 +72,15 @@ public class StateView {
 
             turn = true;
 
-            if (actions.contains(ActionType.MOVE)) {
-                possibleMoves = getPossibleMoves(state, state.currentPlayerState().getStepLimit(state.getPlayers().size()));
-            } else if (actions.contains(ActionType.MOVE_1_FORWARD)) {
-                possibleMoves = getPossibleMoves(state, 1);
-            } else if (actions.contains(ActionType.MOVE_2_FORWARD)) {
-                possibleMoves = getPossibleMoves(state, 2);
-            } else if (actions.contains(ActionType.MOVE_3_FORWARD)) {
-                possibleMoves = getPossibleMoves(state, 3);
-            } else if (actions.contains(ActionType.MOVE_3_FORWARD_WITHOUT_FEES)) {
-                possibleMoves = getPossibleMoves(state, 3);
-            } else if (actions.contains(ActionType.MOVE_4_FORWARD)) {
-                possibleMoves = getPossibleMoves(state, 4);
-            } else if (actions.contains(ActionType.MOVE_5_FORWARD)) {
-                possibleMoves = getPossibleMoves(state, 5);
+            if (actions.contains(ActionType.MOVE)
+                    || actions.contains(ActionType.MOVE_1_FORWARD)
+                    || actions.contains(ActionType.MOVE_2_FORWARD)
+                    || actions.contains(ActionType.MOVE_3_FORWARD)
+                    || actions.contains(ActionType.MOVE_4_FORWARD)
+                    || actions.contains(ActionType.MOVE_5_FORWARD)) {
+                possibleMoves = state.possibleMoves(state.getCurrentPlayer()).stream()
+                        .map(PossibleMoveView::new)
+                        .collect(Collectors.toSet());
             }
 
             if (actions.contains(ActionType.BUY_CATTLE)) {
@@ -180,14 +175,8 @@ public class StateView {
 
     private Set<PossibleBuyView> getPossibleBuys(Game game, Player player) {
         var playerState = game.playerState(player);
-        return game.getCattleMarket().possibleBuys(playerState.getNumberOfCowboys(), playerState.getBalance())
+        return game.getCattleMarket().possibleBuys(playerState.getNumberOfCowboys() - playerState.getUsedCowboys(), playerState.getBalance())
                 .map(PossibleBuyView::new)
-                .collect(Collectors.toSet());
-    }
-
-    private Set<PossibleMoveView> getPossibleMoves(Game game, int atMost) {
-        return game.possibleMoves(game.getCurrentPlayer(), atMost).stream()
-                .map(PossibleMoveView::new)
                 .collect(Collectors.toSet());
     }
 

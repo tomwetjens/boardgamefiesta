@@ -70,6 +70,10 @@ public class PossibleMove {
         return Optional.ofNullable(from);
     }
 
+    public Location getTo() {
+        return steps.get(steps.size() - 1);
+    }
+
     @Value
     private static class PlayerFee {
         Player player;

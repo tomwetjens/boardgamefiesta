@@ -26,10 +26,10 @@ class AutomaExecutor {
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     void execute(@Observes AutomaScheduler.Request request) {
         try {
-            var table = request.getTable();
-
             var retries = 0;
             do {
+                var table = tables.findById(request.getTable().getId());
+
                 if (table.getStatus() != Table.Status.STARTED) {
                     return;
                 }
@@ -42,13 +42,13 @@ class AutomaExecutor {
 
                 try {
                     tables.update(table);
+                    return;
                 } catch (Tables.TableConcurrentlyModifiedException e) {
-                    if (retries >= 5) {
-                        throw new RuntimeException("Executor failed after " + retries + " retries", e);
+                    if (retries >= 256) {
+                        throw new RuntimeException("Executor failed after " + retries + " retries. Table id " + table.getId().getId() + ", version " + table.getVersion(), e);
                     }
 
                     retries++;
-                    table = tables.findById(request.getTable().getId());
                 }
             } while (true);
         } catch (RuntimeException e) {

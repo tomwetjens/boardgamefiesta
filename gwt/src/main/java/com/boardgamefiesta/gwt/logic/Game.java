@@ -288,19 +288,6 @@ public class Game implements State {
         return trail.possibleMoves(player, playerState(player).getBalance(), atMost, playerOrder.size());
     }
 
-    public Set<PossibleMove> possibleMoves(Player player, Location to) {
-        if (isEnded()) {
-            return Collections.emptySet();
-        }
-
-        Location from = trail.getCurrentLocation(player)
-                .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION));
-
-        var playerState = playerState(player);
-
-        return trail.possibleMoves(from, to, player, playerState.getBalance(), playerState.getStepLimit(playerOrder.size()), playerOrder.size());
-    }
-
     public Score scoreDetails(Player player) {
         return playerState(player).score(this).add(trail.score(player)).add(railroadTrack.score(player));
     }
@@ -424,4 +411,22 @@ public class Game implements State {
         }
     }
 
+    public Set<PossibleMove> possibleMoves(Player player) {
+        if (actionStack.canPerform(Action.Move.class)) {
+            return possibleMoves(player, playerState(player).getStepLimit(players.size()));
+        } else if (actionStack.canPerform(Action.Move1Forward.class)) {
+            return possibleMoves(player, 1);
+        } else if (actionStack.canPerform(Action.Move2Forward.class)) {
+            return possibleMoves(player, 2);
+        } else if (actionStack.canPerform(Action.Move3Forward.class)
+                || actionStack.canPerform(Action.Move3ForwardWithoutFees.class)) {
+            return possibleMoves(player, 3);
+        } else if (actionStack.canPerform(Action.Move4Forward.class)) {
+            return possibleMoves(player, 4);
+        } else if (actionStack.canPerform(Action.Move5Forward.class)) {
+            return possibleMoves(player, 5);
+        } else {
+            return Collections.emptySet();
+        }
+    }
 }

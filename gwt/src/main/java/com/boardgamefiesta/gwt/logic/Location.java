@@ -251,6 +251,10 @@ public abstract class Location {
 
         @Override
         Optional<PossibleAction> activate(Game game) {
+            if (game.getForesights().isEmpty()) {
+                // No foresights left, go straight to delivery
+                return Optional.of(PossibleAction.mandatory(Action.DeliverToCity.class));
+            }
             return Optional.of(PossibleAction.mandatory(Action.ChooseForesights.class));
         }
 

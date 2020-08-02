@@ -72,4 +72,9 @@ public class Foresights {
         return Collections.unmodifiableList(Arrays.asList(spaces[columnIndex]));
     }
 
+    boolean isEmpty() {
+        return spaces[0][0] == null && spaces[0][1] == null
+                && spaces[1][0] == null && spaces[1][1] == null
+                && spaces[2][0] == null && spaces[2][1] == null;
+    }
 }

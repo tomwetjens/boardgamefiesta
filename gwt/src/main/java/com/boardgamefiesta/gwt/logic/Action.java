@@ -617,7 +617,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
                 KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, rowIndex);
 
-                placeTile(game, tile);
+                if (tile != null) {
+                    placeTile(game, tile);
+                }
             }
 
             return ImmediateActions.of(PossibleAction.mandatory(DeliverToCity.class));
