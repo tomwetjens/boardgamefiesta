@@ -24,8 +24,6 @@ public class Table {
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.HOURS);
 
     private static final Random RANDOM = new Random();
-    private static final int MIN_NUMBER_OF_PLAYERS = 2;
-    private static final int MAX_NUMBER_OF_PLAYERS = 4;
 
     @Getter
     @NonNull
@@ -452,7 +450,7 @@ public class Table {
     }
 
     public boolean canStart() {
-        return status == Status.NEW && playersThatAccepted().count() >= MIN_NUMBER_OF_PLAYERS;
+        return status == Status.NEW && playersThatAccepted().count() >= game.getMinNumberOfPlayers();
     }
 
     public Optional<Player> getPlayerByUserId(User.Id userId) {
