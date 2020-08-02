@@ -20,7 +20,7 @@ public class Table {
 
     private static final Duration RETENTION_NEW = Duration.of(2, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ACTION = Duration.of(1, ChronoUnit.DAYS);
-    private static final Duration RETENTION_AFTER_ENDED = Duration.of(5, ChronoUnit.YEARS);
+    private static final Duration RETENTION_AFTER_ENDED = Duration.of(365 * 5, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.HOURS);
 
     private static final Random RANDOM = new Random();
