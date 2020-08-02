@@ -18,9 +18,9 @@ import java.util.stream.Stream;
 @ToString(doNotUseGetters = true)
 public class Table {
 
-    private static final Duration START_TIMEOUT = Duration.of(2, ChronoUnit.DAYS);
-    private static final Duration ACTION_TIMEOUT = Duration.of(1, ChronoUnit.DAYS);
-    private static final Duration RETENTION_AFTER_ENDED = Duration.of(2, ChronoUnit.DAYS);
+    private static final Duration RETENTION_NEW = Duration.of(2, ChronoUnit.DAYS);
+    private static final Duration RETENTION_AFTER_ACTION = Duration.of(1, ChronoUnit.DAYS);
+    private static final Duration RETENTION_AFTER_ENDED = Duration.of(5, ChronoUnit.YEARS);
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.HOURS);
 
     private static final Random RANDOM = new Random();
@@ -122,7 +122,7 @@ public class Table {
                 .options(options)
                 .created(created)
                 .updated(created)
-                .expires(created.plus(START_TIMEOUT))
+                .expires(created.plus(RETENTION_NEW))
                 .ownerId(owner.getId())
                 .players(Collections.singleton(player))
                 .log(new Log())
@@ -156,7 +156,7 @@ public class Table {
         status = Status.STARTED;
         started = Instant.now();
         updated = started;
-        expires = started.plus(ACTION_TIMEOUT);
+        expires = started.plus(RETENTION_AFTER_ACTION);
 
         state = CurrentState.of(game.start(players.stream()
                 .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor()))
@@ -374,7 +374,7 @@ public class Table {
 
             new Ended(id).fire();
         } else {
-            expires = updated.plus(ACTION_TIMEOUT);
+            expires = updated.plus(RETENTION_AFTER_ACTION);
 
             for (Player player : players) {
                 var playerInState = state.get().getPlayerByName(player.getId().getId());
