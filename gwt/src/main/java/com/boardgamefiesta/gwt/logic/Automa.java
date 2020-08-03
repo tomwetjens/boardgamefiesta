@@ -94,7 +94,7 @@ public class Automa {
             return Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD;
         }
         if (playerState.canUnlock(Unlockable.CERT_LIMIT_4)) {
-            return Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD;
+            return Unlockable.CERT_LIMIT_4;
         }
         if (playerState.canUnlock(Unlockable.CERT_LIMIT_6)) {
             return Unlockable.CERT_LIMIT_6;
@@ -112,8 +112,7 @@ public class Automa {
         if (playerState.canUnlock(Unlockable.EXTRA_STEP_DOLLARS)) {
             return Unlockable.EXTRA_STEP_DOLLARS;
         }
-        if (playerState.canUnlock(Unlockable.EXTRA_CARD)
-                && playerState.getBalance() >= Unlockable.EXTRA_CARD.getCost()) {
+        if (playerState.canUnlock(Unlockable.EXTRA_CARD)) {
             return Unlockable.EXTRA_CARD;
         }
 
