@@ -104,7 +104,7 @@ public class UserDynamoDbRepository implements Users {
                 .key(key(user.getId()));
 
         if (user.getVersion() != null) {
-            builder = builder.conditionalOperator("Version=:ExpectedVersion");
+            builder = builder.conditionExpression("Version=:ExpectedVersion");
             expressionAttributeValues.put(":ExpectedVersion", AttributeValue.builder().n(user.getVersion().toString()).build());
         }
 
