@@ -37,7 +37,7 @@ public class RatingAdjuster {
                 return;
             }
 
-            if (table.getMode() == Table.Mode.NORMAL) {
+            if (table.getMode() != Table.Mode.NORMAL) {
                 // Ignore training mode
                 return;
             }
