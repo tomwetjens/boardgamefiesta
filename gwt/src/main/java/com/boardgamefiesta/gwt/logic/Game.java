@@ -204,11 +204,15 @@ public class Game implements State {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
-        actionStack.skip();
+        if (!actionStack.isEmpty()) {
+            actionStack.skip();
 
-        fireEvent(currentPlayer, GWTEvent.Type.SKIP, Collections.emptyList());
+            fireEvent(currentPlayer, GWTEvent.Type.SKIP, Collections.emptyList());
 
-        endTurnIfNoMoreActions(random);
+            endTurnIfNoMoreActions(random);
+        } else {
+            endTurn(random);
+        }
     }
 
     @Override
