@@ -1,0 +1,30 @@
+@startuml
+
+class User <<AggregateRoot>>
+
+class Table <<AggregateRoot>>
+
+class Player <<Entity>>
+User <-- Player
+
+class Game <<AggregateRoot>>
+
+class Rating
+Rating -> Table
+User <-- Rating
+
+interface State
+
+Table --> Game
+Table --> Player
+Table --> State
+
+interface Ratings
+
+interface Tables
+
+interface Users
+
+interface Games
+
+@enduml

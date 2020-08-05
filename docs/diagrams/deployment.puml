@@ -1,0 +1,34 @@
+@startuml
+actor User
+
+component auth.boardgamefiesta.com <<AWS Cognito>>
+
+frame Frontend {
+    component boardgamefiesta.com <<AWS CloudFront>>
+    component FrontendDist <<AWS S3>>
+    boardgamefiesta.com --> FrontendDist
+
+    component FrontendSPA <<Angular>>
+    FrontendSPA -[dotted] boardgamefiesta.com
+}
+
+frame Backend {
+    component api.boardgamefiesta.com <<AWS ELB>>
+    component ServerInstance <<AWS Fargate>>
+    database Database <<AWS DynamoDB>>
+    FrontendSPA --> api.boardgamefiesta.com
+    ServerInstance --> Database
+    api.boardgamefiesta.com --> ServerInstance
+    UserPool <-- ServerInstance
+}
+
+component CognitoTriggers <<AWS Lambda>>
+CognitoTriggers -> api.boardgamefiesta.com
+auth.boardgamefiesta.com --> CognitoTriggers
+
+User --> boardgamefiesta.com
+User --> FrontendSPA
+User --> auth.boardgamefiesta.com
+
+
+@enduml

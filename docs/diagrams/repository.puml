@@ -1,0 +1,19 @@
+@startuml
+frame Domain {
+    interface Tables
+    interface Users
+}
+
+frame Repositories {
+  class UserDynamoDbRepository
+  UserDynamoDbRepository ----|> Users
+  UserDynamoDbRepository --> DynamoDbClient
+
+  class TableDynamoDbRepository
+  TableDynamoDbRepository ----|> Tables
+  TableDynamoDbRepository --> DynamoDbClient
+
+  class DynamoDbClient
+}
+
+@enduml

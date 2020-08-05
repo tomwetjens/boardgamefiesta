@@ -1,0 +1,30 @@
+@startuml
+
+interface Action
+
+interface State
+
+interface ActionMapper
+ActionMapper --> Action
+ActionMapper --> State
+
+interface StateSerializer
+
+StateSerializer --> State
+
+interface StateDeserializer
+
+StateDeserializer --> State
+
+interface ViewMapper
+
+ViewMapper --> State
+
+interface GameProvider
+
+GameProvider --> ActionMapper
+GameProvider --> ViewMapper
+GameProvider --> StateSerializer
+GameProvider --> StateDeserializer
+
+@enduml

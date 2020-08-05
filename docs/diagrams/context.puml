@@ -1,0 +1,5 @@
+@startuml
+actor User
+rectangle BoardGameFiesta
+User --> BoardGameFiesta
+@enduml

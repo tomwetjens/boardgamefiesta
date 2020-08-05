@@ -1,0 +1,14 @@
+@startuml
+actor User
+frame BoardGameFiesta {
+    component Frontend <<Angular>>
+    component Backend <<JVM>>
+    component AuthServer <<OIDC>>
+    database Database
+    Frontend --> Backend
+    Backend --> Database
+    Backend --> AuthServer
+}
+User --> Frontend
+User --> AuthServer
+@enduml

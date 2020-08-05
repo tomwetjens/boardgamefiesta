@@ -1,0 +1,21 @@
+@startuml
+actor User
+database Database <<DynamoDB>>
+
+frame Backend <<JVM>> {
+  component Commands
+  component Queries
+  component Domain
+  component Repositories
+
+  Commands --> Repositories
+  Commands --> Domain
+  Queries --> Repositories
+  Repositories --> Domain
+  Repositories --> Database
+}
+
+User --> Commands
+User --> Queries
+
+@enduml
