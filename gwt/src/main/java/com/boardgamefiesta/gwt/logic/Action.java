@@ -450,7 +450,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ImmediateActions perform(Game game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.JERSEY, 1);
-            playerState.gainTempCertificates(4);
+            playerState.gainDollars(4);
 
             game.fireActionEvent(this, Collections.emptyList());
 
