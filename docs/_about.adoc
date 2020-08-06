@@ -1,0 +1,9 @@
+:numbered!:
+**About**
+
+[role="lead"]
+Play your favorite board games with friends or other players around the world!.
+
+By Tom Wetjens.
+
+(C) Copyright 2020 All rights reserved.

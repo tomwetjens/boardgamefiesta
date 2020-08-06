@@ -1,0 +1,4 @@
+== Domain Model
+
+plantuml::diagrams/domain.puml[format=svg, alt="System Context"]
+
