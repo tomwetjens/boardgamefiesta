@@ -80,6 +80,7 @@ public class EventsServerEndpoint {
 
     void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.StateChanged event) {
         var table = tables.findById(event.getTableId());
+        // TODO Only notify other players who did not trigger the change
         notifyOtherPlayers(null, table, new Event(Event.EventType.STATE_CHANGED, table.getId().getId(), null));
     }
 
@@ -124,6 +125,11 @@ public class EventsServerEndpoint {
     void optionsChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.OptionsChanged event) {
         var table = tables.findById(event.getTableId());
         notifyOtherPlayers(null, table, new Event(Event.EventType.OPTIONS_CHANGED, event.getTableId().getId(), null));
+    }
+
+    void computerAdded(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ComputerAdded event) {
+        var table = tables.findById(event.getTableId());
+        notifyOtherPlayers(null, table, new Event(Event.EventType.COMPUTER_ADDED, event.getTableId().getId(), null));
     }
 
     private void notifyOtherPlayers(User.Id currentUserId, Table table, Event event) {

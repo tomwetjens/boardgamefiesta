@@ -26,6 +26,7 @@ public class Event {
         AGREED_TO_LEAVE,
         KICKED,
         OPTIONS_CHANGED,
+        COMPUTER_ADDED,
         ABANDONED
     }
 }
