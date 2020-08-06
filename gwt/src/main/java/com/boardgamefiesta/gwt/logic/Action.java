@@ -1068,8 +1068,21 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.getTrail().movePlayer(player, to);
 
-            // TODO Include name of building, hazard or teepee in the params
-            game.fireActionEvent(this, List.of(to.getName()));
+            if (to instanceof Location.BuildingLocation) {
+                ((Location.BuildingLocation) to).getBuilding()
+                        .ifPresentOrElse(building -> {
+                            if (building instanceof PlayerBuilding) {
+                                game.fireActionEvent("MOVE_TO_PLAYER_BUILDING"
+                                        + (payFeesAndActivate ? "" : "_WITHOUT_FEES"), List.of(to.getName(), building.getName(), ((PlayerBuilding) building).getPlayer().getName()));
+                            } else {
+                                game.fireActionEvent("MOVE_TO_BUILDING"
+                                        + (payFeesAndActivate ? "" : "_WITHOUT_FEES"), List.of(to.getName(), building.getName()));
+                            }
+                        }, () -> game.fireActionEvent("MOVE"
+                                + (payFeesAndActivate ? "" : "_WITHOUT_FEES"), List.of(to.getName())));
+            } else {
+                game.fireActionEvent("MOVE", List.of(to.getName()));
+            }
 
             if (payFeesAndActivate) {
                 // Actions from previous locations cannot be performed anymore
