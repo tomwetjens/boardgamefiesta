@@ -23,7 +23,7 @@ public class PossibleMoveView {
     List<PlayerFeeView> playerFees;
 
     public PossibleMoveView(PossibleMove possibleMove) {
-        this.to = possibleMove.getSteps().get(possibleMove.getSteps().size() - 1).getName();
+        this.to = possibleMove.getTo().getName();
         this.cost = possibleMove.getCost();
         this.steps = possibleMove.getSteps().stream()
                 .map(Location::getName)
