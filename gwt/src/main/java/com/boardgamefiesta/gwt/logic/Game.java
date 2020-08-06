@@ -304,7 +304,7 @@ public class Game implements State {
     public JsonObject serialize(JsonBuilderFactory factory) {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
-                .add("players", serializer.fromCollection(playerOrder, Player::serialize))
+                .add("players", serializer.fromCollection(players, Player::serialize))
                 .add("playerOrder", serializer.fromStrings(playerOrder.stream().map(Player::getName)))
                 .add("playerStates", serializer.fromMap(playerStates, Player::getName, PlayerState::serialize))
                 .add("currentPlayer", currentPlayer.getName())

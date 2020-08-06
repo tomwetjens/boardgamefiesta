@@ -3,6 +3,7 @@ package com.boardgamefiesta.api.domain;
 import lombok.NonNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
@@ -27,8 +28,8 @@ public interface State {
 
     Player getCurrentPlayer();
 
-    default Player getPlayerByName(@NonNull String name) {
-        return getPlayers().stream().filter(player -> name.equals(player.getName())).findAny().orElseThrow();
+    default Optional<Player> getPlayerByName(@NonNull String name) {
+        return getPlayers().stream().filter(player -> name.equals(player.getName())).findAny();
     }
 
     void leave(Player player);

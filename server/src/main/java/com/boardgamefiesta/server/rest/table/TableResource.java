@@ -242,7 +242,7 @@ public class TableResource {
         return table.getGame().getProvider().getViewMapper().toView(state, viewingPlayer
                 .map(Player::getId)
                 .map(Player.Id::getId)
-                .map(state::getPlayerByName)
+                .flatMap(state::getPlayerByName)
                 .orElse(null));
     }
 

@@ -275,17 +275,10 @@ public class Table {
 
         player.leave();
 
-        players.remove(player);
-        new Left(id, userId).fire();
-
-        log.add(new LogEntry(player, LogEntry.Type.LEFT));
-
-        updated = Instant.now();
-
         if (status == Status.STARTED) {
-            if (players.size() > game.getMinNumberOfPlayers()) {
+            if (players.size() >= game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
-                runStateChange(() -> state.get().leave(state.get().getPlayerByName(player.getId().getId())));
+                runStateChange(() -> state.get().leave(state.get().getPlayerByName(player.getId().getId()).orElseThrow()));
             } else {
                 // Game cannot be continued without player
                 abandon();
@@ -293,6 +286,13 @@ public class Table {
 
             // TODO Deduct karma points if playing with humans
         }
+
+        players.remove(player);
+        new Left(id, userId).fire();
+
+        log.add(new LogEntry(player, LogEntry.Type.LEFT));
+
+        updated = Instant.now();
     }
 
     private Stream<Player> otherHumanPlayers(User.Id userId) {
@@ -362,12 +362,12 @@ public class Table {
             var winners = state.get().winners();
 
             for (Player player : players) {
-                var playerInState = state.get().getPlayerByName(player.getId().getId());
+                state.get().getPlayerByName(player.getId().getId()).ifPresent(playerInState -> {
+                    var score = state.get().score(playerInState);
+                    var winner = winners.contains(playerInState);
 
-                var score = state.get().score(playerInState);
-                var winner = winners.contains(playerInState);
-
-                player.assignScore(score, winner);
+                    player.assignScore(score, winner);
+                });
             }
 
             new Ended(id).fire();
@@ -375,11 +375,11 @@ public class Table {
             expires = updated.plus(RETENTION_AFTER_ACTION);
 
             for (Player player : players) {
-                var playerInState = state.get().getPlayerByName(player.getId().getId());
+                state.get().getPlayerByName(player.getId().getId()).ifPresent(playerInState -> {
+                    var score = state.get().score(playerInState);
 
-                var score = state.get().score(playerInState);
-
-                player.assignScore(score, false);
+                    player.assignScore(score, false);
+                });
             }
         }
 
