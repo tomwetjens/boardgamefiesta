@@ -109,7 +109,8 @@ public class UserDynamoDbRepository implements Users {
         }
 
         var request = builder
-                .updateExpression("SET Username=:Username" +
+                .updateExpression("SET Version=:Version" +
+                        ",Username=:Username" +
                         ",Email=:Email" +
                         ",Created=:Created" +
                         ",Updated=:Updated" +
