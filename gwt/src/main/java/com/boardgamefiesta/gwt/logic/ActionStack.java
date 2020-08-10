@@ -49,7 +49,7 @@ class ActionStack {
     }
 
     boolean canPerform(Class<? extends Action> action) {
-        return peek().canPerform(action);
+        return !isEmpty() && peek().canPerform(action);
     }
 
     Set<Class<? extends Action>> getPossibleActions() {

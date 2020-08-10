@@ -14,6 +14,6 @@ public enum Hand {
     }
 
     public int getFee(int playerCount) {
-        return amounts[playerCount - 2];
+        return amounts[Math.max(0, Math.min(playerCount - 2, 2))];
     }
 }
