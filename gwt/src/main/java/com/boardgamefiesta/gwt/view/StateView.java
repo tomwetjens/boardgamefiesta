@@ -72,23 +72,16 @@ public class StateView {
 
             turn = true;
 
-            if (actions.contains(ActionType.MOVE)
-                    || actions.contains(ActionType.MOVE_1_FORWARD)
-                    || actions.contains(ActionType.MOVE_2_FORWARD)
-                    || actions.contains(ActionType.MOVE_3_FORWARD)
-                    || actions.contains(ActionType.MOVE_4_FORWARD)
-                    || actions.contains(ActionType.MOVE_5_FORWARD)) {
-                possibleMoves = state.possibleMoves(state.getCurrentPlayer()).stream()
-                        .map(PossibleMoveView::new)
-                        // when deduplicating, sort first, to keep the same one every time
-                        .sorted(Comparator
-                                // shortest route first
-                                .comparingInt((PossibleMoveView possibleMoveView) -> possibleMoveView.getRoute().size())
-                                // then the one with the most empty locations
-                                .thenComparingInt((PossibleMoveView possibleMoveView) -> possibleMoveView.getSteps().size() - possibleMoveView.getRoute().size()))
-                        // then deduplicate moves with equal cost and fees
-                        .collect(Collectors.toSet());
-            }
+            possibleMoves = state.possibleMoves(state.getCurrentPlayer()).stream()
+                    .map(PossibleMoveView::new)
+                    // when deduplicating, sort first, to keep the same one every time
+                    .sorted(Comparator
+                            // shortest route first
+                            .comparingInt((PossibleMoveView possibleMoveView) -> possibleMoveView.getRoute().size())
+                            // then the one with the most empty locations
+                            .thenComparingInt((PossibleMoveView possibleMoveView) -> possibleMoveView.getSteps().size() - possibleMoveView.getRoute().size()))
+                    // then deduplicate moves with equal cost and fees
+                    .collect(Collectors.toSet());
 
             if (actions.contains(ActionType.BUY_CATTLE)) {
                 possibleBuys = getPossibleBuys(state, viewingPlayer);
