@@ -1084,8 +1084,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.fireActionEvent("MOVE", List.of(to.getName()));
             }
 
-            if (payFeesAndActivate) {
-                // Actions from previous locations cannot be performed anymore
+            if (payFeesAndActivate
+                    || to == game.getTrail().getKansasCity()) { // Always activate KC, else player is stuck
+                // Actions from previous locations (and possibly a mandatory Move in case of free-moving to KC) cannot be performed anymore
                 game.getActionStack().clear();
 
                 // Actions of new location are now possible
