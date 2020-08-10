@@ -275,6 +275,13 @@ public class Table {
 
         player.leave();
 
+        players.remove(player);
+        new Left(id, userId).fire();
+
+        log.add(new LogEntry(player, LogEntry.Type.LEFT));
+
+        updated = Instant.now();
+
         if (status == Status.STARTED) {
             if (players.size() >= game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
@@ -286,13 +293,6 @@ public class Table {
 
             // TODO Deduct karma points if playing with humans
         }
-
-        players.remove(player);
-        new Left(id, userId).fire();
-
-        log.add(new LogEntry(player, LogEntry.Type.LEFT));
-
-        updated = Instant.now();
     }
 
     private Stream<Player> otherHumanPlayers(User.Id userId) {
