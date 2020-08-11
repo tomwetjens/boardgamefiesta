@@ -26,7 +26,16 @@ public class TableDynamoDbRepository implements Tables {
     private static final String STATE_TABLE_NAME = "gwt-state";
 
     private static final String USER_ID_ID_INDEX = "UserId-Id-index";
-    public static final int FIRST_VERSION = 1;
+
+    private static final int FIRST_VERSION = 1;
+
+    private static final EnumSet<Table.Status> ACTIVE_STATUSES = EnumSet.of(
+            Table.Status.STARTED,
+            Table.Status.NEW);
+
+    private static final EnumSet<Player.Status> ADJACENCY_IGNORED_STATUSES = EnumSet.of(
+            Player.Status.REJECTED,
+            Player.Status.LEFT);
 
     private final Games games;
     private final DynamoDbClient dynamoDbClient;
@@ -52,18 +61,74 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findByUserId(User.Id userId) {
-        var response = dynamoDbClient.query(QueryRequest.builder()
+    public Stream<Table> findActive(User.Id userId) {
+        Set<Table.Id> ids = getActiveTableIds(userId);
+        return getTables(ids)
+                // Extra check in case adjacency list was not up to date
+                .filter(TableDynamoDbRepository::isActive)
+                .map(this::mapToTable);
+    }
+
+    @Override
+    public int countActive(User.Id userId) {
+        return getActiveTableIds(userId).size();
+    }
+
+    private Stream<Map<String, AttributeValue>> getTables(Set<Table.Id> ids) {
+        if (ids.isEmpty()) {
+            return Stream.empty();
+        }
+        return dynamoDbClient.batchGetItemPaginator(BatchGetItemRequest.builder()
+                // Max 100 items, max 16 MB!!
+                .requestItems(Map.of(tableName, KeysAndAttributes.builder()
+                        .consistentRead(true)
+                        .keys(ids.stream()
+                                .map(id -> Map.of(
+                                        "Id", AttributeValue.builder().s(id.getId()).build(),
+                                        "UserId", AttributeValue.builder().s("Table-" + id.getId()).build()))
+                                .collect(Collectors.toSet()))
+                        .build()))
+                .build())
+                .stream()
+                .map(BatchGetItemResponse::responses)
+                .flatMap(response -> response.get(tableName).stream());
+    }
+
+    private Set<Table.Id> getActiveTableIds(User.Id userId) {
+        return dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
                 .indexName(USER_ID_ID_INDEX)
                 .keyConditionExpression("UserId = :UserId")
-                .expressionAttributeValues(Collections.singletonMap(":UserId", AttributeValue.builder()
-                        .s("User-" + userId.getId())
-                        .build()))
-                .build());
+                .filterExpression("#Status = :New or #Status = :Started" +
+                        " or #Status = :Accepted or #Status = :Invited") // Kept for backwards compatibility
+                .expressionAttributeNames(Map.of(
+                        "#Status", "Status"
+                ))
+                .expressionAttributeValues(Map.of(
+                        ":UserId", AttributeValue.builder().s("User-" + userId.getId()).build(),
+                        ":New", AttributeValue.builder().s(Table.Status.NEW.name()).build(),
+                        ":Started", AttributeValue.builder().s(Table.Status.STARTED.name()).build(),
+                        ":Accepted", AttributeValue.builder().s(Player.Status.ACCEPTED.name()).build(),
+                        ":Invited", AttributeValue.builder().s(Player.Status.INVITED.name()).build()
+                ))
+                .build())
+                .items().stream()
+                .map(item -> Table.Id.of(item.get("Id").s()))
+                .collect(Collectors.toSet());
+    }
 
-        return response.items().stream()
-                .flatMap(item -> findOptionallyById(Table.Id.of(item.get("Id").s())).stream());
+    @Override
+    public int countActiveByType(User.Id userId, Table.Type type) {
+        Set<Table.Id> ids = getActiveTableIds(userId);
+        return (int) getTables(ids)
+                // Extra check in case adjacency list was not up to date
+                .filter(TableDynamoDbRepository::isActive)
+                .filter(item -> Table.Type.valueOf(item.get("Type").s()) == type)
+                .count();
+    }
+
+    private static boolean isActive(Map<String, AttributeValue> item) {
+        return ACTIVE_STATUSES.contains(Table.Status.valueOf(item.get("Status").s()));
     }
 
     @Override
@@ -109,7 +174,7 @@ public class TableDynamoDbRepository implements Tables {
                                         .build()),
                                 table.getPlayers().stream()
                                         .filter(player -> player.getType() == Player.Type.USER)
-                                        .map(player -> mapLookupItem(table, player))
+                                        .map(player -> mapToAdjacencyListItem(table, player))
                                         .map(lookupItem -> WriteRequest.builder()
                                                 .putRequest(PutRequest.builder()
                                                         .item(lookupItem)
@@ -254,10 +319,10 @@ public class TableDynamoDbRepository implements Tables {
         addPendingHistoricStates(table, serializeCache);
         addLogEntries(table);
 
-        updateLookupItems(table);
+        updateAdjacencyList(table);
     }
 
-    private void updateLookupItems(Table table) {
+    private void updateAdjacencyList(Table table) {
         var response = dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
                 .keyConditionExpression("Id = :Id")
@@ -272,6 +337,7 @@ public class TableDynamoDbRepository implements Tables {
 
         var playersBySortKey = table.getPlayers().stream()
                 .filter(player -> player.getType() == Player.Type.USER)
+                .filter(player -> !ADJACENCY_IGNORED_STATUSES.contains(player.getStatus()))
                 .collect(Collectors.toMap(player -> "User-" + player.getUserId().orElseThrow().getId(), Function.identity()));
 
         var lookupItemsToDelete = lookupItemsBySortKey.entrySet().stream()
@@ -280,7 +346,7 @@ public class TableDynamoDbRepository implements Tables {
                 .collect(Collectors.toList());
         var lookupItemsToAdd = playersBySortKey.entrySet().stream()
                 .filter(entry -> !lookupItemsBySortKey.containsKey(entry.getKey()))
-                .map(entry -> mapLookupItem(table, entry.getValue()))
+                .map(entry -> mapToAdjacencyListItem(table, entry.getValue()))
                 .collect(Collectors.toList());
 
         if (!lookupItemsToAdd.isEmpty() || !lookupItemsToDelete.isEmpty()) {
@@ -288,9 +354,10 @@ public class TableDynamoDbRepository implements Tables {
                     .requestItems(Map.of(tableName, Stream.concat(
                             lookupItemsToDelete.stream().map(item -> WriteRequest.builder()
                                     .deleteRequest(DeleteRequest.builder()
-                                            .key(item.entrySet().stream()
-                                                    .filter(entry -> entry.getKey().equals("Id") || entry.getKey().equals("UserId"))
-                                                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
+                                            .key(Map.of(
+                                                    "Id", item.get("Id"),
+                                                    "UserId", item.get("UserId")
+                                            ))
                                             .build())
                                     .build()),
                             lookupItemsToAdd.stream().map(item -> WriteRequest.builder()
@@ -306,8 +373,11 @@ public class TableDynamoDbRepository implements Tables {
                 .filter(entry -> lookupItemsBySortKey.containsKey(entry.getKey()))
                 .forEach(entry -> dynamoDbClient.updateItem(UpdateItemRequest.builder()
                         .tableName(tableName)
-                        .key(keyLookup(table.getId(), entry.getValue().getUserId().orElseThrow()))
-                        .attributeUpdates(mapLookupItemUpdate(table, entry.getValue()))
+                        .key(Map.of(
+                                "Id", AttributeValue.builder().s(table.getId().getId()).build(),
+                                "UserId", AttributeValue.builder().s("User-" + entry.getValue().getUserId().orElseThrow().getId()).build()
+                        ))
+                        .attributeUpdates(mapToAdjacencyListItemUpdates(table))
                         .build()));
     }
 
@@ -324,16 +394,18 @@ public class TableDynamoDbRepository implements Tables {
         return Optional.of(mapToTable(response.item()));
     }
 
-    private Map<String, AttributeValue> mapLookupItem(Table table, Player player) {
-        var map = new HashMap<>(keyLookup(table.getId(), player.getUserId().orElseThrow()));
-        map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
-        map.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
-        return map;
+    private Map<String, AttributeValue> mapToAdjacencyListItem(Table table, Player player) {
+        var item = new HashMap<String, AttributeValue>();
+        item.put("Id", AttributeValue.builder().s(table.getId().getId()).build());
+        item.put("UserId", AttributeValue.builder().s("User-" + player.getUserId().orElseThrow().getId()).build());
+        item.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
+        item.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+        return item;
     }
 
-    private Map<String, AttributeValueUpdate> mapLookupItemUpdate(Table table, Player player) {
+    private Map<String, AttributeValueUpdate> mapToAdjacencyListItemUpdates(Table table) {
         var map = new HashMap<String, AttributeValueUpdate>();
-        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(player.getStatus().name()).build()).build());
+        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getStatus().name()).build()).build());
         map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
         return map;
     }
@@ -470,13 +542,6 @@ public class TableDynamoDbRepository implements Tables {
         var key = new HashMap<String, AttributeValue>();
         key.put("Id", AttributeValue.builder().s(id.getId()).build());
         key.put("UserId", AttributeValue.builder().s("Table-" + id.getId()).build());
-        return key;
-    }
-
-    private Map<String, AttributeValue> keyLookup(Table.Id gameId, User.Id userId) {
-        var key = new HashMap<String, AttributeValue>();
-        key.put("Id", AttributeValue.builder().s(gameId.getId()).build());
-        key.put("UserId", AttributeValue.builder().s("User-" + userId.getId()).build());
         return key;
     }
 

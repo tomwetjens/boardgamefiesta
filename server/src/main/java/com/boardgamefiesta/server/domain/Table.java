@@ -27,6 +27,9 @@ public class Table {
 
     private static final Random RANDOM = new Random();
 
+    private static final int MAX_ACTIVE_REALTIME_GAMES = 1;
+    private static final int MAX_ACTIVE_GAMES = 10;
+
     @Getter
     @NonNull
     private final Id id;
@@ -102,11 +105,12 @@ public class Table {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        if (Tables.instance().findByUserId(owner.getId())
-                .filter(table -> table.getType() == Type.REALTIME)
-                .filter(table -> table.getStatus() == Status.NEW || table.getStatus() == Status.STARTED)
-                .count() >= 1) {
+        if (Tables.instance().countActiveByType(owner.getId(), Type.REALTIME) >= MAX_ACTIVE_REALTIME_GAMES) {
             throw APIException.forbidden(APIError.EXCEEDS_MAX_REALTIME_GAMES);
+        }
+
+        if (Tables.instance().countActive(owner.getId()) >= MAX_ACTIVE_GAMES) {
+            throw APIException.forbidden(APIError.EXCEEDS_MAX_ACTIVE_GAMES);
         }
 
         var player = Player.accepted(owner.getId());
@@ -500,6 +504,10 @@ public class Table {
 
         if (players.stream().anyMatch(player -> user.getId().equals(player.getUserId().orElse(null)))) {
             throw APIException.badRequest(APIError.ALREADY_INVITED);
+        }
+
+        if (Tables.instance().countActive(user.getId()) >= MAX_ACTIVE_GAMES) {
+            throw APIException.forbidden(APIError.CANNOT_INVITE_REACHED_MAX_ACTIVE_GAMES);
         }
 
         var player = Player.invite(user.getId());

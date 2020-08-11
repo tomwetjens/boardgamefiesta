@@ -14,7 +14,11 @@ public interface Tables {
 
     void update(Table table) throws TableConcurrentlyModifiedException;
 
-    Stream<Table> findByUserId(User.Id id);
+    Stream<Table> findActive(User.Id userId);
+
+    int countActive(User.Id userId);
+
+    int countActiveByType(User.Id userId, Table.Type type);
 
     class TableConcurrentlyModifiedException extends Exception {
         public TableConcurrentlyModifiedException(Throwable cause) {
