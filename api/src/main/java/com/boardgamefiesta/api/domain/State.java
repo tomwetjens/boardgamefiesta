@@ -26,6 +26,8 @@ public interface State {
 
     boolean isEnded();
 
+    boolean canUndo();
+
     Player getCurrentPlayer();
 
     default Optional<Player> getPlayerByName(@NonNull String name) {

@@ -58,6 +58,8 @@ public class Game implements State {
     @Getter
     private boolean ended;
 
+    private boolean canUndo;
+
     public static Game start(@NonNull Set<Player> players, boolean beginner, @NonNull Random random) {
         if (players.size() < 2) {
             throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
@@ -97,6 +99,7 @@ public class Game implements State {
                 .cattleMarket(new CattleMarket(players.size(), random))
                 .objectiveCards(new ObjectiveCards(random))
                 .actionStack(new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class))))
+                .canUndo(false)
                 .build();
 
         game.placeInitialTiles();
@@ -138,11 +141,13 @@ public class Game implements State {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
-            ImmediateActions immediateActions = action.perform(this, random);
+            var actionResult = action.perform(this, random);
 
-            if (!immediateActions.isEmpty()) {
-                actionStack.addFirst(immediateActions.getActions());
+            if (!actionResult.getImmediateActions().isEmpty()) {
+                actionStack.addFirst(actionResult.getImmediateActions().getActions());
             }
+
+            canUndo = actionResult.canUndo();
         } else {
             if (!actionStack.canPerform(action.getClass())) {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
@@ -152,13 +157,16 @@ public class Game implements State {
             // before executing it
             actionStack.perform(action.getClass());
 
-            ImmediateActions immediateActions = action.perform(this, random);
+            var actionResult = action.perform(this, random);
 
-            if (!immediateActions.isEmpty()) {
-                actionStack.addFirst(immediateActions.getActions());
+            if (!actionResult.getImmediateActions().isEmpty()) {
+                actionStack.addFirst(actionResult.getImmediateActions().getActions());
             }
+
+            canUndo = actionResult.canUndo();
         }
 
+        // TODO Should not automatically end turn if rollback is still possible?
         endTurnIfNoMoreActions(random);
     }
 
@@ -226,6 +234,7 @@ public class Game implements State {
         fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
         currentPlayerState().drawUpToHandLimit(random);
+        canUndo = false;
 
         afterEndTurn();
     }
@@ -317,6 +326,7 @@ public class Game implements State {
                 .add("objectiveCards", objectiveCards.serialize(factory))
                 .add("actionStack", actionStack.serialize(factory))
                 .add("ended", ended)
+                .add("canUndo", canUndo)
                 .build();
     }
 
@@ -350,6 +360,7 @@ public class Game implements State {
                 .objectiveCards(ObjectiveCards.deserialize(jsonObject.getJsonObject("objectiveCards")))
                 .actionStack(ActionStack.deserialize(jsonObject.getJsonObject("actionStack")))
                 .ended(jsonObject.getBoolean("ended", false))
+                .canUndo(jsonObject.getBoolean("canUndo", false))
                 .build();
     }
 
@@ -433,4 +444,10 @@ public class Game implements State {
             return Collections.emptySet();
         }
     }
+
+    @Override
+    public boolean canUndo() {
+        return canUndo;
+    }
+
 }

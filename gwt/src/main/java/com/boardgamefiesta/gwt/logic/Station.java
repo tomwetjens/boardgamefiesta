@@ -83,11 +83,10 @@ public class Station {
         return reward.activate(game);
     }
 
-    ImmediateActions downgrade(Game state) {
+    void downgrade(Game state) {
         if (!players.remove(state.getCurrentPlayer())) {
             throw new GWTException(GWTError.STATION_NOT_UPGRADED_BY_PLAYER);
         }
-        return ImmediateActions.none();
     }
 
     JsonObject serialize(JsonBuilderFactory factory) {

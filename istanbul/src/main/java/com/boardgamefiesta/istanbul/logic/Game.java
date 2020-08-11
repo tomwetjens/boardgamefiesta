@@ -309,6 +309,12 @@ public class Game implements State {
     }
 
     @Override
+    public boolean canUndo() {
+        // TODO Implement when rollback is allowed
+        return false;
+    }
+
+    @Override
     public void leave(Player player) {
         if (playerOrder.contains(player)) {
             if (currentPlayer == player) {
@@ -503,5 +509,11 @@ public class Game implements State {
         LAST_ROUND,
         PLAY_LEFTOVER_BONUS_CARDS,
         ENDED
+    }
+
+    @Override
+    public State clone() {
+        // TODO
+        return null;
     }
 }
