@@ -7,9 +7,10 @@ import lombok.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,6 +23,7 @@ public class Table {
     private static final Duration RETENTION_AFTER_ACTION = Duration.of(14, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(365 * 5, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.HOURS);
+    private static final TemporalAmount RETENTION_HISTORIC_STATE = RETENTION_AFTER_ENDED;
 
     private static final Random RANDOM = new Random();
 
@@ -69,7 +71,7 @@ public class Table {
     private User.Id ownerId;
 
     @Getter
-    private CurrentState state;
+    private Optional<CurrentState> currentState;
 
     @Getter
     private HistoricStates historicStates;
@@ -124,6 +126,7 @@ public class Table {
                 .ownerId(owner.getId())
                 .players(Collections.singleton(player))
                 .log(new Log())
+                .currentState(Optional.empty())
                 .build();
 
         table.log.add(new LogEntry(player, LogEntry.Type.CREATE));
@@ -156,10 +159,11 @@ public class Table {
         updated = started;
         expires = started.plus(RETENTION_AFTER_ACTION);
 
-        state = CurrentState.of(game.start(players.stream()
+        CurrentState initialState = CurrentState.initial(game.start(players.stream()
                 .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor()))
                 .collect(Collectors.toSet()), options, RANDOM));
-        historicStates = HistoricStates.initial();
+        currentState = Optional.of(initialState);
+        historicStates = HistoricStates.initial(initialState);
 
         afterStateChange();
 
@@ -176,7 +180,7 @@ public class Table {
         }
 
         try {
-            runStateChange(() -> state.get().perform(action, RANDOM));
+            runStateChange(state -> state.perform(action, RANDOM));
         } catch (InGameException e) {
             throw APIException.inGame(e, game.getId());
         }
@@ -192,23 +196,31 @@ public class Table {
             throw new IllegalStateException("Current player is not computer");
         }
 
-        runStateChange(() -> game.executeAutoma(state.get(), RANDOM));
+        runStateChange(state -> game.executeAutoma(state, RANDOM));
     }
 
-    private void runStateChange(Runnable runnable) {
-        var state = this.state.get();
-
-        EventListener eventListener = event -> log.add(new LogEntry(this, event));
-        state.addEventListener(eventListener);
+    private void runStateChange(Consumer<State> change) {
+        var beginState = this.currentState.orElseThrow(() -> APIException.internalError(APIError.GAME_NOT_STARTED));
+        var state = beginState.getState();
 
         var currentPlayer = getCurrentPlayer();
 
-        runnable.run();
+        EventListener eventListener = event -> log.add(new LogEntry(this, event));
+        state.addEventListener(eventListener);
+        try {
+            change.accept(state);
+        } finally {
+            state.removeEventListener(eventListener);
+        }
 
-        state.removeEventListener(eventListener);
+        CurrentState newState = beginState.next(state);
+
+        currentState = Optional.of(newState);
+        historicStates.add(HistoricState.from(newState));
 
         afterStateChange();
 
+        // TODO Move this into afterStateChange to also support undoing after turn ends
         if (!state.isEnded()) {
             var newCurrentPlayer = getCurrentPlayer();
 
@@ -230,7 +242,7 @@ public class Table {
         }
 
         try {
-            runStateChange(() -> state.get().skip(RANDOM));
+            runStateChange(state -> state.skip(RANDOM));
         } catch (InGameException e) {
             throw APIException.inGame(e, game.getId());
         }
@@ -244,7 +256,7 @@ public class Table {
         var player = getCurrentPlayer();
 
         try {
-            runStateChange(() -> state.get().endTurn(RANDOM));
+            runStateChange(state -> state.endTurn(RANDOM));
         } catch (InGameException e) {
             throw APIException.inGame(e, game.getId());
         }
@@ -285,7 +297,7 @@ public class Table {
         if (status == Status.STARTED) {
             if (players.size() >= game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
-                runStateChange(() -> state.get().leave(state.get().getPlayerByName(player.getId().getId()).orElseThrow()));
+                runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow()));
             } else {
                 // Game cannot be continued without player
                 abandon();
@@ -354,16 +366,19 @@ public class Table {
 
         new StateChanged(id).fire();
 
-        if (state.get().isEnded()) {
+        var currentState = this.currentState.orElseThrow();
+        var state = currentState.getState();
+
+        if (state.isEnded()) {
             status = Status.ENDED;
             ended = updated;
             expires = ended.plus(RETENTION_AFTER_ENDED);
 
-            var winners = state.get().winners();
+            var winners = state.winners();
 
             for (Player player : players) {
-                state.get().getPlayerByName(player.getId().getId()).ifPresent(playerInState -> {
-                    var score = state.get().score(playerInState);
+                state.getPlayerByName(player.getId().getId()).ifPresent(playerInState -> {
+                    var score = state.score(playerInState);
                     var winner = winners.contains(playerInState);
 
                     player.assignScore(score, winner);
@@ -375,16 +390,13 @@ public class Table {
             expires = updated.plus(RETENTION_AFTER_ACTION);
 
             for (Player player : players) {
-                state.get().getPlayerByName(player.getId().getId()).ifPresent(playerInState -> {
-                    var score = state.get().score(playerInState);
+                state.getPlayerByName(player.getId().getId()).ifPresent(playerInState -> {
+                    var score = state.score(playerInState);
 
                     player.assignScore(score, false);
                 });
             }
         }
-
-        // TODO Determine correct expiry for historic states
-        historicStates.add(new HistoricState(updated, state.get(), expires));
     }
 
     public void acceptInvite(@NonNull User.Id userId) {
@@ -460,16 +472,20 @@ public class Table {
     }
 
     public Player getCurrentPlayer() {
-        if (state == null) {
-            throw APIException.badRequest(APIError.GAME_NOT_STARTED);
-        }
-        return getPlayerById(Player.Id.of(state.get().getCurrentPlayer().getName()))
+        var state = this.currentState.map(CurrentState::getState)
+                .orElseThrow(() -> APIException.badRequest(APIError.GAME_NOT_STARTED));
+
+        return getPlayerById(Player.Id.of(state.getCurrentPlayer().getName()))
                 .orElseThrow(() -> APIException.internalError(APIError.NOT_PLAYER_IN_GAME));
+    }
+
+    public State getState() {
+        return currentState.orElseThrow(() -> APIException.badRequest(APIError.GAME_NOT_STARTED)).getState();
     }
 
     public Optional<Player> getPlayerById(Player.Id playerId) {
         return players.stream()
-                .filter(player -> player.getId().equals(playerId))
+                .filter(player -> playerId.equals(player.getId()))
                 .findAny();
     }
 
@@ -553,9 +569,40 @@ public class Table {
         var historicState = historicStates.get(timestamp)
                 .orElseThrow(() -> APIException.badRequest(APIError.HISTORY_NOT_AVAILABLE));
 
-        state = CurrentState.of(historicState.getState());
+        var previousState = this.currentState
+                .orElseThrow(() -> APIException.internalError(APIError.GAME_NOT_STARTED));
+
+        this.currentState = Optional.of(previousState.revertTo(historicState));
 
         afterStateChange();
+    }
+
+    public void undo() {
+        if (status != Status.STARTED) {
+            throw APIException.badRequest(APIError.GAME_NOT_STARTED);
+        }
+
+        var currentState = this.currentState
+                .orElseThrow(() -> APIException.internalError(APIError.GAME_NOT_STARTED));
+        var currentPlayer = getCurrentPlayer();
+
+        if (!currentState.canUndo()) {
+            throw APIException.badRequest(APIError.CANNOT_UNDO);
+        }
+
+        var historicState = currentState.getPrevious()
+                .flatMap(historicStates::get)
+                .orElseThrow(() -> APIException.badRequest(APIError.HISTORY_NOT_AVAILABLE));
+
+        log.add(new LogEntry(currentPlayer, LogEntry.Type.UNDO));
+
+        this.currentState = Optional.of(currentState.revertTo(historicState));
+
+        afterStateChange();
+    }
+
+    public boolean canUndo() {
+        return currentState.map(CurrentState::canUndo).orElse(false);
     }
 
     public enum Status {
@@ -666,50 +713,66 @@ public class Table {
         @NonNull Table.Id tableId;
     }
 
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static final class CurrentState {
+    @Value(staticConstructor = "of")
+    public static class CurrentState {
+        State state;
+        Instant timestamp;
+        Optional<Instant> previous;
 
-        private final Supplier<State> supplier;
-        private State current;
-
-        public static CurrentState of(State state) {
-            return new CurrentState(null, state);
+        public static CurrentState initial(State state) {
+            return new CurrentState(state, Instant.now(), Optional.empty());
         }
 
-        public static CurrentState defer(Supplier<State> supplier) {
-            return new CurrentState(supplier, null);
+        public CurrentState next(State state) {
+            return new CurrentState(state, Instant.now(), Optional.of(timestamp));
         }
 
-        public State get() {
-            if (current == null) {
-                current = supplier.get();
-            }
-            return current;
+        public CurrentState revertTo(HistoricState historicState) {
+            return new CurrentState(historicState.getState(), historicState.getTimestamp(), historicState.getPrevious());
         }
 
-        public boolean isPresent() {
-            return current != null;
+        public boolean canUndo() {
+            return previous.isPresent() && state.canUndo();
         }
-
     }
 
-    @Value
+    @Value(staticConstructor = "of")
     public static class HistoricState {
         Instant timestamp;
+        Optional<Instant> previous;
         State state;
         Instant expires;
+
+        public static HistoricState from(CurrentState currentState) {
+            return new HistoricState(currentState.getTimestamp(), currentState.getPrevious(), currentState.getState(), Instant.now().plus(RETENTION_HISTORIC_STATE));
+        }
     }
 
-    @RequiredArgsConstructor(staticName = "defer")
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public static class HistoricStates {
 
-        private final Function<Instant, Optional<HistoricState>> supplier;
-
-        private final NavigableMap<Instant, HistoricState> states = new TreeMap<>();
         private final Set<HistoricState> pending = new HashSet<>();
 
-        public static HistoricStates initial() {
-            return new HistoricStates(timestamp -> Optional.empty());
+        private final NavigableMap<Instant, HistoricState> states;
+
+        /**
+         * Supplies Historic States that occurred before the given timestamp, most recent first.
+         */
+        private final Function<Instant, Optional<HistoricState>> supplier;
+
+        public static HistoricStates initial(CurrentState currentState) {
+            HistoricStates historicStates = new HistoricStates(new TreeMap<>(), timestamp -> Optional.empty());
+            historicStates.add(HistoricState.from(currentState));
+            return historicStates;
+        }
+
+        public static HistoricStates of(HistoricState... historicStates) {
+            return new HistoricStates(new TreeMap<>(Arrays.stream(historicStates)
+                    .collect(Collectors.toMap(HistoricState::getTimestamp, Function.identity()))), timestamp -> Optional.empty());
+        }
+
+        public static HistoricStates defer(Function<Instant, Optional<HistoricState>> supplier) {
+            return new HistoricStates(new TreeMap<>(), supplier);
         }
 
         public void add(HistoricState historicState) {
@@ -731,7 +794,7 @@ public class Table {
 
         public Optional<HistoricState> get(Instant timestamp) {
             var historicState = states.get(timestamp);
-            if (historicState == null) {
+            if (historicState == null && supplier != null) {
                 historicState = supplier.apply(timestamp).orElse(null);
                 if (historicState != null) {
                     states.put(historicState.getTimestamp(), historicState);
@@ -739,6 +802,6 @@ public class Table {
             }
             return Optional.ofNullable(historicState);
         }
-    }
 
+    }
 }

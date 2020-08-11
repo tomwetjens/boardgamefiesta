@@ -33,6 +33,7 @@ public class TableView {
 
     Boolean turn;
     String currentPlayer;
+    Boolean canUndo;
 
     public TableView(@NonNull Table table,
                      @NonNull Map<User.Id, User> userMap,
@@ -75,9 +76,11 @@ public class TableView {
 
             this.turn = currentUserId.equals(currentPlayer.getUserId().orElse(null));
             this.currentPlayer = currentPlayer.getId().getId();
+            this.canUndo = table.canUndo();
         } else {
             this.turn = null;
             this.currentPlayer = null;
+            this.canUndo = null;
         }
     }
 }

@@ -127,7 +127,7 @@ public class TableResource {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkTurn(table);
 
-            table.perform(request.toAction(table.getGame(), table.getState().get()));
+            table.perform(request.toAction(table.getGame(), table.getState()));
         });
     }
 
@@ -148,6 +148,16 @@ public class TableResource {
             checkTurn(table);
 
             table.endTurn();
+        });
+    }
+
+    @POST
+    @Path("/{id}/undo")
+    public void undo(@PathParam("id") String id) {
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkTurn(table);
+
+            table.undo();
         });
     }
 
@@ -231,7 +241,7 @@ public class TableResource {
 
         checkViewAllowed(table);
 
-        var state = table.getState().get();
+        var state = table.getState();
 
         if (state == null) {
             throw new NotFoundException();

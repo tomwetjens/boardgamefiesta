@@ -166,8 +166,9 @@ public class Game implements State {
             canUndo = actionResult.canUndo();
         }
 
-        // TODO Should not automatically end turn if rollback is still possible?
-        endTurnIfNoMoreActions(random);
+        if (!canUndo) {
+            endTurnIfNoMoreActions(random);
+        }
     }
 
     @Override

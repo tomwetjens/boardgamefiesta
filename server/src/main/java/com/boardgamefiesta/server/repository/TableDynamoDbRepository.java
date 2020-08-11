@@ -68,7 +68,36 @@ public class TableDynamoDbRepository implements Tables {
 
     @Override
     public void add(Table table) {
-        var item = mapFromTable(table);
+        var serializeCache = Collections.<State, AttributeValue>emptyMap();
+
+        var item = new HashMap<>(key(table.getId()));
+        item.put("Version", AttributeValue.builder().n(Integer.toString(table.getVersion())).build());
+        item.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
+        item.put("Type", AttributeValue.builder().s(table.getType().name()).build());
+        item.put("Mode", AttributeValue.builder().s(table.getMode().name()).build());
+        item.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
+        item.put("Options", mapFromOptions(table.getOptions()));
+        item.put("Created", AttributeValue.builder().n(Long.toString(table.getCreated().getEpochSecond())).build());
+        item.put("Updated", AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build());
+        item.put("Started", table.getStarted() != null ? AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build() : null);
+        item.put("Ended", table.getEnded() != null ? AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build() : null);
+        item.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+        item.put("OwnerId", AttributeValue.builder().s(table.getOwnerId().getId()).build());
+        item.put("Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
+
+        if (table.getCurrentState().isPresent()) {
+            var currentState = table.getCurrentState().get();
+            var state = currentState.getState();
+            var serialized = mapFromState(table.getGame(), state);
+
+            item.put("State", serialized);
+            item.put("StateTimestamp", AttributeValue.builder().n(Long.toString(currentState.getTimestamp().toEpochMilli())).build());
+            if (currentState.getPrevious().isPresent()) {
+                item.put("PreviousStateTimestamp", AttributeValue.builder().n(Long.toString(currentState.getPrevious().get().toEpochMilli())).build());
+            }
+
+            serializeCache = Collections.singletonMap(state, serialized);
+        }
 
         dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
                 .requestItems(Map.of(
@@ -89,10 +118,7 @@ public class TableDynamoDbRepository implements Tables {
                                 .collect(Collectors.toList())))
                 .build());
 
-        addPendingHistoricStates(table, table.getState() != null && table.getState().isPresent()
-                ? Map.of(table.getState().get(), item.get("State"))
-                : Collections.emptyMap());
-
+        addPendingHistoricStates(table, serializeCache);
         addLogEntries(table);
     }
 
@@ -102,12 +128,7 @@ public class TableDynamoDbRepository implements Tables {
                     .requestItems(Map.of(historicStateTableName, table.getHistoricStates().getPending().stream()
                             .map(historicState -> WriteRequest.builder()
                                     .putRequest(PutRequest.builder()
-                                            .item(Map.of(
-                                                    "TableId", AttributeValue.builder().s(table.getId().getId()).build(),
-                                                    "Timestamp", AttributeValue.builder().n(Long.toString(historicState.getTimestamp().toEpochMilli())).build(),
-                                                    "GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build(),
-                                                    "Expires", AttributeValue.builder().n(Long.toString(historicState.getExpires().getEpochSecond())).build(),
-                                                    "State", Optional.ofNullable(serializedCache.get(historicState.getState())).orElseGet(() -> mapFromState(table.getGame(), historicState.getState()))))
+                                            .item(mapFromHistoricState(table, serializedCache, historicState))
                                             .build())
                                     .build())
                             .collect(Collectors.toList())))
@@ -115,6 +136,18 @@ public class TableDynamoDbRepository implements Tables {
 
             table.getHistoricStates().commit();
         }
+    }
+
+    private Map<String, AttributeValue> mapFromHistoricState(Table table, Map<State, AttributeValue> serializedCache,
+                                                             Table.HistoricState historicState) {
+        var item = new HashMap<String, AttributeValue>();
+        item.put("TableId", AttributeValue.builder().s(table.getId().getId()).build());
+        item.put("Timestamp", AttributeValue.builder().n(Long.toString(historicState.getTimestamp().toEpochMilli())).build());
+        item.put("Previous", historicState.getPrevious().map(previous -> AttributeValue.builder().n(Long.toString(previous.toEpochMilli())).build()).orElse(null));
+        item.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
+        item.put("Expires", AttributeValue.builder().n(Long.toString(historicState.getExpires().getEpochSecond())).build());
+        item.put("State", Optional.ofNullable(serializedCache.get(historicState.getState())).orElseGet(() -> mapFromState(table.getGame(), historicState.getState())));
+        return item;
     }
 
     private void addLogEntries(Table table) {
@@ -143,6 +176,8 @@ public class TableDynamoDbRepository implements Tables {
 
     @Override
     public void update(Table table) throws TableConcurrentlyModifiedException {
+        var serializeCache = Collections.<State, AttributeValue>emptyMap();
+
         var expressionAttributeValues = new HashMap<String, AttributeValue>();
         var expressionAttributeNames = new HashMap<String, String>();
         expressionAttributeNames.put("#Status", "Status");
@@ -175,10 +210,23 @@ public class TableDynamoDbRepository implements Tables {
             expressionAttributeValues.put(":Ended", AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build());
         }
 
-        if (table.getState() != null && table.getState().isPresent()) {
-            updateExpression += ",#State=:State";
-            expressionAttributeValues.put(":State", mapFromState(table.getGame(), table.getState().get()));
+        if (table.getCurrentState().isPresent()) {
+            var currentState = table.getCurrentState().get();
+            var state = currentState.getState();
+            var serialized = mapFromState(table.getGame(), state);
+
+            updateExpression += ",#State=:State,StateTimestamp=:StateTimestamp";
             expressionAttributeNames.put("#State", "State");
+
+            expressionAttributeValues.put(":StateTimestamp", AttributeValue.builder().n(Long.toString(currentState.getTimestamp().toEpochMilli())).build());
+            expressionAttributeValues.put(":State", serialized);
+
+            if (currentState.getPrevious().isPresent()) {
+                updateExpression += ",PreviousStateTimestamp=:PreviousStateTimestamp";
+                expressionAttributeValues.put(":PreviousStateTimestamp", AttributeValue.builder().n(Long.toString(currentState.getPrevious().get().toEpochMilli())).build());
+            }
+
+            serializeCache = Collections.singletonMap(state, serialized);
         }
 
         var requestBuilder = UpdateItemRequest.builder()
@@ -203,9 +251,7 @@ public class TableDynamoDbRepository implements Tables {
             throw new TableConcurrentlyModifiedException(e);
         }
 
-        addPendingHistoricStates(table, table.getState() != null && table.getState().isPresent()
-                ? Map.of(table.getState().get(), expressionAttributeValues.get(":State"))
-                : Collections.emptyMap());
+        addPendingHistoricStates(table, serializeCache);
         addLogEntries(table);
 
         updateLookupItems(table);
@@ -270,32 +316,12 @@ public class TableDynamoDbRepository implements Tables {
                 .tableName(tableName)
                 .key(key(id))
                 .consistentRead(true)
-                .attributesToGet("Id",
-                        "Version",
-                        "Type",
-                        "Mode",
-                        "GameId",
-                        "Status",
-                        "Options",
-                        "Created",
-                        "Updated",
-                        "Started",
-                        "Ended",
-                        "Expires",
-                        "OwnerId",
-                        "Players")
                 .build());
 
         if (!response.hasItem()) {
             return Optional.empty();
         }
         return Optional.of(mapToTable(response.item()));
-    }
-
-    private Map<String, AttributeValue> mapFromTable(Table table) {
-        var map = createAttributeValues(table);
-        map.putAll(key(table.getId()));
-        return map;
     }
 
     private Map<String, AttributeValue> mapLookupItem(Table table, Player player) {
@@ -309,27 +335,6 @@ public class TableDynamoDbRepository implements Tables {
         var map = new HashMap<String, AttributeValueUpdate>();
         map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(player.getStatus().name()).build()).build());
         map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
-        return map;
-    }
-
-    private Map<String, AttributeValue> createAttributeValues(Table table) {
-        var map = new HashMap<String, AttributeValue>();
-        map.put("Version", AttributeValue.builder().n(Integer.toString(table.getVersion())).build());
-        map.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
-        map.put("Type", AttributeValue.builder().s(table.getType().name()).build());
-        map.put("Mode", AttributeValue.builder().s(table.getMode().name()).build());
-        map.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
-        map.put("Options", mapFromOptions(table.getOptions()));
-        map.put("Created", AttributeValue.builder().n(Long.toString(table.getCreated().getEpochSecond())).build());
-        map.put("Updated", AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build());
-        map.put("Started", table.getStarted() != null ? AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build() : null);
-        map.put("Ended", table.getEnded() != null ? AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build() : null);
-        map.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
-        map.put("OwnerId", AttributeValue.builder().s(table.getOwnerId().getId()).build());
-        map.put("Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
-        if (table.getState() != null) {
-            map.put("State", mapFromState(table.getGame(), table.getState().get()));
-        }
         return map;
     }
 
@@ -353,6 +358,7 @@ public class TableDynamoDbRepository implements Tables {
         var gameId = Game.Id.of(item.get("GameId").s());
         var game = games.get(gameId);
 
+        Instant updated = Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n()));
         return Table.builder()
                 .id(id)
                 // TODO Version can become required after backwards compatibility period
@@ -372,7 +378,7 @@ public class TableDynamoDbRepository implements Tables {
                             }
                         }))))
                 .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
-                .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
+                .updated(updated)
                 .started(item.get("Started") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Started").n())) : null)
                 .ended(item.get("Ended") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Ended").n())) : null)
                 .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
@@ -380,32 +386,48 @@ public class TableDynamoDbRepository implements Tables {
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
                         .collect(Collectors.toSet()))
-                .state(Table.CurrentState.defer(() -> getState(game, id)))
-                .historicStates(Table.HistoricStates.defer(timestamp -> getHistoricState(id, timestamp)))
+                .currentState(Optional.ofNullable(item.get("State"))
+                        .map(attributeValue -> DynamoDbJson.fromJson(attributeValue, game.getProvider().getStateDeserializer()::deserialize))
+                        .map(state -> Table.CurrentState.of(state,
+                                Optional.ofNullable(item.get("StateTimestamp"))
+                                        .map(AttributeValue::n)
+                                        .map(Long::parseLong)
+                                        .map(Instant::ofEpochMilli)
+                                        .orElse(updated),
+                                Optional.ofNullable(item.get("PreviousStateTimestamp"))
+                                        .map(AttributeValue::n)
+                                        .map(Long::parseLong)
+                                        .map(Instant::ofEpochMilli))))
+                .historicStates(Table.HistoricStates.defer(timestamp -> getHistoricState(game, id, timestamp)))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
     }
 
-    private State getState(Game game, Table.Id tableId) {
-        var response = dynamoDbClient.getItem(GetItemRequest.builder()
-                .tableName(tableName)
-                .key(key(tableId))
-                .consistentRead(true)
-                .attributesToGet("State")
-                .build());
+    private Optional<Table.HistoricState> getHistoricState(Game game, Table.Id id, Instant timestamp) {
+        var expressionAttributeValues = new HashMap<String, AttributeValue>();
+        expressionAttributeValues.put(":TableId", AttributeValue.builder().s(id.getId()).build());
+        expressionAttributeValues.put(":Timestamp", AttributeValue.builder().n(Long.toString(timestamp.toEpochMilli())).build());
 
-        var attributeValue = response.item().get("State");
-
-        if (attributeValue != null) {
-            var deserializer = game.getProvider().getStateDeserializer();
-            return DynamoDbJson.fromJson(attributeValue, deserializer::deserialize);
-        }
-        return null;
+        return dynamoDbClient.query(QueryRequest.builder()
+                .tableName(historicStateTableName)
+                .keyConditionExpression("TableId = :TableId AND #Timestamp = :Timestamp")
+                .expressionAttributeNames(Collections.singletonMap("#Timestamp", "Timestamp"))
+                .expressionAttributeValues(expressionAttributeValues)
+                .build())
+                .items().stream()
+                .findFirst()
+                .map(item -> mapToHistoricState(item, game));
     }
 
-    private Optional<Table.HistoricState> getHistoricState(Table.Id id, Instant timestamp) {
-        // TODO
-        return Optional.empty();
+    private Table.HistoricState mapToHistoricState(Map<String, AttributeValue> item, Game game) {
+        var timestamp = Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n()));
+        var previous = Optional.ofNullable(item.get("Previous"))
+                .map(AttributeValue::n)
+                .map(Long::parseLong)
+                .map(Instant::ofEpochMilli);
+        var expires = Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n()));
+        var state = DynamoDbJson.fromJson(item.get("State"), game.getProvider().getStateDeserializer()::deserialize);
+        return Table.HistoricState.of(timestamp, previous, state, expires);
     }
 
     private Player mapToPlayer(AttributeValue attributeValue) {
