@@ -80,10 +80,13 @@ public class PlayerStateView {
                 .map(Building::getName)
                 .collect(Collectors.toList());
 
+        // TODO sorting
         stationMasters = playerState.getStationMasters();
 
+        // TODO sorting
         hazards = playerState.getHazards().stream().map(HazardView::new).collect(Collectors.toList());
 
+        // TODO sorting
         teepees = playerState.getTeepees();
 
         var objectivesScores = playerState.scoreObjectives(state);

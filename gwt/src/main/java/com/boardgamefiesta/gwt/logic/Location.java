@@ -24,8 +24,8 @@ public abstract class Location {
         return Collections.unmodifiableSet(next);
     }
 
-    Optional<PossibleAction> activate(Game game) {
-        return Optional.empty();
+    PossibleAction activate(Game game) {
+        throw new GWTException(GWTError.LOCATION_EMPTY);
     }
 
     public Hand getHand() {
@@ -41,23 +41,6 @@ public abstract class Location {
 
     public boolean isDirect(Location to) {
         return next.stream().anyMatch(between -> between == to || (between.isEmpty() && between.isDirect(to)));
-    }
-
-    public Set<Location> reachableLocations(int atLeast, int atMost) {
-        if (atMost <= 0) {
-            return Collections.emptySet();
-        }
-
-        return next.stream()
-                .flatMap(step -> {
-                    if (!step.isEmpty()) {
-                        return Stream.concat(atLeast <= 1 ? Stream.of(step) : Stream.empty(),
-                                step.reachableLocations(atLeast - 1, atMost - 1).stream());
-                    } else {
-                        return step.reachableLocations(atLeast, atMost).stream();
-                    }
-                })
-                .collect(Collectors.toSet());
     }
 
     public Stream<List<Location>> routes(Location to) {
@@ -104,36 +87,37 @@ public abstract class Location {
         }
 
         @Override
-        Optional<PossibleAction> activate(Game game) {
-            if (building != null) {
-                if (building instanceof NeutralBuilding || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer()) {
-                    var buildingAction = building.activate(game);
+        PossibleAction activate(Game game) {
+            if (building == null) {
+                throw new GWTException(GWTError.LOCATION_EMPTY);
+            }
 
-                    if (riskAction != null) {
-                        // There is an optional risk action
+            if (building instanceof NeutralBuilding || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer()) {
+                var buildingAction = building.activate(game);
 
-                        if (buildingAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class)) {
-                            // Leave out the SingleAuxiliaryAction, because it is useless when you can choose SingleOrDoubleAuxiliaryAction
-                            return Optional.of(PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction))));
-                        } else {
-                            return Optional.of(PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction), Action.SingleAuxiliaryAction.class)));
-                        }
+                if (riskAction != null) {
+                    // There is an optional risk action
+
+                    if (buildingAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class)) {
+                        // Leave out the SingleAuxiliaryAction, because it is useless when you can choose SingleOrDoubleAuxiliaryAction
+                        return PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction)));
                     } else {
-                        // No risk action
-
-                        if (buildingAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class)) {
-                            // Leave out the SingleAuxiliaryAction, because it is useless when you can choose SingleOrDoubleAuxiliaryAction
-                            return Optional.of(buildingAction);
-                        } else {
-                            return Optional.of(PossibleAction.optional(PossibleAction.choice(buildingAction, Action.SingleAuxiliaryAction.class)));
-                        }
+                        return PossibleAction.optional(PossibleAction.choice(PossibleAction.any(buildingAction, riskAction), Action.SingleAuxiliaryAction.class));
                     }
                 } else {
-                    // Other player's building, only allowed to use aux action
-                    return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
+                    // No risk action
+
+                    if (buildingAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class)) {
+                        // Leave out the SingleAuxiliaryAction, because it is useless when you can choose SingleOrDoubleAuxiliaryAction
+                        return buildingAction;
+                    } else {
+                        return PossibleAction.optional(PossibleAction.choice(buildingAction, Action.SingleAuxiliaryAction.class));
+                    }
                 }
+            } else {
+                // Other player's building, only allowed to use aux action
+                return PossibleAction.optional(Action.SingleAuxiliaryAction.class);
             }
-            return Optional.empty();
         }
 
         @Override
@@ -203,11 +187,11 @@ public abstract class Location {
         }
 
         @Override
-        Optional<PossibleAction> activate(Game game) {
-            if (hazard != null) {
-                return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
+        PossibleAction activate(Game game) {
+            if (hazard == null) {
+                throw new GWTException(GWTError.LOCATION_EMPTY);
             }
-            return Optional.empty();
+            return PossibleAction.optional(Action.SingleAuxiliaryAction.class);
         }
 
         @Override
@@ -250,12 +234,12 @@ public abstract class Location {
         }
 
         @Override
-        Optional<PossibleAction> activate(Game game) {
+        PossibleAction activate(Game game) {
             if (game.getForesights().isEmpty()) {
                 // No foresights left, go straight to delivery
-                return Optional.of(PossibleAction.mandatory(Action.DeliverToCity.class));
+                return PossibleAction.mandatory(Action.DeliverToCity.class);
             }
-            return Optional.of(PossibleAction.mandatory(Action.ChooseForesights.class));
+            return PossibleAction.mandatory(Action.ChooseForesights.class);
         }
 
         @Override
@@ -276,11 +260,11 @@ public abstract class Location {
         }
 
         @Override
-        public Optional<PossibleAction> activate(Game game) {
-            if (teepee != null) {
-                return Optional.of(PossibleAction.optional(Action.SingleAuxiliaryAction.class));
+        public PossibleAction activate(Game game) {
+            if (teepee == null) {
+                throw new GWTException(GWTError.LOCATION_EMPTY);
             }
-            return Optional.empty();
+            return PossibleAction.optional(Action.SingleAuxiliaryAction.class);
         }
 
         @Override

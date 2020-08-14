@@ -88,7 +88,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions())));
+            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions()));
         }
     }
 
@@ -110,7 +110,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions())));
+            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions()));
         }
     }
 
@@ -1104,9 +1104,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.getActionStack().clear();
 
                 // Actions of new location are now possible
-                return ActionResult.undoAllowed(to.activate(game)
-                        .map(ImmediateActions::of)
-                        .orElse(ImmediateActions.none()));
+                return ActionResult.undoAllowed(to.activate(game));
             } else {
                 // From Objective Card action
                 return ActionResult.undoAllowed(ImmediateActions.none());
@@ -1472,7 +1470,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(ImmediateActions.of(building.activate(game)));
+            return ActionResult.undoAllowed(building.activate(game));
         }
     }
 

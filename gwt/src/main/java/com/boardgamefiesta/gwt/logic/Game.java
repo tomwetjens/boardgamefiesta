@@ -76,7 +76,7 @@ public class Game implements State {
                 ? PlayerBuilding.BuildingSet.beginner()
                 : PlayerBuilding.BuildingSet.random(random);
 
-        Queue<ObjectiveCard> startingObjectiveCards = ObjectiveCards.createStartingObjectiveCardsDrawStack(random);
+        var startingObjectiveCards = ObjectiveCards.createStartingObjectiveCardsDrawStack(random);
 
         var playerStates = new HashMap<Player, PlayerState>();
         int startBalance = 6;
@@ -98,7 +98,7 @@ public class Game implements State {
                 .foresights(new Foresights(kansasCitySupply))
                 .cattleMarket(new CattleMarket(players.size(), random))
                 .objectiveCards(new ObjectiveCards(random))
-                .actionStack(new ActionStack(Collections.singleton(PossibleAction.mandatory(Action.Move.class))))
+                .actionStack(ActionStack.initial(Collections.singleton(PossibleAction.mandatory(Action.Move.class))))
                 .canUndo(false)
                 .build();
 
@@ -143,9 +143,8 @@ public class Game implements State {
 
             var actionResult = action.perform(this, random);
 
-            if (!actionResult.getImmediateActions().isEmpty()) {
-                actionStack.addFirst(actionResult.getImmediateActions().getActions());
-            }
+            actionStack.addImmediateActions(actionResult.getImmediateActions());
+            actionStack.addActions(actionResult.getNewActions());
 
             canUndo = actionResult.canUndo();
         } else {
@@ -159,9 +158,8 @@ public class Game implements State {
 
             var actionResult = action.perform(this, random);
 
-            if (!actionResult.getImmediateActions().isEmpty()) {
-                actionStack.addFirst(actionResult.getImmediateActions().getActions());
-            }
+            actionStack.addImmediateActions(actionResult.getImmediateActions());
+            actionStack.addActions(actionResult.getNewActions());
 
             canUndo = actionResult.canUndo();
         }
@@ -250,7 +248,7 @@ public class Game implements State {
         currentPlayer = playerOrder.get((playerOrder.indexOf(currentPlayer) + 1) % playerOrder.size());
 
         if (!currentPlayerState().hasJobMarketToken()) {
-            actionStack.addFirst(Collections.singletonList(PossibleAction.mandatory(Action.Move.class)));
+            actionStack.addAction(PossibleAction.mandatory(Action.Move.class));
 
             fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
         } else {
@@ -281,7 +279,7 @@ public class Game implements State {
             return Collections.emptySet();
         }
 
-        Set<Class<? extends Action>> possibleActions = actionStack.getPossibleActions();
+        var possibleActions = actionStack.getPossibleActions();
 
         if (canPlayObjectiveCard()) {
             possibleActions = new HashSet<>(possibleActions);
@@ -293,9 +291,14 @@ public class Game implements State {
     }
 
     private boolean canPlayObjectiveCard() {
+        // During your own turn, if you happen to have one or more objective cards in your hand, you can play any
+        // of them, either:
+        // - before performing phase A or
+        // - before or after performing any one action in phase B.
         return currentPlayerState().hasObjectiveCardInHand()
-                && (actionStack.isEmpty() /* = after phase B */
-                || (actionStack.size() == 1 && actionStack.canPerform(Action.Move.class))) /* before phase A */;
+                && ((actionStack.size() == 1 && actionStack.canPerform(Action.Move.class)) // before phase A
+                || !actionStack.hasImmediate() // not during an action in phase B
+                || actionStack.isEmpty()); // after phase B
     }
 
     public Set<PossibleMove> possibleMoves(@NonNull Player player, int atMost) {
@@ -372,7 +375,7 @@ public class Game implements State {
 
     @Override
     public Set<Player> winners() {
-        Map<Player, Integer> scores = playerOrder.stream()
+        var scores = playerOrder.stream()
                 .collect(Collectors.toMap(Function.identity(), this::score));
 
         int maxScore = scores.values().stream().max(Integer::compare).orElse(0);
