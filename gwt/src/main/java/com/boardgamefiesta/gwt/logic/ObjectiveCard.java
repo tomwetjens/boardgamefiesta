@@ -2,10 +2,7 @@ package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.repository.JsonSerializer;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -62,11 +59,13 @@ public class ObjectiveCard extends Card {
         return scoreCards(objectiveCards, committed, counts, Score.EMPTY)
                 .max(committedPairs3Points
                         ? Comparator.comparingInt(score -> score.getTotal() + (score.getCommitted().size() / 2) * 3)
-                        : Comparator.comparing(Score::getTotal))
+                        : Comparator.comparingInt(Score::getTotal))
                 .orElse(Score.EMPTY);
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @EqualsAndHashCode
+    @ToString
     public static class Score {
 
         static final Score EMPTY = new Score(0, Collections.emptyMap());
@@ -116,7 +115,11 @@ public class ObjectiveCard extends Card {
                         scoreCards(tail, committed, counts, score.add(head, -head.getPenalty())));
             }
         } else {
-            return scoreCards(tail, committed, remaining, score.add(head, head.getPoints()));
+            return Stream.concat(
+                    // Normal case, completed so use it
+                    scoreCards(tail, committed, remaining, score.add(head, head.getPoints())),
+                    // Or see what happens when using the resources for other cards
+                    scoreCards(tail, committed, counts, score));
         }
     }
 

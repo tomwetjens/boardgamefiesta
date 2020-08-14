@@ -84,24 +84,19 @@ class ObjectiveCardTest {
         }
 
         @Test
-        void performance() {
-            var objectiveCards = Set.of(
-                    objectiveCard("a"),
-                    objectiveCard("b"),
-                    objectiveCard("c"),
-                    objectiveCard("d"),
-                    objectiveCard("e"),
-                    objectiveCard("f"),
-                    objectiveCard("g"));
+        void scott() {
+            var start = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0);
+            var a = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.GREEN_TEEPEE), 3, 2);
+            var b = new ObjectiveCard(null, List.of(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 2);
 
-            when(playerState.numberOfHazards()).thenReturn(8);
+            when(game.getRailroadTrack().numberOfUpgradedStations(player)).thenReturn(0);
+            when(playerState.numberOfHazards()).thenReturn(3);
+            when(playerState.numberOfTeepees()).thenReturn(2);
+            when(playerState.numberOfGreenTeepees()).thenReturn(1);
+            when(trail.numberOfBuildings(player)).thenReturn(2);
 
-            var start = Instant.now();
-//            for (int i = 0; i < 1000; i++) {
-            ObjectiveCard.score(Collections.emptySet(), objectiveCards, game, player, true);
-//            }
-            var end = Instant.now();
-            System.out.println(Duration.between(start, end));
+            var result = ObjectiveCard.score(Set.of(start, a), Set.of(b), game, player, false);
+            assertThat(result.getTotal()).isEqualTo(3);
         }
     }
 
