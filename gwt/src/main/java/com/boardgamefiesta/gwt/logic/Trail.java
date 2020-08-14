@@ -267,6 +267,7 @@ public class Trail {
                 .orElseGet(() -> getLocations().stream()
                         .filter(location -> location != start)
                         .filter(location -> !location.isEmpty())
+                        .filter(location -> location instanceof Location.BuildingLocation)
                         .map(PossibleMove::firstMove))
                 .collect(Collectors.toSet());
     }

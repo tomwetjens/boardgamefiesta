@@ -1065,12 +1065,20 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             Player player = game.getCurrentPlayer();
 
             Location to = steps.get(steps.size() - 1);
+            if (to.isEmpty()) {
+                throw new GWTException(GWTError.LOCATION_EMPTY);
+            }
 
-            game.getTrail().getCurrentLocation(player).ifPresent(from -> {
+            game.getTrail().getCurrentLocation(player).ifPresentOrElse(from -> {
                 checkDirectAndConsecutiveSteps(from, steps);
 
                 if (payFeesAndActivate) {
                     payFees(game);
+                }
+            }, () -> {
+                // Must start at neutral building
+                if (!(to instanceof Location.BuildingLocation)) {
+                    throw new GWTException(GWTError.MUST_START_ON_NEUTRAL_BUILDING);
                 }
             });
 
