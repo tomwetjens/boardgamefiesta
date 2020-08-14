@@ -230,9 +230,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return objectiveCard != null
-                    ? ActionResult.undoAllowed(ImmediateActions.none())
-                    : ActionResult.undoNotAllowed(ImmediateActions.none());
+            return ActionResult.undoNotAllowed(ImmediateActions.none());
         }
     }
 
@@ -1428,7 +1426,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(Add1ObjectiveCardToHand.class)));
+            return ActionResult.undoAllowed(
+                    !game.getObjectiveCards().isEmpty()
+                            ? ImmediateActions.of(PossibleAction.mandatory(Add1ObjectiveCardToHand.class))
+                            : ImmediateActions.none());
         }
     }
 
@@ -1587,9 +1588,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return objectiveCard != null
-                    ? ActionResult.undoAllowed(ImmediateActions.none())
-                    : ActionResult.undoNotAllowed(ImmediateActions.none());
+            return ActionResult.undoNotAllowed(ImmediateActions.none());
         }
     }
 }
