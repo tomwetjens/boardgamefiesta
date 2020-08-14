@@ -23,19 +23,18 @@ public class Foresights {
     private final KansasCitySupply.Tile[][] spaces;
 
     Foresights(KansasCitySupply kansasCitySupply) {
-        this(kansasCitySupply, drawInitialTiles(kansasCitySupply));
+        this(kansasCitySupply, new KansasCitySupply.Tile[NUM_COLUMNS][NUM_ROWS]);
+        fillUp();
     }
 
-    private static KansasCitySupply.Tile[][] drawInitialTiles(KansasCitySupply kansasCitySupply) {
-        var spaces = new KansasCitySupply.Tile[NUM_COLUMNS][NUM_ROWS];
-
+    void fillUp() {
         for (int columnIndex = 0; columnIndex < NUM_COLUMNS; columnIndex++) {
             for (int rowIndex = 0; rowIndex < NUM_ROWS; rowIndex++) {
-                spaces[columnIndex][rowIndex] = kansasCitySupply.draw(columnIndex);
+                if (spaces[columnIndex][rowIndex] == null) {
+                    spaces[columnIndex][rowIndex] = kansasCitySupply.draw(columnIndex);
+                }
             }
         }
-
-        return spaces;
     }
 
     JsonObject serialize(JsonBuilderFactory factory) {
@@ -62,8 +61,7 @@ public class Foresights {
     KansasCitySupply.Tile take(int columnIndex, int rowIndex) {
         KansasCitySupply.Tile tile = spaces[columnIndex][rowIndex];
 
-        KansasCitySupply.Tile replacement = kansasCitySupply.draw(columnIndex);
-        spaces[columnIndex][rowIndex] = replacement;
+        spaces[columnIndex][rowIndex] = null;
 
         return tile;
     }

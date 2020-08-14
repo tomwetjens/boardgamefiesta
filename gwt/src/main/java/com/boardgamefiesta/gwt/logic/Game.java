@@ -232,6 +232,8 @@ public class Game implements State {
 
         fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
+        foresights.fillUp();
+
         currentPlayerState().drawUpToHandLimit(random);
         canUndo = false;
 

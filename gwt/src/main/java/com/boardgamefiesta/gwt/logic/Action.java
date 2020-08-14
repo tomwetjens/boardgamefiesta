@@ -628,7 +628,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 }
             }
 
-            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.mandatory(DeliverToCity.class)));
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(DeliverToCity.class)));
         }
 
         List<String> toEventParams(Game game) {
