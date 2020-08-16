@@ -299,6 +299,7 @@ public class Game implements State {
         // - before performing phase A or
         // - before or after performing any one action in phase B.
         return currentPlayerState().hasObjectiveCardInHand()
+                && !trail.atKansasCity(currentPlayer)
                 && ((actionStack.size() == 1 && actionStack.canPerform(Action.Move.class)) // before phase A
                 || !actionStack.hasImmediate() // not during an action in phase B
                 || actionStack.isEmpty()); // after phase B
