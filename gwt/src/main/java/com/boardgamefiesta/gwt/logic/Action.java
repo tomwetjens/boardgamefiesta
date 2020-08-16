@@ -1473,12 +1473,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new GWTException(GWTError.LOCATION_NOT_ADJACENT);
             }
 
-            var building = adjacentLocation.getBuilding()
-                    .orElseThrow(() -> new GWTException(GWTError.LOCATION_EMPTY));
+            if (adjacentLocation.isEmpty()) {
+                throw new GWTException(GWTError.LOCATION_EMPTY);
+            }
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(building.activate(game));
+            return ActionResult.undoAllowed(adjacentLocation.activate(game));
         }
     }
 
