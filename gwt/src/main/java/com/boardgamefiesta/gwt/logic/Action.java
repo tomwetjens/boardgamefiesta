@@ -675,9 +675,24 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            int payout = calculatePayout(game);
+            var extraordinary = !game.getTrail().atKansasCity(game.getCurrentPlayer());
+            return ActionResult.undoAllowed(extraordinary ? extraordinaryDelivery(game) : normalDelivery(game));
+        }
 
-            int tempCertificates = Math.max(0, certificates - game.currentPlayerState().permanentCertificates());
+        private ImmediateActions normalDelivery(Game game) {
+            var breedingValue = game.currentPlayerState().handValue() + certificates;
+            if (breedingValue < city.getValue()) {
+                throw new GWTException(GWTError.NOT_ENOUGH_BREEDING_VALUE);
+            }
+
+            var transportCosts = Math.max(0, city.getSignals() - game.getRailroadTrack().signalsPassed(game.getCurrentPlayer()));
+
+            var payout = breedingValue - transportCosts;
+            if (city == City.KANSAS_CITY) {
+                payout += 6;
+            }
+
+            var tempCertificates = Math.max(0, certificates - game.currentPlayerState().permanentCertificates());
             if (tempCertificates > 0) {
                 game.currentPlayerState().spendTempCertificates(tempCertificates);
             }
@@ -685,29 +700,26 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.currentPlayerState().gainDollars(payout);
             game.currentPlayerState().discardHand();
 
-            ImmediateActions immediateActions = game.deliverToCity(city);
+            fireEvent(game, payout, certificates);
+            var immediateActions = game.deliverToCity(city);
 
             game.getTrail().moveToStart(game.getCurrentPlayer());
 
-            game.fireActionEvent(this, List.of(city.name(), Integer.toString(certificates), Integer.toString(payout)));
-
-            return ActionResult.undoAllowed(immediateActions);
+            return immediateActions;
         }
 
-        private int calculatePayout(Game game) {
-            int breedingValue = game.currentPlayerState().handValue() + certificates;
-
-            if (breedingValue < city.getValue()) {
-                throw new GWTException(GWTError.NOT_ENOUGH_BREEDING_VALUE);
+        private ImmediateActions extraordinaryDelivery(Game game) {
+            if (city.getValue() > game.currentPlayerState().getLastEngineMove()) {
+                throw new GWTException(GWTError.CITY_VALUE_MUST_BE_LESS_THEN_OR_EQUAL_TO_SPACES_THAT_ENGINE_MOVED_BACKWARDS);
             }
 
-            int transportCosts = Math.max(0, city.getSignals() - game.getRailroadTrack().signalsPassed(game.getCurrentPlayer()));
+            fireEvent(game, 0, 0);
 
-            int payout = breedingValue - transportCosts;
-            if (city == City.KANSAS_CITY) {
-                payout += 6;
-            }
-            return payout;
+            return game.deliverToCity(city);
+        }
+
+        private void fireEvent(Game game, int payout, Integer certificates) {
+            game.fireActionEvent(this, List.of(city.name(), Integer.toString(certificates), Integer.toString(payout)));
         }
 
     }
@@ -1264,21 +1276,17 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class ExtraordinaryDelivery extends Action {
 
         @NonNull RailroadTrack.Space to;
-        @NonNull City city;
 
         @Override
         public ActionResult perform(Game game, Random random) {
             RailroadTrack.EngineMove engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, Integer.MAX_VALUE);
 
-            if (city.getValue() > engineMove.getSteps()) {
-                throw new GWTException(GWTError.CITY_VALUE_MUST_BE_LESS_THEN_OR_EQUAL_TO_SPACES_THAT_ENGINE_MOVED_BACKWARDS);
-            }
+            game.fireActionEvent(this, List.of(Integer.toString(engineMove.getSteps()), to.getName()));
 
-            var immediateActions = game.deliverToCity(city);
+            game.currentPlayerState().setLastEngineMove(engineMove.getSteps());
 
-            game.fireActionEvent(this, List.of(city.name()));
-
-            return ActionResult.undoAllowed(immediateActions.andThen(engineMove.getImmediateActions()));
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(DeliverToCity.class))
+                    .andThen(engineMove.getImmediateActions()));
         }
 
     }

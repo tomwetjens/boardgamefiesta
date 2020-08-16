@@ -30,7 +30,7 @@ public class Automa {
                     chooseForesight(game.getForesights().choices(2), random))), random);
         } else if (possibleActions.contains(Action.DeliverToCity.class)) {
             // TODO Pick highest possible city for now
-            var possibleDeliveries = currentPlayerState.possibleDeliveries(game.getRailroadTrack());
+            var possibleDeliveries = game.possibleDeliveries(game.getCurrentPlayer());
             game.perform(possibleDeliveries.stream().max(Comparator.comparingInt(RailroadTrack.PossibleDelivery::getReward))
                     .map(possibleDelivery -> new Action.DeliverToCity(possibleDelivery.getCity(), possibleDelivery.getCertificates()))
                     .orElse(new Action.DeliverToCity(City.KANSAS_CITY, 0)), random);

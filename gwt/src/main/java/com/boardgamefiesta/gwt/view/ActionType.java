@@ -177,7 +177,7 @@ public enum ActionType {
             case DRAW_2_CATTLE_CARDS:
                 return new Action.Draw2CattleCards();
             case EXTRAORDINARY_DELIVERY:
-                return new Action.ExtraordinaryDelivery(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)), getEnum(jsonObject, JsonProperties.CITY, City.class));
+                return new Action.ExtraordinaryDelivery(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
             case GAIN_1_CERTIFICATE:
                 return new Action.Gain1Certificate();
             case GAIN_1_DOLLAR:

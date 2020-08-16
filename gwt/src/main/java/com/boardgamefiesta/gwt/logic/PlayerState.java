@@ -44,6 +44,9 @@ public class PlayerState {
     private boolean jobMarketToken;
     @Getter
     private int usedCowboys;
+    @Getter
+    @Setter(AccessLevel.PACKAGE)
+    private int lastEngineMove;
 
     PlayerState(@NonNull Player player, int balance, @NonNull ObjectiveCard startingObjectiveCard, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
         this.player = player;
@@ -93,6 +96,7 @@ public class PlayerState {
                 .add("balance", balance)
                 .add("jobMarketToken", jobMarketToken)
                 .add("usedCowboys", usedCowboys)
+                .add("lastEngineMove", lastEngineMove)
                 .build();
     }
 
@@ -123,10 +127,11 @@ public class PlayerState {
         var balance = jsonObject.getInt("balance", 0);
         var jobMarketToken = jsonObject.getBoolean("jobMarketToken", false);
         var usedCowboys = jsonObject.getInt("usedCowboys", 0);
+        var lastEngineMove = jsonObject.getInt("lastEngineMove", 0);
 
         return new PlayerState(player, drawStack, hand, discardPile, workers,
                 buildings, unlocked, objectives, stationMasters, teepees, hazards,
-                tempCertificates, balance, jobMarketToken, usedCowboys);
+                tempCertificates, balance, jobMarketToken, usedCowboys, lastEngineMove);
     }
 
     void drawCard(Random random) {
@@ -387,10 +392,6 @@ public class PlayerState {
 
     public boolean hasJobMarketToken() {
         return jobMarketToken;
-    }
-
-    public Set<RailroadTrack.PossibleDelivery> possibleDeliveries(RailroadTrack railroadTrack) {
-        return railroadTrack.possibleDeliveries(player, handValue(), tempCertificates + permanentCertificates());
     }
 
     public int handValue() {

@@ -371,4 +371,7 @@ public class Trail {
         playerLocations.put(player, start);
     }
 
+    public boolean atKansasCity(Player player) {
+        return playerLocations.get(player) == kansasCity;
+    }
 }

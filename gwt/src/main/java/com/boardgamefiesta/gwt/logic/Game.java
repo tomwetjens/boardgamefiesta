@@ -464,6 +464,13 @@ public class Game implements State {
         return status == Status.ENDED;
     }
 
+    public Set<RailroadTrack.PossibleDelivery> possibleDeliveries(Player player) {
+        var playerState = playerState(player);
+        return trail.atKansasCity(player)
+                ? railroadTrack.possibleDeliveries(player, playerState.handValue(), playerState.getTempCertificates() + playerState.permanentCertificates())
+                : railroadTrack.possibleExtraordinaryDeliveries(player, playerState.getLastEngineMove());
+    }
+
     public enum Status {
         BIDDING,
         STARTED,

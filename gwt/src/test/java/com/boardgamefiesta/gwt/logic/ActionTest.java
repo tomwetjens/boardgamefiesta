@@ -89,6 +89,7 @@ class ActionTest {
         void passedAllSignals() {
             when(currentPlayerState.handValue()).thenReturn(11);
             when(railroadTrack.signalsPassed(currentPlayer)).thenReturn(7);
+            when(trail.atKansasCity(currentPlayer)).thenReturn(true);
 
             Action.DeliverToCity deliverToCity = new Action.DeliverToCity(City.EL_PASO, 1);
             deliverToCity.perform(game, new Random(0));
