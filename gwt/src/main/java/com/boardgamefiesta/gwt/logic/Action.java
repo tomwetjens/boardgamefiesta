@@ -1307,10 +1307,12 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            int buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
-            game.currentPlayerState().gainDollars(buildingsInWoods * 2);
+            var buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
 
-            game.fireActionEvent(this, Collections.emptyList());
+            var amount = buildingsInWoods * 2;
+            game.currentPlayerState().gainDollars(amount);
+
+            game.fireActionEvent(this, List.of(Integer.toString(amount)));
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
