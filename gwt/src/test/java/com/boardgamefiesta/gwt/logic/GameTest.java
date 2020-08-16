@@ -24,6 +24,14 @@ class GameTest {
             PlayerBuilding.Building10A.class
     };
 
+    private static final Game.Options BEGINNER = Game.Options.builder()
+            .buildings(Game.Options.Buildings.BEGINNER)
+            .build();
+
+    private static final Game.Options RANDOMIZED = Game.Options.builder()
+            .buildings(Game.Options.Buildings.RANDOMIZED)
+            .build();
+
     private Player playerA = new Player("Player A", PlayerColor.WHITE);
     private Player playerB = new Player("Player B", PlayerColor.YELLOW);
 
@@ -32,7 +40,7 @@ class GameTest {
 
         @Test
         void beginner() {
-            Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, new Random(0));
 
             assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
@@ -54,7 +62,7 @@ class GameTest {
 
         @Test
         void randomized() {
-            Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), false, new Random(0));
+            Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), RANDOMIZED, new Random(0));
 
             assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
@@ -91,7 +99,7 @@ class GameTest {
 
         @Test
         void serialize() {
-            var game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            var game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, new Random(0));
 
             // TODO
         }
@@ -121,21 +129,21 @@ class GameTest {
 
         @Test
         void needWhite() {
-            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, new Random(0));
 
             assertThat(game.removeDisc(Collections.singletonList(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
         }
 
         @Test
         void needBlackOrWhite() {
-            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, new Random(0));
 
             assertThat(game.removeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
         }
 
         @Test
         void needWhiteButCanOnlyUnlockBlack() {
-            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, new Random(0));
 
             assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
 
@@ -158,7 +166,7 @@ class GameTest {
 
         @Test
         void cannotUnlockButStationsUpgraded() {
-            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, new Random(0));
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 
@@ -188,7 +196,7 @@ class GameTest {
 
         @Test
         void cannotUnlockNoStationsUpgraded() {
-            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), true, new Random(0));
+            Game game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, new Random(0));
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 

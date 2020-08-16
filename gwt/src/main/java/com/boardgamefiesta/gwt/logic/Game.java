@@ -56,11 +56,11 @@ public class Game implements State {
     private Player currentPlayer;
 
     @Getter
-    private boolean ended;
+    private Status status;
 
     private boolean canUndo;
 
-    public static Game start(@NonNull Set<Player> players, boolean beginner, @NonNull Random random) {
+    public static Game start(@NonNull Set<Player> players, @NonNull Options options, @NonNull Random random) {
         if (players.size() < 2) {
             throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
         }
@@ -72,7 +72,7 @@ public class Game implements State {
         var playerOrder = new LinkedList<>(players);
         Collections.shuffle(playerOrder, random);
 
-        PlayerBuilding.BuildingSet buildings = beginner
+        PlayerBuilding.BuildingSet buildings = options.getBuildings() == Options.Buildings.BEGINNER
                 ? PlayerBuilding.BuildingSet.beginner()
                 : PlayerBuilding.BuildingSet.random(random);
 
@@ -93,13 +93,14 @@ public class Game implements State {
                 .currentPlayer(playerOrder.get(0))
                 .railroadTrack(new RailroadTrack(players, random))
                 .kansasCitySupply(kansasCitySupply)
-                .trail(new Trail(beginner, random))
+                .trail(new Trail(options.getBuildings() == Options.Buildings.BEGINNER, random))
                 .jobMarket(new JobMarket(players.size()))
                 .foresights(new Foresights(kansasCitySupply))
                 .cattleMarket(new CattleMarket(players.size(), random))
                 .objectiveCards(new ObjectiveCards(random))
                 .actionStack(ActionStack.initial(Collections.singleton(PossibleAction.mandatory(Action.Move.class))))
                 .canUndo(false)
+                .status(Status.STARTED)
                 .build();
 
         game.placeInitialTiles();
@@ -254,7 +255,7 @@ public class Game implements State {
 
             fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
         } else {
-            ended = true;
+            status = Status.ENDED;
             fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());
         }
     }
@@ -331,7 +332,7 @@ public class Game implements State {
                 .add("cattleMarket", cattleMarket.serialize(factory))
                 .add("objectiveCards", objectiveCards.serialize(factory))
                 .add("actionStack", actionStack.serialize(factory))
-                .add("ended", ended)
+                .add("status", status.name())
                 .add("canUndo", canUndo)
                 .build();
     }
@@ -365,7 +366,9 @@ public class Game implements State {
                 .cattleMarket(CattleMarket.deserialize(players.size(), jsonObject.getJsonObject("cattleMarket")))
                 .objectiveCards(ObjectiveCards.deserialize(jsonObject.getJsonObject("objectiveCards")))
                 .actionStack(ActionStack.deserialize(jsonObject.getJsonObject("actionStack")))
-                .ended(jsonObject.getBoolean("ended", false))
+                .status(jsonObject.containsKey("status")
+                        ? Status.valueOf(jsonObject.getString("status"))
+                        : (jsonObject.getBoolean("ended", false) ? Status.ENDED : Status.STARTED))
                 .canUndo(jsonObject.getBoolean("canUndo", false))
                 .build();
     }
@@ -454,6 +457,47 @@ public class Game implements State {
     @Override
     public boolean canUndo() {
         return canUndo;
+    }
+
+    @Override
+    public boolean isEnded() {
+        return status == Status.ENDED;
+    }
+
+    public enum Status {
+        BIDDING,
+        STARTED,
+        ENDED
+    }
+
+    @Value
+    @Builder
+    public static class Options {
+        @NonNull
+        @Builder.Default
+        Buildings buildings = Buildings.RANDOMIZED;
+
+        @NonNull
+        @Builder.Default
+        Variant variant = Variant.ORIGINAL;
+
+        @NonNull
+        @Builder.Default
+        PlayerOrder playerOrder = PlayerOrder.BIDDING;
+
+        public enum Buildings {
+            BEGINNER,
+            RANDOMIZED
+        }
+
+        public enum Variant {
+            ORIGINAL
+        }
+
+        public enum PlayerOrder {
+            RANDOMIZED,
+            BIDDING
+        }
     }
 
 }
