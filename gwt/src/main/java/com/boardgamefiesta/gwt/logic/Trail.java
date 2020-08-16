@@ -41,7 +41,7 @@ public class Trail {
                 new Location.HazardLocation(HazardType.ROCKFALL, 2,
                         new Location.HazardLocation(HazardType.ROCKFALL, 3,
                                 new Location.HazardLocation(HazardType.ROCKFALL, 4,
-                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, true,
+                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false,
                                                 new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, true, f))))));
 
         Location.BuildingLocation e = new Location.BuildingLocation("E", false,
