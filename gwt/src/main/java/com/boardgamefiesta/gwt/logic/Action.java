@@ -608,7 +608,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @Value
     @NonFinal
     @EqualsAndHashCode(callSuper = false)
-    private static class ChooseForesight extends Action {
+    private static abstract class ChooseForesight extends Action {
 
         int columnIndex;
         int rowIndex;
