@@ -98,6 +98,24 @@ class ObjectiveCardTest {
             var result = ObjectiveCard.score(Set.of(start, a), Set.of(b), game, player, false);
             assertThat(result.getTotal()).isEqualTo(3);
         }
+
+        @Test
+        void anotherCase() {
+            var start = new ObjectiveCard(null, List.of(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE), 3, 0);
+            var a = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD), 3, 2);
+            var b = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BREEDING_VALUE_5, ObjectiveCard.Task.HAZARD), 3, 2);
+            var c = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.STATION), 4, 2);
+            var d = new ObjectiveCard(null, List.of(ObjectiveCard.Task.SAN_FRANCISCO), 5, 3);
+
+            when(game.getRailroadTrack().numberOfUpgradedStations(player)).thenReturn(0);
+            when(playerState.numberOfHazards()).thenReturn(1);
+            when(playerState.numberOfTeepees()).thenReturn(0);
+            when(playerState.numberOfGreenTeepees()).thenReturn(0);
+            when(trail.numberOfBuildings(player)).thenReturn(3);
+
+            var result = ObjectiveCard.score(Set.of(start, a, b, c, d), Collections.emptySet(), game, player, false);
+            assertThat(result.getTotal()).isEqualTo(-4);
+        }
     }
 
 }
