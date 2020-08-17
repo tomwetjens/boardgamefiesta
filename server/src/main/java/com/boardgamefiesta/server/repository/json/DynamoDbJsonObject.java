@@ -20,25 +20,31 @@ class DynamoDbJsonObject extends DynamoDbJsonValue implements JsonObject {
 
     @Override
     public JsonArray getJsonArray(String key) {
-        var value = attributeValue.m().get(key);
-        return value != null ? new DynamoDbJsonArray(value) : null;
+        return DynamoDbJsonValue.of(attributeValue.m().get(key)).asJsonArray();
     }
 
     @Override
     public JsonObject getJsonObject(String key) {
         var value = attributeValue.m().get(key);
-        return value != null ? new DynamoDbJsonObject(value) : null;
+        return DynamoDbJsonValue.of(value).asJsonObject();
     }
 
     @Override
     public JsonNumber getJsonNumber(String key) {
-        return new DynamoDbJsonNumber(attributeValue.m().get(key));
+        JsonValue jsonValue = DynamoDbJsonValue.of(attributeValue.m().get(key));
+        if (jsonValue == JsonValue.NULL) {
+            throw new NullPointerException();
+        }
+        return (JsonNumber) jsonValue;
     }
 
     @Override
     public JsonString getJsonString(String key) {
-        var value = attributeValue.m().get(key);
-        return value != null ? new DynamoDbJsonString(value) : null;
+        JsonValue jsonValue = DynamoDbJsonValue.of(attributeValue.m().get(key));
+        if (jsonValue == JsonValue.NULL) {
+            throw new NullPointerException();
+        }
+        return (JsonString) jsonValue;
     }
 
     @Override
@@ -103,7 +109,7 @@ class DynamoDbJsonObject extends DynamoDbJsonValue implements JsonObject {
     @Override
     public JsonValue get(Object key) {
         var attributeValue = this.attributeValue.m().get(key);
-        return attributeValue != null ? DynamoDbJsonValue.of(attributeValue) : null;
+        return DynamoDbJsonValue.of(attributeValue);
     }
 
     @Override

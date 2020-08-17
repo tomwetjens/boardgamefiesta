@@ -22,11 +22,6 @@ class DynamoDbJsonNumber extends DynamoDbJsonValue implements JsonNumber {
         this.value = attributeValue.n();
     }
 
-    DynamoDbJsonNumber(String value) {
-        this.attributeValue = null;
-        this.value = value;
-    }
-
     @Override
     public boolean isIntegral() {
         return value.contains(".");

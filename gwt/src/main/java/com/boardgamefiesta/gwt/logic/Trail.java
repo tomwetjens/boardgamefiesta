@@ -8,6 +8,7 @@ import lombok.NonNull;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonString;
+import javax.json.JsonValue;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -152,19 +153,19 @@ public class Trail {
         var locations = jsonObject.getJsonObject("locations");
 
         trail.getBuildingLocations().forEach(buildingLocation -> {
-            var location = locations.getJsonObject(buildingLocation.getName());
-            if (location != null) {
-                var building = location.getJsonObject("building");
-                if (building != null) {
-                    buildingLocation.placeBuilding(Building.deserialize(playerMap, building));
+            var location = locations.get(buildingLocation.getName());
+            if (location != null && location != JsonValue.NULL) {
+                var building = location.asJsonObject().get("building");
+                if (building != null && building != JsonValue.NULL) {
+                    buildingLocation.placeBuilding(Building.deserialize(playerMap, building.asJsonObject()));
                 }
             }
         });
 
         trail.getTeepeeLocations().forEach(teepeeLocation -> {
-            var location = locations.getJsonObject(teepeeLocation.getName());
-            if (location != null) {
-                var teepee = location.getString("teepee");
+            var location = locations.get(teepeeLocation.getName());
+            if (location != null && location != JsonValue.NULL) {
+                var teepee = location.asJsonObject().getString("teepee");
                 if (teepee != null) {
                     teepeeLocation.placeTeepee(Teepee.valueOf(teepee));
                 }
@@ -172,11 +173,11 @@ public class Trail {
         });
 
         trail.getHazardLocations().forEach(hazardLocation -> {
-            var location = locations.getJsonObject(hazardLocation.getName());
-            if (location != null) {
-                var hazard = location.getJsonObject("hazard");
-                if (hazard != null) {
-                    hazardLocation.placeHazard(Hazard.deserialize(hazard));
+            var location = locations.get(hazardLocation.getName());
+            if (location != null && location != JsonValue.NULL) {
+                var hazard = location.asJsonObject().get("hazard");
+                if (hazard != null && hazard != JsonValue.NULL) {
+                    hazardLocation.placeHazard(Hazard.deserialize(hazard.asJsonObject()));
                 }
             }
         });

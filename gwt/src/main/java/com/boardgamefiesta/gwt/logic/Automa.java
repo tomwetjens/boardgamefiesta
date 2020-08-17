@@ -1,6 +1,9 @@
 package com.boardgamefiesta.gwt.logic;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Random;
 
 public class Automa {
 
@@ -23,11 +26,12 @@ public class Automa {
             game.perform(new Action.Move4Forward(calculateMove(game)), random);
         } else if (possibleActions.contains(Action.Move5Forward.class)) {
             game.perform(new Action.Move5Forward(calculateMove(game)), random);
-        } else if (possibleActions.contains(Action.ChooseForesights.class)) {
-            game.perform(new Action.ChooseForesights(List.of(
-                    chooseForesight(game.getForesights().choices(0), random),
-                    chooseForesight(game.getForesights().choices(1), random),
-                    chooseForesight(game.getForesights().choices(2), random))), random);
+        } else if (possibleActions.contains(Action.ChooseForesight1.class)) {
+            game.perform(new Action.ChooseForesight1(chooseForesight(game.getForesights().choices(0), random)), random);
+        } else if (possibleActions.contains(Action.ChooseForesight2.class)) {
+            game.perform(new Action.ChooseForesight2(chooseForesight(game.getForesights().choices(1), random)), random);
+        } else if (possibleActions.contains(Action.ChooseForesight3.class)) {
+            game.perform(new Action.ChooseForesight3(chooseForesight(game.getForesights().choices(2), random)), random);
         } else if (possibleActions.contains(Action.DeliverToCity.class)) {
             // TODO Pick highest possible city for now
             var possibleDeliveries = game.possibleDeliveries(game.getCurrentPlayer());
@@ -122,12 +126,12 @@ public class Automa {
 
     private int chooseForesight(List<KansasCitySupply.Tile> choices, Random random) {
         // TODO Just pick a random tile now
-        do {
-            var index = random.nextInt(choices.size());
-            if (choices.get(index) != null) {
-                return index;
-            }
-        } while (true);
+        var index = random.nextInt(choices.size());
+        if (choices.get(index) != null) {
+            return index;
+        }
+        // Pick the other one (could be empty as well)
+        return (index + 1) % 2;
     }
 
 

@@ -235,11 +235,17 @@ public abstract class Location {
 
         @Override
         PossibleAction activate(Game game) {
-            if (game.getForesights().isEmpty()) {
-                // No foresights left, go straight to delivery
-                return PossibleAction.mandatory(Action.DeliverToCity.class);
+            if (game.getForesights().isEmpty(0)) {
+                if (game.getForesights().isEmpty(1)) {
+                    if (game.getForesights().isEmpty(2)) {
+                        // No foresights left, go straight to delivery
+                        return PossibleAction.mandatory(Action.DeliverToCity.class);
+                    }
+                    return PossibleAction.mandatory(Action.ChooseForesight3.class);
+                }
+                return PossibleAction.mandatory(Action.ChooseForesight2.class);
             }
-            return PossibleAction.mandatory(Action.ChooseForesights.class);
+            return PossibleAction.mandatory(Action.ChooseForesight1.class);
         }
 
         @Override

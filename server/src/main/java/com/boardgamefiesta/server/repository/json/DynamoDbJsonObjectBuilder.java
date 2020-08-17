@@ -12,6 +12,8 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.boardgamefiesta.server.repository.json.DynamoDbJsonValue.NUL;
+
 /**
  * {@link JsonObjectBuilder} that builds into a {@link AttributeValue}.
  */
@@ -22,25 +24,25 @@ class DynamoDbJsonObjectBuilder implements JsonObjectBuilder {
 
     @Override
     public JsonObjectBuilder add(String key, JsonValue value) {
-        attributeValues.put(key, value != null ? ((DynamoDbJsonValue) value).getAttributeValue() : null);
+        attributeValues.put(key, DynamoDbJsonValue.getAttributeValue(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(String key, String value) {
-        attributeValues.put(key, value != null ? AttributeValue.builder().s(value).build() : null);
+        attributeValues.put(key, value != null ? AttributeValue.builder().s(value).build() : NUL);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(String key, BigInteger value) {
-        attributeValues.put(key, value != null ? AttributeValue.builder().n(value.toString()).build() : null);
+        attributeValues.put(key, value != null ? AttributeValue.builder().n(value.toString()).build() : NUL);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(String key, BigDecimal value) {
-        attributeValues.put(key, value != null ? AttributeValue.builder().n(value.toString()).build() : null);
+        attributeValues.put(key, value != null ? AttributeValue.builder().n(value.toString()).build() : NUL);
         return this;
     }
 
@@ -70,19 +72,19 @@ class DynamoDbJsonObjectBuilder implements JsonObjectBuilder {
 
     @Override
     public JsonObjectBuilder addNull(String key) {
-        attributeValues.put(key, AttributeValue.builder().nul(true).build());
+        attributeValues.put(key, NUL);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(String key, JsonObjectBuilder jsonObjectBuilder) {
-        attributeValues.put(key, jsonObjectBuilder != null ? ((DynamoDbJsonObject) jsonObjectBuilder.build()).getAttributeValue() : null);
+        attributeValues.put(key, jsonObjectBuilder != null ? ((DynamoDbJsonObject) jsonObjectBuilder.build()).getAttributeValue() : NUL);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(String key, JsonArrayBuilder jsonArrayBuilder) {
-        attributeValues.put(key, jsonArrayBuilder != null ? ((DynamoDbJsonArray) jsonArrayBuilder.build()).getAttributeValue() : null);
+        attributeValues.put(key, jsonArrayBuilder != null ? ((DynamoDbJsonArray) jsonArrayBuilder.build()).getAttributeValue() : NUL);
         return this;
     }
 

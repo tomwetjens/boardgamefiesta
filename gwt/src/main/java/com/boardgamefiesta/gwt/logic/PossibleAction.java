@@ -100,24 +100,20 @@ abstract class PossibleAction {
     }
 
     static PossibleAction deserialize(JsonObject jsonObject) {
-        var mandatory = jsonObject.getJsonObject("mandatory");
-        if (mandatory != null) {
-            return Mandatory.deserialize(mandatory);
+        if (jsonObject.containsKey("mandatory")) {
+            return Mandatory.deserialize(jsonObject.getJsonObject("mandatory"));
         }
 
-        var any = jsonObject.getJsonObject("any");
-        if (any != null) {
-            return Any.deserialize(any);
+        if (jsonObject.containsKey("any")) {
+            return Any.deserialize(jsonObject.getJsonObject("any"));
         }
 
-        var choice = jsonObject.getJsonObject("choice");
-        if (choice != null) {
-            return Choice.deserialize(choice);
+        if (jsonObject.containsKey("choice")) {
+            return Choice.deserialize(jsonObject.getJsonObject("choice"));
         }
 
-        var whenThen = jsonObject.getJsonObject("whenThen");
-        if (whenThen != null) {
-            return WhenThen.deserialize(whenThen);
+        if (jsonObject.containsKey("whenThen")) {
+            return WhenThen.deserialize(jsonObject.getJsonObject("whenThen"));
         }
 
         return Repeat.deserialize(jsonObject.getJsonObject("repeat"));
@@ -491,11 +487,11 @@ abstract class PossibleAction {
 
         static Repeat deserialize(JsonObject jsonObject) {
             if (jsonObject.containsKey("repeatingAction")) {
-                var current = jsonObject.getJsonObject("current");
+                var current = jsonObject.get("current");
                 return new Repeat(jsonObject.getInt("atLeast"),
                         jsonObject.getInt("atMost"),
                         PossibleAction.deserialize(jsonObject.getJsonObject("repeatingAction")),
-                        current != null ? PossibleAction.deserialize(current) : null);
+                        current != null && current != JsonValue.NULL ? PossibleAction.deserialize(current.asJsonObject()) : null);
             } else {
                 // Deprecated
                 return new Repeat(jsonObject.getInt("atLeast"),

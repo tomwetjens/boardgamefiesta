@@ -233,7 +233,7 @@ public class Game implements State {
 
         fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
-        foresights.fillUp();
+        foresights.fillUp(!jobMarket.isClosed());
 
         currentPlayerState().drawUpToHandLimit(random);
         canUndo = false;

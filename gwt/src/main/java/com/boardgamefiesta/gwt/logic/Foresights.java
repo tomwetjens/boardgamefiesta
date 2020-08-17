@@ -11,7 +11,6 @@ import javax.json.JsonValue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Foresights {
@@ -24,14 +23,18 @@ public class Foresights {
 
     Foresights(KansasCitySupply kansasCitySupply) {
         this(kansasCitySupply, new KansasCitySupply.Tile[NUM_COLUMNS][NUM_ROWS]);
-        fillUp();
+        fillUp(true);
     }
 
-    void fillUp() {
+    void fillUp(boolean workers) {
         for (int columnIndex = 0; columnIndex < NUM_COLUMNS; columnIndex++) {
             for (int rowIndex = 0; rowIndex < NUM_ROWS; rowIndex++) {
                 if (spaces[columnIndex][rowIndex] == null) {
-                    spaces[columnIndex][rowIndex] = kansasCitySupply.draw(columnIndex);
+                    var tile = kansasCitySupply.draw(columnIndex);
+
+                    if (tile.getWorker() == null || workers) {
+                        spaces[columnIndex][rowIndex] = tile;
+                    }
                 }
             }
         }
@@ -41,7 +44,7 @@ public class Foresights {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
                 .add("spaces", serializer.fromStream(Arrays.stream(spaces),
-                        tiles -> serializer.fromStream(Arrays.stream(tiles).filter(Objects::nonNull), KansasCitySupply.Tile::serialize)))
+                        tiles -> serializer.fromStream(Arrays.stream(tiles), tile -> tile != null ? tile.serialize(factory) : JsonValue.NULL)))
                 .build();
     }
 
@@ -71,8 +74,21 @@ public class Foresights {
     }
 
     boolean isEmpty() {
-        return spaces[0][0] == null && spaces[0][1] == null
-                && spaces[1][0] == null && spaces[1][1] == null
-                && spaces[2][0] == null && spaces[2][1] == null;
+        return isEmpty(0) && isEmpty(1) && isEmpty(2);
+    }
+
+    boolean isEmpty(int columnIndex) {
+        return spaces[columnIndex][0] == null && spaces[columnIndex][1] == null;
+    }
+
+    void removeWorkers() {
+        for (int columnIndex = 0; columnIndex < NUM_COLUMNS; columnIndex++) {
+            for (int rowIndex = 0; rowIndex < NUM_ROWS; rowIndex++) {
+                var tile = spaces[columnIndex][rowIndex];
+                if (tile != null && tile.getWorker() != null) {
+                    spaces[columnIndex][rowIndex] = null;
+                }
+            }
+        }
     }
 }

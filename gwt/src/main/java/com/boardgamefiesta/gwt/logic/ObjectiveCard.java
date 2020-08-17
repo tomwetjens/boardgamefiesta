@@ -7,6 +7,7 @@ import lombok.*;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonString;
+import javax.json.JsonValue;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,9 +38,9 @@ public class ObjectiveCard extends Card {
     }
 
     static ObjectiveCard deserialize(JsonObject jsonObject) {
-        var possibleAction = jsonObject.getJsonObject("possibleAction");
+        var possibleAction = jsonObject.get("possibleAction");
         return new ObjectiveCard(
-                possibleAction != null ? PossibleAction.deserialize(possibleAction) : null,
+                possibleAction != null && possibleAction != JsonValue.NULL ? PossibleAction.deserialize(possibleAction.asJsonObject()) : null,
                 jsonObject.getJsonArray("tasks").getValuesAs(JsonString::getString).stream().map(Task::valueOf).collect(Collectors.toList()),
                 jsonObject.getInt("points"),
                 jsonObject.getInt("penalty"));

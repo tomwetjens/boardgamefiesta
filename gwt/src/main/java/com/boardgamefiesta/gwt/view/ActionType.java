@@ -93,7 +93,9 @@ public enum ActionType {
     UPGRADE_ANY_STATION_BEHIND_ENGINE(Action.UpgradeAnyStationBehindEngine.class),
     UPGRADE_STATION(Action.UpgradeStation.class),
     USE_ADJACENT_BUILDING(Action.UseAdjacentBuilding.class),
-    CHOOSE_FORESIGHTS(Action.ChooseForesights.class),
+    CHOOSE_FORESIGHT_1(Action.ChooseForesight1.class),
+    CHOOSE_FORESIGHT_2(Action.ChooseForesight2.class),
+    CHOOSE_FORESIGHT_3(Action.ChooseForesight3.class),
     UNLOCK_BLACK_OR_WHITE(Action.UnlockBlackOrWhite.class),
     UNLOCK_WHITE(Action.UnlockWhite.class),
     DOWNGRADE_STATION(Action.DowngradeStation.class);
@@ -278,11 +280,12 @@ public enum ActionType {
                 return new Action.UseAdjacentBuilding(game.getTrail()
                         .getBuildingLocation(getString(jsonObject, JsonProperties.LOCATION))
                         .orElseThrow(() -> new JsonException("No such location")));
-            case CHOOSE_FORESIGHTS:
-                return new Action.ChooseForesights(getJsonArray(jsonObject, JsonProperties.CHOICES).stream()
-                        .map(jsonValue -> (JsonNumber) jsonValue)
-                        .map(JsonNumber::intValue)
-                        .collect(Collectors.toList()));
+            case CHOOSE_FORESIGHT_1:
+                return new Action.ChooseForesight1(jsonObject.getInt("choice"));
+            case CHOOSE_FORESIGHT_2:
+                return new Action.ChooseForesight2(jsonObject.getInt("choice"));
+            case CHOOSE_FORESIGHT_3:
+                return new Action.ChooseForesight3(jsonObject.getInt("choice"));
             case UNLOCK_BLACK_OR_WHITE:
                 return new Action.UnlockBlackOrWhite(getEnum(jsonObject, JsonProperties.UNLOCK, Unlockable.class));
             case UNLOCK_WHITE:

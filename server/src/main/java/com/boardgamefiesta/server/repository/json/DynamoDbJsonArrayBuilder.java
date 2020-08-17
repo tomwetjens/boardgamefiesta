@@ -22,7 +22,7 @@ class DynamoDbJsonArrayBuilder implements JsonArrayBuilder {
 
     @Override
     public JsonArrayBuilder add(JsonValue value) {
-        attributeValues.add(((DynamoDbJsonValue) value).getAttributeValue());
+        attributeValues.add(DynamoDbJsonValue.getAttributeValue(value));
         return this;
     }
 
@@ -70,7 +70,7 @@ class DynamoDbJsonArrayBuilder implements JsonArrayBuilder {
 
     @Override
     public JsonArrayBuilder addNull() {
-        attributeValues.add(AttributeValue.builder().nul(true).build());
+        attributeValues.add(DynamoDbJsonValue.NUL);
         return this;
     }
 

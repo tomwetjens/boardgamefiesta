@@ -19,11 +19,6 @@ class DynamoDbJsonString extends DynamoDbJsonValue implements JsonString {
         this.value = attributeValue.s();
     }
 
-    DynamoDbJsonString(String value) {
-        this.attributeValue = null;
-        this.value = value;
-    }
-
     @Override
     public String getString() {
         return value;

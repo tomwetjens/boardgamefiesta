@@ -4,15 +4,21 @@ import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 import lombok.experimental.NonFinal;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @SuppressWarnings("unchecked")
     static Class<? extends Action> deserializeClass(String str) {
+        // Backwards compatibility
+        if (str.equals("ChooseForesights")) {
+            return deserializeClass(ChooseForesight1.class.getSimpleName());
+        }
+
         try {
             return (Class<? extends Action>) Class.forName(Action.class.getName() + "$" + str);
         } catch (ClassNotFoundException e) {
@@ -600,44 +606,27 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     }
 
     @Value
+    @NonFinal
     @EqualsAndHashCode(callSuper = false)
-    public static class ChooseForesights extends Action {
+    private static class ChooseForesight extends Action {
 
-        @NonNull
-        List<Integer> choices;
-
-        public ChooseForesights(@NonNull List<Integer> choices) {
-            if (choices.size() != 3) {
-                throw new GWTException(GWTError.MUST_SPECIFY_3_FORESIGHTS);
-            }
-
-            this.choices = new ArrayList<>(choices);
-        }
+        int columnIndex;
+        int rowIndex;
 
         @Override
         public ActionResult perform(@NonNull Game game, @NonNull Random random) {
-            game.fireActionEvent(this, toEventParams(game));
+            KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, rowIndex);
 
-            for (int columnIndex = 0; columnIndex < choices.size(); columnIndex++) {
-                int rowIndex = choices.get(columnIndex);
+            game.fireActionEvent(this, List.of(tile.getTeepee() != null
+                    ? tile.getTeepee().name() : tile.getWorker() != null
+                    ? tile.getWorker().name() : tile.getHazard().getType().name()));
 
-                KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, rowIndex);
+            placeTile(game, tile);
 
-                if (tile != null) {
-                    placeTile(game, tile);
-                }
-            }
-
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(DeliverToCity.class)));
-        }
-
-        List<String> toEventParams(Game game) {
-            return IntStream.range(0, 3)
-                    .mapToObj(columnIndex -> game.getForesights().choices(columnIndex).get(choices.get(columnIndex)))
-                    .map(tile -> tile.getTeepee() != null
-                            ? tile.getTeepee().name() : tile.getWorker() != null
-                            ? tile.getWorker().name() : tile.getHazard().getType().name())
-                    .collect(Collectors.toList());
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(
+                    columnIndex == 0 ? (game.getForesights().isEmpty(1) ? DeliverToCity.class : ChooseForesight2.class)
+                            : columnIndex == 1 ? (game.getForesights().isEmpty(2) ? DeliverToCity.class : ChooseForesight3.class)
+                            : DeliverToCity.class)));
         }
 
         private void placeTile(Game game, KansasCitySupply.Tile tile) {
@@ -656,6 +645,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                     if (jobMarket.isClosed()) {
                         game.currentPlayerState().gainJobMarketToken();
                         game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.GAINS_JOB_MARKET_TOKEN, Collections.emptyList());
+
+                        game.getForesights().removeWorkers();
                     }
                 }
             } else if (tile.getHazard() != null) {
@@ -663,6 +654,24 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             } else {
                 game.getTrail().placeTeepee(tile.getTeepee());
             }
+        }
+    }
+
+    public static class ChooseForesight1 extends ChooseForesight {
+        public ChooseForesight1(int rowIndex) {
+            super(0, rowIndex);
+        }
+    }
+
+    public static class ChooseForesight2 extends ChooseForesight {
+        public ChooseForesight2(int rowIndex) {
+            super(1, rowIndex);
+        }
+    }
+
+    public static class ChooseForesight3 extends ChooseForesight {
+        public ChooseForesight3(int rowIndex) {
+            super(2, rowIndex);
         }
     }
 
