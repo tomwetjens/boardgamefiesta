@@ -48,10 +48,7 @@ public class GWT implements GameProvider<Game> {
     @Override
     public Game start(Set<Player> players, Options options, Random random) {
         return Game.start(players, Game.Options.builder()
-                // TODO Remove backwards compatible option "beginner"
-                .buildings(options.getBoolean("beginner", false)
-                        ? Game.Options.Buildings.BEGINNER
-                        : options.getEnum("buildings", Game.Options.Buildings.class, Game.Options.Buildings.RANDOMIZED))
+                .buildings(options.getEnum("buildings", Game.Options.Buildings.class, Game.Options.Buildings.RANDOMIZED))
                 .playerOrder(options.getEnum("playerOrder", Game.Options.PlayerOrder.class, Game.Options.PlayerOrder.RANDOMIZED))
                 .build(), random);
     }
