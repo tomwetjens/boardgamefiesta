@@ -34,21 +34,27 @@ public class StateView {
     public StateView(Game state, Player viewingPlayer) {
         railroadTrack = new RailroadTrackView(state.getRailroadTrack());
 
-        player = state.getPlayers().stream()
-                .filter(p -> p == viewingPlayer)
-                .map(state::playerState)
-                .map(playerState -> new PlayerStateView(state, playerState, viewingPlayer))
-                .findAny()
-                .orElse(null);
+        if (viewingPlayer != null) {
+            player = state.getPlayers().stream()
+                    .filter(p -> p == viewingPlayer)
+                    .map(state::playerState)
+                    .map(playerState -> new PlayerStateView(state, playerState, viewingPlayer))
+                    .findAny()
+                    .orElse(null);
 
-        // Other players in play order
-        var viewingPlayerIndex = state.getPlayers().indexOf(viewingPlayer);
-        var playerCount = state.getPlayers().size();
-        otherPlayers = IntStream.range(1, playerCount)
-                .map(i -> (viewingPlayerIndex + i) % playerCount)
-                .mapToObj(i -> state.getPlayers().get(i))
-                .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer))
-                .collect(Collectors.toList());
+            // Other players in play order
+            var viewingPlayerIndex = state.getPlayers().indexOf(viewingPlayer);
+            var playerCount = state.getPlayers().size();
+            otherPlayers = IntStream.range(1, playerCount)
+                    .map(i -> (viewingPlayerIndex + i) % playerCount)
+                    .mapToObj(i -> state.getPlayers().get(i))
+                    .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer))
+                    .collect(Collectors.toList());
+        } else {
+            otherPlayers = state.getPlayers().stream()
+                    .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer))
+                    .collect(Collectors.toList());
+        }
 
         foresights = new ForesightsView(state.getForesights());
 
