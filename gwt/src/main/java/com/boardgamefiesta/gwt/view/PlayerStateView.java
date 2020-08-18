@@ -56,7 +56,7 @@ public class PlayerStateView {
         drawStackSize = playerState.getDrawStack().size();
         handSize = playerState.getHand().size();
 
-        if (viewingPlayer == playerState.getPlayer()) {
+        if (viewingPlayer == playerState.getPlayer() || state.isEnded()) {
             hand = playerState.getHand().stream()
                     .map(CardView::of)
                     .sorted()
