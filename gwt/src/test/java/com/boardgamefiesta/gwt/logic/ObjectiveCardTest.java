@@ -100,6 +100,22 @@ class ObjectiveCardTest {
         }
 
         @Test
+        void scott2() {
+            var start = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BUILDING), 3, 0);
+            var a = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.GREEN_TEEPEE), 3, 2);
+            var b = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 3, 2);
+
+            when(game.getRailroadTrack().numberOfUpgradedStations(player)).thenReturn(0);
+            when(playerState.numberOfHazards()).thenReturn(2);
+            when(playerState.numberOfTeepees()).thenReturn(3);
+            when(playerState.numberOfGreenTeepees()).thenReturn(1);
+            when(trail.numberOfBuildings(player)).thenReturn(2);
+
+            var result = ObjectiveCard.score(Set.of(start, a, b), Collections.emptySet(), game, player, false);
+            assertThat(result.getTotal()).isEqualTo(1);
+        }
+
+        @Test
         void anotherCase() {
             var start = new ObjectiveCard(null, List.of(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE), 3, 0);
             var a = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD), 3, 2);

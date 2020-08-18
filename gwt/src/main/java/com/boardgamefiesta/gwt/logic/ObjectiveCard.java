@@ -116,11 +116,21 @@ public class ObjectiveCard extends Card {
                         scoreCards(tail, committed, counts, score.add(head, -head.getPenalty())));
             }
         } else {
-            return Stream.concat(
-                    // Normal case, completed so use it
-                    scoreCards(tail, committed, remaining, score.add(head, head.getPoints())),
-                    // Or see what happens when using the resources for other cards
-                    scoreCards(tail, committed, counts, score));
+            if (committed.contains(head)) {
+                return Stream.concat(
+                        // Normal case, committing to it
+                        scoreCards(tail, committed, remaining, score.add(head, head.getPoints())),
+                        // Or see what happens when taking the penalty
+                        scoreCards(tail, committed, counts, score.add(head, -head.getPenalty())));
+            } else {
+                // If the player has the "3 points per pair of committed objective cards" station master tile,
+                // it could make sense to commit to failed objective cards, if the penalty is less than the points for a pair
+                return Stream.concat(
+                        // Normal case, skipping it
+                        scoreCards(tail, committed, counts, score),
+                        // Or see what happens when committing to it
+                        scoreCards(tail, committed, remaining, score.add(head, head.getPoints())));
+            }
         }
     }
 
@@ -144,6 +154,7 @@ public class ObjectiveCard extends Card {
     }
 
     @AllArgsConstructor
+    @ToString
     private static class Counts {
         int buildings;
         int greenTeepees;
