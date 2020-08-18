@@ -88,11 +88,19 @@ public abstract class Location {
 
         @Override
         PossibleAction activate(Game game) {
+            return activate(game, false);
+        }
+
+        /**
+         * @param adjacent Normally using another player's building is not allowed, but when performing
+         *                 the "Use Adjacent Location" tile action, it is allowed to use another player's building.
+         */
+        PossibleAction activate(Game game, boolean adjacent) {
             if (building == null) {
                 throw new GWTException(GWTError.LOCATION_EMPTY);
             }
 
-            if (building instanceof NeutralBuilding || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer()) {
+            if (canUseBuilding(game, adjacent)) {
                 var buildingAction = building.activate(game);
 
                 if (riskAction != null) {
@@ -118,6 +126,11 @@ public abstract class Location {
                 // Other player's building, only allowed to use aux action
                 return PossibleAction.optional(Action.SingleAuxiliaryAction.class);
             }
+        }
+
+        private boolean canUseBuilding(Game game, boolean adjacent) {
+            return adjacent || building instanceof NeutralBuilding
+                    || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer();
         }
 
         @Override

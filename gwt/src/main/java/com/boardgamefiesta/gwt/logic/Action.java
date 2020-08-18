@@ -1490,7 +1490,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(adjacentLocation.activate(game));
+            return ActionResult.undoAllowed(adjacentLocation.activate(game, true));
         }
     }
 
