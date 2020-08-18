@@ -52,7 +52,7 @@ public class GWT implements GameProvider<Game> {
                 .buildings(options.getBoolean("beginner", false)
                         ? Game.Options.Buildings.BEGINNER
                         : options.getEnum("buildings", Game.Options.Buildings.class, Game.Options.Buildings.RANDOMIZED))
-                .playerOrder(options.getEnum("playerOrder", Game.Options.PlayerOrder.class, Game.Options.PlayerOrder.BIDDING))
+                .playerOrder(options.getEnum("playerOrder", Game.Options.PlayerOrder.class, Game.Options.PlayerOrder.RANDOMIZED))
                 .build(), random);
     }
 
