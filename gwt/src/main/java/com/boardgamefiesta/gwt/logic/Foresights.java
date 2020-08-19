@@ -32,7 +32,7 @@ public class Foresights {
                 if (spaces[columnIndex][rowIndex] == null) {
                     var tile = kansasCitySupply.draw(columnIndex);
 
-                    if (tile.getWorker() == null || workers) {
+                    if (tile != null && (tile.getWorker() == null || workers)) {
                         spaces[columnIndex][rowIndex] = tile;
                     }
                 }

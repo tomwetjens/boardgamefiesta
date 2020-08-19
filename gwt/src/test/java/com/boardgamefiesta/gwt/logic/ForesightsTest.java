@@ -98,4 +98,12 @@ class ForesightsTest {
         }
     }
 
+    @Test
+    void fillUpWhenSupplyIsEmpty() {
+        var foresights = new Foresights(kansasCitySupply);
+
+        foresights.fillUp(false);
+
+        assertThat(foresights.isEmpty()).isTrue();
+    }
 }
