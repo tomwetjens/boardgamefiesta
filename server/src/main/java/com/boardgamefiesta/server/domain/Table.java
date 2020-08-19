@@ -282,8 +282,7 @@ public class Table {
 
         if (ownerId.equals(userId)) {
             // if owner wants to leave, have to appoint a new owner
-            otherHumanPlayers(userId)
-                    .filter(Player::hasAccepted)
+            otherUsersPlaying(userId)
                     .findAny()
                     .flatMap(Player::getUserId)
                     .ifPresentOrElse(this::changeOwner, this::abandon);
@@ -292,7 +291,7 @@ public class Table {
         player.leave();
 
         if (status == Status.STARTED) {
-            if (players.size() - 1 >= game.getMinNumberOfPlayers()) {
+            if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
                 runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow()));
             } else {
@@ -303,7 +302,6 @@ public class Table {
             // TODO Deduct karma points if playing with humans
         }
 
-        players.remove(player); // Remove player from list, after updating state, else it will fail to find it
         new Left(id, userId).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.LEFT));
@@ -311,9 +309,10 @@ public class Table {
         updated = Instant.now();
     }
 
-    private Stream<Player> otherHumanPlayers(User.Id userId) {
+    private Stream<Player> otherUsersPlaying(User.Id userId) {
         return players.stream()
                 .filter(player -> player.getType() == Player.Type.USER)
+                .filter(Player::isPlaying)
                 .filter(player -> !player.getUserId().orElseThrow().equals(userId));
     }
 
@@ -355,12 +354,7 @@ public class Table {
 
         updated = Instant.now();
 
-        var allOtherPlayersAgreedToLeave = players.stream()
-                .filter(otherPlayer -> otherPlayer.getType() == Player.Type.USER)
-                .filter(otherPlayer -> !userId.equals(otherPlayer.getUserId().orElseThrow()))
-                .allMatch(Player::hasAgreedToLeave);
-
-        if (allOtherPlayersAgreedToLeave) {
+        if (otherUsersPlaying(userId).allMatch(Player::hasAgreedToLeave)) {
             abandon();
         }
     }
@@ -426,7 +420,7 @@ public class Table {
             throw APIException.badRequest(APIError.CANNOT_ABANDON);
         }
 
-        if (status != Status.STARTED && otherHumanPlayers(ownerId).count() > 1) {
+        if (status != Status.STARTED && otherUsersPlaying(ownerId).count() > 1) {
             throw APIException.forbidden(APIError.CANNOT_ABANDON);
         }
 
@@ -438,7 +432,7 @@ public class Table {
     }
 
     private Stream<Player> playersThatAccepted() {
-        return players.stream().filter(Player::hasAccepted);
+        return players.stream().filter(Player::isPlaying);
     }
 
     public void rejectInvite(@NonNull User.Id userId) {

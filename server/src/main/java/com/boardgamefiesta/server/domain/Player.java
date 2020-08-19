@@ -141,7 +141,7 @@ public class Player {
         updated = Instant.now();
     }
 
-    public boolean hasAccepted() {
+    public boolean isPlaying() {
         return status == Status.ACCEPTED || status == Status.PROPOSED_TO_LEAVE || status == Status.AGREED_TO_LEAVE;
     }
 

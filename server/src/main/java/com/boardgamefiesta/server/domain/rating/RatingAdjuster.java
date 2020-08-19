@@ -43,6 +43,7 @@ public class RatingAdjuster {
             }
 
             var playerRatings = table.getPlayers().stream()
+                    .filter(Player::isPlaying)
                     // Only users can have ratings
                     .flatMap(player -> player.getUserId().stream())
                     .map(userId -> ratings.findLatest(userId, table.getGame().getId()))
@@ -51,6 +52,7 @@ public class RatingAdjuster {
             var playerScores = table.getPlayers().stream()
                     // Computer players have no rating and therefore cannot be considered
                     .filter(player -> player.getType() == Player.Type.USER)
+                    .filter(Player::isPlaying)
                     .collect(Collectors.toMap(
                             player -> player.getUserId().orElseThrow(),
                             player -> player.getScore().orElseThrow()));
