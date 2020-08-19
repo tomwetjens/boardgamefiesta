@@ -19,8 +19,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PlayerStateTest {
 
-    private ObjectiveCard startingObjectiveCard = new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0);
-
     private Player player = new Player("A", PlayerColor.WHITE);
 
     @Nested
@@ -28,7 +26,7 @@ class PlayerStateTest {
 
         @Test
         void create() {
-            PlayerState playerState = new PlayerState(player, 6, startingObjectiveCard, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            PlayerState playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
 
             assertThat(playerState.getBalance()).isEqualTo(6);
             assertThat(playerState.getTempCertificates()).isEqualTo(0);
@@ -41,7 +39,6 @@ class PlayerStateTest {
             assertThat(playerState.getHazards()).isEmpty();
             assertThat(playerState.getTeepees()).isEmpty();
             assertThat(playerState.getStationMasters()).isEmpty();
-            assertThat(playerState.getCommittedObjectives()).containsExactly(startingObjectiveCard);
             assertThat(playerState.getBuildings()).hasSize(10);
             assertThat(playerState.getHand()).hasSize(4);
             assertThat(playerState.getDiscardPile()).isEmpty();
@@ -55,7 +52,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, startingObjectiveCard, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
         }
 
         @Test
@@ -369,7 +366,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, startingObjectiveCard, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
         }
 
         @Test

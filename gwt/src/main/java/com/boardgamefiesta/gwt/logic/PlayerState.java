@@ -37,6 +37,8 @@ public class PlayerState {
     private final Set<Hazard> hazards;
 
     @Getter
+    private int bid = 0;
+    @Getter
     private int tempCertificates;
     @Getter
     private int balance;
@@ -48,7 +50,7 @@ public class PlayerState {
     @Setter(AccessLevel.PACKAGE)
     private int lastEngineMove;
 
-    PlayerState(@NonNull Player player, int balance, @NonNull ObjectiveCard startingObjectiveCard, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
+    PlayerState(@NonNull Player player, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
         this.player = player;
         this.balance = balance;
         this.tempCertificates = 0;
@@ -69,7 +71,6 @@ public class PlayerState {
         this.unlocked.put(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, 1);
 
         this.objectives = new HashSet<>();
-        this.objectives.add(startingObjectiveCard);
 
         this.stationMasters = new HashSet<>();
         this.teepees = new LinkedList<>();
@@ -93,6 +94,7 @@ public class PlayerState {
                 .add("teepees", serializer.fromStrings(teepees, Teepee::name))
                 .add("hazards", serializer.fromCollection(hazards, Hazard::serialize))
                 .add("tempCertificates", tempCertificates)
+                .add("bid", bid)
                 .add("balance", balance)
                 .add("jobMarketToken", jobMarketToken)
                 .add("usedCowboys", usedCowboys)
@@ -123,6 +125,7 @@ public class PlayerState {
         var stationMasters = jsonObject.getJsonArray("stationMasters").getValuesAs(JsonString::getString).stream().map(StationMaster::valueOf).collect(Collectors.toSet());
         var teepees = jsonObject.getJsonArray("teepees").getValuesAs(JsonString::getString).stream().map(Teepee::valueOf).collect(Collectors.toList());
         var hazards = jsonObject.getJsonArray("hazards").stream().map(JsonValue::asJsonObject).map(Hazard::deserialize).collect(Collectors.toSet());
+        var bid = jsonObject.getInt("bid", 0);
         var tempCertificates = jsonObject.getInt("tempCertificates", 0);
         var balance = jsonObject.getInt("balance", 0);
         var jobMarketToken = jsonObject.getBoolean("jobMarketToken", false);
@@ -131,7 +134,11 @@ public class PlayerState {
 
         return new PlayerState(player, drawStack, hand, discardPile, workers,
                 buildings, unlocked, objectives, stationMasters, teepees, hazards,
-                tempCertificates, balance, jobMarketToken, usedCowboys, lastEngineMove);
+                bid, tempCertificates, balance, jobMarketToken, usedCowboys, lastEngineMove);
+    }
+
+    void placeBid(int bid) {
+        this.bid = bid;
     }
 
     void drawCard(Random random) {
@@ -261,12 +268,16 @@ public class PlayerState {
             throw new GWTException(GWTError.CARD_NOT_IN_HAND);
         }
 
-        objectives.add(objectiveCard);
+        commitToObjectiveCard(objectiveCard);
 
         return objectiveCard.getPossibleAction()
                 .map(PossibleAction::clone)
                 .map(ImmediateActions::of)
                 .orElse(ImmediateActions.none());
+    }
+
+    void commitToObjectiveCard(ObjectiveCard objectiveCard) {
+        objectives.add(objectiveCard);
     }
 
     void removeWorker(Worker worker) {
@@ -534,6 +545,7 @@ public class PlayerState {
     Score score(Game game) {
         var objectives = scoreObjectives(game);
         return new Score(Map.of(
+                ScoreCategory.BID, -bid,
                 ScoreCategory.DOLLARS, balance / 5,
                 ScoreCategory.CATTLE_CARDS, scoreCattleCards(),
                 ScoreCategory.OBJECTIVE_CARDS, objectives.getTotal(),

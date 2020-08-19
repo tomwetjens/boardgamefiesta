@@ -11,5 +11,6 @@ public enum ScoreCategory {
     JOB_MARKET_TOKEN,
     BUILDINGS,
     CITIES,
+    BID,
     STATIONS
 }

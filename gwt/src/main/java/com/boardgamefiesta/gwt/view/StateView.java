@@ -24,6 +24,9 @@ public class StateView {
     ObjectiveCardsView objectiveCards;
     PlayerView currentPlayer;
     List<ActionType> actions;
+    Game.Status status;
+    List<ObjectiveCardView> startingObjectiveCards;
+    List<BidView> bids;
     boolean turn;
     boolean ended;
     Set<PossibleMoveView> possibleMoves;
@@ -32,6 +35,18 @@ public class StateView {
     Map<ActionType, Set<RailroadTrackView.SpaceView>> possibleSpaces;
 
     public StateView(Game state, Player viewingPlayer) {
+        status = state.getStatus();
+
+        if (state.getStartingObjectiveCards() != null) {
+            startingObjectiveCards = state.getStartingObjectiveCards().stream()
+                    .map(ObjectiveCardView::new)
+                    .collect(Collectors.toList());
+        }
+
+        bids = state.playerOrderFromBids().stream()
+                .map(player -> new BidView(player.getName(), state.playerState(player).getBid()))
+                .collect(Collectors.toList());
+
         railroadTrack = new RailroadTrackView(state.getRailroadTrack());
 
         if (viewingPlayer != null) {

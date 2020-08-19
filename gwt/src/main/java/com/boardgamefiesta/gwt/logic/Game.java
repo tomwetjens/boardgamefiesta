@@ -22,7 +22,6 @@ import java.util.stream.Stream;
 public class Game implements State {
 
     private final Set<Player> players;
-    private final List<Player> playerOrder;
 
     private final Map<Player, PlayerState> playerStates;
 
@@ -55,10 +54,15 @@ public class Game implements State {
     @Getter
     private Player currentPlayer;
 
+    private List<Player> playerOrder;
+
     @Getter
     private Status status;
 
     private boolean canUndo;
+
+    @Getter
+    private final List<ObjectiveCard> startingObjectiveCards;
 
     public static Game start(@NonNull Set<Player> players, @NonNull Options options, @NonNull Random random) {
         if (players.size() < 2) {
@@ -76,13 +80,8 @@ public class Game implements State {
                 ? PlayerBuilding.BuildingSet.beginner()
                 : PlayerBuilding.BuildingSet.random(random);
 
-        var startingObjectiveCards = ObjectiveCards.createStartingObjectiveCardsDrawStack(random);
-
-        var playerStates = new HashMap<Player, PlayerState>();
-        int startBalance = 6;
-        for (Player player : playerOrder) {
-            playerStates.put(player, new PlayerState(player, startBalance++, startingObjectiveCards.poll(), random, buildings));
-        }
+        var playerStates = players.stream()
+                .collect(Collectors.toMap(Function.identity(), player -> new PlayerState(player, 0, random, buildings)));
 
         var kansasCitySupply = new KansasCitySupply(random);
 
@@ -98,14 +97,84 @@ public class Game implements State {
                 .foresights(new Foresights(kansasCitySupply))
                 .cattleMarket(new CattleMarket(players.size(), random))
                 .objectiveCards(new ObjectiveCards(random))
-                .actionStack(ActionStack.initial(Collections.singleton(PossibleAction.mandatory(Action.Move.class))))
+                .actionStack(ActionStack.initial(Collections.emptyList()))
                 .canUndo(false)
-                .status(Status.STARTED)
+                .status(Status.BIDDING)
+                .startingObjectiveCards(ObjectiveCards.createStartingObjectiveCardsDrawStack(random, players.size()))
                 .build();
 
         game.placeInitialTiles();
 
+        if (options.getPlayerOrder() != Options.PlayerOrder.BIDDING) {
+            game.start();
+        } else {
+            game.startBidding();
+        }
+
         return game;
+    }
+
+    private void startBidding() {
+        status = Status.BIDDING;
+
+        beginFirstTurn();
+    }
+
+    void placeBid(int bid) {
+        var playerState = currentPlayerState();
+
+        if (bid < playerState.getBid()) {
+            throw new GWTException(GWTError.BID_TOO_LOW);
+        }
+
+        var maxBid = playerStates.values().stream()
+                .mapToInt(PlayerState::getBid)
+                .max()
+                .orElse(0);
+
+        if (bid > maxBid + 8) {
+            throw new GWTException(GWTError.BID_TOO_HIGH);
+        }
+
+        if (playerStates.values().stream().anyMatch(ps -> ps.getBid() == bid)) {
+            throw new GWTException(GWTError.BID_TOO_LOW);
+        }
+
+        playerState.placeBid(bid);
+    }
+
+    void passBid() {
+        actionStack.clear();
+        fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
+
+        playerOrder = playerOrderFromBids();
+
+        start();
+    }
+
+    private void start() {
+        for (int i = 0; i < playerOrder.size(); i++) {
+            var player = playerOrder.get(i);
+            var playerState = playerStates.get(player);
+
+            int startBalance = 6 + i;
+
+            fireEvent(playerState.getPlayer(), GWTEvent.Type.PLAYER_ORDER, List.of(Integer.toString(i + 1), Integer.toString(startBalance)));
+
+            playerState.gainDollars(startBalance);
+            playerState.commitToObjectiveCard(startingObjectiveCards.remove(0));
+        }
+
+        status = Status.STARTED; // change before determining begin turn actions
+
+        beginFirstTurn();
+    }
+
+    private void beginFirstTurn() {
+        currentPlayer = playerOrder.get(0);
+        actionStack.addActions(determineBeginTurnActions());
+
+        fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
     }
 
     private void placeInitialTiles() {
@@ -251,12 +320,28 @@ public class Game implements State {
         currentPlayer = playerOrder.get((playerOrder.indexOf(currentPlayer) + 1) % playerOrder.size());
 
         if (!currentPlayerState().hasJobMarketToken()) {
-            actionStack.addAction(PossibleAction.mandatory(Action.Move.class));
+            actionStack.addActions(determineBeginTurnActions());
 
             fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
         } else {
             status = Status.ENDED;
             fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());
+        }
+    }
+
+    private List<PossibleAction> determineBeginTurnActions() {
+        if (status == Status.BIDDING) {
+            var currentPlayerState = currentPlayerState();
+            var bid = currentPlayerState.getBid();
+            if (bid != 0 || playerStates.values().stream().noneMatch(playerState -> playerState != currentPlayerState
+                    && playerState.getBid() == bid)) {
+                return List.of(PossibleAction.choice(Action.Bid.class, Action.PassBid.class));
+            } else {
+                // Must bid
+                return Collections.singletonList(PossibleAction.mandatory(Action.Bid.class));
+            }
+        } else {
+            return Collections.singletonList(PossibleAction.mandatory(Action.Move.class));
         }
     }
 
@@ -298,7 +383,8 @@ public class Game implements State {
         // of them, either:
         // - before performing phase A or
         // - before or after performing any one action in phase B.
-        return currentPlayerState().hasObjectiveCardInHand()
+        return currentPlayer != null
+                && currentPlayerState().hasObjectiveCardInHand()
                 && !trail.atKansasCity(currentPlayer)
                 && ((actionStack.size() == 1 && actionStack.canPerform(Action.Move.class)) // before phase A
                 || !actionStack.hasImmediate() // not during an action in phase B
@@ -334,6 +420,7 @@ public class Game implements State {
                 .add("objectiveCards", objectiveCards.serialize(factory))
                 .add("actionStack", actionStack.serialize(factory))
                 .add("status", status.name())
+                .add("startingObjectiveCards", serializer.fromCollection(startingObjectiveCards, ObjectiveCard::serialize))
                 .add("canUndo", canUndo)
                 .build();
     }
@@ -370,6 +457,12 @@ public class Game implements State {
                 .status(jsonObject.containsKey("status")
                         ? Status.valueOf(jsonObject.getString("status"))
                         : (jsonObject.getBoolean("ended", false) ? Status.ENDED : Status.STARTED))
+                .startingObjectiveCards(jsonObject.containsKey("startingObjectiveCards")
+                        ? jsonObject.getJsonArray("startingObjectiveCards").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(ObjectiveCard::deserialize)
+                        .collect(Collectors.toList())
+                        : Collections.emptyList())
                 .canUndo(jsonObject.getBoolean("canUndo", false))
                 .build();
     }
@@ -472,6 +565,15 @@ public class Game implements State {
                 : railroadTrack.possibleExtraordinaryDeliveries(player, playerState.getLastEngineMove());
     }
 
+    public List<Player> playerOrderFromBids() {
+        return playerStates.values().stream()
+                .sorted(Comparator.comparingInt(PlayerState::getBid).reversed()
+                        // In case bids are equal, keep original player order
+                        .thenComparingInt(playerState -> playerOrder.indexOf(playerState.getPlayer())))
+                .map(PlayerState::getPlayer)
+                .collect(Collectors.toList());
+    }
+
     public enum Status {
         BIDDING,
         STARTED,
@@ -491,7 +593,7 @@ public class Game implements State {
 
         @NonNull
         @Builder.Default
-        PlayerOrder playerOrder = PlayerOrder.BIDDING;
+        PlayerOrder playerOrder = PlayerOrder.RANDOMIZED;
 
         public enum Buildings {
             BEGINNER,

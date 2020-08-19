@@ -41,6 +41,7 @@ public class GWTEvent implements InGameEvent {
         EVERY_OTHER_PLAYER_HAS_1_TURN,
         ENDS_GAME,
         FILL_UP_CATTLE_MARKET,
+        PLAYER_ORDER,
         MAY_DISCARD_1_JERSEY_TO_GAIN_4_DOLLARS
     }
 }

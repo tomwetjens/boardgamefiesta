@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class Automa {
 
@@ -12,7 +13,11 @@ public class Automa {
         var currentPlayerState = game.currentPlayerState();
         var possibleActions = game.possibleActions();
 
-        if (possibleActions.contains(Action.Move.class)) {
+        if (possibleActions.contains(Action.PassBid.class)) {
+            game.perform(new Action.PassBid(), random);
+        } else if (possibleActions.contains(Action.Bid.class)) {
+            game.perform(new Action.Bid(lowestBidPossible(game)), random);
+        } else if (possibleActions.contains(Action.Move.class)) {
             game.perform(new Action.Move(calculateMove(game)), random);
         } else if (possibleActions.contains(Action.Move1Forward.class)) {
             game.perform(new Action.Move1Forward(calculateMove(game)), random);
@@ -61,6 +66,19 @@ public class Automa {
             // TODO For now just stupidly end turn
             game.endTurn(random);
         }
+    }
+
+    private int lowestBidPossible(Game game) {
+        var bids = game.getPlayers().stream()
+                .map(player -> game.playerState(player).getBid())
+                .collect(Collectors.toSet());
+
+        int bid = game.currentPlayerState().getBid() + 1;
+        while (bids.contains(bid)) {
+            bid++;
+        }
+
+        return bid;
     }
 
     private List<Location> calculateMove(Game game) {

@@ -44,9 +44,14 @@ public class ObjectiveCards {
                         .collect(Collectors.toSet()));
     }
 
-    static Queue<ObjectiveCard> createStartingObjectiveCardsDrawStack(@NonNull Random random) {
+    static List<ObjectiveCard> createStartingObjectiveCardsDrawStack(@NonNull Random random, int playerCount) {
         List<ObjectiveCard> deck = new ArrayList<>(createStartingObjectiveCardsSet());
         Collections.shuffle(deck, random);
+
+        while (deck.size() > playerCount) {
+            deck.remove(0);
+        }
+
         return new LinkedList<>(deck);
     }
 

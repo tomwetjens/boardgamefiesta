@@ -42,17 +42,20 @@ class GameTest {
         void beginner() {
             Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, new Random(0));
 
+            assertThat(game.getStatus()).isEqualTo(Game.Status.STARTED);
             assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
 
             // Neutral buildings should not be randomized
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get()).isInstanceOf(NeutralBuilding.A.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("B")).getBuilding().get()).isInstanceOf(NeutralBuilding.B.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("C")).getBuilding().get()).isInstanceOf(NeutralBuilding.C.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("D")).getBuilding().get()).isInstanceOf(NeutralBuilding.D.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("E")).getBuilding().get()).isInstanceOf(NeutralBuilding.E.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("F")).getBuilding().get()).isInstanceOf(NeutralBuilding.F.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get()).isInstanceOf(NeutralBuilding.G.class);
+            assertThat(Arrays.asList(
+                    ((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("B")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("C")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("D")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("E")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("F")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get())).extracting(Building::getName)
+                    .containsExactly("A", "B", "C", "D", "E", "F", "G");
 
             // Player buildings should not be randomized
             assertThat(game.currentPlayerState().getBuildings()).extracting(PlayerBuilding::getClass).containsExactlyInAnyOrder(A_BUILDINGS);
@@ -64,18 +67,21 @@ class GameTest {
         void randomized() {
             Game game = Game.start(new LinkedHashSet<>(Arrays.asList(playerA, playerB)), RANDOMIZED, new Random(0));
 
+            assertThat(game.getStatus()).isEqualTo(Game.Status.STARTED);
             assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
             assertThat(game.possibleActions()).containsExactly(Action.Move.class);
 
             // Neutral buildings should be randomized
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get()).isInstanceOf(NeutralBuilding.B.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("B")).getBuilding().get()).isInstanceOf(NeutralBuilding.E.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("C")).getBuilding().get()).isInstanceOf(NeutralBuilding.A.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("D")).getBuilding().get()).isInstanceOf(NeutralBuilding.G.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("E")).getBuilding().get()).isInstanceOf(NeutralBuilding.C.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("F")).getBuilding().get()).isInstanceOf(NeutralBuilding.F.class);
-            assertThat(((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get()).isInstanceOf(NeutralBuilding.D.class);
+            assertThat(Arrays.asList(
+                    ((Location.BuildingLocation) game.getTrail().getLocation("A")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("B")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("C")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("D")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("E")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("F")).getBuilding().get(),
+                    ((Location.BuildingLocation) game.getTrail().getLocation("G")).getBuilding().get())).extracting(Building::getName)
+                    .doesNotContainSequence("A", "B", "C", "D", "E", "F", "G");
 
             // Player buildings should be randomized
             Class[] randomizedBuildings = {

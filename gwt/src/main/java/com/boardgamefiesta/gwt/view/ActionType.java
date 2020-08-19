@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 public enum ActionType {
 
     APPOINT_STATION_MASTER(Action.AppointStationMaster.class),
+    BID(Action.Bid.class),
+    PASS_BID(Action.PassBid.class),
     BUY_CATTLE(Action.BuyCattle.class),
     DELIVER_TO_CITY(Action.DeliverToCity.class),
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_CERTIFICATES(Action.Discard1BlackAngusToGain2Certificates.class),
@@ -118,6 +120,10 @@ public enum ActionType {
         switch (type) {
             case APPOINT_STATION_MASTER:
                 return new Action.AppointStationMaster(getEnum(jsonObject, JsonProperties.WORKER, Worker.class));
+            case BID:
+                return new Action.Bid(jsonObject.getInt("bid"));
+            case PASS_BID:
+                return new Action.PassBid();
             case BUY_CATTLE:
                 return new Action.BuyCattle(findCattleCards(game, getJsonArray(jsonObject, JsonProperties.CATTLE_CARDS)), getInt(jsonObject, JsonProperties.COWBOYS), getInt(jsonObject, JsonProperties.DOLLARS));
             case DELIVER_TO_CITY:

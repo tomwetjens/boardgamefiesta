@@ -14,6 +14,7 @@ public class PlayerStateView {
 
     PlayerView player;
 
+    int bid;
     int balance;
     int cowboys;
     int craftsmen;
@@ -41,6 +42,7 @@ public class PlayerStateView {
     PlayerStateView(@NonNull Game state, @NonNull PlayerState playerState, Player viewingPlayer) {
         player = new PlayerView(playerState.getPlayer());
 
+        bid = playerState.getBid();
         balance = playerState.getBalance();
         cowboys = playerState.getNumberOfCowboys();
         craftsmen = playerState.getNumberOfCraftsmen();

@@ -1609,4 +1609,33 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return ActionResult.undoNotAllowed(ImmediateActions.none());
         }
     }
+
+    public static class Bid extends Action {
+        int bid;
+
+        public Bid(int bid) {
+            this.bid = bid;
+        }
+
+        @Override
+        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+            game.placeBid(bid);
+
+            int place = game.playerOrderFromBids().indexOf(game.getCurrentPlayer()) + 1;
+            game.fireActionEvent(this, List.of(Integer.toString(bid), Integer.toString(place)));
+
+            return ActionResult.undoNotAllowed(ImmediateActions.none()); // cannot undo so turn is ended automatically
+        }
+    }
+
+    public static class PassBid extends Action {
+        @Override
+        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+            game.fireActionEvent(this, Collections.emptyList());
+
+            game.passBid();
+
+            return ActionResult.undoNotAllowed(ImmediateActions.none()); // cannot undo so turn is ended automatically
+        }
+    }
 }
