@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.concurrent.CompletionException;
 
-@WebFilter("/events")
+@WebFilter({"/events", "*/events"})
 @Slf4j
 public class EventsAuthFilter implements Filter {
 
