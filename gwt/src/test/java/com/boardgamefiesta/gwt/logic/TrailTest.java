@@ -91,4 +91,26 @@ class TrailTest {
         assertThat(trail.getTeepeeLocation(-2).getTeepee().get()).isEqualTo(Teepee.GREEN);
         assertThat(trail.getTeepeeLocation(-1).getTeepee().get()).isEqualTo(Teepee.GREEN);
     }
+
+    @Test
+    void scott() {
+        var trail = new Trail();
+
+        ((Location.BuildingLocation) trail.getLocation("A")).placeBuilding(new NeutralBuilding.A());
+        ((Location.BuildingLocation) trail.getLocation("B")).placeBuilding(new NeutralBuilding.B());
+        ((Location.BuildingLocation) trail.getLocation("A-1")).placeBuilding(new PlayerBuilding.Building10B(playerA));
+        ((Location.BuildingLocation) trail.getLocation("A-2")).placeBuilding(new PlayerBuilding.Building8B(playerA));
+        ((Location.BuildingLocation) trail.getLocation("A-3")).placeBuilding(new PlayerBuilding.Building4B(playerB));
+        ((Location.HazardLocation) trail.getLocation("FLOOD-1")).placeHazard(new Hazard(HazardType.FLOOD, Hand.GREEN, 4));
+        ((Location.HazardLocation) trail.getLocation("FLOOD-2")).placeHazard(new Hazard(HazardType.FLOOD, Hand.BLACK, 2));
+        ((Location.BuildingLocation) trail.getLocation("FLOOD-RISK-1")).placeBuilding(new PlayerBuilding.Building7B(playerA));
+        ((Location.BuildingLocation) trail.getLocation("B-1")).placeBuilding(new PlayerBuilding.Building1A(playerC));
+
+        Location from = trail.getLocation("A");
+        Location to = trail.getLocation("B-1");
+
+        assertThat(trail.possibleMoves(from, to, playerC, 2, 6, 4)).containsExactlyInAnyOrder(
+                new PossibleMove(from, asList(trail.getLocation("A-1"), trail.getLocation("A-2"), trail.getLocation("A-3"), trail.getLocation("B"), to), 2, Map.of(playerA, 2)),
+                new PossibleMove(from, asList(trail.getLocation("FLOOD-1"), trail.getLocation("FLOOD-2"), trail.getLocation("FLOOD-RISK-1"), trail.getLocation("B"), to), 2, Collections.emptyMap()));
+    }
 }

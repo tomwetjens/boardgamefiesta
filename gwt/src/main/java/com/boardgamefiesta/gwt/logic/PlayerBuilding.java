@@ -274,7 +274,7 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
-    private static class Building4B extends PlayerBuilding {
+    static class Building4B extends PlayerBuilding {
 
         Building4B(Player player) {
             super(4, BuildingSet.Side.B, player, Hand.BLACK, 2, 3);
@@ -342,7 +342,7 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
-    private static class Building8B extends PlayerBuilding {
+    static class Building8B extends PlayerBuilding {
 
         Building8B(Player player) {
             super(8, BuildingSet.Side.B, player, Hand.NONE, 6, 8);

@@ -27,7 +27,7 @@ public class Trail {
 
     private final Map<Player, Location> playerLocations = new HashMap<>();
 
-    private Trail() {
+    Trail() {
         kansasCity = new Location.KansasCity();
 
         Location.BuildingLocation g = new Location.BuildingLocation("G", false,
