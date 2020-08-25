@@ -198,13 +198,22 @@ public class PlayerState {
     }
 
     void gainDollars(int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Amount must not be negative: " + amount);
+        }
+
         balance += amount;
     }
 
     void payDollars(int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Amount must not be negative: " + amount);
+        }
+
         if (balance < amount) {
             throw new GWTException(GWTError.NOT_ENOUGH_BALANCE_TO_PAY);
         }
+
         balance -= amount;
     }
 

@@ -267,7 +267,7 @@ public abstract class Location {
         }
     }
 
-    public static final class TeepeeLocation extends Location {
+    public static class TeepeeLocation extends Location {
 
         @Getter
         private final int reward;

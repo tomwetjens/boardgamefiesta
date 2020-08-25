@@ -428,4 +428,23 @@ class PlayerStateTest {
         }
     }
 
+    @Test
+    void payDollarsNegative() {
+        var playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+
+        assertThatThrownBy(() -> playerState.payDollars(-1))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        assertThat(playerState.getBalance()).isEqualTo(6);
+    }
+
+    @Test
+    void gainDollarsNegative() {
+        var playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+
+        assertThatThrownBy(() -> playerState.gainDollars(-1))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        assertThat(playerState.getBalance()).isEqualTo(6);
+    }
 }

@@ -305,7 +305,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.currentPlayerState().addTeepee(teepee);
                 game.currentPlayerState().gainDollars(teepeeLocation.getReward());
             } else {
-                game.currentPlayerState().payDollars(teepeeLocation.getReward());
+                game.currentPlayerState().payDollars(-teepeeLocation.getReward());
                 teepeeLocation.removeTeepee();
                 game.currentPlayerState().addTeepee(teepee);
             }
