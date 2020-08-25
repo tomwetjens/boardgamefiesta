@@ -287,11 +287,11 @@ public enum ActionType {
                         .getBuildingLocation(getString(jsonObject, JsonProperties.LOCATION))
                         .orElseThrow(() -> new JsonException("No such location")));
             case CHOOSE_FORESIGHT_1:
-                return new Action.ChooseForesight1(jsonObject.getInt("choice"));
+                return new Action.ChooseForesight1(getInt(jsonObject, "choice"));
             case CHOOSE_FORESIGHT_2:
-                return new Action.ChooseForesight2(jsonObject.getInt("choice"));
+                return new Action.ChooseForesight2(getInt(jsonObject, "choice"));
             case CHOOSE_FORESIGHT_3:
-                return new Action.ChooseForesight3(jsonObject.getInt("choice"));
+                return new Action.ChooseForesight3(getInt(jsonObject, "choice"));
             case UNLOCK_BLACK_OR_WHITE:
                 return new Action.UnlockBlackOrWhite(getEnum(jsonObject, JsonProperties.UNLOCK, Unlockable.class));
             case UNLOCK_WHITE:
