@@ -69,6 +69,16 @@ public class TableDynamoDbRepository implements Tables {
                 .map(this::mapToTable);
     }
 
+    public Stream<Table> findAll() {
+        return dynamoDbClient.scanPaginator(ScanRequest.builder()
+                .tableName(tableName)
+                .filterExpression("attribute_exists(#State)")
+                .expressionAttributeNames(Map.of("#State", "State"))
+                .build())
+                .items().stream()
+                .map(this::mapToTable);
+    }
+
     @Override
     public int countActive(User.Id userId) {
         return getActiveTableIds(userId).size();
@@ -590,4 +600,5 @@ public class TableDynamoDbRepository implements Tables {
                 .items().stream()
                 .map(this::mapToLogEntry);
     }
+
 }
