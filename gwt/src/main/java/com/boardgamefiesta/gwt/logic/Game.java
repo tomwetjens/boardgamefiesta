@@ -302,8 +302,6 @@ public class Game implements State {
 
         fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
-        foresights.fillUp(!jobMarket.isClosed());
-
         currentPlayerState().drawUpToHandLimit(random);
         canUndo = false;
 
@@ -311,6 +309,8 @@ public class Game implements State {
     }
 
     private void afterEndTurn() {
+        foresights.fillUp(!jobMarket.isClosed());
+
         if (currentPlayerState().hasJobMarketToken()) {
             // current player is ending the game, every other player can have one more turn
             fireEvent(currentPlayer, GWTEvent.Type.EVERY_OTHER_PLAYER_HAS_1_TURN, Collections.emptyList());
