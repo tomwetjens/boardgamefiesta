@@ -288,6 +288,8 @@ public class Table {
                     .ifPresentOrElse(this::changeOwner, this::abandon);
         }
 
+        log.add(new LogEntry(player, LogEntry.Type.LEFT));
+
         player.leave();
 
         if (status == Status.STARTED) {
@@ -304,7 +306,6 @@ public class Table {
 
         new Left(id, userId).fire();
 
-        log.add(new LogEntry(player, LogEntry.Type.LEFT));
 
         updated = Instant.now();
     }

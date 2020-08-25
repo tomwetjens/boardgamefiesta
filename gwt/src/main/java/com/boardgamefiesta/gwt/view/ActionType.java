@@ -15,8 +15,7 @@ import java.util.stream.Collectors;
 public enum ActionType {
 
     APPOINT_STATION_MASTER(Action.AppointStationMaster.class),
-    BID(Action.Bid.class),
-    PASS_BID(Action.PassBid.class),
+    PLACE_BID(Action.PlaceBid.class),
     BUY_CATTLE(Action.BuyCattle.class),
     DELIVER_TO_CITY(Action.DeliverToCity.class),
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_CERTIFICATES(Action.Discard1BlackAngusToGain2Certificates.class),
@@ -120,10 +119,8 @@ public enum ActionType {
         switch (type) {
             case APPOINT_STATION_MASTER:
                 return new Action.AppointStationMaster(getEnum(jsonObject, JsonProperties.WORKER, Worker.class));
-            case BID:
-                return new Action.Bid(jsonObject.getInt("bid"));
-            case PASS_BID:
-                return new Action.PassBid();
+            case PLACE_BID:
+                return new Action.PlaceBid(new Bid(getInt(jsonObject, JsonProperties.POSITION), getInt(jsonObject, JsonProperties.POINTS)));
             case BUY_CATTLE:
                 return new Action.BuyCattle(findCattleCards(game, getJsonArray(jsonObject, JsonProperties.CATTLE_CARDS)), getInt(jsonObject, JsonProperties.COWBOYS), getInt(jsonObject, JsonProperties.DOLLARS));
             case DELIVER_TO_CITY:
@@ -474,6 +471,7 @@ public enum ActionType {
     }
 
     private static class JsonProperties {
+        private static final String POSITION = "position";
         private static final String DOLLARS = "dollars";
         private static final String COWBOYS = "cowboys";
         private static final String CATTLE_TYPE = "cattleType";

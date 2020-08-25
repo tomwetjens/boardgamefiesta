@@ -58,6 +58,10 @@ class ActionStack {
         return !isEmpty() && peek().canPerform(action);
     }
 
+    public boolean canSkip() {
+        return !isEmpty() && peek().canSkip();
+    }
+
     Set<Class<? extends Action>> getPossibleActions() {
         return !immediateActions.isEmpty()
                 ? immediateActions.peek().getPossibleActions()
@@ -153,4 +157,5 @@ class ActionStack {
     void addAction(PossibleAction action) {
         actions.addFirst(action);
     }
+
 }

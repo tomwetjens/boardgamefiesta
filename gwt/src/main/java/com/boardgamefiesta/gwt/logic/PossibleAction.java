@@ -147,6 +147,8 @@ abstract class PossibleAction {
      */
     abstract boolean canPerform(Class<? extends Action> action);
 
+    abstract boolean canSkip();
+
     /**
      * Returns all possible actions that a player can perform next.
      * E.g. if it is a choice, all possible choices, or if it is a repeating action the action that can be performed once more.
@@ -195,6 +197,11 @@ abstract class PossibleAction {
         @Override
         boolean canPerform(Class<? extends Action> action) {
             return action != null && action == this.action;
+        }
+
+        @Override
+        boolean canSkip() {
+            return false;
         }
 
         @Override
@@ -265,6 +272,11 @@ abstract class PossibleAction {
         @Override
         boolean canPerform(Class<? extends Action> action) {
             return actions.stream().anyMatch(possibleAction -> possibleAction.canPerform(action));
+        }
+
+        @Override
+        boolean canSkip() {
+            return true;
         }
 
         @Override
@@ -354,6 +366,11 @@ abstract class PossibleAction {
         @Override
         boolean canPerform(Class<? extends Action> action) {
             return actions.stream().anyMatch(fa -> fa.canPerform(action));
+        }
+
+        @Override
+        boolean canSkip() {
+            return actions.isEmpty() || (actions.size() == 1 && actions.get(0).canSkip());
         }
 
         @Override
@@ -548,6 +565,11 @@ abstract class PossibleAction {
         @Override
         boolean canPerform(Class<? extends Action> action) {
             return current != null ? current.canPerform(action) : (repeatingAction.canPerform(action) && atMost > 0);
+        }
+
+        @Override
+        boolean canSkip() {
+            return (current != null && current.canSkip()) || atLeast == 0;
         }
 
         @Override

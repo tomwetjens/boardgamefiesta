@@ -37,7 +37,7 @@ public class PlayerState {
     private final Set<Hazard> hazards;
 
     @Getter
-    private int bid = 0;
+    private Bid bid;
     @Getter
     private int tempCertificates;
     @Getter
@@ -94,7 +94,7 @@ public class PlayerState {
                 .add("teepees", serializer.fromStrings(teepees, Teepee::name))
                 .add("hazards", serializer.fromCollection(hazards, Hazard::serialize))
                 .add("tempCertificates", tempCertificates)
-                .add("bid", bid)
+                .add("bid", bid != null ? bid.serialize(factory) : JsonValue.NULL)
                 .add("balance", balance)
                 .add("jobMarketToken", jobMarketToken)
                 .add("usedCowboys", usedCowboys)
@@ -103,41 +103,38 @@ public class PlayerState {
     }
 
     static PlayerState deserialize(Player player, JsonObject jsonObject) {
-        var drawStack = jsonObject.getJsonArray("drawStack").stream()
-                .map(JsonValue::asJsonObject)
-                .map(Card::deserialize)
-                .collect(Collectors.toCollection(LinkedList::new));
-        var hand = jsonObject.getJsonArray("hand").stream()
-                .map(JsonValue::asJsonObject)
-                .map(Card::deserialize)
-                .collect(Collectors.toSet());
-        var discardPile = jsonObject.getJsonArray("discardPile").stream()
-                .map(JsonValue::asJsonObject)
-                .map(Card::deserialize)
-                .collect(Collectors.toCollection(LinkedList::new));
-        var workers = JsonDeserializer.forObject(jsonObject.getJsonObject("workers")).asIntegerMap(Worker::valueOf);
-        var buildings = jsonObject.getJsonArray("buildings")
-                .getValuesAs(JsonString::getString).stream()
-                .map(name -> PlayerBuilding.forName(name, player))
-                .collect(Collectors.toSet());
-        var unlocked = JsonDeserializer.forObject(jsonObject.getJsonObject("unlocked")).asIntegerMap(Unlockable::valueOf);
-        var objectives = jsonObject.getJsonArray("objectives").stream().map(JsonValue::asJsonObject).map(ObjectiveCard::deserialize).collect(Collectors.toSet());
-        var stationMasters = jsonObject.getJsonArray("stationMasters").getValuesAs(JsonString::getString).stream().map(StationMaster::valueOf).collect(Collectors.toSet());
-        var teepees = jsonObject.getJsonArray("teepees").getValuesAs(JsonString::getString).stream().map(Teepee::valueOf).collect(Collectors.toList());
-        var hazards = jsonObject.getJsonArray("hazards").stream().map(JsonValue::asJsonObject).map(Hazard::deserialize).collect(Collectors.toSet());
-        var bid = jsonObject.getInt("bid", 0);
-        var tempCertificates = jsonObject.getInt("tempCertificates", 0);
-        var balance = jsonObject.getInt("balance", 0);
-        var jobMarketToken = jsonObject.getBoolean("jobMarketToken", false);
-        var usedCowboys = jsonObject.getInt("usedCowboys", 0);
-        var lastEngineMove = jsonObject.getInt("lastEngineMove", 0);
-
-        return new PlayerState(player, drawStack, hand, discardPile, workers,
-                buildings, unlocked, objectives, stationMasters, teepees, hazards,
-                bid, tempCertificates, balance, jobMarketToken, usedCowboys, lastEngineMove);
+        return new PlayerState(player,
+                jsonObject.getJsonArray("drawStack").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Card::deserialize)
+                        .collect(Collectors.toCollection(LinkedList::new)),
+                jsonObject.getJsonArray("hand").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Card::deserialize)
+                        .collect(Collectors.toSet()),
+                jsonObject.getJsonArray("discardPile").stream()
+                        .map(JsonValue::asJsonObject)
+                        .map(Card::deserialize)
+                        .collect(Collectors.toCollection(LinkedList::new)),
+                JsonDeserializer.forObject(jsonObject.getJsonObject("workers")).<Worker>asIntegerMap(Worker::valueOf),
+                jsonObject.getJsonArray("buildings")
+                        .getValuesAs(JsonString::getString).stream()
+                        .map(name -> PlayerBuilding.forName(name, player))
+                        .collect(Collectors.toSet()),
+                JsonDeserializer.forObject(jsonObject.getJsonObject("unlocked")).<Unlockable>asIntegerMap(Unlockable::valueOf),
+                jsonObject.getJsonArray("objectives").stream().map(JsonValue::asJsonObject).map(ObjectiveCard::deserialize).collect(Collectors.toSet()),
+                jsonObject.getJsonArray("stationMasters").getValuesAs(JsonString::getString).stream().map(StationMaster::valueOf).collect(Collectors.toSet()),
+                jsonObject.getJsonArray("teepees").getValuesAs(JsonString::getString).stream().map(Teepee::valueOf).collect(Collectors.toList()),
+                jsonObject.getJsonArray("hazards").stream().map(JsonValue::asJsonObject).map(Hazard::deserialize).collect(Collectors.toSet()),
+                Bid.deserialize(jsonObject.get("bid")),
+                jsonObject.getInt("tempCertificates", 0),
+                jsonObject.getInt("balance", 0),
+                jsonObject.getBoolean("jobMarketToken", false),
+                jsonObject.getInt("usedCowboys", 0),
+                jsonObject.getInt("lastEngineMove", 0));
     }
 
-    void placeBid(int bid) {
+    void placeBid(Bid bid) {
         this.bid = bid;
     }
 
@@ -554,7 +551,7 @@ public class PlayerState {
     Score score(Game game) {
         var objectives = scoreObjectives(game);
         return new Score(Map.of(
-                ScoreCategory.BID, -bid,
+                ScoreCategory.BID, bid != null ? -bid.getPoints() : 0,
                 ScoreCategory.DOLLARS, balance / 5,
                 ScoreCategory.CATTLE_CARDS, scoreCattleCards(),
                 ScoreCategory.OBJECTIVE_CARDS, objectives.getTotal(),
@@ -685,5 +682,9 @@ public class PlayerState {
 
     public int numberOfHazards() {
         return hazards.size();
+    }
+
+    public Optional<Bid> getBid() {
+        return Optional.ofNullable(bid);
     }
 }

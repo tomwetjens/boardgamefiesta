@@ -1,10 +1,8 @@
 package com.boardgamefiesta.gwt.logic;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Automa {
 
@@ -13,10 +11,12 @@ public class Automa {
         var currentPlayerState = game.currentPlayerState();
         var possibleActions = game.possibleActions();
 
-        if (possibleActions.contains(Action.PassBid.class)) {
-            game.perform(new Action.PassBid(), random);
-        } else if (possibleActions.contains(Action.Bid.class)) {
-            game.perform(new Action.Bid(lowestBidPossible(game)), random);
+        if (possibleActions.contains(Action.PlaceBid.class)) {
+            if (game.canSkip()) {
+                game.skip(random);
+            } else {
+                game.perform(new Action.PlaceBid(lowestBidPossible(game)), random);
+            }
         } else if (possibleActions.contains(Action.Move.class)) {
             game.perform(new Action.Move(calculateMove(game)), random);
         } else if (possibleActions.contains(Action.Move1Forward.class)) {
@@ -68,17 +68,21 @@ public class Automa {
         }
     }
 
-    private int lowestBidPossible(Game game) {
+    private Bid lowestBidPossible(Game game) {
         var bids = game.getPlayers().stream()
-                .map(player -> game.playerState(player).getBid())
+                .map(game::playerState)
+                .map(PlayerState::getBid)
+                .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
-        int bid = game.currentPlayerState().getBid() + 1;
-        while (bids.contains(bid)) {
-            bid++;
-        }
-
-        return bid;
+        return IntStream.range(0, game.getPlayerOrder().size())
+                .filter(position -> bids.stream().noneMatch(bid -> bid.getPosition() == position))
+                .mapToObj(position -> new Bid(position, 0))
+                .findFirst()
+                .orElseGet(() -> bids.stream()
+                        .max(Comparator.comparingInt(Bid::getPoints))
+                        .map(bid -> new Bid(bid.getPosition(), bid.getPoints() + 1))
+                        .orElse(new Bid(0, 0)));
     }
 
     private List<Location> calculateMove(Game game) {

@@ -44,7 +44,9 @@ public class StateView {
         }
 
         bids = state.playerOrderFromBids().stream()
-                .map(player -> new BidView(player.getName(), state.playerState(player).getBid()))
+                .map(player -> state.playerState(player).getBid()
+                        .map(bid -> new BidView(player, bid))
+                        .orElseGet(() -> new BidView(player)))
                 .collect(Collectors.toList());
 
         railroadTrack = new RailroadTrackView(state.getRailroadTrack());

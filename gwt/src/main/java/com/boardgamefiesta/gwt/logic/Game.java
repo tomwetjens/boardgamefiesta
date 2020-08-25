@@ -120,36 +120,47 @@ public class Game implements State {
         beginFirstTurn();
     }
 
-    void placeBid(int bid) {
+    void placeBid(Bid bid) {
+        if (bid.getPosition() < 0 || bid.getPosition() >= playerOrder.size()) {
+            throw new GWTException(GWTError.BID_INVALID_POSITION);
+        }
+
         var playerState = currentPlayerState();
 
-        if (bid < playerState.getBid()) {
-            throw new GWTException(GWTError.BID_TOO_LOW);
-        }
-
-        var maxBid = playerStates.values().stream()
-                .mapToInt(PlayerState::getBid)
+        var highestForPosition = playerStates.values().stream()
+                .map(PlayerState::getBid)
+                .flatMap(Optional::stream)
+                .filter(existing -> existing.getPosition() == bid.getPosition())
+                .mapToInt(Bid::getPoints)
                 .max()
-                .orElse(0);
+                .orElse(-1); // less than 0, to allow bidding 0
 
-        if (bid > maxBid + 8) {
-            throw new GWTException(GWTError.BID_TOO_HIGH);
-        }
-
-        if (playerStates.values().stream().anyMatch(ps -> ps.getBid() == bid)) {
+        if (bid.getPoints() <= highestForPosition) {
             throw new GWTException(GWTError.BID_TOO_LOW);
         }
 
         playerState.placeBid(bid);
+
+        endBiddingIfCompleted();
     }
 
-    void passBid() {
-        actionStack.clear();
-        fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
+    private void endBiddingIfCompleted() {
+        var uncontested = playerOrder.stream()
+                .map(this::playerState)
+                .map(PlayerState::getBid)
+                .flatMap(Optional::stream)
+                .mapToInt(Bid::getPosition)
+                .distinct()
+                .count();
 
-        playerOrder = playerOrderFromBids();
+        if (uncontested == playerOrder.size()) {
+            actionStack.clear();
+            fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
-        start();
+            playerOrder = playerOrderFromBids();
+
+            start();
+        }
     }
 
     private void start() {
@@ -331,18 +342,28 @@ public class Game implements State {
 
     private List<PossibleAction> determineBeginTurnActions() {
         if (status == Status.BIDDING) {
-            var currentPlayerState = currentPlayerState();
-            var bid = currentPlayerState.getBid();
-            if (bid != 0 || playerStates.values().stream().noneMatch(playerState -> playerState != currentPlayerState
-                    && playerState.getBid() == bid)) {
-                return List.of(PossibleAction.choice(Action.Bid.class, Action.PassBid.class));
-            } else {
-                // Must bid
-                return Collections.singletonList(PossibleAction.mandatory(Action.Bid.class));
-            }
+            return Collections.singletonList(mustPlaceBid()
+                    ? PossibleAction.mandatory(Action.PlaceBid.class)
+                    : PossibleAction.optional(Action.PlaceBid.class));
         } else {
             return Collections.singletonList(PossibleAction.mandatory(Action.Move.class));
         }
+    }
+
+    private boolean mustPlaceBid() {
+        return currentPlayerState().getBid()
+                .map(Bid::getPosition)
+                .map(this::isPositionContested)
+                .orElse(true);
+    }
+
+    private boolean isPositionContested(int position) {
+        return playerStates.values().stream()
+                .map(PlayerState::getBid)
+                .flatMap(Optional::stream)
+                .mapToInt(Bid::getPosition)
+                .filter(p -> p == position)
+                .count() > 1;
     }
 
     public PlayerState currentPlayerState() {
@@ -487,18 +508,23 @@ public class Game implements State {
 
     @Override
     public void leave(Player player) {
-        if (currentPlayer == player) {
-            actionStack.clear();
-
-            afterEndTurn();
-        }
-
         playerOrder.remove(player);
         // Do not remove player from "players" set since there may be buildings, railroad track etc. referring to the player still,
         // and these are deserialized back from that single set which must therefore not be modified after game has started
 
+        if (status == Status.BIDDING) {
+            endBiddingIfCompleted();
+        } else if (status == Status.STARTED) {
+            if (currentPlayer == player) {
+                actionStack.clear();
+
+                afterEndTurn();
+            }
+        } else {
+            throw new GWTException(GWTError.GAME_ENDED);
+        }
+
         jobMarket.adjustRowLimit(playerOrder.size());
-        // TODO Adjust cattle market?
     }
 
     ImmediateActions deliverToCity(City city) {
@@ -566,12 +592,19 @@ public class Game implements State {
     }
 
     public List<Player> playerOrderFromBids() {
-        return playerStates.values().stream()
-                .sorted(Comparator.comparingInt(PlayerState::getBid).reversed()
-                        // In case bids are equal, keep original player order
+        return playerOrder.stream()
+                .map(this::playerState)
+                .sorted(Comparator.comparingInt((PlayerState playerState) -> playerState.getBid().map(Bid::getPosition).orElse(Integer.MAX_VALUE))
+                        // If equal positions, then by points
+                        .thenComparing(Comparator.comparingInt((PlayerState playerState) -> playerState.getBid().map(Bid::getPoints).orElse(Integer.MIN_VALUE)).reversed())
+                        // If equal bids, keep a consistent order
                         .thenComparingInt(playerState -> playerOrder.indexOf(playerState.getPlayer())))
                 .map(PlayerState::getPlayer)
                 .collect(Collectors.toList());
+    }
+
+    public boolean canSkip() {
+        return actionStack.canSkip();
     }
 
     public enum Status {
