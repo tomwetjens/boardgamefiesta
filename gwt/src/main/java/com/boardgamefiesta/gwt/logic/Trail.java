@@ -10,6 +10,7 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -18,8 +19,9 @@ public class Trail {
     @Getter
     private final Location.Start start;
 
-    private final List<Location.TeepeeLocation> teepeeLocations;
-
+    private final Map<HazardType, List<Location.HazardLocation>> hazardLocations;
+    private final Map<Integer, Location.TeepeeLocation> teepeeLocations;
+    private final Map<String, Location.BuildingLocation> buildingLocations;
     private final List<Location.BuildingLocation> neutralBuildingLocations;
 
     @Getter
@@ -30,80 +32,85 @@ public class Trail {
     Trail() {
         kansasCity = new Location.KansasCity();
 
-        Location.BuildingLocation g = new Location.BuildingLocation("G", false,
-                new Location.BuildingLocation("G-1", false, kansasCity),
-                new Location.BuildingLocation("G-2", false, kansasCity));
+        var g1 = new Location.BuildingLocation("G-1", false, kansasCity);
+        var g2 = new Location.BuildingLocation("G-2", false, kansasCity);
+        var g = new Location.BuildingLocation("G", false, g1, g2);
 
-        Location.BuildingLocation f = new Location.BuildingLocation("F", false,
-                new Location.BuildingLocation("F-1", false, g),
-                new Location.BuildingLocation("F-2", true, g));
+        var f1 = new Location.BuildingLocation("F-1", false, g);
+        var f2 = new Location.BuildingLocation("F-2", true, g);
+        var f = new Location.BuildingLocation("F", false, f1, f2);
 
-        Location.HazardLocation rockfallSection = new Location.HazardLocation(HazardType.ROCKFALL, 1,
-                new Location.HazardLocation(HazardType.ROCKFALL, 2,
-                        new Location.HazardLocation(HazardType.ROCKFALL, 3,
-                                new Location.HazardLocation(HazardType.ROCKFALL, 4,
-                                        new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false,
-                                                new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, true, f))))));
+        var rockfallRisk2 = new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, true, f);
+        var rockfallRisk1 = new Location.BuildingLocation(HazardType.ROCKFALL + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false, rockfallRisk2);
+        var rockfall4 = new Location.HazardLocation(HazardType.ROCKFALL, 4, rockfallRisk1);
+        var rockfall3 = new Location.HazardLocation(HazardType.ROCKFALL, 3, rockfall4);
+        var rockfall2 = new Location.HazardLocation(HazardType.ROCKFALL, 2, rockfall3);
+        var rockfall1 = new Location.HazardLocation(HazardType.ROCKFALL, 1, rockfall2);
 
-        Location.BuildingLocation e = new Location.BuildingLocation("E", false,
-                new Location.BuildingLocation("E-1", true,
-                        new Location.BuildingLocation("E-2", true, f)),
-                rockfallSection);
+        var e2 = new Location.BuildingLocation("E-2", true, f);
+        var e1 = new Location.BuildingLocation("E-1", true, e2);
+        var e = new Location.BuildingLocation("E", false, e1, rockfall1);
 
-        Location.BuildingLocation d = new Location.BuildingLocation("D", false, e);
+        var d = new Location.BuildingLocation("D", false, e);
 
-        Location.TeepeeLocation teepeeLocation10 = new Location.TeepeeLocation(10,
-                new Location.BuildingLocation("INDIAN-TRADE-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false,
-                        new Location.BuildingLocation("INDIAN-TRADE-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, false, e)));
-        Location.TeepeeLocation teepeeLocation8 = new Location.TeepeeLocation(8, teepeeLocation10);
-        Location.TeepeeLocation teepeeLocation6 = new Location.TeepeeLocation(6, teepeeLocation8);
-        Location.TeepeeLocation teepeeLocation4 = new Location.TeepeeLocation(4, teepeeLocation6);
-        Location.TeepeeLocation teepeeLocation2 = new Location.TeepeeLocation(2, teepeeLocation4);
-        Location.TeepeeLocation teepeeLocation1 = new Location.TeepeeLocation(1, teepeeLocation2);
+        var indianTradeRisk2 = new Location.BuildingLocation("INDIAN-TRADE-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, false, e);
+        var indianTradeRisk1 = new Location.BuildingLocation("INDIAN-TRADE-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false, indianTradeRisk2);
+        var teepeeLocation10 = new Location.TeepeeLocation(10, indianTradeRisk1);
+        var teepeeLocation8 = new Location.TeepeeLocation(8, teepeeLocation10);
+        var teepeeLocation6 = new Location.TeepeeLocation(6, teepeeLocation8);
+        var teepeeLocation4 = new Location.TeepeeLocation(4, teepeeLocation6);
+        var teepeeLocation2 = new Location.TeepeeLocation(2, teepeeLocation4);
+        var teepeeLocation1 = new Location.TeepeeLocation(1, teepeeLocation2);
 
-        teepeeLocations = Arrays.asList(
-                new Location.TeepeeLocation(-3),
-                new Location.TeepeeLocation(-2),
-                new Location.TeepeeLocation(-1),
+        var teepeeMin3 = new Location.TeepeeLocation(-3);
+        var teepeeMin2 = new Location.TeepeeLocation(-2);
+        var teepeeMin1 = new Location.TeepeeLocation(-1);
+        teepeeLocations = Stream.of(
+                teepeeMin3,
+                teepeeMin2,
+                teepeeMin1,
                 teepeeLocation1,
                 teepeeLocation2,
                 teepeeLocation4,
                 teepeeLocation6,
                 teepeeLocation8,
                 teepeeLocation10
-        );
+        ).collect(Collectors.toMap(Location.TeepeeLocation::getReward, Function.identity()));
 
-        Location.BuildingLocation crossRoadsIndianTrade = new Location.BuildingLocation("C-2", false, d, teepeeLocation1);
+        var c2 = new Location.BuildingLocation("C-2", false, d, teepeeLocation1);
 
-        Location.BuildingLocation c = new Location.BuildingLocation("C", false,
-                new Location.BuildingLocation("C-1-1", true,
-                        new Location.BuildingLocation("C-1-2", true, e)),
-                crossRoadsIndianTrade);
+        var c12 = new Location.BuildingLocation("C-1-2", true, e);
+        var c11 = new Location.BuildingLocation("C-1-1", true, c12);
+        var c = new Location.BuildingLocation("C", false, c11, c2);
 
-        Location.HazardLocation droughtSection = new Location.HazardLocation(HazardType.DROUGHT, 1,
-                new Location.HazardLocation(HazardType.DROUGHT, 2,
-                        new Location.HazardLocation(HazardType.DROUGHT, 3,
-                                new Location.HazardLocation(HazardType.DROUGHT, 4,
-                                        new Location.BuildingLocation(HazardType.DROUGHT + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false, c)))));
+        var droughtRisk1 = new Location.BuildingLocation(HazardType.DROUGHT + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false, c);
+        var drought4 = new Location.HazardLocation(HazardType.DROUGHT, 4, droughtRisk1);
+        var drought3 = new Location.HazardLocation(HazardType.DROUGHT, 3, drought4);
+        var drought2 = new Location.HazardLocation(HazardType.DROUGHT, 2, drought3);
+        var drought1 = new Location.HazardLocation(HazardType.DROUGHT, 1, drought2);
 
-        Location.BuildingLocation b = new Location.BuildingLocation("B", false, droughtSection,
-                new Location.BuildingLocation("B-1", true,
-                        new Location.BuildingLocation("B-2", false,
-                                new Location.BuildingLocation("B-3", false, c))));
+        var b3 = new Location.BuildingLocation("B-3", false, c);
+        var b2 = new Location.BuildingLocation("B-2", false, b3);
+        var b1 = new Location.BuildingLocation("B-1", true, b2);
+        var b = new Location.BuildingLocation("B", false, drought1, b1);
 
-        Location.HazardLocation floodSection = new Location.HazardLocation(HazardType.FLOOD, 1,
-                new Location.HazardLocation(HazardType.FLOOD, 2,
-                        new Location.HazardLocation(HazardType.FLOOD, 3,
-                                new Location.HazardLocation(HazardType.FLOOD, 4,
-                                        new Location.BuildingLocation(HazardType.FLOOD + "-RISK-1", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, false,
-                                                new Location.BuildingLocation(HazardType.FLOOD + "-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, true, b))))));
-        Location.BuildingLocation a = new Location.BuildingLocation("A", false,
-                new Location.BuildingLocation("A-1", false,
-                        new Location.BuildingLocation("A-2", false,
-                                new Location.BuildingLocation("A-3", false, b))),
-                floodSection);
+        var floodRisk2 = new Location.BuildingLocation(HazardType.FLOOD + "-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, true, b);
+        var floodRisk1 = new Location.BuildingLocation(HazardType.FLOOD + "-RISK-1", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, false, floodRisk2);
+        var flood4 = new Location.HazardLocation(HazardType.FLOOD, 4, floodRisk1);
+        var flood3 = new Location.HazardLocation(HazardType.FLOOD, 3, flood4);
+        var flood2 = new Location.HazardLocation(HazardType.FLOOD, 2, flood3);
+        var flood1 = new Location.HazardLocation(HazardType.FLOOD, 1, flood2);
+
+        var a3 = new Location.BuildingLocation("A-3", false, b);
+        var a2 = new Location.BuildingLocation("A-2", false, a3);
+        var a1 = new Location.BuildingLocation("A-1", false, a2);
+        var a = new Location.BuildingLocation("A", false, a1, flood1);
 
         neutralBuildingLocations = List.of(a, b, c, d, e, f, g);
+        buildingLocations = Stream.of(a, a1, a2, a3, floodRisk1, floodRisk2, b, b1, b2, b3, droughtRisk1, c, c11, c12, c2, d, e, e1, e2, indianTradeRisk1, indianTradeRisk2, rockfallRisk1, rockfallRisk2, f, f1, f2, g, g1, g2)
+                .collect(Collectors.toMap(Location::getName, Function.identity()));
+        hazardLocations = Stream.of(flood1, flood2, flood3, flood4, drought1, drought2, drought3, drought4, rockfall1, rockfall2, rockfall3, rockfall4)
+                .collect(Collectors.groupingBy(Location.HazardLocation::getType));
 
         start = new Location.Start(a);
     }
@@ -123,17 +130,18 @@ public class Trail {
     JsonObject serialize(JsonBuilderFactory factory) {
         var locations = factory.createObjectBuilder();
 
-        getBuildingLocations().stream()
+        buildingLocations.values().stream()
                 .filter(buildingLocation -> buildingLocation.getBuilding().isPresent())
                 .forEach(buildingLocation -> locations.add(buildingLocation.getName(), factory.createObjectBuilder()
                         .add("building", buildingLocation.getBuilding().map(b -> b.serialize(factory)).orElse(null))));
 
-        getTeepeeLocations().stream()
+        teepeeLocations.values().stream()
                 .filter(teepeeLocation -> teepeeLocation.getTeepee().isPresent())
                 .forEach(teepeeLocation -> locations.add(teepeeLocation.getName(), factory.createObjectBuilder()
                         .add("teepee", teepeeLocation.getTeepee().map(Teepee::name).orElse(null))));
 
-        getHazardLocations()
+        hazardLocations.values().stream()
+                .flatMap(List::stream)
                 .filter(hazardLocation -> hazardLocation.getHazard().isPresent())
                 .forEach(hazardLocation -> locations.add(hazardLocation.getName(), factory.createObjectBuilder()
                         .add("hazard", hazardLocation.getHazard().map(h -> h.serialize(factory)).orElse(null))));
@@ -152,7 +160,7 @@ public class Trail {
 
         var locations = jsonObject.getJsonObject("locations");
 
-        trail.getBuildingLocations().forEach(buildingLocation -> {
+        trail.buildingLocations.values().forEach(buildingLocation -> {
             var location = locations.get(buildingLocation.getName());
             if (location != null && location != JsonValue.NULL) {
                 var building = location.asJsonObject().get("building");
@@ -162,7 +170,7 @@ public class Trail {
             }
         });
 
-        trail.getTeepeeLocations().forEach(teepeeLocation -> {
+        trail.teepeeLocations.values().forEach(teepeeLocation -> {
             var location = locations.get(teepeeLocation.getName());
             if (location != null && location != JsonValue.NULL) {
                 var teepee = location.asJsonObject().getString("teepee");
@@ -172,15 +180,17 @@ public class Trail {
             }
         });
 
-        trail.getHazardLocations().forEach(hazardLocation -> {
-            var location = locations.get(hazardLocation.getName());
-            if (location != null && location != JsonValue.NULL) {
-                var hazard = location.asJsonObject().get("hazard");
-                if (hazard != null && hazard != JsonValue.NULL) {
-                    hazardLocation.placeHazard(Hazard.deserialize(hazard.asJsonObject()));
-                }
-            }
-        });
+        trail.hazardLocations.values().stream()
+                .flatMap(List::stream)
+                .forEach(hazardLocation -> {
+                    var location = locations.get(hazardLocation.getName());
+                    if (location != null && location != JsonValue.NULL) {
+                        var hazard = location.asJsonObject().get("hazard");
+                        if (hazard != null && hazard != JsonValue.NULL) {
+                            hazardLocation.placeHazard(Hazard.deserialize(hazard.asJsonObject()));
+                        }
+                    }
+                });
 
         return trail;
     }
@@ -205,27 +215,16 @@ public class Trail {
         return Stream.concat(Stream.of(from), from.getNext().stream().flatMap(this::getLocations));
     }
 
-    private Stream<Location.HazardLocation> getHazardLocations() {
-        return getLocations().stream()
-                .filter(location -> location instanceof Location.HazardLocation)
-                .map(location -> (Location.HazardLocation) location);
-    }
-
     public List<Location.HazardLocation> getHazardLocations(HazardType hazardType) {
-        return getHazardLocations()
-                .filter(hazardLocation -> hazardLocation.getType() == hazardType)
-                .collect(Collectors.toList());
+        return Collections.unmodifiableList(hazardLocations.get(hazardType));
     }
 
-    public List<Location.TeepeeLocation> getTeepeeLocations() {
-        return Collections.unmodifiableList(teepeeLocations);
+    public Collection<Location.TeepeeLocation> getTeepeeLocations() {
+        return Collections.unmodifiableCollection(teepeeLocations.values());
     }
 
-    public Set<Location.BuildingLocation> getBuildingLocations() {
-        return getLocations().stream()
-                .filter(location -> location instanceof Location.BuildingLocation)
-                .map(location -> (Location.BuildingLocation) location)
-                .collect(Collectors.toSet());
+    public Collection<Location.BuildingLocation> getBuildingLocations() {
+        return Collections.unmodifiableCollection(buildingLocations.values());
     }
 
     public Optional<Location> getCurrentLocation(Player player) {
@@ -244,16 +243,11 @@ public class Trail {
     }
 
     public Optional<Location.BuildingLocation> getBuildingLocation(String name) {
-        return getLocations().stream()
-                .filter(location -> location.getName().equals(name))
-                .filter(location -> location instanceof Location.BuildingLocation)
-                .map(location -> (Location.BuildingLocation) location)
-                .findAny();
+        return Optional.ofNullable(buildingLocations.get(name));
     }
 
     public Location.TeepeeLocation getTeepeeLocation(int reward) {
-        return teepeeLocations.stream()
-                .filter(teepeeLocation -> teepeeLocation.getReward() == reward).findAny()
+        return Optional.ofNullable(teepeeLocations.get(reward))
                 .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION));
     }
 
