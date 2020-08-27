@@ -1,8 +1,11 @@
 package com.boardgamefiesta.server.repository;
 
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.api.spi.GameProvider;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.gwt.GWT;
 import com.boardgamefiesta.server.domain.Game;
 import com.boardgamefiesta.server.domain.Games;
 import com.boardgamefiesta.server.domain.Table;
@@ -15,48 +18,84 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Disabled
 class TableDynamoDbRepositoryTest {
 
+    static final Game.Id GAME_ID = Game.Id.of("gwt");
+
     @Mock
     Games games;
 
-    @Mock
-    Game game;
+    GameProvider<State> gameProvider = (GameProvider) new GWT();
+    Game game = Game.builder().id(GAME_ID).provider(gameProvider).build();
 
     @Mock
     DynamoDbConfiguration config;
+
+    @Mock
+    CDI<Object> cdi;
+
+    @Mock
+    BeanManager beanManager;
 
     TableDynamoDbRepository tableDynamodbRepository;
 
     @BeforeEach
     void setUp() {
-        when(config.getTableSuffix()).thenReturn(Optional.of("-test"));
+        lenient().when(cdi.getBeanManager()).thenReturn(beanManager);
+        CDI.setCDIProvider(() -> cdi);
+
+        lenient().when(config.getTableSuffix()).thenReturn(Optional.of("-test"));
+
+        lenient().when(games.get(GAME_ID)).thenReturn(game);
 
         tableDynamodbRepository = new TableDynamoDbRepository(games, DynamoDbClient.create(), config);
     }
 
     @Test
     void add() {
-        User tom = mock(User.class);
-        when(tom.getId()).thenReturn(User.Id.of("348413c8-3484-432c-ae1c-d02d1e010222"));
-        User sharon = mock(User.class);
-        when(sharon.getId()).thenReturn(User.Id.of("34efb2e1-8ef6-47e3-a1d1-3f986d2d7c1d"));
+        var tableId = tableDynamodbRepository.findAll()
+                .findFirst()
+                .map(Table::getId)
+                .orElseGet(() -> {
+                    User tom = mock(User.class);
+                    when(tom.getId()).thenReturn(User.Id.of("348413c8-3484-432c-ae1c-d02d1e010222"));
 
-        Table table = Table.create(game, Table.Mode.NORMAL, tom, Collections.singleton(sharon), new Options(Collections.emptyMap()));
-        table.acceptInvite(sharon.getId());
-        table.start();
+                    User sharon = mock(User.class);
+                    when(sharon.getId()).thenReturn(User.Id.of("34efb2e1-8ef6-47e3-a1d1-3f986d2d7c1d"));
 
-        tableDynamodbRepository.add(table);
+                    Table table = Table.create(this.game, Table.Mode.NORMAL, tom, new Options(Collections.emptyMap()));
+                    table.invite(sharon);
+                    table.acceptInvite(sharon.getId());
 
-        tableDynamodbRepository.findById(table.getId());
+                    table.start();
+
+                    tableDynamodbRepository.add(table);
+
+                    return table.getId();
+                });
+
+        int n = 300;
+        Instant startTime = Instant.now();
+        for (int i = 0; i < n; i++) {
+            tableDynamodbRepository.findById(tableId);
+        }
+        Instant endTime = Instant.now();
+        System.out.println(Duration.between(startTime, endTime).dividedBy(n) + " per find");
     }
 
 }

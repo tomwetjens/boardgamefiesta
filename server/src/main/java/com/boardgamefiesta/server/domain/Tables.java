@@ -4,10 +4,6 @@ import java.util.stream.Stream;
 
 public interface Tables {
 
-    static Tables instance() {
-        return DomainService.instance(Tables.class);
-    }
-
     Table findById(Table.Id id);
 
     void add(Table table);
@@ -15,10 +11,6 @@ public interface Tables {
     void update(Table table) throws TableConcurrentlyModifiedException;
 
     Stream<Table> findActive(User.Id userId);
-
-    int countActive(User.Id userId);
-
-    int countActiveByType(User.Id userId, Table.Type type);
 
     class TableConcurrentlyModifiedException extends Exception {
         public TableConcurrentlyModifiedException(Throwable cause) {

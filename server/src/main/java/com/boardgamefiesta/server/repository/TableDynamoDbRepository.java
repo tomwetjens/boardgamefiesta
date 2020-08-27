@@ -37,6 +37,9 @@ public class TableDynamoDbRepository implements Tables {
             Player.Status.REJECTED,
             Player.Status.LEFT);
 
+    private static final int MAX_ACTIVE_REALTIME_GAMES = 1;
+    private static final int MAX_ACTIVE_GAMES = 10;
+
     private final Games games;
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
@@ -79,8 +82,7 @@ public class TableDynamoDbRepository implements Tables {
                 .map(this::mapToTable);
     }
 
-    @Override
-    public int countActive(User.Id userId) {
+    private int countActive(User.Id userId) {
         return getActiveTableIds(userId).size();
     }
 
@@ -127,8 +129,7 @@ public class TableDynamoDbRepository implements Tables {
                 .collect(Collectors.toSet());
     }
 
-    @Override
-    public int countActiveByType(User.Id userId, Table.Type type) {
+    private int countActiveByType(User.Id userId, Table.Type type) {
         Set<Table.Id> ids = getActiveTableIds(userId);
         return (int) getTables(ids)
                 // Extra check in case adjacency list was not up to date
@@ -143,6 +144,14 @@ public class TableDynamoDbRepository implements Tables {
 
     @Override
     public void add(Table table) {
+        if (countActiveByType(table.getOwnerId(), Table.Type.REALTIME) >= MAX_ACTIVE_REALTIME_GAMES) {
+            throw APIException.forbidden(APIError.EXCEEDS_MAX_REALTIME_GAMES);
+        }
+
+        if (countActive(table.getOwnerId()) >= MAX_ACTIVE_GAMES) {
+            throw APIException.forbidden(APIError.EXCEEDS_MAX_ACTIVE_GAMES);
+        }
+
         var serializeCache = Collections.<State, AttributeValue>emptyMap();
 
         var item = new HashMap<>(key(table.getId()));

@@ -5,7 +5,6 @@ import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import java.util.Map;
-import java.util.Set;
 
 @Data
 public class CreateTableRequest {
@@ -18,8 +17,6 @@ public class CreateTableRequest {
 
     @NotNull
     Table.Mode mode;
-
-    Set<String> inviteUserIds;
 
     Map<String, Object> options;
 

@@ -63,18 +63,10 @@ public class TableResource {
     public TableView create(@NotNull @Valid CreateTableRequest request) {
         var currentUser = currentUser();
 
-        var invitedUsers = request.getInviteUserIds() != null
-                ? request.getInviteUserIds().stream()
-                .map(userId -> users.findOptionallyById(User.Id.of(userId))
-                        .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER)))
-                .collect(Collectors.toSet())
-                : Collections.<User>emptySet();
-
         Table table = Table.create(
                 games.get(Game.Id.of(request.getGame())),
                 request.getMode(),
                 currentUser,
-                invitedUsers,
                 new Options(request.getOptions() != null ? request.getOptions() : Collections.emptyMap()));
 
         tables.add(table);
