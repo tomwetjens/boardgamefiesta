@@ -55,6 +55,7 @@ public class Table {
     @NonNull
     private final Instant created;
 
+    @Getter
     @NonNull
     private final Set<Player> players;
 
@@ -432,10 +433,6 @@ public class Table {
         log.add(new LogEntry(player, LogEntry.Type.REJECT));
 
         updated = Instant.now();
-    }
-
-    public Set<Player> getPlayers() {
-        return Collections.unmodifiableSet(players);
     }
 
     public boolean canStart() {

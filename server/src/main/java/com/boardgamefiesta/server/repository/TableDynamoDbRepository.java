@@ -342,59 +342,40 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     private void updateAdjacencyList(Table table) {
-        var response = dynamoDbClient.query(QueryRequest.builder()
-                .tableName(tableName)
-                .keyConditionExpression("Id = :Id")
-                .expressionAttributeValues(Collections.singletonMap(":Id", AttributeValue.builder()
-                        .s(table.getId().getId())
-                        .build()))
-                .build());
+        var trackingSet = (TrackingSet<Player>) table.getPlayers();
 
-        var lookupItemsBySortKey = response.items().stream()
-                .filter(item -> !item.get("UserId").s().equals("Table-" + table.getId().getId())) // Filter out the main item
-                .collect(Collectors.toMap(item -> item.get("UserId").s(), Function.identity()));
-
-        var playersBySortKey = table.getPlayers().stream()
-                .filter(player -> player.getType() == Player.Type.USER)
-                .filter(player -> !ADJACENCY_IGNORED_STATUSES.contains(player.getStatus()))
-                .collect(Collectors.toMap(player -> "User-" + player.getUserId().orElseThrow().getId(), Function.identity()));
-
-        var lookupItemsToDelete = lookupItemsBySortKey.entrySet().stream()
-                .filter(item -> !playersBySortKey.containsKey(item.getKey()))
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
-        var lookupItemsToAdd = playersBySortKey.entrySet().stream()
-                .filter(entry -> !lookupItemsBySortKey.containsKey(entry.getKey()))
-                .map(entry -> mapToAdjacencyListItem(table, entry.getValue()))
-                .collect(Collectors.toList());
-
-        if (!lookupItemsToAdd.isEmpty() || !lookupItemsToDelete.isEmpty()) {
+        if (!trackingSet.getAdded().isEmpty() || !trackingSet.getRemoved().isEmpty()) {
             dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
                     .requestItems(Map.of(tableName, Stream.concat(
-                            lookupItemsToDelete.stream().map(item -> WriteRequest.builder()
+                            trackingSet.getRemoved().stream()
+                                    .map(Player::getUserId)
+                                    .flatMap(Optional::stream)
+                                    .map(userId -> WriteRequest.builder()
                                     .deleteRequest(DeleteRequest.builder()
                                             .key(Map.of(
-                                                    "Id", item.get("Id"),
-                                                    "UserId", item.get("UserId")
+                                                    "Id", AttributeValue.builder().s(table.getId().getId()).build(),
+                                                    "UserId", AttributeValue.builder().s("User-" + userId.getId()).build()
                                             ))
                                             .build())
                                     .build()),
-                            lookupItemsToAdd.stream().map(item -> WriteRequest.builder()
+                            trackingSet.getAdded().stream()
+                                    .filter(player -> player.getType() == Player.Type.USER)
+                                    .map(player -> WriteRequest.builder()
                                     .putRequest(PutRequest.builder()
-                                            .item(item)
+                                            .item(mapToAdjacencyListItem(table, player))
                                             .build())
                                     .build()))
                             .collect(Collectors.toList())))
                     .build());
         }
 
-        playersBySortKey.entrySet().stream()
-                .filter(entry -> lookupItemsBySortKey.containsKey(entry.getKey()))
-                .forEach(entry -> dynamoDbClient.updateItem(UpdateItemRequest.builder()
+        trackingSet.getNotAddedOrRemoved()
+                .filter(player -> player.getType() == Player.Type.USER)
+                .forEach(player -> dynamoDbClient.updateItem(UpdateItemRequest.builder()
                         .tableName(tableName)
                         .key(Map.of(
                                 "Id", AttributeValue.builder().s(table.getId().getId()).build(),
-                                "UserId", AttributeValue.builder().s("User-" + entry.getValue().getUserId().orElseThrow().getId()).build()
+                                "UserId", AttributeValue.builder().s("User-" + player.getUserId().orElseThrow().getId()).build()
                         ))
                         .attributeUpdates(mapToAdjacencyListItemUpdates(table))
                         .build()));
@@ -476,7 +457,7 @@ public class TableDynamoDbRepository implements Tables {
                 .ownerId(User.Id.of(item.get("OwnerId").s()))
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
-                        .collect(Collectors.toSet()))
+                        .collect(Collectors.toCollection(TrackingSet::new)))
                 .currentState(Optional.ofNullable(item.get("State"))
                         .map(attributeValue -> DynamoDbJson.fromJson(attributeValue, game.getProvider().getStateDeserializer()::deserialize))
                         .map(state -> Table.CurrentState.of(state,

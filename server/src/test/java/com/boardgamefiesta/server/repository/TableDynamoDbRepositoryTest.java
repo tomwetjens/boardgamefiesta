@@ -1,15 +1,10 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.domain.PlayerColor;
-import com.boardgamefiesta.api.spi.GameProvider;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.api.spi.GameProvider;
 import com.boardgamefiesta.gwt.GWT;
-import com.boardgamefiesta.server.domain.Game;
-import com.boardgamefiesta.server.domain.Games;
-import com.boardgamefiesta.server.domain.Table;
-import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -24,11 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -92,7 +83,11 @@ class TableDynamoDbRepositoryTest {
         int n = 300;
         Instant startTime = Instant.now();
         for (int i = 0; i < n; i++) {
-            tableDynamodbRepository.findById(tableId);
+            try {
+                tableDynamodbRepository.update(tableDynamodbRepository.findById(tableId));
+            } catch (Tables.TableConcurrentlyModifiedException e) {
+                e.printStackTrace();
+            }
         }
         Instant endTime = Instant.now();
         System.out.println(Duration.between(startTime, endTime).dividedBy(n) + " per find");
