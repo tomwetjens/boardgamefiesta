@@ -367,6 +367,8 @@ public class TableDynamoDbRepository implements Tables {
                                     .build()))
                             .collect(Collectors.toList())))
                     .build());
+
+            trackingSet.flush();
         }
 
         trackingSet.getNotAddedOrRemoved()
