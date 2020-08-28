@@ -144,13 +144,15 @@ public class CattleMarket {
     }
 
     void fillUp() {
-        while (market.size() < limit) {
+        while (market.size() < limit && !drawStack.isEmpty()) {
             draw();
         }
     }
 
     void draw() {
-        market.add(drawStack.poll());
+        if (!drawStack.isEmpty()) {
+            market.add(drawStack.poll());
+        }
     }
 
     private static Queue<Card.CattleCard> createDrawStack(Random random) {
