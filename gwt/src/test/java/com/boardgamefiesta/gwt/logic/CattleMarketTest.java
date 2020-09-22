@@ -50,5 +50,15 @@ class CattleMarketTest {
         assertThat(jsonObject.getJsonArray("market")).hasSize(0);
     }
 
+    @Test
+    void buy2WestHighlandAsCheapAsPossible() {
+        var westHighland1 = new Card.CattleCard(CattleType.WEST_HIGHLAND, 4);
+        var westHighland2 = new Card.CattleCard(CattleType.WEST_HIGHLAND, 4);
+        var cattleMarket = new CattleMarket(4, new LinkedList<>(), new HashSet<>(Set.of(
+                westHighland1,
+                westHighland2
+        )));
 
+        cattleMarket.buy(westHighland1, westHighland2, 6, 12);
+    }
 }

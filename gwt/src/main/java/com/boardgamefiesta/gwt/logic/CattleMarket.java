@@ -34,9 +34,9 @@ public class CattleMarket {
                     Cost.single(6, 3),
                     Cost.pair(8, 5),
                     // 2 singles:
+                    Cost.pair(12, 6),
                     Cost.pair(24, 2),
-                    Cost.pair(18, 4),
-                    Cost.pair(6, 6)
+                    Cost.pair(18, 4)
             ),
             5, Set.of(
                     Cost.single(12, 2),
