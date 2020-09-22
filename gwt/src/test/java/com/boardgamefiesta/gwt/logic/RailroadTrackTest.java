@@ -497,4 +497,143 @@ class RailroadTrackTest {
             assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 18);
         }
     }
+
+    @Nested
+    class EndSpace {
+
+        @Test
+        void shouldAllowUpgradeStation() {
+            var game = TestHelper.givenAGame();
+            var startBalance = game.currentPlayerState().getBalance();
+            game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), game.getRailroadTrack().getSpace(38), 0, Integer.MAX_VALUE);
+
+            game.perform(new Action.Move(List.of(game.getTrail().getBuildingLocation("G").get())), new Random(0));
+            assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
+
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(39)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+
+            game.perform(new Action.UpgradeStation(), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
+
+            game.perform(new Action.UnlockBlackOrWhite(Unlockable.EXTRA_STEP_POINTS), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+
+            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace(38)), new Random(0));
+            assertThat(game.currentPlayerState().getBalance()).isEqualTo(startBalance);
+            assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
+        }
+
+        @Test
+        void shouldAllowSkipUpgradeStation() {
+            var game = TestHelper.givenAGame();
+            var startBalance = game.currentPlayerState().getBalance();
+            game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), game.getRailroadTrack().getSpace(38), 0, Integer.MAX_VALUE);
+
+            game.perform(new Action.Move(List.of(game.getTrail().getBuildingLocation("G").get())), new Random(0));
+            assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
+
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(39)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+
+            game.skip(new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+
+            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace(38)), new Random(0));
+            assertThat(game.currentPlayerState().getBalance()).isEqualTo(startBalance + 3);
+            assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
+        }
+
+        @Test
+        void shouldNotAllowSkipMoveEngineBackwards() {
+            var game = TestHelper.givenAGame();
+            var startBalance = game.currentPlayerState().getBalance();
+            game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), game.getRailroadTrack().getSpace(38), 0, Integer.MAX_VALUE);
+
+            game.perform(new Action.Move(List.of(game.getTrail().getBuildingLocation("G").get())), new Random(0));
+            assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
+
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(39)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+
+            game.skip(new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+
+            assertThatThrownBy(() -> game.skip(new Random(0)))
+                    .isInstanceOf(GWTException.class)
+                    .hasMessage(GWTError.CANNOT_SKIP_ACTION.name());
+        }
+
+        @Test
+        void shouldGive3DollarsBeforeHavingToMoveEngineBackwards() {
+            var game = TestHelper.givenAGame();
+            game.currentPlayerState().payDollars(game.currentPlayerState().getBalance()); // start with no money
+            game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), game.getRailroadTrack().getSpace(38), 0, Integer.MAX_VALUE);
+
+            game.perform(new Action.Move(List.of(game.getTrail().getBuildingLocation("G").get())), new Random(0));
+            assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
+
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(39)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+
+            game.skip(new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+
+            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getTurnouts().get(0)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.currentPlayerState().getBalance()).isEqualTo(3);
+        }
+
+        @Test
+        void shouldAllowUpgradeStationAfterMoveEngineBackwards() {
+            var game = TestHelper.givenAGame();
+            game.currentPlayerState().payDollars(game.currentPlayerState().getBalance()); // start with no money
+            game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), game.getRailroadTrack().getSpace(38), 0, Integer.MAX_VALUE);
+
+            game.perform(new Action.Move(List.of(game.getTrail().getBuildingLocation("G").get())), new Random(0));
+            assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
+
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(39)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+
+            game.skip(new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+
+            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getTurnouts().get(0)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.currentPlayerState().getBalance()).isEqualTo(3);
+
+            game.perform(new Action.UpgradeStation(), new Random(0));
+            assertThat(game.currentPlayerState().getBalance()).isEqualTo(1);
+            assertThat(game.possibleActions()).containsExactly(Action.UnlockWhite.class);
+
+            game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.AppointStationMaster.class);
+
+            game.skip(new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
+        }
+
+        @Test
+        void shouldAllowSkipUpgradeStationAfterMoveEngineBackwards() {
+            var game = TestHelper.givenAGame();
+            game.currentPlayerState().payDollars(game.currentPlayerState().getBalance()); // start with no money
+            game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), game.getRailroadTrack().getSpace(38), 0, Integer.MAX_VALUE);
+
+            game.perform(new Action.Move(List.of(game.getTrail().getBuildingLocation("G").get())), new Random(0));
+            assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
+
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(39)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+
+            game.skip(new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+
+            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getTurnouts().get(0)), new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+
+            game.skip(new Random(0));
+            assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
+        }
+    }
 }

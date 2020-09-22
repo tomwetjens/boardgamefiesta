@@ -781,11 +781,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, Integer.MAX_VALUE).getImmediateActions();
-
-            game.currentPlayerState().gainDollars(3);
-
             game.fireActionEvent(this, Collections.emptyList());
+
+            // According to the rules, the dollars gained can be used to upgrade a station when moving backwards
+            game.currentPlayerState().gainDollars(3);
+            ImmediateActions immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, Integer.MAX_VALUE).getImmediateActions();
 
             return ActionResult.undoAllowed(immediateActions);
         }
