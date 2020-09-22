@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -112,5 +113,28 @@ class TrailTest {
         assertThat(trail.possibleMoves(from, to, playerC, 2, 6, 4)).containsExactlyInAnyOrder(
                 new PossibleMove(from, asList(trail.getLocation("A-1"), trail.getLocation("A-2"), trail.getLocation("A-3"), trail.getLocation("B"), to), 2, Map.of(playerA, 2)),
                 new PossibleMove(from, asList(trail.getLocation("FLOOD-1"), trail.getLocation("FLOOD-2"), trail.getLocation("FLOOD-RISK-1"), trail.getLocation("B"), to), 2, Collections.emptyMap()));
+    }
+
+    @Test
+    void shouldDifferentiateBetweenPlayerFeesButExcludeOwnBuildings() {
+        var trail = new Trail();
+
+        ((Location.BuildingLocation) trail.getLocation("A")).placeBuilding(new NeutralBuilding.A());
+        ((Location.BuildingLocation) trail.getLocation("B")).placeBuilding(new NeutralBuilding.B());
+        ((Location.BuildingLocation) trail.getLocation("A-1")).placeBuilding(new PlayerBuilding.Building1A(playerA));
+        ((Location.BuildingLocation) trail.getLocation("A-2")).placeBuilding(new PlayerBuilding.Building4A(playerB));
+        ((Location.BuildingLocation) trail.getLocation("A-3")).placeBuilding(new PlayerBuilding.Building2A(playerA));
+        ((Location.HazardLocation) trail.getLocation("FLOOD-1")).placeHazard(new Hazard(HazardType.FLOOD, Hand.BLACK, 4));
+        ((Location.HazardLocation) trail.getLocation("FLOOD-2")).placeHazard(new Hazard(HazardType.FLOOD, Hand.GREEN, 2));
+        ((Location.HazardLocation) trail.getLocation("FLOOD-3")).placeHazard(new Hazard(HazardType.FLOOD, Hand.GREEN, 2));
+
+        Location from = trail.getLocation("A");
+        Location to = trail.getLocation("B");
+
+        var possibleMoves = trail.possibleMoves(from, to, playerA, 1, 6, 4);
+        assertThat(possibleMoves).hasSize(2);
+        assertThat(possibleMoves).containsExactlyInAnyOrder(
+                new PossibleMove(from, asList(trail.getLocation("A-1"), trail.getLocation("A-2"), trail.getLocation("A-3"), to), 1, Map.of(playerB, 1)),
+                new PossibleMove(from, asList(trail.getLocation("FLOOD-1"), trail.getLocation("FLOOD-2"), trail.getLocation("FLOOD-3"), to), 1, Collections.emptyMap()));
     }
 }

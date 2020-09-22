@@ -51,16 +51,24 @@ public class PossibleMove {
                 .flatMap(location -> {
                     var fee = Math.min(remainingBalance.get(), location.getHand().getFee(playerCount));
 
-                    remainingBalance.getAndAdd(-fee);
+                    if (location instanceof Location.BuildingLocation) {
+                        var otherPlayerFee = ((Location.BuildingLocation) location).getBuilding()
+                                .filter(building -> building instanceof PlayerBuilding)
+                                .map(building -> (PlayerBuilding) building)
+                                .filter(playerBuilding -> playerBuilding.getPlayer() != player)
+                                .filter(playerBuilding -> playerBuilding.getHand() != Hand.NONE)
+                                .map(playerBuilding -> new PlayerFee(playerBuilding.getPlayer(), fee));
 
-                    return location instanceof Location.BuildingLocation
-                            ? ((Location.BuildingLocation) location).getBuilding()
-                            .filter(building -> building instanceof PlayerBuilding)
-                            .map(building -> (PlayerBuilding) building)
-                            .filter(playerBuilding -> playerBuilding.getPlayer() != player)
-                            .filter(playerBuilding -> playerBuilding.getHand() != Hand.NONE)
-                            .map(playerBuilding -> new PlayerFee(playerBuilding.getPlayer(), fee)).stream()
-                            : Stream.empty();
+                        if (otherPlayerFee.isPresent()) {
+                            remainingBalance.getAndAdd(-fee);
+                        }
+
+                        return otherPlayerFee.stream();
+                    } else {
+                        // hazard or teepee
+                        remainingBalance.getAndAdd(-fee);
+                    }
+                    return Stream.empty();
                 })
                 .filter(playerFee -> playerFee.getFee() > 0)
                 .collect(Collectors.groupingBy(PlayerFee::getPlayer)).entrySet()
