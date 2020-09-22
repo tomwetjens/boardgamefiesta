@@ -343,6 +343,25 @@ class RailroadTrackTest {
             assertThat(railroadTrack.reachableSpacesBackwards(from, 2, 2)).containsExactly(
                     railroadTrack.getSpace(11));
         }
+
+        @Test
+        void shouldAllowDippingThroughTurnoutWhenPossibleMovesExactly2Backwards() {
+            var game = TestHelper.givenAGame();
+
+            var reachableSpaces = game.getRailroadTrack().reachableSpacesBackwards(game.getRailroadTrack().getSpace(30), 2, 2);
+
+            assertThat(reachableSpaces).extracting(Space::getName).containsExactlyInAnyOrder("28", "29");
+        }
+
+        @Test
+        void shouldAllowDippingThroughTurnoutWhenPossibleMovesExactly2BackwardsButTurnoutIsNotAvailable() {
+            var game = TestHelper.givenAGame();
+            game.getRailroadTrack().moveEngineForward(game.getNextPlayer(), game.getRailroadTrack().getTurnouts().get(7), 0, Integer.MAX_VALUE);
+
+            var reachableSpaces = game.getRailroadTrack().reachableSpacesBackwards(game.getRailroadTrack().getSpace(30), 2, 2);
+
+            assertThat(reachableSpaces).extracting(Space::getName).containsExactlyInAnyOrder("28");
+        }
     }
 
     @Nested
@@ -636,4 +655,5 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }
+
 }

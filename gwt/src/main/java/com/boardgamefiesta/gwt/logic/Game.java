@@ -328,7 +328,7 @@ public class Game implements State {
         }
 
         // next player
-        currentPlayer = playerOrder.get((playerOrder.indexOf(currentPlayer) + 1) % playerOrder.size());
+        currentPlayer = getNextPlayer();
 
         if (!currentPlayerState().hasJobMarketToken()) {
             actionStack.addActions(determineBeginTurnActions());
@@ -607,6 +607,10 @@ public class Game implements State {
 
     public boolean canSkip() {
         return actionStack.canSkip();
+    }
+
+    public Player getNextPlayer() {
+        return playerOrder.get((playerOrder.indexOf(currentPlayer) + 1) % playerOrder.size());
     }
 
     public enum Status {
