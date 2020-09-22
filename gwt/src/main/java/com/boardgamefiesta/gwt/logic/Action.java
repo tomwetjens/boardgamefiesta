@@ -791,25 +791,6 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static class Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates extends Action {
-
-        @NonNull RailroadTrack.Space to;
-
-        @Override
-        public ActionResult perform(Game game, Random random) {
-            game.currentPlayerState().payDollars(2);
-
-            var immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2).getImmediateActions();
-            game.currentPlayerState().gainTempCertificates(2);
-
-            game.fireActionEvent(this, Collections.emptyList());
-
-            return ActionResult.undoAllowed(immediateActions);
-        }
-    }
-
-    @Value
-    @EqualsAndHashCode(callSuper = false)
     public static class MoveEngine2BackwardsToRemove2Cards extends Action {
 
         @NonNull RailroadTrack.Space to;
@@ -862,15 +843,29 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            var playerState = game.currentPlayerState();
-            playerState.payDollars(1);
-
-            var immediateActions = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1).getImmediateActions();
-            playerState.gainTempCertificates(1);
+            game.currentPlayerState().payDollars(1);
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(immediateActions);
+            return ActionResult.undoAllowed(game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1).getImmediateActions()
+                    .andThen(PossibleAction.optional(Gain1Certificate.class)));
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates extends Action {
+
+        @NonNull RailroadTrack.Space to;
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().payDollars(2);
+
+            game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2).getImmediateActions()
+                    .andThen(PossibleAction.optional(Gain2Certificates.class)));
         }
     }
 
@@ -996,6 +991,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         @Override
         public ActionResult perform(Game game, Random random) {
             game.currentPlayerState().gainTempCertificates(1);
+
+            game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
+    public static final class Gain2Certificates extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().gainTempCertificates(2);
 
             game.fireActionEvent(this, Collections.emptyList());
 

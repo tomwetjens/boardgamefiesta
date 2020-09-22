@@ -47,6 +47,7 @@ public enum ActionType {
     DRAW_2_CATTLE_CARDS(Action.Draw2CattleCards.class),
     EXTRAORDINARY_DELIVERY(Action.ExtraordinaryDelivery.class),
     GAIN_1_CERTIFICATE(Action.Gain1Certificate.class),
+    GAIN_2_CERTIFICATES(Action.Gain2Certificates.class),
     GAIN_1_DOLLAR(Action.Gain1Dollar.class),
     GAIN_2_DOLLARS_PER_BUILDING_IN_WOODS(Action.Gain2DollarsPerBuildingInWoods.class),
     GAIN_1_DOLLAR_PER_ENGINEER(Action.Gain1DollarPerEngineer.class),
@@ -185,6 +186,8 @@ public enum ActionType {
                 return new Action.ExtraordinaryDelivery(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
             case GAIN_1_CERTIFICATE:
                 return new Action.Gain1Certificate();
+            case GAIN_2_CERTIFICATES:
+                return new Action.Gain2Certificates();
             case GAIN_1_DOLLAR:
                 return new Action.Gain1Dollar();
             case GAIN_2_DOLLARS_PER_BUILDING_IN_WOODS:
@@ -486,7 +489,6 @@ public enum ActionType {
         private static final String LOCATION = "location";
         private static final String BUILDING = "building";
         private static final String STATION = "station";
-        private static final String CHOICES = "choices";
         private static final String UNLOCK = "unlock";
         private static final String TASKS = "tasks";
         private static final String POINTS = "points";
