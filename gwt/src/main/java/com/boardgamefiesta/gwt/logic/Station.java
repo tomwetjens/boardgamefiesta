@@ -58,7 +58,9 @@ public class Station {
             throw new GWTException(GWTError.ALREADY_UPGRADED_STATION);
         }
 
-        game.currentPlayerState().payDollars(cost);
+        var playerState = game.currentPlayerState();
+        playerState.payDollars(cost);
+        playerState.rememberLastUpgradedStation(this);
 
         players.add(game.getCurrentPlayer());
 

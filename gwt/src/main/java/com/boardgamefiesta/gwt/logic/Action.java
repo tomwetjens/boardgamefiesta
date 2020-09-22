@@ -600,8 +600,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         private Station getStation(Game game) {
-            RailroadTrack.Space current = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
-            return current.getStation().orElseThrow(() -> new GWTException(GWTError.NOT_AT_STATION));
+            return game.currentPlayerState().getLastUpgradedStation()
+                    // For backwards compatibility (can be removed if all player states in active games have a last remembered station):
+                    .orElseGet(() -> game.getRailroadTrack().currentSpace(game.getCurrentPlayer()).getStation()
+                            .orElseThrow(() -> new GWTException(GWTError.NOT_AT_STATION)));
         }
     }
 

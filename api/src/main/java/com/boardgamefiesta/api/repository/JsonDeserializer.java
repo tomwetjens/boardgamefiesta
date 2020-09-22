@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -21,6 +22,10 @@ public class JsonDeserializer {
 
     public static JsonDeserializer forObject(@NonNull JsonObject jsonObject) {
         return new JsonDeserializer(jsonObject);
+    }
+
+    public static Optional<Integer> getInt(String key, JsonObject jsonObject) {
+        return jsonObject.containsKey(key) ? Optional.of(jsonObject.getInt(key)) : Optional.empty();
     }
 
     /**

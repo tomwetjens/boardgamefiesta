@@ -49,6 +49,8 @@ public class PlayerState {
     @Getter
     @Setter(AccessLevel.PACKAGE)
     private int lastEngineMove;
+    @Getter
+    private Optional<Station> lastUpgradedStation;
 
     PlayerState(@NonNull Player player, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
         this.player = player;
@@ -79,7 +81,7 @@ public class PlayerState {
         drawUpToHandLimit(random);
     }
 
-    JsonObject serialize(JsonBuilderFactory factory) {
+    JsonObject serialize(JsonBuilderFactory factory, RailroadTrack railroadTrack) {
         var serializer = JsonSerializer.forFactory(factory);
 
         return factory.createObjectBuilder()
@@ -99,10 +101,11 @@ public class PlayerState {
                 .add("jobMarketToken", jobMarketToken)
                 .add("usedCowboys", usedCowboys)
                 .add("lastEngineMove", lastEngineMove)
+                .add("lastUpgradedStation", lastUpgradedStation.map(railroadTrack.getStations()::indexOf).orElse(-1))
                 .build();
     }
 
-    static PlayerState deserialize(Player player, JsonObject jsonObject) {
+    static PlayerState deserialize(Player player, RailroadTrack railroadTrack, JsonObject jsonObject) {
         return new PlayerState(player,
                 jsonObject.getJsonArray("drawStack").stream()
                         .map(JsonValue::asJsonObject)
@@ -131,7 +134,8 @@ public class PlayerState {
                 jsonObject.getInt("balance", 0),
                 jsonObject.getBoolean("jobMarketToken", false),
                 jsonObject.getInt("usedCowboys", 0),
-                jsonObject.getInt("lastEngineMove", 0));
+                jsonObject.getInt("lastEngineMove", 0),
+                JsonDeserializer.getInt("lastUpgradedStation", jsonObject).filter(index -> index >= 0).map(railroadTrack.getStations()::get));
     }
 
     void placeBid(Bid bid) {
@@ -664,6 +668,10 @@ public class PlayerState {
             throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
         }
         usedCowboys += amount;
+    }
+
+    void rememberLastUpgradedStation(@NonNull Station station) {
+        this.lastUpgradedStation = Optional.of(station);
     }
 
     public Stream<ObjectiveCard> getOptionalObjectives() {

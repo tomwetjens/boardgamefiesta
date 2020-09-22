@@ -430,7 +430,7 @@ public class Game implements State {
         return factory.createObjectBuilder()
                 .add("players", serializer.fromCollection(players, Player::serialize))
                 .add("playerOrder", serializer.fromStrings(playerOrder.stream().map(Player::getName)))
-                .add("playerStates", serializer.fromMap(playerStates, Player::getName, PlayerState::serialize))
+                .add("playerStates", serializer.fromMap(playerStates, Player::getName, playerState -> playerState.serialize(factory, railroadTrack)))
                 .add("currentPlayer", currentPlayer.getName())
                 .add("railroadTrack", railroadTrack.serialize(factory))
                 .add("kansasCitySupply", kansasCitySupply.serialize(factory))
@@ -462,12 +462,14 @@ public class Game implements State {
 
         var kansasCitySupply = KansasCitySupply.deserialize(jsonObject.getJsonObject("kansasCitySupply"));
 
+        var railroadTrack = RailroadTrack.deserialize(playerMap, jsonObject.getJsonObject("railroadTrack"));
+
         return builder()
                 .players(players)
                 .playerOrder(playerOrder)
-                .playerStates(deserializePlayerStates(playerMap, jsonObject.getJsonObject("playerStates")))
+                .playerStates(deserializePlayerStates(playerMap, railroadTrack, jsonObject.getJsonObject("playerStates")))
                 .currentPlayer(playerMap.get(jsonObject.getString("currentPlayer")))
-                .railroadTrack(RailroadTrack.deserialize(playerMap, jsonObject.getJsonObject("railroadTrack")))
+                .railroadTrack(railroadTrack)
                 .kansasCitySupply(kansasCitySupply)
                 .trail(Trail.deserialize(playerMap, jsonObject.getJsonObject("trail")))
                 .jobMarket(JobMarket.deserialize(players.size(), jsonObject.getJsonObject("jobMarket")))
@@ -488,9 +490,9 @@ public class Game implements State {
                 .build();
     }
 
-    private static Map<Player, PlayerState> deserializePlayerStates(Map<String, Player> playerMap, JsonObject jsonObject) {
+    private static Map<Player, PlayerState> deserializePlayerStates(Map<String, Player> playerMap, RailroadTrack railroadTrack, JsonObject jsonObject) {
         return jsonObject.keySet().stream()
-                .collect(Collectors.toMap(playerMap::get, key -> PlayerState.deserialize(playerMap.get(key), jsonObject.getJsonObject(key).asJsonObject())));
+                .collect(Collectors.toMap(playerMap::get, key -> PlayerState.deserialize(playerMap.get(key), railroadTrack, jsonObject.getJsonObject(key).asJsonObject())));
     }
 
     @Override
