@@ -327,4 +327,61 @@ class ActionTest {
             verify(teepeeLocation, never()).removeTeepee();
         }
     }
+
+    @Nested
+    class Move3ForwardWithoutFeesTest {
+
+        @Test
+        void shouldNotAllowActionsFromPreviousLocation() {
+            var game = TestHelper.givenAGame();
+
+            var a1 = game.getTrail().getBuildingLocation("A-1").get();
+            var a2 = game.getTrail().getBuildingLocation("A-2").get();
+            a1.placeBuilding(new PlayerBuilding.Building4B(game.getCurrentPlayer()));
+            a2.placeBuilding(new PlayerBuilding.Building4B(game.getNextPlayer()));
+
+            var objectiveCard = new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class),
+                    List.of(ObjectiveCard.Task.BLUE_TEEPEE), 2, 0);
+            game.currentPlayerState().addCardToHand(objectiveCard);
+
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
+
+            game.perform(new Action.Move(List.of(a1)), new Random(0));
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(
+                    Action.SingleAuxiliaryAction.class,
+                    Action.PlayObjectiveCard.class,
+                    Action.Move3Forward.class,
+                    Action.DrawCard.class);
+
+            game.perform(new Action.PlayObjectiveCard(objectiveCard), new Random(0));
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class);
+
+            game.perform(new Action.Move3ForwardWithoutFees(List.of(a2)), new Random(0));
+            assertThat(game.possibleActions()).isEmpty();
+        }
+
+        @Test
+        void shouldNotAllowKansasCity() {
+            var game = TestHelper.givenAGame();
+
+            var objectiveCard = new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class),
+                    List.of(ObjectiveCard.Task.BLUE_TEEPEE), 2, 0);
+            game.currentPlayerState().addCardToHand(objectiveCard);
+
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
+
+            game.perform(new Action.Move(List.of(game.getTrail().getLocation("G"))), new Random(0));
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(
+                    Action.PlayObjectiveCard.class,
+                    Action.MoveEngineForward.class,
+                    Action.SingleOrDoubleAuxiliaryAction.class);
+
+            game.perform(new Action.PlayObjectiveCard(objectiveCard), new Random(0));
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class);
+
+            assertThatThrownBy(() -> game.perform(new Action.Move3ForwardWithoutFees(List.of(game.getTrail().getKansasCity())), new Random(0)))
+                    .isInstanceOf(GWTException.class)
+                    .hasMessage(GWTError.CANNOT_PERFORM_ACTION.name());
+        }
+    }
 }

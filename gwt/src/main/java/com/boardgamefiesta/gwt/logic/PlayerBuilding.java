@@ -283,26 +283,35 @@ public abstract class PlayerBuilding extends Building {
         @Override
         PossibleAction activate(Game game) {
             var numberOfCowboys = game.currentPlayerState().getNumberOfCowboys();
+            return PossibleAction.any(drawCardsThenDiscardCardsUpToNumberOfCowboys(numberOfCowboys), Action.Move3Forward.class);
+        }
 
-            var drawCardsUpToNumberOfCowboys = new HashSet<PossibleAction>();
-            drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.DrawCard.class));
+        private static PossibleAction drawCardsThenDiscardCardsUpToNumberOfCowboys(int numberOfCowboys) {
+            var choices = new HashSet<PossibleAction>();
+
+            choices.add(PossibleAction.optional(Action.DrawCard.class));
+
             if (numberOfCowboys > 1) {
-                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw2Cards.class));
-            }
-            if (numberOfCowboys > 2) {
-                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw3Cards.class));
-            }
-            if (numberOfCowboys > 3) {
-                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw4Cards.class));
-            }
-            if (numberOfCowboys > 4) {
-                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw5Cards.class));
-            }
-            if (numberOfCowboys > 5) {
-                drawCardsUpToNumberOfCowboys.add(PossibleAction.optional(Action.Draw6Cards.class));
+                choices.add(PossibleAction.optional(Action.Draw2Cards.class));
             }
 
-            return PossibleAction.any(PossibleAction.choice(drawCardsUpToNumberOfCowboys), Action.Move3Forward.class);
+            if (numberOfCowboys > 2) {
+                choices.add(PossibleAction.optional(Action.Draw3Cards.class));
+            }
+
+            if (numberOfCowboys > 3) {
+                choices.add(PossibleAction.optional(Action.Draw4Cards.class));
+            }
+
+            if (numberOfCowboys > 4) {
+                choices.add(PossibleAction.optional(Action.Draw5Cards.class));
+            }
+
+            if (numberOfCowboys > 5) {
+                choices.add(PossibleAction.optional(Action.Draw6Cards.class));
+            }
+
+            return PossibleAction.choice(choices);
         }
     }
 
