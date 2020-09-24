@@ -78,6 +78,8 @@ public class PlayerState {
         this.teepees = new LinkedList<>();
         this.hazards = new HashSet<>();
 
+        this.lastUpgradedStation = Optional.empty();
+
         drawUpToHandLimit(random);
     }
 
@@ -648,7 +650,7 @@ public class PlayerState {
                 new Card.CattleCard(CattleType.GUERNSEY, 0)));
     }
 
-    public boolean canRemoveDisc(Collection<DiscColor> discColors) {
+    boolean canRemoveDisc(Collection<DiscColor> discColors) {
         return Arrays.stream(Unlockable.values())
                 .filter(this::canUnlock)
                 .anyMatch(unlockable -> discColors.contains(unlockable.getDiscColor()));
