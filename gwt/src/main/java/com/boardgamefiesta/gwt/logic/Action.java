@@ -14,11 +14,6 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @SuppressWarnings("unchecked")
     static Class<? extends Action> deserializeClass(String str) {
-        // Backwards compatibility
-        if (str.equals("ChooseForesights")) {
-            return deserializeClass(ChooseForesight1.class.getSimpleName());
-        }
-
         try {
             return (Class<? extends Action>) Class.forName(Action.class.getName() + "$" + str);
         } catch (ClassNotFoundException e) {
@@ -625,10 +620,21 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             placeTile(game, tile);
 
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(
-                    columnIndex == 0 ? (game.getForesights().isEmpty(1) ? DeliverToCity.class : ChooseForesight2.class)
-                            : columnIndex == 1 ? (game.getForesights().isEmpty(2) ? DeliverToCity.class : ChooseForesight3.class)
-                            : DeliverToCity.class)));
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(getNextAction(game, columnIndex))));
+        }
+
+        private static Class<? extends Action> getNextAction(Game game, int columnIndex) {
+            switch (columnIndex) {
+                case 0:
+                    return game.getForesights().isEmpty(1) ? getNextAction(game, 1) : ChooseForesight2.class;
+                case 1:
+                    return game.getForesights().isEmpty(2) ? getNextAction(game, 2) : ChooseForesight3.class;
+                case 2:
+                    // Last foresight column, so continue with delivery
+                    return DeliverToCity.class;
+                default:
+                    throw new IllegalArgumentException("Foresight column invalid: " + columnIndex);
+            }
         }
 
         private void placeTile(Game game, KansasCitySupply.Tile tile) {
