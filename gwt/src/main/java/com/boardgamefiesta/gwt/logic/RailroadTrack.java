@@ -275,13 +275,13 @@ public class RailroadTrack {
                 .findAny();
     }
 
-    Set<PossibleDelivery> possibleDeliveries(Player player, int breedingValue, int certificates) {
+    Set<PossibleDelivery> possibleDeliveries(Player player, int handValue, int certificates) {
         int signalsPassed = signalsPassed(player);
 
         return Arrays.stream(City.values())
                 .filter(city -> city.isMultipleDeliveries() || !hasMadeDelivery(player, city))
-                .filter(city -> city.getValue() <= breedingValue + certificates)
-                .map(city -> new PossibleDelivery(city, Math.max(0, city.getValue() - breedingValue), breedingValue - city.getSignals() + signalsPassed))
+                .filter(city -> city.getValue() <= handValue + certificates)
+                .map(city -> new PossibleDelivery(city, Math.max(0, city.getValue() - handValue), handValue - city.getSignals() + signalsPassed))
                 .collect(Collectors.toSet());
     }
 

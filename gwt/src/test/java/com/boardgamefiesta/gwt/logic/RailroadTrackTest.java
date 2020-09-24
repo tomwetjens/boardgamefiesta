@@ -273,6 +273,16 @@ class RailroadTrackTest {
 
             assertThat(possibleDeliveries).contains(new RailroadTrack.PossibleDelivery(City.COLORADO_SPRINGS, 1, 2));
         }
+
+        @Test
+        void sanDiegoWithHandValue7() {
+            var railroadTrack = RailroadTrack.builder().cities(new HashMap<>()).build();
+
+            var possibleDeliveries = railroadTrack.possibleDeliveries(playerA, 7, 8);
+
+            assertThat(possibleDeliveries).contains(
+                    new RailroadTrack.PossibleDelivery(City.SAN_DIEGO, 7, -1));
+        }
     }
 
     @Nested
