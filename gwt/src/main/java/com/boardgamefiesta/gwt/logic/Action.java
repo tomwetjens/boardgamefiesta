@@ -1134,19 +1134,22 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.fireActionEvent("MOVE", List.of(to.getName()));
             }
 
-            // Actions from previous locations cannot be performed anymore,
-            // after moving to a new location
-            game.getActionStack().clear();
+            if (!game.getActionStack().canPerform(Move.class)) {
+                // Actions from previous locations cannot be performed anymore, after moving to a new location
+                game.getActionStack().clear();
+            }
+            // Else: Move 3 without fees from Objective card is played, before player has performed the normal move to a location and activating it
+            // That means the player must still do that after this
 
             if (payFeesAndActivate) {
                 // Actions of new location are now possible
                 return ActionResult.undoAllowed(to.activate(game));
             } else {
+                // From Objective Card action
                 if (to == game.getTrail().getKansasCity()) {
                     // Cannot free-move, but must always activate Kansas City, else player is stuck
                     throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
                 }
-                // From Objective Card action
                 return ActionResult.undoAllowed(ImmediateActions.none());
             }
         }
