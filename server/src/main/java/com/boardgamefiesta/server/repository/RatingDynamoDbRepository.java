@@ -12,7 +12,6 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,6 +22,7 @@ public class RatingDynamoDbRepository implements Ratings {
     private static final String TABLE_NAME = "gwt-ratings";
     private static final String RANKING_TABLE_NAME = "gwt-ranking";
     private static final String GAME_ID_RANK_ORDER_INDEX = "GameId-RankOrder-index";
+    private static final String TABLE_ID_USER_ID_INDEX = "TableId-UserId-index";
 
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
@@ -39,7 +39,8 @@ public class RatingDynamoDbRepository implements Ratings {
     public Stream<Rating> findHistoric(User.Id userId, Game.Id gameId, Instant from, Instant to) {
         var response = dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(tableName)
-                .keyConditionExpression("UserIdGameId = :UserIdGameId AND Timestamp BETWEEN :From AND :To")
+                .keyConditionExpression("UserIdGameId = :UserIdGameId AND #Timestamp BETWEEN :From AND :To")
+                .expressionAttributeNames(Map.of("#Timestamp", "Timestamp"))
                 .expressionAttributeValues(Map.of(
                         ":UserIdGameId", AttributeValue.builder().s(partitionKey(userId, gameId)).build(),
                         ":From", AttributeValue.builder().n(Long.toString(from.toEpochMilli())).build(),
@@ -51,20 +52,14 @@ public class RatingDynamoDbRepository implements Ratings {
     }
 
     @Override
-    public Optional<Rating> findByTable(User.Id userId, Table table) {
-        // Restrict the time period to limit scanning
-        var from = table.getEnded();
-        // Reasonable assumption that rating is stored within after the game has ended
-        var to = table.getEnded().plus(1, ChronoUnit.HOURS);
-
+    public Optional<Rating> findByTable(User.Id userId, Table.Id tableId) {
         var response = dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
-                .keyConditionExpression("UserIdGameId = :UserIdGameId AND Timestamp BETWEEN :From AND :To")
-                .filterExpression("TableId = :TableId")
+                .indexName(TABLE_ID_USER_ID_INDEX)
+                .keyConditionExpression("UserId = :UserId AND TableId = :TableId")
                 .expressionAttributeValues(Map.of(
-                        ":UserIdGameId", AttributeValue.builder().s(partitionKey(userId, table.getGame().getId())).build(),
-                        ":From", AttributeValue.builder().n(Long.toString(from.toEpochMilli())).build(),
-                        ":To", AttributeValue.builder().n(Long.toString(to.toEpochMilli())).build()))
+                        ":UserId", AttributeValue.builder().s(userId.getId()).build(),
+                        ":TableId", AttributeValue.builder().s(tableId.getId()).build()))
                 .limit(1)
                 .build());
 
@@ -118,14 +113,14 @@ public class RatingDynamoDbRepository implements Ratings {
     }
 
     @Override
-    public Stream<User.Id> findRanking(Game.Id gameId) {
+    public Stream<User.Id> findRanking(Game.Id gameId, int maxResults) {
         return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(rankingTableName)
                 .indexName(GAME_ID_RANK_ORDER_INDEX)
                 .keyConditionExpression("GameId = :GameId")
-                .expressionAttributeValues(Map.of("GameId", AttributeValue.builder().s(gameId.getId()).build()))
+                .expressionAttributeValues(Map.of(":GameId", AttributeValue.builder().s(gameId.getId()).build()))
                 .scanIndexForward(false) // Descending, best player first
-                .attributesToGet("UserId")
+                .limit(maxResults)
                 .build())
                 .items()
                 .stream()

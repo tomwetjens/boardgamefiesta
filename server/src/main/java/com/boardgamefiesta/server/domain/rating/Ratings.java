@@ -13,13 +13,13 @@ public interface Ratings {
 
     Stream<Rating> findHistoric(User.Id userId, Game.Id gameId, Instant from, Instant to);
 
-    Optional<Rating> findByTable(User.Id userId, Table table);
+    Optional<Rating> findByTable(User.Id userId, Table.Id tableId);
 
     Rating findLatest(User.Id userId, Game.Id gameId);
 
     void addAll(Collection<Rating> ratings);
 
-    Stream<User.Id> findRanking(Game.Id gameId);
+    Stream<User.Id> findRanking(Game.Id gameId, int maxResults);
 
     Optional<Integer> findRank(User.Id userId, Game.Id gameId);
 
