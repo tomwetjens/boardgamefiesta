@@ -58,9 +58,8 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Table findById(Table.Id id) {
-        return findOptionallyById(id)
-                .orElseThrow(NotFoundException::new);
+    public Table findById(Table.Id id, boolean consistentRead) {
+        return getItem(id, consistentRead).orElseThrow(NotFoundException::new);
     }
 
     @Override
@@ -405,10 +404,14 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     private Optional<Table> findOptionallyById(Table.Id id) {
+        return getItem(id, false);
+    }
+
+    private Optional<Table> getItem(Table.Id id, boolean consistentRead) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(tableName)
                 .key(key(id))
-                .consistentRead(true)
+                .consistentRead(consistentRead)
                 .build());
 
         if (!response.hasItem()) {

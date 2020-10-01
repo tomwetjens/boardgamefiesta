@@ -34,8 +34,8 @@ public class UserDynamoDbRepository implements Users {
     }
 
     @Override
-    public User findById(User.Id id) {
-        return findOptionallyById(id).orElseThrow(NotFoundException::new);
+    public User findById(User.Id id, boolean consistentRead) {
+        return getItem(key(id), consistentRead).orElseThrow(NotFoundException::new);
     }
 
     @Override
@@ -162,14 +162,14 @@ public class UserDynamoDbRepository implements Users {
 
     @Override
     public Optional<User> findOptionallyById(User.Id id) {
-        return getItem(key(id));
+        return getItem(key(id), false);
     }
 
-    private Optional<User> getItem(Map<String, AttributeValue> key) {
+    private Optional<User> getItem(Map<String, AttributeValue> key, boolean consistentRead) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(tableName)
                 .key(key)
-                .consistentRead(true)
+                .consistentRead(consistentRead)
                 .build());
 
         if (!response.hasItem()) {

@@ -29,7 +29,7 @@ class UserAttributesUpdater {
     }
 
     void emailChanged(@Observes User.EmailChanged event) {
-        var user = users.findById(event.getUserId());
+        var user = users.findById(event.getUserId(), false);
 
         cognitoIdentityProviderClient.adminUpdateUserAttributes(AdminUpdateUserAttributesRequest.builder()
                 .userPoolId(cognitoConfiguration.getUserPoolId())

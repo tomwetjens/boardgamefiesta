@@ -77,7 +77,7 @@ public class TableResource {
     @GET
     @Path("/{id}")
     public TableView get(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
+        var table = tables.findById(Table.Id.of(id), false);
 
         checkViewAllowed(table);
 
@@ -228,7 +228,7 @@ public class TableResource {
     @GET
     @Path("/{id}/state")
     public Object getState(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id));
+        var table = tables.findById(Table.Id.of(id), false);
 
         checkViewAllowed(table);
 
@@ -250,7 +250,7 @@ public class TableResource {
     @GET
     @Path("/{id}/log")
     public List<LogEntryView> getLog(@PathParam("id") String id, @QueryParam("since") String since) {
-        var table = tables.findById(Table.Id.of(id));
+        var table = tables.findById(Table.Id.of(id), false);
 
         checkViewAllowed(table);
 
@@ -259,7 +259,7 @@ public class TableResource {
 
         return table.getLog().since(Instant.parse(since))
                 .map(logEntry -> new LogEntryView(table, logEntry,
-                        userId -> userMap.computeIfAbsent(userId, this.users::findById),
+                        userId -> userMap.computeIfAbsent(userId, k -> this.users.findOptionallyById(userId).orElse(null)),
                         ratingMap))
                 .collect(Collectors.toList());
     }
@@ -267,7 +267,7 @@ public class TableResource {
     private Table handleConcurrentModification(Table.Id id, Consumer<Table> modifier) {
         int retries = 0;
         do {
-            var table = tables.findById(id);
+            var table = tables.findById(id, true);
 
             modifier.accept(table);
 

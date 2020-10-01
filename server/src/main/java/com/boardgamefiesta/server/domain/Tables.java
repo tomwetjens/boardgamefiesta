@@ -4,7 +4,7 @@ import java.util.stream.Stream;
 
 public interface Tables {
 
-    Table findById(Table.Id id);
+    Table findById(Table.Id id, boolean consistentRead);
 
     void add(Table table);
 

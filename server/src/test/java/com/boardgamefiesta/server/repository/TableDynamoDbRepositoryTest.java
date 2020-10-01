@@ -84,7 +84,7 @@ class TableDynamoDbRepositoryTest {
         Instant startTime = Instant.now();
         for (int i = 0; i < n; i++) {
             try {
-                tableDynamodbRepository.update(tableDynamodbRepository.findById(tableId));
+                tableDynamodbRepository.update(tableDynamodbRepository.findById(tableId, true));
             } catch (Tables.TableConcurrentlyModifiedException e) {
                 e.printStackTrace();
             }

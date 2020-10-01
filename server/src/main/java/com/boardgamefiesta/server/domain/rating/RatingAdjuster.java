@@ -30,7 +30,7 @@ public class RatingAdjuster {
 
     public void tableEnded(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended event) {
         try {
-            var table = tables.findById(event.getTableId());
+            var table = tables.findById(event.getTableId(), true);
 
             if (table.getStatus() != Table.Status.ENDED) {
                 // Ignore

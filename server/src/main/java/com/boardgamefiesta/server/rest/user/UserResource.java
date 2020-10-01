@@ -53,7 +53,7 @@ public class UserResource {
     @GET
     @Path("/{id}")
     public UserView get(@PathParam("id") String id) {
-        var user = users.findById(User.Id.of(id));
+        var user = users.findById(User.Id.of(id), false);
         return new UserView(user.getId(), user, currentUserId());
     }
 
@@ -95,7 +95,7 @@ public class UserResource {
     private User handleConcurrentModification(User.Id id, Consumer<User> modifier) {
         int retries = 0;
         do {
-            var table = users.findById(id);
+            var table = users.findById(id, true);
 
             modifier.accept(table);
 

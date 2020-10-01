@@ -9,7 +9,7 @@ public interface Users extends DomainService {
         return DomainService.instance(Users.class);
     }
 
-    User findById(User.Id id);
+    User findById(User.Id id, boolean consistentRead);
 
     Optional<User> findOptionallyById(User.Id id);
 
