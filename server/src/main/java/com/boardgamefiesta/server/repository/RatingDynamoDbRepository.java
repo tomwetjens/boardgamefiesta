@@ -45,6 +45,7 @@ public class RatingDynamoDbRepository implements Ratings {
                         ":UserIdGameId", AttributeValue.builder().s(partitionKey(userId, gameId)).build(),
                         ":From", AttributeValue.builder().n(Long.toString(from.toEpochMilli())).build(),
                         ":To", AttributeValue.builder().n(Long.toString(to.toEpochMilli())).build()))
+                .scanIndexForward(false) // Most recent first
                 .build());
 
         return response.items().stream()
@@ -124,6 +125,7 @@ public class RatingDynamoDbRepository implements Ratings {
                 .build())
                 .items()
                 .stream()
+                .limit(maxResults)
                 .map(item -> User.Id.of(item.get("UserId").s()));
     }
 

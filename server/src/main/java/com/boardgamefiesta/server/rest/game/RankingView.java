@@ -1,6 +1,7 @@
 package com.boardgamefiesta.server.rest.game;
 
 import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.rating.Rating;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 import lombok.Value;
 
@@ -8,8 +9,10 @@ import lombok.Value;
 public class RankingView {
 
     UserView user;
+    float rating;
 
-    RankingView(User user) {
+    RankingView(User user, Rating latest) {
         this.user = new UserView(user.getId(), user, null);
+        this.rating = latest.getRating();
     }
 }
