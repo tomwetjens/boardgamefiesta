@@ -12,6 +12,8 @@ public interface Tables {
 
     Stream<Table> findActive(User.Id userId);
 
+    Stream<Table> findAllByUserId(User.Id userId, int maxResults);
+
     class TableConcurrentlyModifiedException extends Exception {
         public TableConcurrentlyModifiedException(Throwable cause) {
             super(cause);

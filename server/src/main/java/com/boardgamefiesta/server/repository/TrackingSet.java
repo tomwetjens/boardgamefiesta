@@ -8,6 +8,11 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+/**
+ * {@link Set} that tracks elements that were added or removed, until {@link #flush()} is called.
+ *
+ * @param <T> Type of element.
+ */
 class TrackingSet<T> extends SetWrapper<T> {
 
     @Getter

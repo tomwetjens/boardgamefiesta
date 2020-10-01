@@ -14,7 +14,6 @@ import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,6 +25,7 @@ public class TableDynamoDbRepository implements Tables {
     private static final String STATE_TABLE_NAME = "gwt-state";
 
     private static final String USER_ID_ID_INDEX = "UserId-Id-index";
+    private static final String USER_ID_EXPIRES_INDEX = "UserId-Expires-index";
 
     private static final int FIRST_VERSION = 1;
 
@@ -70,6 +70,27 @@ public class TableDynamoDbRepository implements Tables {
                 // Extra check in case adjacency list was not up to date
                 .filter(TableDynamoDbRepository::isActive)
                 .map(this::mapToTable);
+    }
+
+    @Override
+    public Stream<Table> findAllByUserId(User.Id userId, int maxResults) {
+        return findAllTableIdsByUserId(userId, maxResults)
+                .flatMap(tableId -> findOptionallyById(tableId).stream());
+    }
+
+    private Stream<Table.Id> findAllTableIdsByUserId(User.Id userId, int maxResults) {
+        // TODO This query should return the most recent table first
+        return dynamoDbClient.queryPaginator(QueryRequest.builder()
+                .tableName(tableName)
+                .indexName(USER_ID_EXPIRES_INDEX)
+                .keyConditionExpression("UserId = :UserId")
+                .expressionAttributeValues(Map.of(":UserId", AttributeValue.builder().s("User-" + userId.getId()).build()))
+                .scanIndexForward(false) // Most recent first
+                .limit(maxResults)
+                .build())
+                .items().stream()
+                .limit(maxResults)
+                .map(item -> Table.Id.of(item.get("Id").s()));
     }
 
     public Stream<Table> findAll() {
@@ -351,20 +372,20 @@ public class TableDynamoDbRepository implements Tables {
                                     .map(Player::getUserId)
                                     .flatMap(Optional::stream)
                                     .map(userId -> WriteRequest.builder()
-                                    .deleteRequest(DeleteRequest.builder()
-                                            .key(Map.of(
-                                                    "Id", AttributeValue.builder().s(table.getId().getId()).build(),
-                                                    "UserId", AttributeValue.builder().s("User-" + userId.getId()).build()
-                                            ))
-                                            .build())
-                                    .build()),
+                                            .deleteRequest(DeleteRequest.builder()
+                                                    .key(Map.of(
+                                                            "Id", AttributeValue.builder().s(table.getId().getId()).build(),
+                                                            "UserId", AttributeValue.builder().s("User-" + userId.getId()).build()
+                                                    ))
+                                                    .build())
+                                            .build()),
                             trackingSet.getAdded().stream()
                                     .filter(player -> player.getType() == Player.Type.USER)
                                     .map(player -> WriteRequest.builder()
-                                    .putRequest(PutRequest.builder()
-                                            .item(mapToAdjacencyListItem(table, player))
-                                            .build())
-                                    .build()))
+                                            .putRequest(PutRequest.builder()
+                                                    .item(mapToAdjacencyListItem(table, player))
+                                                    .build())
+                                            .build()))
                             .collect(Collectors.toList())))
                     .build());
 
