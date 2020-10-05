@@ -40,13 +40,14 @@ public class UserFilter implements ContainerRequestFilter {
     }
 
     private void updateUser(User user, JsonWebToken jwt) {
-        user.lastSeen(Instant.now());
-
-        try {
-            users.updateLastSeen(user);
-        } catch (Users.UserConcurrentlyModifiedException e) {
-            // Too bad, ignore
-        }
+        // TODO Update user last seen in some way that is not resulting in a write request on each request, because it is too expensive
+//        user.lastSeen(Instant.now());
+//
+//        try {
+//            users.updateLastSeen(user);
+//        } catch (Users.UserConcurrentlyModifiedException e) {
+//            // Too bad, ignore
+//        }
     }
 
     private void createUser(JsonWebToken jwt) {
