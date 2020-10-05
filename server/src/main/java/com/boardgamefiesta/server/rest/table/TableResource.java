@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 @Produces(MediaType.APPLICATION_JSON)
 @RolesAllowed("user")
 @Slf4j
-@Transactional
 public class TableResource {
 
     @Inject
@@ -60,6 +59,7 @@ public class TableResource {
 
     @POST
     @Path("/create")
+    @Transactional
     public TableView create(@NotNull @Valid CreateTableRequest request) {
         var currentUser = currentUser();
 
@@ -114,6 +114,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/perform")
+    @Transactional
     public void perform(@PathParam("id") String id, ActionRequest request) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkTurn(table);
@@ -124,6 +125,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/skip")
+    @Transactional
     public void skip(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkTurn(table);
@@ -134,6 +136,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/end-turn")
+    @Transactional
     public void endTurn(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkTurn(table);
@@ -144,6 +147,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/undo")
+    @Transactional
     public void undo(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkTurn(table);
@@ -154,6 +158,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/propose-to-leave")
+    @Transactional
     public void proposeToLeave(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
                 table.proposeToLeave(currentUserId()));
@@ -161,6 +166,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/agree-to-leave")
+    @Transactional
     public void agreeToLeave(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
                 table.agreeToLeave(currentUserId()));
@@ -168,6 +174,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/leave")
+    @Transactional
     public void leave(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
                 table.leave(currentUserId()));
@@ -175,6 +182,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/abandon")
+    @Transactional
     public void abandon(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
@@ -185,6 +193,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/invite")
+    @Transactional
     public void invite(@PathParam("id") String id, @NotNull @Valid InviteRequest request) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
@@ -196,6 +205,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/add-computer")
+    @Transactional
     public void addComputer(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
@@ -206,6 +216,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/players/{playerId}/kick")
+    @Transactional
     public void kick(@PathParam("id") String id, @PathParam("playerId") String playerId) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
@@ -217,6 +228,7 @@ public class TableResource {
 
     @POST
     @Path("/{id}/change-options")
+    @Transactional
     public void changeOptions(@PathParam("id") String id, @NotNull @Valid ChangeOptionsRequest request) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
