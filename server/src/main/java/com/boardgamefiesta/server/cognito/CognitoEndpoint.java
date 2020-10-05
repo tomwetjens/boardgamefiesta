@@ -67,6 +67,14 @@ public class CognitoEndpoint {
         try {
             log.info("Post Confirmation trigger: {}", event);
 
+            // TODO Move claim names to configuration properties
+            var sub = event.getRequest().getUserAttributes().get("sub");
+            var email = event.getRequest().getUserAttributes().get("email");
+
+            User user = User.createAutomatically(User.Id.of(sub), event.getUserName(), email);
+
+            users.add(user);
+
             log.info("Adding user '{}' to group '{}' in user pool: {}", event.getUserName(), DEFAULT_GROUP, event.getUserPoolId());
             cognitoIdentityProviderClient.adminAddUserToGroup(AdminAddUserToGroupRequest.builder()
                     .userPoolId(event.getUserPoolId())
