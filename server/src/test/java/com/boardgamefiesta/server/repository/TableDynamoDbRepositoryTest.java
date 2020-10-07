@@ -97,4 +97,8 @@ class TableDynamoDbRepositoryTest {
         System.out.println(Duration.between(startTime, endTime).dividedBy(n) + " per find");
     }
 
+    @Test
+    void migrateAdjacencyLists() {
+        tableDynamodbRepository.migrateAdjacencyLists();
+    }
 }

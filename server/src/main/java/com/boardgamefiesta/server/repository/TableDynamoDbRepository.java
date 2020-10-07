@@ -3,7 +3,8 @@ package com.boardgamefiesta.server.repository;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.api.domain.State;
-import com.boardgamefiesta.server.domain.*;
+import com.boardgamefiesta.server.domain.APIError;
+import com.boardgamefiesta.server.domain.APIException;
 import com.boardgamefiesta.server.domain.game.Game;
 import com.boardgamefiesta.server.domain.game.Games;
 import com.boardgamefiesta.server.domain.table.LogEntry;
@@ -99,11 +100,12 @@ public class TableDynamoDbRepository implements Tables {
                 .map(item -> Table.Id.of(item.get("Id").s()));
     }
 
-    public Stream<Table> findAll() {
+    Stream<Table> findAll() {
         return dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)
-                .filterExpression("attribute_exists(#State)")
-                .expressionAttributeNames(Map.of("#State", "State"))
+                // Filter out the adjacency list items
+                .filterExpression("begins_with(UserId, :UserIdBeginsWith)")
+                .expressionAttributeValues(Map.of(":UserIdBeginsWith", AttributeValue.builder().s("Table-").build()))
                 .build())
                 .items().stream()
                 .map(this::mapToTable);
@@ -368,6 +370,28 @@ public class TableDynamoDbRepository implements Tables {
         updateAdjacencyList(table);
     }
 
+    @Override
+    public Stream<User.Id> findRecentlyPlayedWith(User.Id userId) {
+        return Stream.empty();
+//        return dynamoDbClient.queryPaginator(QueryRequest.builder()
+//                .tableName(tableName)
+//                .build());
+    }
+
+    void migrateAdjacencyLists() {
+        findAll().forEach(table -> {
+            System.out.println("Migrating table " + table.getId().getId());
+            table.getPlayers().stream()
+                    .filter(player -> player.getType() == Player.Type.USER)
+                    .forEach(player -> {
+                        dynamoDbClient.putItem(PutItemRequest.builder()
+                                .tableName(tableName)
+                                .item(mapToAdjacencyListItem(table, player))
+                                .build());
+                    });
+        });
+    }
+
     private void updateAdjacencyList(Table table) {
         var trackingSet = (TrackingSet<Player>) table.getPlayers();
 
@@ -429,10 +453,19 @@ public class TableDynamoDbRepository implements Tables {
 
     private Map<String, AttributeValue> mapToAdjacencyListItem(Table table, Player player) {
         var item = new HashMap<String, AttributeValue>();
+
         item.put("Id", AttributeValue.builder().s(table.getId().getId()).build());
         item.put("UserId", AttributeValue.builder().s("User-" + player.getUserId().orElseThrow().getId()).build());
-        item.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
+
+        // Expire adjacency list whenever table expires, since it doesn't make any sense to keep it after
         item.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+
+        // Having some table attributes redundantly in the adjacency list is important
+        // for efficiently querying the active tables a user is in
+        item.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
+        item.put("Created", AttributeValue.builder().n(Long.toString(table.getCreated().getEpochSecond())).build());
+        item.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
+
         return item;
     }
 

@@ -16,6 +16,8 @@ public interface Tables {
 
     Stream<Table> findAllByUserId(User.Id userId, int maxResults);
 
+    Stream<User.Id> findRecentlyPlayedWith(User.Id userId);
+
     class TableConcurrentlyModifiedException extends Exception {
         public TableConcurrentlyModifiedException(Throwable cause) {
             super(cause);
