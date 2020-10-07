@@ -417,7 +417,7 @@ public class Table {
     }
 
     private Stream<Player> playersThatAccepted() {
-        return players.stream().filter(Player::isPlaying);
+        return players.stream().filter(player -> player.getStatus() == Player.Status.ACCEPTED);
     }
 
     public void rejectInvite(@NonNull User.Id userId) {
@@ -582,6 +582,10 @@ public class Table {
 
     public boolean canUndo() {
         return currentState.map(CurrentState::canUndo).orElse(false);
+    }
+
+    public boolean isActive() {
+        return status != Status.ENDED && status != Status.ABANDONED;
     }
 
     public enum Status {

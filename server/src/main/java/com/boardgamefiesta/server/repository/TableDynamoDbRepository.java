@@ -430,7 +430,7 @@ public class TableDynamoDbRepository implements Tables {
                                 "Id", AttributeValue.builder().s(table.getId().getId()).build(),
                                 "UserId", AttributeValue.builder().s("User-" + player.getUserId().orElseThrow().getId()).build()
                         ))
-                        .attributeUpdates(mapToAdjacencyListItemUpdates(table))
+                        .attributeUpdates(mapToAdjacencyListItemUpdates(table, player))
                         .build()));
     }
 
@@ -465,14 +465,17 @@ public class TableDynamoDbRepository implements Tables {
         item.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
         item.put("Created", AttributeValue.builder().n(Long.toString(table.getCreated().getEpochSecond())).build());
         item.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
+        item.put("Active", AttributeValue.builder().bool(table.isActive() && player.isActive()).build());
 
         return item;
     }
 
-    private Map<String, AttributeValueUpdate> mapToAdjacencyListItemUpdates(Table table) {
+    private Map<String, AttributeValueUpdate> mapToAdjacencyListItemUpdates(Table table, Player player) {
         var map = new HashMap<String, AttributeValueUpdate>();
-        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getStatus().name()).build()).build());
         map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
+        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getStatus().name()).build()).build());
+        map.put("Active", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().bool(table.isActive() && player.isActive()).build()).build());
+
         return map;
     }
 

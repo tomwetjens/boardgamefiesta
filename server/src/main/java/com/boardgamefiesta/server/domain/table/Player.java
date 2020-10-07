@@ -148,6 +148,14 @@ public class Player {
         return status == Status.ACCEPTED || status == Status.PROPOSED_TO_LEAVE || status == Status.AGREED_TO_LEAVE;
     }
 
+    /**
+     * Is this player still considered "active" in this table?
+     * I.e. must the player see this table in their active tables overview.
+     */
+    public boolean isActive() {
+        return status != Status.LEFT && status != Status.REJECTED;
+    }
+
     public boolean hasResponded() {
         return status != Status.INVITED;
     }
