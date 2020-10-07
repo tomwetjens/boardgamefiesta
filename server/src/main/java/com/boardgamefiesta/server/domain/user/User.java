@@ -1,6 +1,9 @@
-package com.boardgamefiesta.server.domain;
+package com.boardgamefiesta.server.domain.user;
 
 import com.boardgamefiesta.ResourceLoader;
+import com.boardgamefiesta.server.domain.APIError;
+import com.boardgamefiesta.server.domain.APIException;
+import com.boardgamefiesta.server.domain.DomainEvent;
 import lombok.*;
 import org.apache.commons.codec.binary.Hex;
 

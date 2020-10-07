@@ -1,7 +1,7 @@
 package com.boardgamefiesta.server.rest.user;
 
-import com.boardgamefiesta.server.domain.Table;
-import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.server.domain.user.User;
 import com.boardgamefiesta.server.domain.rating.Rating;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 import lombok.NonNull;

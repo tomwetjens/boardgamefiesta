@@ -1,7 +1,12 @@
-package com.boardgamefiesta.server.domain;
+package com.boardgamefiesta.server.domain.table;
 
 import com.boardgamefiesta.api.domain.EventListener;
 import com.boardgamefiesta.api.domain.*;
+import com.boardgamefiesta.server.domain.APIError;
+import com.boardgamefiesta.server.domain.APIException;
+import com.boardgamefiesta.server.domain.DomainEvent;
+import com.boardgamefiesta.server.domain.game.Game;
+import com.boardgamefiesta.server.domain.user.User;
 import lombok.*;
 
 import java.time.Duration;

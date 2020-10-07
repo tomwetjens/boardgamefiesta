@@ -2,8 +2,15 @@ package com.boardgamefiesta.server.rest.table;
 
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.server.domain.*;
+import com.boardgamefiesta.server.domain.game.Game;
+import com.boardgamefiesta.server.domain.game.Games;
 import com.boardgamefiesta.server.domain.rating.Rating;
 import com.boardgamefiesta.server.domain.rating.Ratings;
+import com.boardgamefiesta.server.domain.table.Player;
+import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.server.domain.table.Tables;
+import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.server.domain.user.Users;
 import com.boardgamefiesta.server.rest.table.command.ActionRequest;
 import com.boardgamefiesta.server.rest.table.command.CreateTableRequest;
 import com.boardgamefiesta.server.rest.table.command.InviteRequest;

@@ -1,7 +1,7 @@
 package com.boardgamefiesta.server.rest.game;
 
-import com.boardgamefiesta.server.domain.Game;
-import com.boardgamefiesta.server.domain.Users;
+import com.boardgamefiesta.server.domain.game.Game;
+import com.boardgamefiesta.server.domain.user.Users;
 import com.boardgamefiesta.server.domain.rating.Ratings;
 import lombok.extern.slf4j.Slf4j;
 

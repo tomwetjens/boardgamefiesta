@@ -1,4 +1,4 @@
-package com.boardgamefiesta.server.domain;
+package com.boardgamefiesta.server.domain.table;
 
 import lombok.Value;
 

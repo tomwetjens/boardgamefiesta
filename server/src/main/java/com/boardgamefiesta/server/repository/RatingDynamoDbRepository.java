@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.server.domain.Game;
-import com.boardgamefiesta.server.domain.Table;
-import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.game.Game;
+import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.server.domain.user.User;
 import com.boardgamefiesta.server.domain.rating.Rating;
 import com.boardgamefiesta.server.domain.rating.Ratings;
 import lombok.NonNull;

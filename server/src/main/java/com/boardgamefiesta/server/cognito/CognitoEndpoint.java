@@ -2,8 +2,8 @@ package com.boardgamefiesta.server.cognito;
 
 import com.boardgamefiesta.server.domain.APIError;
 import com.boardgamefiesta.server.domain.APIException;
-import com.boardgamefiesta.server.domain.User;
-import com.boardgamefiesta.server.domain.Users;
+import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.server.domain.user.Users;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;

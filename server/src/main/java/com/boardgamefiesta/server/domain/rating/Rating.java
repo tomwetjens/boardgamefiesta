@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.domain.rating;
 
-import com.boardgamefiesta.server.domain.Game;
-import com.boardgamefiesta.server.domain.Table;
-import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.game.Game;
+import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.server.domain.user.User;
 import lombok.*;
 
 import java.time.Instant;

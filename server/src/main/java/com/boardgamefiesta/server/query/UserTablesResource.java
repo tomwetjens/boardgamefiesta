@@ -1,8 +1,12 @@
 package com.boardgamefiesta.server.query;
 
-import com.boardgamefiesta.server.domain.*;
+import com.boardgamefiesta.server.domain.game.Games;
 import com.boardgamefiesta.server.domain.rating.Rating;
 import com.boardgamefiesta.server.domain.rating.Ratings;
+import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.server.domain.table.Tables;
+import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.server.domain.user.Users;
 import com.boardgamefiesta.server.rest.table.view.TableView;
 import lombok.extern.slf4j.Slf4j;
 

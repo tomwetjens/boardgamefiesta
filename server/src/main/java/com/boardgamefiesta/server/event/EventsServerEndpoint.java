@@ -1,9 +1,9 @@
 package com.boardgamefiesta.server.event;
 
-import com.boardgamefiesta.server.domain.Player;
-import com.boardgamefiesta.server.domain.Table;
-import com.boardgamefiesta.server.domain.Tables;
-import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.table.Player;
+import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.server.domain.table.Tables;
+import com.boardgamefiesta.server.domain.user.User;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

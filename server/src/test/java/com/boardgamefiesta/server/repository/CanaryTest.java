@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.server.domain.Games;
+import com.boardgamefiesta.server.domain.game.Games;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

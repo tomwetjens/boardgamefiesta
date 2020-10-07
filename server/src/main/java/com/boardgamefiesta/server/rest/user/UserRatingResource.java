@@ -1,9 +1,9 @@
 package com.boardgamefiesta.server.rest.user;
 
-import com.boardgamefiesta.server.domain.Game;
-import com.boardgamefiesta.server.domain.Table;
-import com.boardgamefiesta.server.domain.User;
-import com.boardgamefiesta.server.domain.Users;
+import com.boardgamefiesta.server.domain.game.Game;
+import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.server.domain.user.Users;
 import com.boardgamefiesta.server.domain.rating.Ratings;
 
 import javax.annotation.security.RolesAllowed;

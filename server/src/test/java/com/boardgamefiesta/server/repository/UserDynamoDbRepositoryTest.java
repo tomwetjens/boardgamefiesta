@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

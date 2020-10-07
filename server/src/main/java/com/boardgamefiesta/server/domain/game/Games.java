@@ -1,6 +1,7 @@
-package com.boardgamefiesta.server.domain;
+package com.boardgamefiesta.server.domain.game;
 
 import com.boardgamefiesta.api.spi.GameProviders;
+import com.boardgamefiesta.server.domain.DomainService;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Map;
@@ -11,10 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Games implements DomainService {
 
     private final Map<Game.Id, Game> games = new ConcurrentHashMap<>();
-
-    public static Games instance() {
-        return DomainService.instance(Games.class);
-    }
 
     public Game get(Game.Id id) {
         return games.computeIfAbsent(id, key -> Game.builder()

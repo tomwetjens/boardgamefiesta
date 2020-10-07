@@ -2,8 +2,8 @@ package com.boardgamefiesta.server.rest.user;
 
 import com.boardgamefiesta.server.domain.APIError;
 import com.boardgamefiesta.server.domain.APIException;
-import com.boardgamefiesta.server.domain.User;
-import com.boardgamefiesta.server.domain.Users;
+import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.server.domain.user.Users;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;

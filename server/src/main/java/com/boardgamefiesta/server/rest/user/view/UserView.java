@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.rest.user.view;
 
-import com.boardgamefiesta.server.domain.User;
+import com.boardgamefiesta.server.domain.user.User;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;

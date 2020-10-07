@@ -1,7 +1,7 @@
 package com.boardgamefiesta.server.repository;
 
-import com.boardgamefiesta.server.domain.Log;
-import com.boardgamefiesta.server.domain.LogEntry;
+import com.boardgamefiesta.server.domain.table.Log;
+import com.boardgamefiesta.server.domain.table.LogEntry;
 
 import java.time.Instant;
 import java.util.ArrayList;

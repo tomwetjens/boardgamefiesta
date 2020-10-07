@@ -1,4 +1,6 @@
-package com.boardgamefiesta.server.domain;
+package com.boardgamefiesta.server.domain.table;
+
+import com.boardgamefiesta.server.domain.user.User;
 
 import java.util.stream.Stream;
 

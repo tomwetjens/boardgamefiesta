@@ -4,7 +4,7 @@ import com.boardgamefiesta.api.domain.Action;
 import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.server.domain.APIError;
 import com.boardgamefiesta.server.domain.APIException;
-import com.boardgamefiesta.server.domain.Game;
+import com.boardgamefiesta.server.domain.game.Game;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 

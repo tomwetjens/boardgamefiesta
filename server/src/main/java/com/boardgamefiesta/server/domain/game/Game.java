@@ -1,4 +1,4 @@
-package com.boardgamefiesta.server.domain;
+package com.boardgamefiesta.server.domain.game;
 
 import com.boardgamefiesta.api.command.ActionMapper;
 import com.boardgamefiesta.api.domain.Options;
