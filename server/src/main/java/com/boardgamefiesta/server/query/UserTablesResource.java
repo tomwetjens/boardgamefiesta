@@ -51,7 +51,7 @@ public class UserTablesResource {
 
         var userMap = new HashMap<User.Id, User>();
         var ratingMap = new HashMap<User.Id, Rating>();
-        return tables.findRecentByUserId(User.Id.of(userId), 10)
+        return tables.findRecent(User.Id.of(userId), 10)
                 .map(table -> new TableView(table, getUserMap(table, userMap), getRatingMap(table, ratingMap), currentUserId))
                 .collect(Collectors.toList());
     }

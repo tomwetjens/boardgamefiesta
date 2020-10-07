@@ -1,5 +1,6 @@
 package com.boardgamefiesta.server.domain.table;
 
+import com.boardgamefiesta.server.domain.game.Game;
 import com.boardgamefiesta.server.domain.user.User;
 
 import java.util.stream.Stream;
@@ -14,7 +15,9 @@ public interface Tables {
 
     Stream<Table> findActive(User.Id userId);
 
-    Stream<Table> findRecentByUserId(User.Id userId, int maxResults);
+    Stream<Table> findRecent(User.Id userId, int maxResults);
+
+    Stream<Table> findRecent(User.Id userId, Game.Id gameId, int maxResults);
 
     class TableConcurrentlyModifiedException extends Exception {
         public TableConcurrentlyModifiedException(Throwable cause) {

@@ -68,12 +68,40 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findRecentByUserId(User.Id userId, int maxResults) {
+    public Stream<Table> findRecent(User.Id userId, int maxResults) {
         return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(tableName)
                 .indexName(USER_ID_CREATED_INDEX)
                 .keyConditionExpression("UserId = :UserId")
-                .expressionAttributeValues(Map.of(":UserId", AttributeValue.builder().s("User-" + userId.getId()).build()))
+                .filterExpression("#Status <> :Abandoned")
+                .expressionAttributeNames(Map.of(
+                        "#Status", "Status"))
+                .expressionAttributeValues(Map.of(
+                        ":UserId", AttributeValue.builder().s("User-" + userId.getId()).build(),
+                        ":Abandoned", AttributeValue.builder().s(Table.Status.ABANDONED.name()).build()))
+                .scanIndexForward(false) // Most recent first
+                .limit(maxResults)
+                .build())
+                .items().stream()
+                .limit(maxResults)
+                .map(item -> Table.Id.of(item.get("Id").s()))
+                .flatMap(tableId -> findOptionallyById(tableId).stream());
+    }
+
+    @Override
+    public Stream<Table> findRecent(User.Id userId, Game.Id gameId, int maxResults) {
+        return dynamoDbClient.queryPaginator(QueryRequest.builder()
+                .tableName(tableName)
+                .indexName(USER_ID_CREATED_INDEX)
+                .keyConditionExpression("UserId = :UserId")
+                .filterExpression("GameId = :GameId")
+                .filterExpression("#Status <> :Abandoned")
+                .expressionAttributeNames(Map.of(
+                        "#Status", "Status"))
+                .expressionAttributeValues(Map.of(
+                        ":UserId", AttributeValue.builder().s("User-" + userId.getId()).build(),
+                        ":GameId", AttributeValue.builder().s(gameId.getId()).build(),
+                        ":Abandoned", AttributeValue.builder().s(Table.Status.ABANDONED.name()).build()))
                 .scanIndexForward(false) // Most recent first
                 .limit(maxResults)
                 .build())
