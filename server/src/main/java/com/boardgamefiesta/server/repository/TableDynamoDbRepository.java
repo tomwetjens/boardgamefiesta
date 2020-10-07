@@ -33,7 +33,7 @@ public class TableDynamoDbRepository implements Tables {
     private static final String STATE_TABLE_NAME = "gwt-state";
 
     private static final String USER_ID_ID_INDEX = "UserId-Id-index";
-    private static final String USER_ID_EXPIRES_INDEX = "UserId-Expires-index";
+    private static final String USER_ID_CREATED_INDEX = "UserId-Created-index";
 
     private static final int FIRST_VERSION = 1;
 
@@ -68,16 +68,10 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findAllByUserId(User.Id userId, int maxResults) {
-        return findAllTableIdsByUserId(userId, maxResults)
-                .flatMap(tableId -> findOptionallyById(tableId).stream());
-    }
-
-    private Stream<Table.Id> findAllTableIdsByUserId(User.Id userId, int maxResults) {
-        // TODO This query should return the most recent table first
+    public Stream<Table> findRecentByUserId(User.Id userId, int maxResults) {
         return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(tableName)
-                .indexName(USER_ID_EXPIRES_INDEX)
+                .indexName(USER_ID_CREATED_INDEX)
                 .keyConditionExpression("UserId = :UserId")
                 .expressionAttributeValues(Map.of(":UserId", AttributeValue.builder().s("User-" + userId.getId()).build()))
                 .scanIndexForward(false) // Most recent first
@@ -85,7 +79,8 @@ public class TableDynamoDbRepository implements Tables {
                 .build())
                 .items().stream()
                 .limit(maxResults)
-                .map(item -> Table.Id.of(item.get("Id").s()));
+                .map(item -> Table.Id.of(item.get("Id").s()))
+                .flatMap(tableId -> findOptionallyById(tableId).stream());
     }
 
     Stream<Table> findAll() {
@@ -341,14 +336,6 @@ public class TableDynamoDbRepository implements Tables {
         addLogEntries(table);
 
         updateAdjacencyList(table);
-    }
-
-    @Override
-    public Stream<User.Id> findRecentlyPlayedWith(User.Id userId) {
-        return Stream.empty();
-//        return dynamoDbClient.queryPaginator(QueryRequest.builder()
-//                .tableName(tableName)
-//                .build());
     }
 
     void migrateAdjacencyLists() {
