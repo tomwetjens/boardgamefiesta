@@ -1,7 +1,6 @@
 package com.boardgamefiesta.server.domain.user;
 
 import com.boardgamefiesta.server.domain.DomainEvent;
-import com.boardgamefiesta.server.domain.table.Table;
 import lombok.*;
 
 import java.time.Instant;
@@ -22,6 +21,10 @@ public class Friend {
     private Instant ended;
 
     public static Friend start(User user, User otherUser) {
+        if (user.getId().equals(otherUser.getId())) {
+            throw new IllegalArgumentException("User ids must be different");
+        }
+
         var friend = new Friend(Id.of(user.getId(), otherUser.getId()), Instant.now(), null);
 
         new Started(friend.getId()).fire();
