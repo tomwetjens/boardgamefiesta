@@ -94,8 +94,7 @@ public class TableDynamoDbRepository implements Tables {
                 .tableName(tableName)
                 .indexName(USER_ID_CREATED_INDEX)
                 .keyConditionExpression("UserId = :UserId")
-                .filterExpression("GameId = :GameId")
-                .filterExpression("#Status <> :Abandoned")
+                .filterExpression("GameId = :GameId AND #Status <> :Abandoned")
                 .expressionAttributeNames(Map.of(
                         "#Status", "Status"))
                 .expressionAttributeValues(Map.of(
