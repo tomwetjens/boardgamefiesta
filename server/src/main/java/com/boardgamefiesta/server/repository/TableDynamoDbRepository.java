@@ -37,14 +37,6 @@ public class TableDynamoDbRepository implements Tables {
 
     private static final int FIRST_VERSION = 1;
 
-    private static final EnumSet<Table.Status> ACTIVE_STATUSES = EnumSet.of(
-            Table.Status.STARTED,
-            Table.Status.NEW);
-
-    private static final EnumSet<Player.Status> ADJACENCY_IGNORED_STATUSES = EnumSet.of(
-            Player.Status.REJECTED,
-            Player.Status.LEFT);
-
     private static final int MAX_ACTIVE_REALTIME_GAMES = 1;
     private static final int MAX_ACTIVE_GAMES = 10;
 
@@ -72,11 +64,7 @@ public class TableDynamoDbRepository implements Tables {
 
     @Override
     public Stream<Table> findActive(User.Id userId) {
-        Set<Table.Id> ids = getActiveTableIds(userId);
-        return getTables(ids)
-                // Extra check in case adjacency list was not up to date
-                .filter(TableDynamoDbRepository::isActive)
-                .map(this::mapToTable);
+        return getTables(getActiveTableIds(userId)).map(this::mapToTable);
     }
 
     @Override
@@ -111,10 +99,6 @@ public class TableDynamoDbRepository implements Tables {
                 .map(this::mapToTable);
     }
 
-    private int countActive(User.Id userId) {
-        return getActiveTableIds(userId).size();
-    }
-
     private Stream<Map<String, AttributeValue>> getTables(Set<Table.Id> ids) {
         if (ids.isEmpty()) {
             return Stream.empty();
@@ -140,35 +124,24 @@ public class TableDynamoDbRepository implements Tables {
                 .tableName(tableName)
                 .indexName(USER_ID_ID_INDEX)
                 .keyConditionExpression("UserId = :UserId")
-                .filterExpression("#Status = :New or #Status = :Started" +
-                        " or #Status = :Accepted or #Status = :Invited") // Kept for backwards compatibility
-                .expressionAttributeNames(Map.of(
-                        "#Status", "Status"
-                ))
+                .filterExpression("Active = :Active")
                 .expressionAttributeValues(Map.of(
                         ":UserId", AttributeValue.builder().s("User-" + userId.getId()).build(),
-                        ":New", AttributeValue.builder().s(Table.Status.NEW.name()).build(),
-                        ":Started", AttributeValue.builder().s(Table.Status.STARTED.name()).build(),
-                        ":Accepted", AttributeValue.builder().s(Player.Status.ACCEPTED.name()).build(),
-                        ":Invited", AttributeValue.builder().s(Player.Status.INVITED.name()).build()
-                ))
+                        ":Active", AttributeValue.builder().bool(true).build()))
                 .build())
                 .items().stream()
                 .map(item -> Table.Id.of(item.get("Id").s()))
                 .collect(Collectors.toSet());
     }
 
-    private int countActiveByType(User.Id userId, Table.Type type) {
-        Set<Table.Id> ids = getActiveTableIds(userId);
-        return (int) getTables(ids)
-                // Extra check in case adjacency list was not up to date
-                .filter(TableDynamoDbRepository::isActive)
-                .filter(item -> Table.Type.valueOf(item.get("Type").s()) == type)
-                .count();
+    private int countActive(User.Id userId) {
+        return getActiveTableIds(userId).size();
     }
 
-    private static boolean isActive(Map<String, AttributeValue> item) {
-        return ACTIVE_STATUSES.contains(Table.Status.valueOf(item.get("Status").s()));
+    private int countActiveByType(User.Id userId, Table.Type type) {
+        return (int) getTables(getActiveTableIds(userId))
+                .filter(item -> Table.Type.valueOf(item.get("Type").s()) == type)
+                .count();
     }
 
     @Override
