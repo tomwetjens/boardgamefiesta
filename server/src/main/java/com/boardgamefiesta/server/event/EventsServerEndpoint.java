@@ -3,6 +3,7 @@ package com.boardgamefiesta.server.event;
 import com.boardgamefiesta.server.domain.table.Player;
 import com.boardgamefiesta.server.domain.table.Table;
 import com.boardgamefiesta.server.domain.table.Tables;
+import com.boardgamefiesta.server.domain.user.Friend;
 import com.boardgamefiesta.server.domain.user.User;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -130,6 +131,10 @@ public class EventsServerEndpoint {
     void computerAdded(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ComputerAdded event) {
         var table = tables.findById(event.getTableId(), false);
         notifyOtherPlayers(null, table, new Event(Event.EventType.COMPUTER_ADDED, event.getTableId().getId(), null));
+    }
+
+    void addedAsFriend(@Observes(during = TransactionPhase.AFTER_SUCCESS) Friend.Started event) {
+        notifyUser(event.getId().getOtherUserId(), new Event(Event.EventType.ADDED_AS_FRIEND, null, event.getId().getUserId().getId()));
     }
 
     private void notifyOtherPlayers(User.Id currentUserId, Table table, Event event) {

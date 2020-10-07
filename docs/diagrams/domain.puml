@@ -1,30 +1,41 @@
 @startuml
 
-class User <<AggregateRoot>>
+package user {
+    class User
+    interface Users
 
-class Table <<AggregateRoot>>
+    class Friend
+    interface Friends
+    Friend --> User
+}
 
-class Player <<Entity>>
-User <-- Player
+package game {
+    class Game
 
-class Game <<AggregateRoot>>
+    interface Games
+}
 
-class Rating
-Rating -> Table
-User <-- Rating
+package table {
+    class Table
 
-interface State
+    class Player
+    User <-- Player
 
-Table --> Game
-Table --> Player
-Table --> State
+    interface State
 
-interface Ratings
+    Table --> Game
+    Table --> Player
+    Table --> State
 
-interface Tables
+    interface Tables
+}
 
-interface Users
+package Rating {
+    class Rating
+    Rating -> Table
+    User <-- Rating
 
-interface Games
+    interface Ratings
+}
 
 @enduml

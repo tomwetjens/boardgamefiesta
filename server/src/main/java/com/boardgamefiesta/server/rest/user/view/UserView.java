@@ -19,6 +19,10 @@ public class UserView {
     String email;
     String location;
 
+    public UserView(User user) {
+        this(user.getId(), user, null);
+    }
+
     public UserView(User.Id userId, User user, User.Id viewer) {
         this.id = userId.getId();
 

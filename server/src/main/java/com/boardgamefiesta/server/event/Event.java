@@ -27,6 +27,7 @@ public class Event {
         KICKED,
         OPTIONS_CHANGED,
         COMPUTER_ADDED,
-        ABANDONED
+        ABANDONED,
+        ADDED_AS_FRIEND
     }
 }
