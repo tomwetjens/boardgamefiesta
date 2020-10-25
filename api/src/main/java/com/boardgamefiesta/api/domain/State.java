@@ -20,7 +20,7 @@ public interface State {
 
     List<Player> getPlayers();
 
-    int score(Player player);
+    Optional<Integer> score(Player player);
 
     Set<Player> winners();
 

@@ -360,12 +360,9 @@ public class Table {
             var winners = state.winners();
 
             for (Player player : players) {
-                state.getPlayerByName(player.getId().getId()).ifPresent(playerInState -> {
-                    var score = state.score(playerInState);
-                    var winner = winners.contains(playerInState);
-
-                    player.assignScore(score, winner);
-                });
+                state.getPlayerByName(player.getId().getId()).ifPresent(playerInState ->
+                        state.score(playerInState).ifPresent(score ->
+                                player.assignScore(score, winners.contains(playerInState))));
             }
 
             new Ended(id).fire();
@@ -373,11 +370,9 @@ public class Table {
             expires = updated.plus(RETENTION_AFTER_ACTION);
 
             for (Player player : players) {
-                state.getPlayerByName(player.getId().getId()).ifPresent(playerInState -> {
-                    var score = state.score(playerInState);
-
-                    player.assignScore(score, false);
-                });
+                state.getPlayerByName(player.getId().getId())
+                        .flatMap(state::score)
+                        .ifPresent(score -> player.assignScore(score, false));
             }
         }
     }

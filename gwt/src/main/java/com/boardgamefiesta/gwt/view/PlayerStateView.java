@@ -26,11 +26,15 @@ public class PlayerStateView {
     Boolean winner;
 
     List<CardView> hand;
-    Integer handValue;
-    List<CardView> discardPile;
-    Integer drawStackSize;
-    List<CardView> drawStack;
     Integer handSize;
+    Integer handValue;
+
+    List<CardView> discardPile;
+    int discardPileSize;
+    CardView discardPileTop;
+
+    int drawStackSize;
+    List<CardView> drawStack;
 
     Map<Unlockable, Integer> unlocked;
     List<String> buildings;
@@ -49,13 +53,12 @@ public class PlayerStateView {
         tempCertificates = playerState.getTempCertificates();
         certificates = playerState.getTempCertificates() + playerState.permanentCertificates();
 
-        discardPile = playerState.getDiscardPile().stream()
-                .map(CardView::of)
-                .collect(Collectors.toList());
-        Collections.reverse(discardPile);
-
         drawStackSize = playerState.getDrawStack().size();
         handSize = playerState.getHand().size();
+        discardPileSize = playerState.getDiscardPile().size();
+        discardPileTop = !playerState.getDiscardPile().isEmpty()
+                ? CardView.of(playerState.getDiscardPile().get(playerState.getDiscardPile().size() - 1))
+                : null;
 
         if (viewingPlayer == playerState.getPlayer() || state.isEnded()) {
             hand = playerState.getHand().stream()
@@ -64,14 +67,22 @@ public class PlayerStateView {
                     .collect(Collectors.toList());
             handValue = playerState.handValue();
 
+            // Player is allowed to go through discard pile
+            discardPile = playerState.getDiscardPile().stream()
+                    .map(CardView::of)
+                    .collect(Collectors.toList());
+            Collections.reverse(discardPile);
+        } else {
+            hand = null;
+            handValue = null;
+        }
+
+        if (state.isEnded() || (viewingPlayer == playerState.getPlayer() && state.getMode() == Game.Options.Mode.STRATEGIC)) {
             drawStack = playerState.getDrawStack().stream()
                     .map(CardView::of)
                     .collect(Collectors.toList());
             // Randomize so player cannot know which cards are coming
             Collections.shuffle(drawStack);
-        } else {
-            hand = null;
-            handValue = null;
         }
 
         unlocked = playerState.getUnlocked();
@@ -96,7 +107,8 @@ public class PlayerStateView {
                 .sorted()
                 .collect(Collectors.toList());
 
-        this.score = new ScoreView(state.scoreDetails(playerState.getPlayer()));
+        this.score = state.scoreDetails(playerState.getPlayer()).map(ScoreView::new).orElse(null);
+
         if (state.isEnded()) {
             winner = state.winners().contains(playerState.getPlayer());
         }

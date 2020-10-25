@@ -193,8 +193,8 @@ public class Game implements State {
     }
 
     @Override
-    public int score(Player player) {
-        return getPlayerState(player).getRubies();
+    public Optional<Integer> score(Player player) {
+        return Optional.of(getPlayerState(player).getRubies());
     }
 
     @Override

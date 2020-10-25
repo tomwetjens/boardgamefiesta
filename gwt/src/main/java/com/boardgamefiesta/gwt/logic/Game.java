@@ -21,6 +21,9 @@ import java.util.stream.Stream;
 @Builder(access = AccessLevel.PRIVATE)
 public class Game implements State {
 
+    @Getter
+    private final Options.Mode mode;
+
     private final Set<Player> players;
 
     private final Map<Player, PlayerState> playerStates;
@@ -86,6 +89,7 @@ public class Game implements State {
         var kansasCitySupply = new KansasCitySupply(random);
 
         var game = builder()
+                .mode(options.getMode())
                 .players(players)
                 .playerOrder(playerOrder)
                 .playerStates(playerStates)
@@ -416,18 +420,21 @@ public class Game implements State {
         return trail.possibleMoves(player, playerState(player).getBalance(), atMost, playerOrder.size());
     }
 
-    public Score scoreDetails(Player player) {
-        return playerState(player).score(this).add(trail.score(player)).add(railroadTrack.score(player));
+    public Optional<Score> scoreDetails(Player player) {
+        return isEnded() || mode == Options.Mode.STRATEGIC
+                ? Optional.of(playerState(player).score(this).add(trail.score(player)).add(railroadTrack.score(player)))
+                : Optional.empty();
     }
 
     @Override
-    public int score(Player player) {
-        return scoreDetails(player).getTotal();
+    public Optional<Integer> score(Player player) {
+        return scoreDetails(player).map(Score::getTotal);
     }
 
     public JsonObject serialize(JsonBuilderFactory factory) {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
+                .add("mode", mode.name())
                 .add("players", serializer.fromCollection(players, Player::serialize))
                 .add("playerOrder", serializer.fromStrings(playerOrder.stream().map(Player::getName)))
                 .add("playerStates", serializer.fromMap(playerStates, Player::getName, playerState -> playerState.serialize(factory, railroadTrack)))
@@ -465,6 +472,7 @@ public class Game implements State {
         var railroadTrack = RailroadTrack.deserialize(playerMap, jsonObject.getJsonObject("railroadTrack"));
 
         return builder()
+                .mode(Options.Mode.valueOf(jsonObject.getString("mode", Options.Mode.STRATEGIC.name())))
                 .players(players)
                 .playerOrder(playerOrder)
                 .playerStates(deserializePlayerStates(playerMap, railroadTrack, jsonObject.getJsonObject("playerStates")))
@@ -498,7 +506,8 @@ public class Game implements State {
     @Override
     public Set<Player> winners() {
         var scores = playerOrder.stream()
-                .collect(Collectors.toMap(Function.identity(), this::score));
+                .collect(Collectors.toMap(Function.identity(), player -> score(player)
+                .orElseThrow(() -> new GWTException(GWTError.GAME_NOT_ENDED))));
 
         int maxScore = scores.values().stream().max(Integer::compare).orElse(0);
 
@@ -628,7 +637,7 @@ public class Game implements State {
 
         @NonNull
         @Builder.Default
-        Variant variant = Variant.ORIGINAL;
+        Mode mode = Mode.ORIGINAL;
 
         @NonNull
         @Builder.Default
@@ -639,8 +648,9 @@ public class Game implements State {
             RANDOMIZED
         }
 
-        public enum Variant {
-            ORIGINAL
+        public enum Mode {
+            ORIGINAL,
+            STRATEGIC
         }
 
         public enum PlayerOrder {

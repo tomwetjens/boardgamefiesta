@@ -448,8 +448,8 @@ class GameTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.score(playerRed)).isEqualTo(6);
-            assertThat(game.score(playerGreen)).isEqualTo(3);
+            assertThat(game.score(playerRed)).contains(6);
+            assertThat(game.score(playerGreen)).contains(3);
         }
     }
 
