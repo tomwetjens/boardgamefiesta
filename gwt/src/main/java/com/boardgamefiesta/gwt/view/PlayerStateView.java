@@ -53,7 +53,6 @@ public class PlayerStateView {
         tempCertificates = playerState.getTempCertificates();
         certificates = playerState.getTempCertificates() + playerState.permanentCertificates();
 
-        drawStackSize = playerState.getDrawStack().size();
         handSize = playerState.getHand().size();
         discardPileSize = playerState.getDiscardPile().size();
         discardPileTop = !playerState.getDiscardPile().isEmpty()
@@ -66,21 +65,35 @@ public class PlayerStateView {
                     .sorted()
                     .collect(Collectors.toList());
             handValue = playerState.handValue();
-
-            // Player is allowed to go through discard pile
-            discardPile = playerState.getDiscardPile().stream()
-                    .map(CardView::of)
-                    .collect(Collectors.toList());
-            Collections.reverse(discardPile);
         } else {
             hand = null;
             handValue = null;
         }
 
-        if (state.isEnded() || (viewingPlayer == playerState.getPlayer() && state.getMode() == Game.Options.Mode.STRATEGIC)) {
-            drawStack = playerState.getDrawStack().stream()
+        if (state.isEnded() || viewingPlayer == playerState.getPlayer()
+                || state.getMode() == Game.Options.Mode.STRATEGIC) {
+            // Player is allowed to go through discard pile
+            discardPile = playerState.getDiscardPile().stream()
                     .map(CardView::of)
                     .collect(Collectors.toList());
+            Collections.reverse(discardPile);
+        }
+
+        drawStackSize = playerState.getDrawStack().size();
+        if (state.isEnded() || state.getMode() == Game.Options.Mode.STRATEGIC) {
+            if (viewingPlayer == playerState.getPlayer()) {
+                // Hand already visible to player, show only cards in actual draw stack
+                drawStack = playerState.getDrawStack().stream()
+                        .map(CardView::of)
+                        .collect(Collectors.toList());
+
+            } else {
+                // Hand not visible, show draw stack + hand as "draw stack" to prevent deducing what is in hand
+                drawStack = Stream.concat(playerState.getDrawStack().stream(), playerState.getHand().stream())
+                        .map(CardView::of)
+                        .collect(Collectors.toList());
+            }
+
             // Randomize so player cannot know which cards are coming
             Collections.shuffle(drawStack);
         }
