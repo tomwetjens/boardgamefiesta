@@ -1,10 +1,8 @@
 
 package com.boardgamefiesta.istanbul.logic;
 
+import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.domain.EventListener;
-import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.domain.PlayerColor;
-import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.api.repository.JsonDeserializer;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.AccessLevel;
@@ -195,6 +193,12 @@ public class Game implements State {
     @Override
     public Optional<Integer> score(Player player) {
         return Optional.of(getPlayerState(player).getRubies());
+    }
+
+    @Override
+    public Stats stats(Player player) {
+        // TODO Export stats
+        return Stats.builder().build();
     }
 
     @Override

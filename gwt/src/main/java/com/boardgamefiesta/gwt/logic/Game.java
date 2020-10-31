@@ -3,6 +3,7 @@ package com.boardgamefiesta.gwt.logic;
 import com.boardgamefiesta.api.domain.EventListener;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.api.domain.Stats;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import com.boardgamefiesta.gwt.view.ActionType;
 import lombok.*;
@@ -431,6 +432,60 @@ public class Game implements State {
         return scoreDetails(player).map(Score::getTotal);
     }
 
+    @Override
+    public Stats stats(Player player) {
+        var playerState = playerState(player);
+
+        var stats = Stats.builder()
+                .value("players", playerOrder.size())
+                .value("seat", playerOrder.indexOf(player) + 1)
+                .value("cowboys", playerState.getNumberOfCowboys())
+                .value("craftsmen", playerState.getNumberOfCraftsmen())
+                .value("engineers", playerState.getNumberOfEngineers())
+                .value("stepLimit", playerState.getStepLimit(playerOrder.size()))
+                .value("handLimit", playerState.getHandLimit())
+                .value("permCerts", playerState.permanentCertificates())
+                .value("tempCerts", playerState.getTempCertificates())
+                .value("tempCertLimit", playerState.getTempCertificateLimit());
+
+        scoreDetails(player).ifPresent(score ->
+                score.getCategories().forEach((category, value) ->
+                        stats.value("score." + category.name(), value)));
+
+        for (City city : City.values()) {
+            stats.value("deliveries." + city.name(),
+                    railroadTrack.getCities().get(city).stream()
+                            .filter(delivery -> delivery == player)
+                            .count());
+        }
+
+        for (String name : List.of("A", "B", "C", "D", "E", "F", "G")) {
+            stats.value("building." + name, trail.getBuildingLocations().stream()
+                    .filter(location -> name.equals(location.getBuilding().map(Building::getName).orElse(null)))
+                    .findAny()
+                    .map(Location::getName)
+                    .orElse(""));
+        }
+
+        for (var number : PlayerBuilding.BuildingSet.ALL) {
+            for (var side : PlayerBuilding.Side.values()) {
+                var name = PlayerBuilding.Name.of(number, side).toString();
+
+                stats.value("building." + name, trail.getBuildingLocations().stream()
+                        .filter(location -> location.getBuilding()
+                                .filter(building -> building.getName().equals(name))
+                                .filter(building -> building instanceof PlayerBuilding)
+                                .filter(building -> ((PlayerBuilding) building).getPlayer() == player)
+                                .isPresent())
+                        .findAny()
+                        .map(Location::getName)
+                        .orElse(""));
+            }
+        }
+
+        return stats.build();
+    }
+
     public JsonObject serialize(JsonBuilderFactory factory) {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
@@ -507,7 +562,7 @@ public class Game implements State {
     public Set<Player> winners() {
         var scores = playerOrder.stream()
                 .collect(Collectors.toMap(Function.identity(), player -> score(player)
-                .orElseThrow(() -> new GWTException(GWTError.GAME_NOT_ENDED))));
+                        .orElseThrow(() -> new GWTException(GWTError.GAME_NOT_ENDED))));
 
         int maxScore = scores.values().stream().max(Integer::compare).orElse(0);
 

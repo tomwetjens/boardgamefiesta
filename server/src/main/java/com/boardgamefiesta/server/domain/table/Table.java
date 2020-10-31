@@ -583,6 +583,10 @@ public class Table {
         return status != Status.ENDED && status != Status.ABANDONED;
     }
 
+    public boolean hasComputerPlayers() {
+        return players.stream().anyMatch(player -> player.getType() == Player.Type.COMPUTER);
+    }
+
     public enum Status {
         NEW,
         STARTED,

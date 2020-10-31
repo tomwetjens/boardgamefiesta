@@ -110,12 +110,27 @@ public class TableDynamoDbRepository implements Tables {
                 .flatMap(tableId -> findOptionallyById(tableId).stream());
     }
 
-    Stream<Table> findAll() {
+    @Override
+    public Stream<Table> findAll() {
         return dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)
                 // Filter out the adjacency list items
                 .filterExpression("begins_with(UserId, :UserIdBeginsWith)")
                 .expressionAttributeValues(Map.of(":UserIdBeginsWith", AttributeValue.builder().s("Table-").build()))
+                .build())
+                .items().stream()
+                .map(this::mapToTable);
+    }
+
+    @Override
+    public Stream<Table> findAll(Game.Id gameId) {
+        return dynamoDbClient.scanPaginator(ScanRequest.builder()
+                .tableName(tableName)
+                // Filter out the adjacency list items
+                .filterExpression("GameId = :GameId AND begins_with(UserId, :UserIdBeginsWith)")
+                .expressionAttributeValues(Map.of(
+                        ":GameId", AttributeValue.builder().s(gameId.getId()).build(),
+                        ":UserIdBeginsWith", AttributeValue.builder().s("Table-").build()))
                 .build())
                 .items().stream()
                 .map(this::mapToTable);

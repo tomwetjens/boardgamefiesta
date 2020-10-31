@@ -1,12 +1,12 @@
 package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
+import lombok.*;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -17,13 +17,11 @@ public abstract class PlayerBuilding extends Building {
     private final int craftsmen;
     private final int points;
     private final int number;
-    private final BuildingSet.Side side;
 
-    private PlayerBuilding(int number, BuildingSet.Side side, Player player, Hand hand, int craftsmen, int points) {
-        super(number + side.toString().toLowerCase(), hand);
+    private PlayerBuilding(Name name, Player player, Hand hand, int craftsmen, int points) {
+        super(name.toString(), hand);
 
-        this.number = number;
-        this.side = side;
+        this.number = name.getNumber();
         this.player = player;
         this.craftsmen = craftsmen;
         this.points = points;
@@ -76,46 +74,52 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
+    public enum Side {
+        A, B
+    }
+
+    @Value(staticConstructor = "of")
+    public static class Name {
+        int number;
+        Side side;
+
+        @Override
+        public String toString() {
+            return number + side.name().toLowerCase();
+        }
+    }
+
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class BuildingSet {
 
-        @NonNull List<Side> sides;
+        public static final List<Integer> ALL = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+        @NonNull List<String> names;
 
         public static BuildingSet beginner() {
-            return new BuildingSet(Stream.generate(() -> Side.A)
-                    .limit(10)
+            return new BuildingSet(ALL.stream()
+                    .map(number -> number + "a")
                     .collect(Collectors.toList()));
         }
 
         public static BuildingSet random(@NonNull Random random) {
-            return new BuildingSet(Stream.generate(() -> random.nextBoolean() ? Side.A : Side.B)
-                    .limit(10)
+            return new BuildingSet(ALL.stream()
+                    .map(number -> number + (random.nextBoolean() ? "a" : "b"))
                     .collect(Collectors.toList()));
         }
 
         public Set<PlayerBuilding> createPlayerBuildings(@NonNull Player player) {
-            return new HashSet<>(Arrays.asList(
-                    sides.get(0) == Side.A ? new Building1A(player) : new Building1B(player),
-                    sides.get(1) == Side.A ? new Building2A(player) : new Building2B(player),
-                    sides.get(2) == Side.A ? new Building3A(player) : new Building3B(player),
-                    sides.get(3) == Side.A ? new Building4A(player) : new Building4B(player),
-                    sides.get(4) == Side.A ? new Building5A(player) : new Building5B(player),
-                    sides.get(5) == Side.A ? new Building6A(player) : new Building6B(player),
-                    sides.get(6) == Side.A ? new Building7A(player) : new Building7B(player),
-                    sides.get(7) == Side.A ? new Building8A(player) : new Building8B(player),
-                    sides.get(8) == Side.A ? new Building9A(player) : new Building9B(player),
-                    sides.get(9) == Side.A ? new Building10A(player) : new Building10B(player)));
+            return names.stream()
+                    .map(name -> PlayerBuilding.forName(name, player))
+                    .collect(Collectors.toSet());
         }
 
-        private enum Side {
-            A, B
-        }
     }
 
     public static final class Building1A extends PlayerBuilding {
 
         Building1A(Player player) {
-            super(1, BuildingSet.Side.A, player, Hand.GREEN, 1, 1);
+            super(Name.of(1, Side.A), player, Hand.GREEN, 1, 1);
         }
 
         @Override
@@ -127,7 +131,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building2A extends PlayerBuilding {
 
         Building2A(Player player) {
-            super(2, BuildingSet.Side.A, player, Hand.NONE, 1, 1);
+            super(Name.of(2, Side.A), player, Hand.NONE, 1, 1);
         }
 
         @Override
@@ -143,7 +147,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building3A extends PlayerBuilding {
 
         Building3A(Player player) {
-            super(3, BuildingSet.Side.A, player, Hand.NONE, 1, 1);
+            super(Name.of(3, Side.A), player, Hand.NONE, 1, 1);
         }
 
         @Override
@@ -155,7 +159,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building4A extends PlayerBuilding {
 
         Building4A(Player player) {
-            super(4, BuildingSet.Side.A, player, Hand.BLACK, 2, 3);
+            super(Name.of(4, Side.A), player, Hand.BLACK, 2, 3);
         }
 
         @Override
@@ -167,7 +171,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building5A extends PlayerBuilding {
 
         Building5A(Player player) {
-            super(5, BuildingSet.Side.A, player, Hand.NONE, 3, 4);
+            super(Name.of(5, Side.A), player, Hand.NONE, 3, 4);
         }
 
         @Override
@@ -179,7 +183,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building6A extends PlayerBuilding {
 
         Building6A(Player player) {
-            super(6, BuildingSet.Side.A, player, Hand.NONE, 4, 5);
+            super(Name.of(6, Side.A), player, Hand.NONE, 4, 5);
         }
 
         @Override
@@ -191,7 +195,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building7A extends PlayerBuilding {
 
         Building7A(Player player) {
-            super(7, BuildingSet.Side.A, player, Hand.BOTH, 5, 6);
+            super(Name.of(7, Side.A), player, Hand.BOTH, 5, 6);
         }
 
         @Override
@@ -203,7 +207,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building8A extends PlayerBuilding {
 
         Building8A(Player player) {
-            super(8, BuildingSet.Side.A, player, Hand.GREEN, 5, 6);
+            super(Name.of(8, Side.A), player, Hand.GREEN, 5, 6);
         }
 
         @Override
@@ -217,7 +221,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building9A extends PlayerBuilding {
 
         Building9A(Player player) {
-            super(9, BuildingSet.Side.A, player, Hand.NONE, 7, 9);
+            super(Name.of(9, Side.A), player, Hand.NONE, 7, 9);
         }
 
         @Override
@@ -229,7 +233,7 @@ public abstract class PlayerBuilding extends Building {
     public static final class Building10A extends PlayerBuilding {
 
         Building10A(Player player) {
-            super(10, BuildingSet.Side.A, player, Hand.BLACK, 9, 13);
+            super(Name.of(10, Side.A), player, Hand.BLACK, 9, 13);
         }
 
         @Override
@@ -241,7 +245,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building1B extends PlayerBuilding {
 
         Building1B(Player player) {
-            super(1, BuildingSet.Side.B, player, Hand.GREEN, 1, 1);
+            super(Name.of(1, Side.B), player, Hand.GREEN, 1, 1);
         }
 
         @Override
@@ -253,7 +257,7 @@ public abstract class PlayerBuilding extends Building {
     static class Building2B extends PlayerBuilding {
 
         Building2B(Player player) {
-            super(2, BuildingSet.Side.B, player, Hand.NONE, 1, 1);
+            super(Name.of(2, Side.B), player, Hand.NONE, 1, 1);
         }
 
         @Override
@@ -265,7 +269,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building3B extends PlayerBuilding {
 
         Building3B(Player player) {
-            super(3, BuildingSet.Side.B, player, Hand.NONE, 2, 3);
+            super(Name.of(3, Side.B), player, Hand.NONE, 2, 3);
         }
 
         @Override
@@ -277,7 +281,7 @@ public abstract class PlayerBuilding extends Building {
     static class Building4B extends PlayerBuilding {
 
         Building4B(Player player) {
-            super(4, BuildingSet.Side.B, player, Hand.BLACK, 2, 3);
+            super(Name.of(4, Side.B), player, Hand.BLACK, 2, 3);
         }
 
         @Override
@@ -318,7 +322,7 @@ public abstract class PlayerBuilding extends Building {
     static class Building5B extends PlayerBuilding {
 
         Building5B(Player player) {
-            super(5, BuildingSet.Side.B, player, Hand.NONE, 3, 4);
+            super(Name.of(5, Side.B), player, Hand.NONE, 3, 4);
         }
 
         @Override
@@ -330,7 +334,7 @@ public abstract class PlayerBuilding extends Building {
     private static class Building6B extends PlayerBuilding {
 
         Building6B(Player player) {
-            super(6, BuildingSet.Side.B, player, Hand.NONE, 4, 5);
+            super(Name.of(6, Side.B), player, Hand.NONE, 4, 5);
         }
 
         @Override
@@ -342,7 +346,7 @@ public abstract class PlayerBuilding extends Building {
     static class Building7B extends PlayerBuilding {
 
         Building7B(Player player) {
-            super(7, BuildingSet.Side.B, player, Hand.BOTH, 5, 6);
+            super(Name.of(7, Side.B), player, Hand.BOTH, 5, 6);
         }
 
         @Override
@@ -354,7 +358,7 @@ public abstract class PlayerBuilding extends Building {
     static class Building8B extends PlayerBuilding {
 
         Building8B(Player player) {
-            super(8, BuildingSet.Side.B, player, Hand.NONE, 6, 8);
+            super(Name.of(8, Side.B), player, Hand.NONE, 6, 8);
         }
 
         @Override
@@ -366,7 +370,7 @@ public abstract class PlayerBuilding extends Building {
     static class Building9B extends PlayerBuilding {
 
         Building9B(Player player) {
-            super(9, BuildingSet.Side.B, player, Hand.NONE, 6, 8);
+            super(Name.of(9, Side.B), player, Hand.NONE, 6, 8);
         }
 
         @Override
@@ -378,7 +382,7 @@ public abstract class PlayerBuilding extends Building {
     static class Building10B extends PlayerBuilding {
 
         Building10B(Player player) {
-            super(10, BuildingSet.Side.B, player, Hand.BLACK, 8, 11);
+            super(Name.of(10, Side.B), player, Hand.BLACK, 8, 11);
         }
 
         @Override

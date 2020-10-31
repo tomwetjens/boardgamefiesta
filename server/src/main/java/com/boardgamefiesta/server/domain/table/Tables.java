@@ -19,6 +19,10 @@ public interface Tables {
 
     Stream<Table> findRecent(User.Id userId, Game.Id gameId, int maxResults);
 
+    Stream<Table> findAll();
+
+    Stream<Table> findAll(Game.Id gameId);
+
     class TableConcurrentlyModifiedException extends Exception {
         public TableConcurrentlyModifiedException(Throwable cause) {
             super(cause);

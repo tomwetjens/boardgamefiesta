@@ -35,4 +35,6 @@ public interface State {
     }
 
     void leave(Player player);
+
+    Stats stats(Player player);
 }
