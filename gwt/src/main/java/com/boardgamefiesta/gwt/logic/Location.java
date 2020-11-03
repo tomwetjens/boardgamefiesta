@@ -100,6 +100,8 @@ public abstract class Location {
                 throw new GWTException(GWTError.LOCATION_EMPTY);
             }
 
+            game.currentPlayerState().activate(this);
+
             if (canUseBuilding(game, adjacent)) {
                 var buildingAction = building.activate(game);
 

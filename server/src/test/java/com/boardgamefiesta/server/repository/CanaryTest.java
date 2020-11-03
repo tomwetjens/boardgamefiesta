@@ -1,6 +1,7 @@
 package com.boardgamefiesta.server.repository;
 
 import com.boardgamefiesta.server.domain.game.Games;
+import com.boardgamefiesta.server.domain.table.Table;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,7 @@ public class CanaryTest {
         tableDynamodbRepository = new TableDynamoDbRepository(games, DynamoDbClient.create(), config);
 
         var count = tableDynamodbRepository.findAll()
+                .filter(table -> table.getStatus() == Table.Status.STARTED || table.getStatus() == Table.Status.ENDED)
                 .peek(table -> {
                     try {
                         table.getCurrentPlayer();

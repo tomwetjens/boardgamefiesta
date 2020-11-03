@@ -48,7 +48,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var playerState = game.currentPlayerState();
 
-            var usableCowboys = playerState.getNumberOfCowboys() - playerState.getUsedCowboys();
+            var usableCowboys = playerState.getNumberOfCowboys() - playerState.getNumberOfCowboysUsedInTurn();
 
             if (cowboys > usableCowboys) {
                 throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
@@ -1497,8 +1497,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            var currentLocation = game.getTrail().getCurrentLocation(game.getCurrentPlayer())
-                    .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION));
+            var currentLocation = game.currentPlayerState().getLastActivatedLocation()
+                    .orElseGet(() -> game.getTrail().getCurrentLocation(game.getCurrentPlayer())
+                            .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION)));
 
             var adjacentLocations = game.getTrail().getAdjacentLocations(currentLocation);
 

@@ -44,8 +44,11 @@ public class PlayerState {
     private int balance;
     @Getter
     private boolean jobMarketToken;
+
     @Getter
-    private int usedCowboys;
+    private int numberOfCowboysUsedInTurn;
+    private final List<Location> locationsActivatedInTurn;
+
     @Getter
     @Setter(AccessLevel.PACKAGE)
     private int lastEngineMove;
@@ -78,6 +81,8 @@ public class PlayerState {
         this.teepees = new LinkedList<>();
         this.hazards = new HashSet<>();
 
+        this.locationsActivatedInTurn = new LinkedList<>();
+
         this.lastUpgradedStation = Optional.empty();
 
         drawUpToHandLimit(random);
@@ -101,13 +106,14 @@ public class PlayerState {
                 .add("bid", bid != null ? bid.serialize(factory) : JsonValue.NULL)
                 .add("balance", balance)
                 .add("jobMarketToken", jobMarketToken)
-                .add("usedCowboys", usedCowboys)
+                .add("usedCowboys", numberOfCowboysUsedInTurn)
+                .add("locationsActivatedInTurn", serializer.fromStrings(locationsActivatedInTurn.stream().map(Location::getName)))
                 .add("lastEngineMove", lastEngineMove)
                 .add("lastUpgradedStation", lastUpgradedStation.map(railroadTrack.getStations()::indexOf).orElse(-1))
                 .build();
     }
 
-    static PlayerState deserialize(Player player, RailroadTrack railroadTrack, JsonObject jsonObject) {
+    static PlayerState deserialize(Player player, RailroadTrack railroadTrack, Trail trail, JsonObject jsonObject) {
         return new PlayerState(player,
                 jsonObject.getJsonArray("drawStack").stream()
                         .map(JsonValue::asJsonObject)
@@ -136,6 +142,12 @@ public class PlayerState {
                 jsonObject.getInt("balance", 0),
                 jsonObject.getBoolean("jobMarketToken", false),
                 jsonObject.getInt("usedCowboys", 0),
+                jsonObject.containsKey("locationsActivatedInTurn") ?
+                        jsonObject.getJsonArray("locationsActivatedInTurn").stream()
+                                .map(jsonValue -> (JsonString) jsonValue)
+                                .map(JsonString::getString)
+                                .map(trail::getLocation)
+                                .collect(Collectors.toCollection(LinkedList::new)) : new LinkedList<>(),
                 jsonObject.getInt("lastEngineMove", 0),
                 JsonDeserializer.getInt("lastUpgradedStation", jsonObject).filter(index -> index >= 0).map(railroadTrack.getStations()::get));
     }
@@ -661,19 +673,32 @@ public class PlayerState {
                 && balance >= unlockable.getCost();
     }
 
-    void resetUsedCowboys() {
-        usedCowboys = 0;
+    void beginTurn() {
+        numberOfCowboysUsedInTurn = 0;
+        locationsActivatedInTurn.clear();
     }
 
     void useCowboys(int amount) {
-        if (getNumberOfCowboys() - usedCowboys < amount) {
+        if (getNumberOfCowboys() - numberOfCowboysUsedInTurn < amount) {
             throw new GWTException(GWTError.NOT_ENOUGH_COWBOYS);
         }
-        usedCowboys += amount;
+        numberOfCowboysUsedInTurn += amount;
     }
 
     void rememberLastUpgradedStation(@NonNull Station station) {
         this.lastUpgradedStation = Optional.of(station);
+    }
+
+    void activate(Location location) {
+        if (locationsActivatedInTurn.contains(location)) {
+            throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
+        }
+
+        locationsActivatedInTurn.add(location);
+    }
+
+    Optional<Location> getLastActivatedLocation() {
+        return locationsActivatedInTurn.isEmpty() ? Optional.empty() : Optional.of(locationsActivatedInTurn.get(locationsActivatedInTurn.size() - 1));
     }
 
     public Stream<ObjectiveCard> getOptionalObjectives() {
