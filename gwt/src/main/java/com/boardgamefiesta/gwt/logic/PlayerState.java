@@ -47,6 +47,7 @@ public class PlayerState {
 
     @Getter
     private int numberOfCowboysUsedInTurn;
+    @Getter
     private final List<Location> locationsActivatedInTurn;
 
     @Getter
@@ -690,10 +691,6 @@ public class PlayerState {
     }
 
     void activate(Location location) {
-        if (locationsActivatedInTurn.contains(location)) {
-            throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
-        }
-
         locationsActivatedInTurn.add(location);
     }
 

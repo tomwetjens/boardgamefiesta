@@ -103,7 +103,7 @@ public abstract class Location {
             game.currentPlayerState().activate(this);
 
             if (canUseBuilding(game, adjacent)) {
-                var buildingAction = building.activate(game);
+                var buildingAction = building.getPossibleAction(game);
 
                 if (riskAction != null) {
                     // There is an optional risk action

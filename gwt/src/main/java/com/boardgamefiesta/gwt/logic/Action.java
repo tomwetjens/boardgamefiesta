@@ -1497,7 +1497,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            var currentLocation = game.currentPlayerState().getLastActivatedLocation()
+            var playerState = game.currentPlayerState();
+            var currentLocation = playerState.getLastActivatedLocation()
                     .orElseGet(() -> game.getTrail().getCurrentLocation(game.getCurrentPlayer())
                             .orElseThrow(() -> new GWTException(GWTError.NOT_AT_LOCATION)));
 
@@ -1507,8 +1508,12 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new GWTException(GWTError.LOCATION_NOT_ADJACENT);
             }
 
-            if (adjacentLocation.isEmpty()) {
-                throw new GWTException(GWTError.LOCATION_EMPTY);
+            var building = adjacentLocation.getBuilding().orElseThrow(() -> new GWTException(GWTError.LOCATION_EMPTY));
+
+            if (building.getPossibleAction(game).canPerform(UseAdjacentBuilding.class)
+                && playerState.getLocationsActivatedInTurn().contains(adjacentLocation)) {
+                // Not allowed to keep looping
+                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
             game.fireActionEvent(this, Collections.emptyList());

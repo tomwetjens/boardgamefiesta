@@ -36,6 +36,6 @@ public abstract class Building {
         return builder.build();
     }
 
-    abstract PossibleAction activate(Game game);
+    abstract PossibleAction getPossibleAction(Game game);
 
 }

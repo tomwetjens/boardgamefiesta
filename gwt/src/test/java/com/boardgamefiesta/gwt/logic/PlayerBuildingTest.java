@@ -118,20 +118,43 @@ class PlayerBuildingTest {
             var player = game.getCurrentPlayer();
             var otherPlayer = game.getNextPlayer();
 
+            var a1 = game.getTrail().getBuildingLocation("A-1").get();
             var a2 = game.getTrail().getBuildingLocation("A-2").get();
-            var a3 = game.getTrail().getBuildingLocation("A-3").get();
-            var b = game.getTrail().getBuildingLocation("B").get();
-            a2.placeBuilding(new PlayerBuilding.Building8B(player));
-            a3.placeBuilding(new PlayerBuilding.Building8B(otherPlayer));
+            a1.placeBuilding(new PlayerBuilding.Building8B(player));
+            a2.placeBuilding(new PlayerBuilding.Building8B(otherPlayer));
 
             // When
-            game.perform(new Action.Move(List.of(a2)), new Random(0));
-            game.perform(new Action.UseAdjacentBuilding(a3), new Random(0));
+            game.perform(new Action.Move(List.of(a1)), new Random(0));
+            game.perform(new Action.UseAdjacentBuilding(a2), new Random(0));
 
             // Then
-            assertThatThrownBy(() -> game.perform(new Action.UseAdjacentBuilding(a2), new Random(0)))
+            assertThatThrownBy(() -> game.perform(new Action.UseAdjacentBuilding(a1), new Random(0)))
                     .isInstanceOf(GWTException.class)
                     .hasMessage(GWTError.CANNOT_PERFORM_ACTION.name());
+        }
+
+        @Test
+        void should10BThen8B() {
+            // Given
+            var game = TestHelper.givenAGame();
+            var player = game.getCurrentPlayer();
+
+            var a1 = game.getTrail().getBuildingLocation("A-1").get();
+            var a2 = game.getTrail().getBuildingLocation("A-2").get();
+            a1.placeBuilding(new PlayerBuilding.Building10B(player));
+            a2.placeBuilding(new PlayerBuilding.Building8B(player));
+
+            // When
+            game.perform(new Action.Move(List.of(a1)), new Random(0));
+            game.perform(new Action.Move4Forward(List.of(a2)), new Random(0));
+            game.perform(new Action.UseAdjacentBuilding(a1), new Random(0));
+
+            // Then
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(
+                    Action.Gain4Dollars.class,
+                    Action.MoveEngineAtMost4Forward.class,
+                    Action.Move4Forward.class,
+                    Action.SingleAuxiliaryAction.class);
         }
 
     }
