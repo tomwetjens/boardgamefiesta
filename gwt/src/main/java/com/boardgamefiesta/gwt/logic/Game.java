@@ -348,17 +348,19 @@ public class Game implements State {
     }
 
     private List<PossibleAction> determineBeginTurnActions() {
-        if (status == Status.BIDDING) {
-            return Collections.singletonList(mustPlaceBid()
-                    ? PossibleAction.mandatory(Action.PlaceBid.class)
-                    : PossibleAction.optional(Action.PlaceBid.class));
+        if (mustPlaceBid(currentPlayer)) {
+            return Collections.singletonList(PossibleAction.mandatory(Action.PlaceBid.class));
         } else {
             return Collections.singletonList(PossibleAction.mandatory(Action.Move.class));
         }
     }
 
-    private boolean mustPlaceBid() {
-        return currentPlayerState().getBid()
+    private boolean mustPlaceBid(Player player) {
+        return status == Status.BIDDING && isBidContested(player);
+    }
+
+    private boolean isBidContested(Player player) {
+        return playerState(player).getBid()
                 .map(Bid::getPosition)
                 .map(this::isPositionContested)
                 .orElse(true);
@@ -679,7 +681,13 @@ public class Game implements State {
     }
 
     public Player getNextPlayer() {
-        return playerOrder.get((playerOrder.indexOf(currentPlayer) + 1) % playerOrder.size());
+        Player player = currentPlayer;
+
+        do {
+            player = playerOrder.get((playerOrder.indexOf(player) + 1) % playerOrder.size());
+        } while (status == Status.BIDDING && !mustPlaceBid(player));
+
+        return player;
     }
 
     public enum Status {

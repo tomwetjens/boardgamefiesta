@@ -34,6 +34,7 @@ class GameTest {
 
     private Player playerA = new Player("Player A", PlayerColor.WHITE);
     private Player playerB = new Player("Player B", PlayerColor.YELLOW);
+    private Player playerC = new Player("Player C", PlayerColor.BLUE);
 
     @Nested
     class Create {
@@ -229,6 +230,65 @@ class GameTest {
             // So player cannot do anything = exception case -> no immediate actions
             assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions()).isEmpty();
             assertThat(game.removeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions()).isEmpty();
+        }
+    }
+
+    @Nested
+    class BiddingTest {
+
+        @Test
+        void startWhenAllPositionsUncontested() {
+            var game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB, playerC)), Game.Options.builder()
+                    .playerOrder(Game.Options.PlayerOrder.BIDDING)
+                    .build(), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(new Action.PlaceBid(new Bid(2, 0)), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerC);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(new Action.PlaceBid(new Bid(1, 0)), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(new Action.PlaceBid(new Bid(0, 0)), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            assertThat(game.possibleActions()).containsExactly(Action.Move.class);
+        }
+
+        @Test
+        void skipTurnWhenUncontested() {
+            var game = Game.start(new HashSet<>(Arrays.asList(playerA, playerB, playerC)), Game.Options.builder()
+                    .playerOrder(Game.Options.PlayerOrder.BIDDING)
+                    .build(), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(new Action.PlaceBid(new Bid(0, 0)), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerC);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(new Action.PlaceBid(new Bid(1, 0)), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(new Action.PlaceBid(new Bid(1, 1)), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).describedAs("should skip player A, since bid is uncontested").isSameAs(playerC);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(new Action.PlaceBid(new Bid(2, 0)), new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
+            assertThat(game.possibleActions()).containsExactly(Action.Move.class);
         }
     }
 }
