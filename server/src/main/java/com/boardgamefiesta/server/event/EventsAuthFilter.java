@@ -6,6 +6,7 @@ import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.TokenAuthenticationRequest;
 import io.smallrye.mutiny.Uni;
+import io.vertx.ext.web.RoutingContext;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -23,7 +24,10 @@ import java.util.concurrent.CompletionException;
 public class EventsAuthFilter implements Filter {
 
     @Inject
-    private OidcIdentityProvider oidcIdentityProvider;
+    OidcIdentityProvider oidcIdentityProvider;
+
+    @Inject
+    RoutingContext routingContext;
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
@@ -38,7 +42,7 @@ public class EventsAuthFilter implements Filter {
         }
 
         try {
-            IdTokenCredential idTokenCredential = new IdTokenCredential(token, null);
+            IdTokenCredential idTokenCredential = new IdTokenCredential(token, routingContext);
             TokenAuthenticationRequest tokenAuthenticationRequest = new TokenAuthenticationRequest(idTokenCredential);
 
             SecurityIdentity securityIdentity = oidcIdentityProvider.authenticate(tokenAuthenticationRequest, function -> Uni.createFrom().item(function.get()))
