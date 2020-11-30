@@ -10,7 +10,6 @@ import lombok.NonNull;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
-import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
@@ -21,7 +20,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-@Path("/stats/{gameId}")
+// Disabled because it took the server down due to memory issues
+//@Path("/stats/{gameId}")
 @ApplicationScoped
 public class StatsResource {
 
