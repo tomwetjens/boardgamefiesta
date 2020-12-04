@@ -28,7 +28,7 @@ public class Table {
     private static final Duration RETENTION_AFTER_ACTION = Duration.of(14, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(365 * 5, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.DAYS);
-    private static final TemporalAmount RETENTION_HISTORIC_STATE = RETENTION_AFTER_ENDED;
+    private static final TemporalAmount RETENTION_HISTORIC_STATE = RETENTION_AFTER_ACTION;
 
     private static final Random RANDOM = new Random();
 
