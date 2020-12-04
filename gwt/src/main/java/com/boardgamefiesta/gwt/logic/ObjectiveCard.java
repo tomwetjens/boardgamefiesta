@@ -3,51 +3,133 @@ package com.boardgamefiesta.gwt.logic;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
+import javax.json.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 // Not a @Value because each instance is unique
 @Getter
+@FieldDefaults(makeFinal = true)
 @ToString
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class ObjectiveCard extends Card {
 
-    PossibleAction possibleAction;
-    List<Task> tasks;
-    int points;
-    int penalty;
+    // Some objective cards, like AUX_SF, can occur multiple times in the deck and in a player's hand,
+    // therefore we cannot use the enum as-is in those sets
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @Getter
+    enum Type {
+        START_34B(null, Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BUILDING), 3, 0),
+        START_SSG(null, Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE), 3, 0),
+        START_BBH(null, Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD), 3, 0),
+        START_BLHH(null, Arrays.asList(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0),
+
+        GAIN2_BBLBL(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 3, 2),
+        GAIN2_BGBL(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.GREEN_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 3, 2),
+        GAIN2_4HH(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 2),
+        GAIN2_SSH(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.HAZARD), 3, 2),
+        GAIN2_333B(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BUILDING), 4, 2),
+
+        AUX_SF(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(ObjectiveCard.Task.SAN_FRANCISCO), 5, 3),
+
+        DRAW_BBH(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD), 3, 2),
+        DRAW_SGBL(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 3, 2),
+        DRAW_5H(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_5, ObjectiveCard.Task.HAZARD), 3, 2),
+        DRAW_SGG(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE, ObjectiveCard.Task.GREEN_TEEPEE), 3, 2),
+        DRAW_333S(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.STATION), 4, 2),
+
+        ENGINE_44SG(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE), 5, 3),
+        ENGINE_345(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BREEDING_VALUE_5), 5, 3),
+        ENGINE_BBGG(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.GREEN_TEEPEE, ObjectiveCard.Task.GREEN_TEEPEE), 5, 3),
+        // Note: these two cards have move engine 3 instead of 2!
+        ENGINE_BBLHH(PossibleAction.optional(Action.MoveEngineAtMost3Forward.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 3),
+        ENGINE_SSHH(PossibleAction.optional(Action.MoveEngineAtMost3Forward.class), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 3),
+
+        MOVE_BBHH(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 2),
+        MOVE_SSBLBL(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 5, 2),
+        MOVE_345(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BREEDING_VALUE_5), 5, 2),
+        MOVE_34HH(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 2),
+        MOVE_SSBB(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING), 5, 2);
+
+        PossibleAction possibleAction;
+        List<Task> tasks;
+        int points;
+        int penalty;
+    }
+
+    static final List<ObjectiveCard> STARTING_CARDS = Arrays.asList(
+            new ObjectiveCard(Type.START_34B),
+            new ObjectiveCard(Type.START_BBH),
+            new ObjectiveCard(Type.START_BLHH),
+            new ObjectiveCard(Type.START_SSG));
+
+    Type type;
 
     Optional<PossibleAction> getPossibleAction() {
-        return Optional.ofNullable(possibleAction);
+        return Optional.ofNullable(type.possibleAction);
     }
 
     @Override
-    JsonObject serialize(JsonBuilderFactory factory) {
-        return factory.createObjectBuilder()
-                .add("possibleAction", possibleAction != null ? possibleAction.serialize(factory) : null)
-                .add("tasks", JsonSerializer.forFactory(factory).fromStrings(tasks.stream().map(Task::name)))
-                .add("points", points)
-                .add("penalty", penalty)
-                .build();
+    JsonValue serialize(JsonBuilderFactory factory) {
+        return Json.createValue(type.name());
     }
 
-    static ObjectiveCard deserialize(JsonObject jsonObject) {
-        var possibleAction = jsonObject.get("possibleAction");
-        return new ObjectiveCard(
-                possibleAction != null && possibleAction != JsonValue.NULL ? PossibleAction.deserialize(possibleAction.asJsonObject()) : null,
-                jsonObject.getJsonArray("tasks").getValuesAs(JsonString::getString).stream().map(Task::valueOf).collect(Collectors.toList()),
-                jsonObject.getInt("points"),
-                jsonObject.getInt("penalty"));
+    static ObjectiveCard deserialize(JsonValue jsonValue) {
+        // For backwards compatibility
+        // Deprecated
+        if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT) {
+            var jsonObject = jsonValue.asJsonObject();
+
+            var possibleActionValue = jsonObject.get("possibleAction");
+
+            var possibleAction = possibleActionValue != null && possibleActionValue != JsonValue.NULL ? PossibleAction.deserialize(possibleActionValue.asJsonObject()) : null;
+
+            var typePrefix = possibleAction == null ? "START_"
+                    : possibleAction.canPerform(Action.Gain2Dollars.class) ? "GAIN2_"
+                    : possibleAction.canPerform(Action.DrawCard.class) ? "DRAW_"
+                    : possibleAction.canPerform(Action.Move3ForwardWithoutFees.class) ? "MOVE_"
+                    : possibleAction.canPerform(Action.SingleOrDoubleAuxiliaryAction.class) ? "AUX_"
+                    : "ENGINE_";
+
+            var taskLetters = jsonObject.getJsonArray("tasks").getValuesAs(JsonString::getString).stream()
+                    .map(Task::valueOf)
+                    .map(task -> {
+                        switch (task) {
+                            case HAZARD:
+                                return "H";
+                            case BUILDING:
+                                return "B";
+                            case STATION:
+                                return "S";
+                            case BLUE_TEEPEE:
+                                return "BL";
+                            case GREEN_TEEPEE:
+                                return "G";
+                            case BREEDING_VALUE_3:
+                                return "3";
+                            case BREEDING_VALUE_4:
+                                return "4";
+                            case BREEDING_VALUE_5:
+                                return "5";
+                            case SAN_FRANCISCO:
+                                return "SF";
+                            default:
+                                throw new IllegalArgumentException("unsupported task: " + task);
+                        }
+                    })
+                    .collect(Collectors.joining());
+
+            return new ObjectiveCard(Type.valueOf(typePrefix + taskLetters));
+        }
+
+        return new ObjectiveCard(Type.valueOf(((JsonString) jsonValue).getString()));
     }
 
     public Set<Class<? extends Action>> getPossibleActions() {
-        return possibleAction != null ? possibleAction.getPossibleActions() : Collections.emptySet();
+        return type.possibleAction != null ? type.possibleAction.getPossibleActions() : Collections.emptySet();
     }
 
     static Score score(Set<ObjectiveCard> committed, Set<ObjectiveCard> uncommitted, Game game, Player player, boolean committedPairs3Points) {
@@ -62,6 +144,18 @@ public class ObjectiveCard extends Card {
                         ? Comparator.comparingInt(score -> score.getTotal() + (score.getCommitted().size() / 2) * 3)
                         : Comparator.comparingInt(Score::getTotal))
                 .orElse(Score.EMPTY);
+    }
+
+    public int getPenalty() {
+        return type.getPenalty();
+    }
+
+    public int getPoints() {
+        return type.getPoints();
+    }
+
+    public List<Task> getTasks() {
+        return type.getTasks();
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)

@@ -117,15 +117,12 @@ public class PlayerState {
     static PlayerState deserialize(Player player, RailroadTrack railroadTrack, Trail trail, JsonObject jsonObject) {
         return new PlayerState(player,
                 jsonObject.getJsonArray("drawStack").stream()
-                        .map(JsonValue::asJsonObject)
                         .map(Card::deserialize)
                         .collect(Collectors.toCollection(LinkedList::new)),
                 jsonObject.getJsonArray("hand").stream()
-                        .map(JsonValue::asJsonObject)
                         .map(Card::deserialize)
                         .collect(Collectors.toSet()),
                 jsonObject.getJsonArray("discardPile").stream()
-                        .map(JsonValue::asJsonObject)
                         .map(Card::deserialize)
                         .collect(Collectors.toCollection(LinkedList::new)),
                 JsonDeserializer.forObject(jsonObject.getJsonObject("workers")).<Worker>asIntegerMap(Worker::valueOf),
@@ -134,7 +131,7 @@ public class PlayerState {
                         .map(name -> PlayerBuilding.forName(name, player))
                         .collect(Collectors.toSet()),
                 JsonDeserializer.forObject(jsonObject.getJsonObject("unlocked")).<Unlockable>asIntegerMap(Unlockable::valueOf),
-                jsonObject.getJsonArray("objectives").stream().map(JsonValue::asJsonObject).map(ObjectiveCard::deserialize).collect(Collectors.toSet()),
+                jsonObject.getJsonArray("objectives").stream().map(ObjectiveCard::deserialize).collect(Collectors.toSet()),
                 jsonObject.getJsonArray("stationMasters").getValuesAs(JsonString::getString).stream().map(StationMaster::valueOf).collect(Collectors.toSet()),
                 jsonObject.getJsonArray("teepees").getValuesAs(JsonString::getString).stream().map(Teepee::valueOf).collect(Collectors.toList()),
                 jsonObject.getJsonArray("hazards").stream().map(JsonValue::asJsonObject).map(Hazard::deserialize).collect(Collectors.toSet()),

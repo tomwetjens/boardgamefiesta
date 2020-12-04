@@ -8,8 +8,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -47,9 +45,9 @@ class ObjectiveCardTest {
 
         @Test
         void test() {
-            var start = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0);
-            var a = new ObjectiveCard(null, List.of(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.HAZARD), 3, 2);
-            var b = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 3);
+            var start = new ObjectiveCard(ObjectiveCard.Type.START_BLHH);
+            var a = new ObjectiveCard(ObjectiveCard.Type.GAIN2_SSH);
+            var b = new ObjectiveCard(ObjectiveCard.Type.ENGINE_BBLHH);
 
             when(game.getRailroadTrack().numberOfUpgradedStations(player)).thenReturn(5);
             when(playerState.numberOfHazards()).thenReturn(3);
@@ -85,9 +83,9 @@ class ObjectiveCardTest {
 
         @Test
         void scott() {
-            var start = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0);
-            var a = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.GREEN_TEEPEE), 3, 2);
-            var b = new ObjectiveCard(null, List.of(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 2);
+            var start = new ObjectiveCard(ObjectiveCard.Type.START_BLHH);
+            var a = new ObjectiveCard(ObjectiveCard.Type.GAIN2_BGBL);
+            var b = new ObjectiveCard(ObjectiveCard.Type.ENGINE_SSHH);
 
             when(game.getRailroadTrack().numberOfUpgradedStations(player)).thenReturn(0);
             when(playerState.numberOfHazards()).thenReturn(3);
@@ -101,9 +99,9 @@ class ObjectiveCardTest {
 
         @Test
         void scott2() {
-            var start = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BUILDING), 3, 0);
-            var a = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.GREEN_TEEPEE), 3, 2);
-            var b = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 3, 2);
+            var start = new ObjectiveCard(ObjectiveCard.Type.START_34B); // 3/0, not completed
+            var a = new ObjectiveCard(ObjectiveCard.Type.GAIN2_BGBL); // 3/-2, completed, committed
+            var b = new ObjectiveCard(ObjectiveCard.Type.GAIN2_BBLBL); // 3/-2, completed, committed
 
             when(game.getRailroadTrack().numberOfUpgradedStations(player)).thenReturn(0);
             when(playerState.numberOfHazards()).thenReturn(2);
@@ -117,11 +115,11 @@ class ObjectiveCardTest {
 
         @Test
         void anotherCase() {
-            var start = new ObjectiveCard(null, List.of(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE), 3, 0);
-            var a = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD), 3, 2);
-            var b = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BREEDING_VALUE_5, ObjectiveCard.Task.HAZARD), 3, 2);
-            var c = new ObjectiveCard(null, List.of(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.STATION), 4, 2);
-            var d = new ObjectiveCard(null, List.of(ObjectiveCard.Task.SAN_FRANCISCO), 5, 3);
+            var start = new ObjectiveCard(ObjectiveCard.Type.START_SSG);
+            var a = new ObjectiveCard(ObjectiveCard.Type.DRAW_BBH);
+            var b = new ObjectiveCard(ObjectiveCard.Type.DRAW_5H);
+            var c = new ObjectiveCard(ObjectiveCard.Type.DRAW_333S);
+            var d = new ObjectiveCard(ObjectiveCard.Type.AUX_SF);
 
             when(game.getRailroadTrack().numberOfUpgradedStations(player)).thenReturn(0);
             when(playerState.numberOfHazards()).thenReturn(1);

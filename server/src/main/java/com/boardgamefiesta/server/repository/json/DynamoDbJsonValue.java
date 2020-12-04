@@ -2,6 +2,8 @@ package com.boardgamefiesta.server.repository.json;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import javax.json.JsonNumber;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import java.util.Collections;
 
@@ -37,6 +39,8 @@ abstract class DynamoDbJsonValue implements JsonValue {
                 : value == JsonValue.FALSE ? FALSE
                 : value == EMPTY_JSON_ARRAY ? EMPTY_LIST
                 : value == EMPTY_JSON_OBJECT ? EMPTY_MAP
+                : value.getValueType() == ValueType.STRING ? AttributeValue.builder().s(((JsonString) value).getString()).build()
+                : value.getValueType() == ValueType.NUMBER ? AttributeValue.builder().n(((JsonNumber) value).bigDecimalValue().toString()).build()
                 : ((DynamoDbJsonValue) value).getAttributeValue();
     }
 

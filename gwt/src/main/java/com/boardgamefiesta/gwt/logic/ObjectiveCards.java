@@ -35,17 +35,15 @@ public class ObjectiveCards {
     static ObjectiveCards deserialize(JsonObject jsonObject) {
         return new ObjectiveCards(
                 jsonObject.getJsonArray("drawStack").stream()
-                        .map(JsonValue::asJsonObject)
                         .map(ObjectiveCard::deserialize)
                         .collect(Collectors.toCollection(LinkedList::new)),
                 jsonObject.getJsonArray("available").stream()
-                        .map(JsonValue::asJsonObject)
                         .map(ObjectiveCard::deserialize)
                         .collect(Collectors.toSet()));
     }
 
     static List<ObjectiveCard> createStartingObjectiveCardsDrawStack(@NonNull Random random, int playerCount) {
-        List<ObjectiveCard> deck = new ArrayList<>(createStartingObjectiveCardsSet());
+        List<ObjectiveCard> deck = new ArrayList<>(ObjectiveCard.STARTING_CARDS);
         Collections.shuffle(deck, random);
 
         while (deck.size() > playerCount) {
@@ -53,15 +51,6 @@ public class ObjectiveCards {
         }
 
         return new LinkedList<>(deck);
-    }
-
-    private static Collection<ObjectiveCard> createStartingObjectiveCardsSet() {
-        return Arrays.asList(
-                new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BUILDING), 3, 0),
-                new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE), 3, 0),
-                new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD), 3, 0),
-                new ObjectiveCard(null, Arrays.asList(ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 0)
-        );
     }
 
     void remove(ObjectiveCard objectiveCard) {
@@ -87,42 +76,34 @@ public class ObjectiveCards {
     }
 
     private static Queue<ObjectiveCard> createDrawStack(Random random) {
-        List<ObjectiveCard> deck = new ArrayList<>(createSet());
+        List<ObjectiveCard> deck = Arrays.asList(
+                new ObjectiveCard(ObjectiveCard.Type.GAIN2_4HH),
+                new ObjectiveCard(ObjectiveCard.Type.GAIN2_BGBL),
+                new ObjectiveCard(ObjectiveCard.Type.GAIN2_SSH),
+                new ObjectiveCard(ObjectiveCard.Type.GAIN2_333B),
+                new ObjectiveCard(ObjectiveCard.Type.GAIN2_BBLBL),
+                new ObjectiveCard(ObjectiveCard.Type.AUX_SF),
+                new ObjectiveCard(ObjectiveCard.Type.AUX_SF),
+                new ObjectiveCard(ObjectiveCard.Type.AUX_SF),
+                new ObjectiveCard(ObjectiveCard.Type.AUX_SF),
+                new ObjectiveCard(ObjectiveCard.Type.DRAW_5H),
+                new ObjectiveCard(ObjectiveCard.Type.DRAW_333S),
+                new ObjectiveCard(ObjectiveCard.Type.DRAW_BBH),
+                new ObjectiveCard(ObjectiveCard.Type.DRAW_SGBL),
+                new ObjectiveCard(ObjectiveCard.Type.DRAW_SGG),
+                new ObjectiveCard(ObjectiveCard.Type.ENGINE_44SG),
+                new ObjectiveCard(ObjectiveCard.Type.ENGINE_345),
+                new ObjectiveCard(ObjectiveCard.Type.ENGINE_BBGG),
+                new ObjectiveCard(ObjectiveCard.Type.ENGINE_BBLHH),
+                new ObjectiveCard(ObjectiveCard.Type.ENGINE_SSHH),
+                new ObjectiveCard(ObjectiveCard.Type.MOVE_34HH),
+                new ObjectiveCard(ObjectiveCard.Type.MOVE_345),
+                new ObjectiveCard(ObjectiveCard.Type.MOVE_BBHH),
+                new ObjectiveCard(ObjectiveCard.Type.MOVE_SSBB),
+                new ObjectiveCard(ObjectiveCard.Type.MOVE_SSBLBL)
+        );
         Collections.shuffle(deck, random);
         return new LinkedList<>(deck);
-    }
-
-    private static Collection<ObjectiveCard> createSet() {
-        return Arrays.asList(
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.GREEN_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.HAZARD), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Gain2Dollars.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BUILDING), 4, 2),
-
-                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(ObjectiveCard.Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(ObjectiveCard.Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(ObjectiveCard.Task.SAN_FRANCISCO), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.SingleOrDoubleAuxiliaryAction.class), Collections.singletonList(ObjectiveCard.Task.SAN_FRANCISCO), 5, 3),
-
-                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_5, ObjectiveCard.Task.HAZARD), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE, ObjectiveCard.Task.GREEN_TEEPEE), 3, 2),
-                new ObjectiveCard(PossibleAction.optional(PossibleAction.choice(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class)), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.STATION), 4, 2),
-
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.STATION, ObjectiveCard.Task.GREEN_TEEPEE), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BREEDING_VALUE_5), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost2Forward.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.GREEN_TEEPEE, ObjectiveCard.Task.GREEN_TEEPEE), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost3Forward.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 3),
-                new ObjectiveCard(PossibleAction.optional(Action.MoveEngineAtMost3Forward.class), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 3),
-
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE), 5, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.BREEDING_VALUE_5), 5, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.BREEDING_VALUE_3, ObjectiveCard.Task.BREEDING_VALUE_4, ObjectiveCard.Task.HAZARD, ObjectiveCard.Task.HAZARD), 5, 2),
-                new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class), Arrays.asList(ObjectiveCard.Task.STATION, ObjectiveCard.Task.STATION, ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BUILDING), 5, 2)
-        );
     }
 
     public boolean isEmpty() {

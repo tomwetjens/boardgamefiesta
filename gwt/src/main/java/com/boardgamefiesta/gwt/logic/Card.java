@@ -4,19 +4,21 @@ import lombok.*;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Card {
 
-    static Card deserialize(JsonObject jsonObject) {
-        if (jsonObject.containsKey("type")) {
-            return CattleCard.deserialize(jsonObject);
+    static Card deserialize(JsonValue jsonValue) {
+        if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT
+                && jsonValue.asJsonObject().containsKey("type")) {
+            return CattleCard.deserialize(jsonValue.asJsonObject());
         } else {
-            return ObjectiveCard.deserialize(jsonObject);
+            return ObjectiveCard.deserialize(jsonValue);
         }
     }
 
-    abstract JsonObject serialize(JsonBuilderFactory factory);
+    abstract JsonValue serialize(JsonBuilderFactory factory);
 
     // Not a @Value because each instance is unique
     @AllArgsConstructor

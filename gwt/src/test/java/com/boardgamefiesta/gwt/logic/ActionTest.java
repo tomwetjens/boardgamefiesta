@@ -337,8 +337,7 @@ class ActionTest {
 
             game.getTrail().moveToStart(game.getCurrentPlayer());
 
-            var objectiveCard = new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class),
-                    List.of(ObjectiveCard.Task.BLUE_TEEPEE), 2, 0);
+            var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
@@ -362,8 +361,7 @@ class ActionTest {
             a1.placeBuilding(new PlayerBuilding.Building4B(game.getCurrentPlayer()));
             a2.placeBuilding(new PlayerBuilding.Building4B(game.getNextPlayer()));
 
-            var objectiveCard = new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class),
-                    List.of(ObjectiveCard.Task.BLUE_TEEPEE), 2, 0);
+            var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
@@ -386,8 +384,7 @@ class ActionTest {
         void shouldNotAllowKansasCity() {
             var game = TestHelper.givenAGame();
 
-            var objectiveCard = new ObjectiveCard(PossibleAction.optional(Action.Move3ForwardWithoutFees.class),
-                    List.of(ObjectiveCard.Task.BLUE_TEEPEE), 2, 0);
+            var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
