@@ -8,7 +8,8 @@
         "options": {
           "awslogs-group": "/ecs/gwt",
           "awslogs-region": "eu-west-1",
-          "awslogs-stream-prefix": "ecs"
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-datetime-format": "%Y-%m-%d %H:%M:%S%L"
         }
       },
       "portMappings": [
