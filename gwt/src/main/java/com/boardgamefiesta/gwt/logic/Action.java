@@ -851,12 +851,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            game.currentPlayerState().payDollars(1);
+            var playerState = game.currentPlayerState();
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1).getImmediateActions()
-                    .andThen(PossibleAction.optional(Gain1Certificate.class)));
+            playerState.payDollars(1);
+            var engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
+            playerState.gainTempCertificates(1);
+
+            return ActionResult.undoAllowed(engineMove.getImmediateActions());
         }
     }
 
@@ -868,12 +871,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            game.currentPlayerState().payDollars(2);
+            var playerState = game.currentPlayerState();
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2).getImmediateActions()
-                    .andThen(PossibleAction.optional(Gain2Certificates.class)));
+            playerState.payDollars(2);
+            var engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2);
+            playerState.gainTempCertificates(2);
+
+            return ActionResult.undoAllowed(engineMove.getImmediateActions());
         }
     }
 
@@ -999,18 +1005,6 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         @Override
         public ActionResult perform(Game game, Random random) {
             game.currentPlayerState().gainTempCertificates(1);
-
-            game.fireActionEvent(this, Collections.emptyList());
-
-            return ActionResult.undoAllowed(ImmediateActions.none());
-        }
-    }
-
-    public static final class Gain2Certificates extends Action {
-
-        @Override
-        public ActionResult perform(Game game, Random random) {
-            game.currentPlayerState().gainTempCertificates(2);
 
             game.fireActionEvent(this, Collections.emptyList());
 
@@ -1511,7 +1505,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var building = adjacentLocation.getBuilding().orElseThrow(() -> new GWTException(GWTError.LOCATION_EMPTY));
 
             if (building.getPossibleAction(game).canPerform(UseAdjacentBuilding.class)
-                && playerState.getLocationsActivatedInTurn().contains(adjacentLocation)) {
+                    && playerState.getLocationsActivatedInTurn().contains(adjacentLocation)) {
                 // Not allowed to keep looping
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
