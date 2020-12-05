@@ -551,7 +551,6 @@ public class Game implements State {
                         : (jsonObject.getBoolean("ended", false) ? Status.ENDED : Status.STARTED))
                 .startingObjectiveCards(jsonObject.containsKey("startingObjectiveCards")
                         ? jsonObject.getJsonArray("startingObjectiveCards").stream()
-                        .map(JsonValue::asJsonObject)
                         .map(ObjectiveCard::deserialize)
                         .collect(Collectors.toList())
                         : Collections.emptyList())
