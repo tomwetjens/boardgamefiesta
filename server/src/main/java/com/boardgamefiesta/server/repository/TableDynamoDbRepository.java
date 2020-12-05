@@ -524,13 +524,12 @@ public class TableDynamoDbRepository implements Tables {
                 .updated(updated)
                 .started(item.get("Started") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Started").n())) : null)
                 .ended(item.get("Ended") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Ended").n())) : null)
-                .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
                 .ownerId(User.Id.of(item.get("OwnerId").s()))
                 .players(item.get("Players").l().stream()
                         .map(this::mapToPlayer)
                         .collect(Collectors.toCollection(TrackingSet::new)))
                 .currentState(Optional.ofNullable(item.get("State"))
-                        .map(attributeValue -> DynamoDbJson.fromJson(attributeValue, game.getProvider().getStateDeserializer()::deserialize))
+                        .map(attributeValue -> mapToState(game, attributeValue))
                         .map(state -> Table.CurrentState.of(state,
                                 Optional.ofNullable(item.get("StateTimestamp"))
                                         .map(AttributeValue::n)
@@ -544,6 +543,10 @@ public class TableDynamoDbRepository implements Tables {
                 .historicStates(Table.HistoricStates.defer(timestamp -> getHistoricState(game, id, timestamp)))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
+    }
+
+    private State mapToState(Game game, AttributeValue attributeValue) {
+        return DynamoDbJson.fromJson(attributeValue, game.getProvider().getStateDeserializer()::deserialize);
     }
 
     private Optional<Table.HistoricState> getHistoricState(Game game, Table.Id id, Instant timestamp) {
@@ -568,9 +571,8 @@ public class TableDynamoDbRepository implements Tables {
                 .map(AttributeValue::n)
                 .map(Long::parseLong)
                 .map(Instant::ofEpochMilli);
-        var expires = Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n()));
-        var state = DynamoDbJson.fromJson(item.get("State"), game.getProvider().getStateDeserializer()::deserialize);
-        return Table.HistoricState.of(timestamp, previous, state, expires);
+        var state = mapToState(game, item.get("State"));
+        return Table.HistoricState.of(timestamp, previous, state);
     }
 
     private Player mapToPlayer(AttributeValue attributeValue) {

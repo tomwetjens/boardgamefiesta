@@ -83,10 +83,6 @@ public class Table {
     private HistoricStates historicStates;
 
     @Getter
-    @NonNull
-    private Instant expires;
-
-    @Getter
     private Instant updated;
 
     @Getter
@@ -112,7 +108,6 @@ public class Table {
                 .options(options)
                 .created(created)
                 .updated(created)
-                .expires(created.plus(RETENTION_NEW))
                 .ownerId(owner.getId())
                 .players(new HashSet<>(Collections.singleton(player)))
                 .log(new Log())
@@ -145,7 +140,6 @@ public class Table {
         status = Status.STARTED;
         started = Instant.now();
         updated = started;
-        expires = started.plus(RETENTION_AFTER_ACTION);
 
         CurrentState initialState = CurrentState.initial(game.start(players.stream()
                 .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor()))
@@ -160,6 +154,19 @@ public class Table {
         new Started(id).fire();
 
         getCurrentPlayer().beginTurn(game.getTimeLimit(options));
+    }
+
+    public Instant getExpires() {
+        switch (status) {
+            case NEW:
+                return created.plus(RETENTION_NEW);
+            case ENDED:
+                return ended.plus(RETENTION_AFTER_ENDED);
+            case ABANDONED:
+                return updated.plus(RETENTION_AFTER_ABANDONED);
+            default:
+                return updated.plus(RETENTION_AFTER_ACTION);
+        }
     }
 
     public void perform(Action action) {
@@ -355,7 +362,6 @@ public class Table {
         if (state.isEnded()) {
             status = Status.ENDED;
             ended = updated;
-            expires = ended.plus(RETENTION_AFTER_ENDED);
 
             var winners = state.winners();
 
@@ -367,8 +373,6 @@ public class Table {
 
             new Ended(id).fire();
         } else {
-            expires = updated.plus(RETENTION_AFTER_ACTION);
-
             for (Player player : players) {
                 state.getPlayerByName(player.getId().getId())
                         .flatMap(state::score)
@@ -406,7 +410,6 @@ public class Table {
 
         status = Status.ABANDONED;
         updated = Instant.now();
-        expires = Instant.now().plus(RETENTION_AFTER_ABANDONED);
 
         new Abandoned(id).fire();
     }
@@ -723,10 +726,17 @@ public class Table {
         Instant timestamp;
         Optional<Instant> previous;
         State state;
-        Instant expires;
+
+        public Instant getExpires() {
+            return calculateExpires(timestamp);
+        }
+
+        public static Instant calculateExpires(Instant timestamp) {
+            return timestamp.plus(RETENTION_HISTORIC_STATE);
+        }
 
         public static HistoricState from(CurrentState currentState) {
-            return new HistoricState(currentState.getTimestamp(), currentState.getPrevious(), currentState.getState(), Instant.now().plus(RETENTION_HISTORIC_STATE));
+            return new HistoricState(currentState.getTimestamp(), currentState.getPrevious(), currentState.getState());
         }
     }
 

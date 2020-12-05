@@ -106,16 +106,15 @@ class TableTest {
                     .options(new Options(Collections.emptyMap()))
                     .created(Instant.now())
                     .updated(Instant.now())
-                    .expires(Instant.MAX)
                     .players(new HashSet<>(Set.of(playerA, playerB)))
                     .ownerId(userId1)
                     .status(Table.Status.STARTED)
                     .log(new Log())
                     .currentState(Optional.of(Table.CurrentState.of(currentState, T, Optional.of(T_MINUS_1))))
                     .historicStates(Table.HistoricStates.of(
-                            Table.HistoricState.of(T, Optional.of(T_MINUS_1), currentState, Instant.MAX),
-                            Table.HistoricState.of(T_MINUS_1, Optional.of(T_MINUS_2), currentMinus1, Instant.MAX),
-                            Table.HistoricState.of(T_MINUS_2, Optional.empty(), currentMinus2, Instant.MAX)))
+                            Table.HistoricState.of(T, Optional.of(T_MINUS_1), currentState),
+                            Table.HistoricState.of(T_MINUS_1, Optional.of(T_MINUS_2), currentMinus1),
+                            Table.HistoricState.of(T_MINUS_2, Optional.empty(), currentMinus2)))
                     .build();
 
             table.undo();
