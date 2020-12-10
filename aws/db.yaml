@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Database for Board Game Fiesta
+Parameters:
+  Suffix:
+    Type: String
+Conditions:
+  IsProduction: !Equals [ !Ref Suffix, '' ]
+Resources:
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub 'boardgamefiesta${Suffix}-user'
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S
+        - AttributeName: Username
+          AttributeType: S
+        - AttributeName: Email
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: Email-index
+          KeySchema:
+            - AttributeName: Email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: Username-index
+          KeySchema:
+            - AttributeName: Username
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: Expires
+        Enabled: True
+
+  TableTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub 'boardgamefiesta${Suffix}-table'
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S
+        - AttributeName: UserId
+          AttributeType: S
+        - AttributeName: Created
+          AttributeType: N
+      BillingMode: !If [ IsProduction, 'PROVISIONED', 'PAY_PER_REQUEST' ]
+      GlobalSecondaryIndexes:
+        - IndexName: UserId-Created-index
+          KeySchema:
+            - AttributeName: UserId
+              KeyType: HASH
+            - AttributeName: Created
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
+        - IndexName: UserId-Id-index
+          KeySchema:
+            - AttributeName: UserId
+              KeyType: HASH
+            - AttributeName: Id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH
+        - AttributeName: UserId
+          KeyType: RANGE
+      ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 9, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
+      TimeToLiveSpecification:
+        AttributeName: Expires
+        Enabled: True
+
+  StateTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub 'boardgamefiesta${Suffix}-state'
+      AttributeDefinitions:
+        - AttributeName: TableId
+          AttributeType: S
+        - AttributeName: Timestamp
+          AttributeType: N
+      BillingMode: !If [ IsProduction, 'PROVISIONED', 'PAY_PER_REQUEST' ]
+      KeySchema:
+        - AttributeName: TableId
+          KeyType: HASH
+        - AttributeName: Timestamp
+          KeyType: RANGE
+      ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
+      TimeToLiveSpecification:
+        AttributeName: Expires
+        Enabled: True
+
+  LogTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub 'boardgamefiesta${Suffix}-log'
+      AttributeDefinitions:
+        - AttributeName: TableId
+          AttributeType: S
+        - AttributeName: Timestamp
+          AttributeType: N
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: TableId
+          KeyType: HASH
+        - AttributeName: Timestamp
+          KeyType: RANGE
+
+  RatingTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub 'boardgamefiesta${Suffix}-rating'
+      AttributeDefinitions:
+        - AttributeName: UserIdGameId
+          AttributeType: S
+        - AttributeName: Timestamp
+          AttributeType: N
+        - AttributeName: TableId
+          AttributeType: S
+        - AttributeName: UserId
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: TableId-UserId-index
+          KeySchema:
+            - AttributeName: TableId
+              KeyType: HASH
+            - AttributeName: UserId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      KeySchema:
+        - AttributeName: UserIdGameId
+          KeyType: HASH
+        - AttributeName: Timestamp
+          KeyType: RANGE
+
+  RankingTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub 'boardgamefiesta${Suffix}-ranking'
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: S
+        - AttributeName: GameId
+          AttributeType: S
+        - AttributeName: RankOrder
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: GameId-RankOrder-index
+          KeySchema:
+            - AttributeName: GameId
+              KeyType: HASH
+            - AttributeName: RankOrder
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH
+        - AttributeName: GameId
+          KeyType: RANGE
+
+  FriendTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub 'boardgamefiesta${Suffix}-friend'
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: S
+        - AttributeName: OtherUserId
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH
+        - AttributeName: OtherUserId
+          KeyType: RANGE
+

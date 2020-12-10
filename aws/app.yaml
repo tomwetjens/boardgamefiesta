@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: gwt.wetjens.com
+      AccelerateConfiguration:
+        AccelerateConfiguration
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        ErrorDocument: index.html
+        IndexDocument: index.html
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    DeletionPolicy: Retain
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - boardgamefiesta.com
+          - www.boardgamefiesta.com
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - HEAD
+            - GET
+          Compress: false
+          DefaultTTL: 300
+          MaxTTL: 600
+          MinTTL: 0
+          TargetOriginId: S3
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        IsIPV6Enabled: true
+        Origins:
+          - Id: S3
+            DomainName: !GetAtt Bucket.WebsiteURL
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          ACMCertificateArn: arn:aws:acm:us-east-1:598172618529:certificate/67df310f-1baf-437f-a48c-a062182be260
+          Certificate: arn:aws:acm:us-east-1:598172618529:certificate/67df310f-1baf-437f-a48c-a062182be260
+          CertificateSource: acm
+          MinimumProtocolVersion: TLSv1.2_2018
+          SSLSupportMethod: sni-only
+
+  ARecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: boardgamefiesta.com
+      Name: boardgamefiesta.com
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt Distribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+
+  WWWRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: boardgamefiesta.com
+      Name: www.boardgamefiesta.com
+      Type: CNAME
+      ResourceRecords:
+        - boardgamefiesta.com

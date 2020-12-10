@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Auth for Board Game Fiesta
+Parameters:
+  Environment:
+    Type: String
+Conditions:
+  IsProduction: !Equals [ !Ref Environment, 'prod' ]
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: !Sub 'boardgamefiesta-${Environment}'
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: False
+      AutoVerifiedAttributes:
+        - email
+      EmailConfiguration:
+        EmailSendingAccount: DEVELOPER
+        From: info@boardgamefiesta.com
+        SourceArn: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/info@boardgamefiesta.com'
+#      LambdaConfig:
+        # TODO Replace this with !Ref to actual Lambda
+#        PostConfirmation: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-PostConfirmation'
+#        PreSignUp: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-PreSignUp'
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: False
+          RequireNumbers: False
+          RequireSymbols: False
+          RequireUppercase: False
+          TemporaryPasswordValidityDays: 7
+      UsernameConfiguration:
+        CaseSensitive: False
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      CustomDomainConfig:
+        CertificateArn: arn:aws:acm:us-east-1:598172618529:certificate/67df310f-1baf-437f-a48c-a062182be260
+      Domain: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      UserPoolId: !Ref UserPool
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      AccessTokenValidity: 1
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthFlowsUserPoolClient: True
+      AllowedOAuthScopes:
+        - profile
+        - email
+        - openid
+      CallbackURLs:
+        - !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+        - !Join [ '', [ 'https://www.', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+      LogoutURLs:
+        - !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+        - !Join [ '', [ 'https://www.', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+      ClientName: 'webapp'
+      DefaultRedirectURI: !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+      GenerateSecret: True
+      RefreshTokenValidity: 30
+      UserPoolId: !Ref UserPool
+
+  DescribeUserPoolDomainRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - cognito-idp:DescribeUserPoolDomain
+                Resource: '*'
+
+  # Lambda used as custom resource to get the CloudFront distribution ID of the UserPoolDomain
+  # since that information cannot be retrieved with a !GetAtt
+  DescribeUserPoolDomain:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      MemorySize: 128
+      Role: !GetAtt DescribeUserPoolDomainRole.Arn
+      Runtime: nodejs12.x
+      Code:
+        ZipFile: |
+          var AWS = require('aws-sdk');
+          var cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
+          var response = require('cfn-response');
+          exports.handler = function (event, context) {
+              var params = {Domain: event.ResourceProperties.UserPoolDomain};
+              cognitoidentityserviceprovider.describeUserPoolDomain(params, function(err, data) {
+               if (err) response.send(event, context, response.FAILED);
+               else response.send(event, context, response.SUCCESS, data.DomainDescription);
+              });
+          };
+
+  UserPoolDomainInfo:
+    Type: Custom::DescribeUserPoolDomain
+    Properties:
+      ServiceToken: !GetAtt DescribeUserPoolDomain.Arn
+      UserPoolDomain: !Ref UserPoolDomain
+
+  AuthRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: boardgamefiesta.com.
+      Name: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt UserPoolDomainInfo.CloudFrontDistribution
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront
+
+Outputs:
+  UserPool:
+    Value: !GetAtt UserPool.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}:UserPool'
