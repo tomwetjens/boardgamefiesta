@@ -71,16 +71,18 @@ public class CognitoEndpoint {
             var sub = event.getRequest().getUserAttributes().get("sub");
             var email = event.getRequest().getUserAttributes().get("email");
 
-            User user = User.createAutomatically(User.Id.of(sub), event.getUserName(), email);
+            if (users.findOptionallyById(User.Id.of(sub)).isEmpty()) {
+                User user = User.createAutomatically(User.Id.of(sub), event.getUserName(), email);
 
-            users.add(user);
+                users.add(user);
 
-            log.info("Adding user '{}' to group '{}' in user pool: {}", event.getUserName(), DEFAULT_GROUP, event.getUserPoolId());
-            cognitoIdentityProviderClient.adminAddUserToGroup(AdminAddUserToGroupRequest.builder()
-                    .userPoolId(event.getUserPoolId())
-                    .username(event.getUserName())
-                    .groupName(DEFAULT_GROUP)
-                    .build());
+                log.info("Adding user '{}' to group '{}' in user pool: {}", event.getUserName(), DEFAULT_GROUP, event.getUserPoolId());
+                cognitoIdentityProviderClient.adminAddUserToGroup(AdminAddUserToGroupRequest.builder()
+                        .userPoolId(event.getUserPoolId())
+                        .username(event.getUserName())
+                        .groupName(DEFAULT_GROUP)
+                        .build());
+            }
         } catch (APIException e) {
             // Do not wrap API exceptions
             throw e;
