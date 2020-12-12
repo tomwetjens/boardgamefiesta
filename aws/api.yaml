@@ -7,19 +7,12 @@ Parameters:
     Type: String
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
-# TODO Enable transform when hooks are added
-#Transform: AWS::CodeDeployBlueGreen
 Resources:
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security Group for Load Balancer
       GroupName: !Sub '${AWS::StackName}-lb'
-      SecurityGroupEgress:
-        - CidrIp: 0.0.0.0/0
-          IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           IpProtocol: tcp
@@ -38,12 +31,12 @@ Resources:
         - !Ref LoadBalancerSecurityGroup
       Subnets:
         - Fn::ImportValue:
-            !Sub 'boardgamefiesta-${Environment}-vpc:PrivateSubnetA'
+            !Sub 'boardgamefiesta-${Environment}-vpc:PublicSubnetA'
         - Fn::ImportValue:
-            !Sub 'boardgamefiesta-${Environment}-vpc:PrivateSubnetB'
+            !Sub 'boardgamefiesta-${Environment}-vpc:PublicSubnetB'
       Type: application
 
-  TargetGroupA:
+  TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckEnabled: True
@@ -51,32 +44,11 @@ Resources:
       HealthCheckPath: /health
       HealthCheckPort: 8080
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 5
+      HealthCheckTimeoutSeconds: 20
+      HealthyThresholdCount: 2
       Matcher:
         HttpCode: 200
-      Name: !Sub '${AWS::StackName}-a'
-      Port: 80
-      Protocol: HTTP
-      TargetType: ip
-      UnhealthyThresholdCount: 2
-      VpcId:
-        Fn::ImportValue:
-          !Sub 'boardgamefiesta-${Environment}-vpc:VPC'
-
-  TargetGroupB:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckEnabled: True
-      HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /health
-      HealthCheckPort: 8080
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 5
-      Matcher:
-        HttpCode: 200
-      Name: !Sub '${AWS::StackName}-b'
+      Name: !Ref 'AWS::StackName'
       Port: 80
       Protocol: HTTP
       TargetType: ip
@@ -94,7 +66,7 @@ Resources:
         - Type: forward
           ForwardConfig:
             TargetGroups:
-              - TargetGroupArn: !Ref TargetGroupA
+              - TargetGroupArn: !Ref TargetGroup
                 Weight: 1
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
@@ -174,6 +146,12 @@ Resources:
                   Fn::ImportValue:
                     !Sub 'boardgamefiesta-${Environment}-auth:UserPool'
 
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref 'AWS::StackName'
+      RetentionInDays: 7
+
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -190,7 +168,7 @@ Resources:
             Options:
               awslogs-group: !Ref 'AWS::StackName'
               awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: 'ecs'
+              awslogs-stream-prefix: 'gwt'
               awslogs-datetime-format: '%Y-%m-%d %H:%M:%S%L'
       Cpu: 512
       Memory: 1024
@@ -208,22 +186,43 @@ Resources:
         - FARGATE_SPOT
       ClusterName: !Ref 'AWS::StackName'
 
-#  Service:
-#    Type: AWS::ECS::Service
-#    Properties:
-#      Cluster: !Ref Cluster
-#      ServiceName: gwt
-#      LaunchType: FARGATE
-#      SchedulingStrategy: REPLICA
-#      DesiredCount: 1
-#      NetworkConfiguration:
-#        AwsvpcConfiguration:
-#          Subnets:
-#            - Fn::ImportValue:
-#                !Sub 'boardgamefiesta-${Environment}-vpc:PrivateSubnetA'
-#            - Fn::ImportValue:
-#                !Sub 'boardgamefiesta-${Environment}-vpc:PrivateSubnetB'
-#      TaskDefinition: !Ref TaskDefinition
+  ServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for ECS Service
+      GroupName: !Sub '${AWS::StackName}-ecs'
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+      VpcId:
+        Fn::ImportValue:
+          !Sub 'boardgamefiesta-${Environment}-vpc:VPC'
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref TaskDefinition
+      LaunchType: FARGATE
+      PlatformVersion: LATEST
+      NetworkConfiguration:
+        AwsVpcConfiguration:
+          AssignPublicIp: ENABLED # Enabled to pull ECR images. Alternative is a NAT gateway
+          SecurityGroups:
+            - !Ref ServiceSecurityGroup
+          Subnets:
+            - Fn::ImportValue:
+                !Sub 'boardgamefiesta-${Environment}-vpc:PublicSubnetA'
+            - Fn::ImportValue:
+                !Sub 'boardgamefiesta-${Environment}-vpc:PublicSubnetB'
+      SchedulingStrategy: REPLICA
+      DesiredCount: 1
+      LoadBalancers:
+        - ContainerName: gwt
+          ContainerPort: 8080
+          TargetGroupArn: !Ref TargetGroup
 
   RecordSet:
     Type: AWS::Route53::RecordSet
