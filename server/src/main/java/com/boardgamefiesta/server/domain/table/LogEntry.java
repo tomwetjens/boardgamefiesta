@@ -96,6 +96,6 @@ public class LogEntry {
         KICK,
         LEFT,
         UNDO,
-        IN_GAME_EVENT
+        JOIN, IN_GAME_EVENT
     }
 }

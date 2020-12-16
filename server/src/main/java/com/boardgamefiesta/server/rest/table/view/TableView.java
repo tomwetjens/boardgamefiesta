@@ -1,9 +1,9 @@
 package com.boardgamefiesta.server.rest.table.view;
 
+import com.boardgamefiesta.server.domain.rating.Rating;
 import com.boardgamefiesta.server.domain.table.Player;
 import com.boardgamefiesta.server.domain.table.Table;
 import com.boardgamefiesta.server.domain.user.User;
-import com.boardgamefiesta.server.domain.rating.Rating;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 import lombok.NonNull;
 import lombok.Value;
@@ -19,6 +19,7 @@ public class TableView {
     String id;
     String game;
     Table.Type type;
+    Table.Visibility visibility;
     Table.Status status;
     Instant created;
     Instant started;
@@ -27,13 +28,25 @@ public class TableView {
     String player;
     Set<String> otherPlayers;
     Map<String, PlayerView> players;
+    boolean canAccept;
+    boolean canStart;
+    boolean canJoin;
+    boolean canLeave;
+
+    @Deprecated
     boolean accepted;
+
+    @Deprecated
     boolean startable;
+
     Map<String, Object> options;
 
     Boolean turn;
     String currentPlayer;
     Boolean canUndo;
+
+    int minNumberOfPlayers;
+    int maxNumberOfPlayers;
 
     public TableView(@NonNull Table table,
                      @NonNull Map<User.Id, User> userMap,
@@ -42,13 +55,12 @@ public class TableView {
         id = table.getId().getId();
         game = table.getGame().getId().getId();
         type = table.getType();
+        visibility = table.getVisibility();
         status = table.getStatus();
         owner = new UserView(table.getOwnerId(), userMap.get(table.getOwnerId()), currentUserId);
         options = table.getOptions().asMap();
 
-        player = table.getPlayers().stream()
-                .filter(player -> currentUserId.equals(player.getUserId().orElse(null)))
-                .findAny()
+        player = table.getPlayerByUserId(currentUserId)
                 .map(Player::getId)
                 .map(Player.Id::getId)
                 .orElse(null);
@@ -63,13 +75,26 @@ public class TableView {
                 .collect(Collectors.toMap(player -> player.getId().getId(),
                         player -> new PlayerView(player, userMap::get, ratingMap)));
 
-        accepted = table.getPlayers().stream()
-                .filter(player -> currentUserId.equals(player.getUserId().orElse(null)))
-                .anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
         created = table.getCreated();
         started = table.getStarted();
         ended = table.getEnded();
-        startable = table.canStart() && currentUserId.equals(table.getOwnerId());
+        canStart = table.canStart() && currentUserId.equals(table.getOwnerId());
+        canJoin = table.canJoin(currentUserId);
+        canAccept = table.getPlayerByUserId(currentUserId)
+                .map(player -> player.getStatus() == Player.Status.INVITED)
+                .orElse(false);
+        canLeave = table.getPlayerByUserId(currentUserId)
+                .map(Player::isPlaying)
+                .orElse(false);
+
+        // TODO Remove when frontend is using canStart and canAccept
+        startable = canStart;
+        accepted = table.getPlayers().stream()
+                .filter(player -> currentUserId.equals(player.getUserId().orElse(null)))
+                .anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
+
+        minNumberOfPlayers = table.getGame().getMinNumberOfPlayers();
+        maxNumberOfPlayers = table.getGame().getMaxNumberOfPlayers();
 
         if (table.getStatus() == Table.Status.STARTED) {
             var currentPlayer = table.getCurrentPlayer();

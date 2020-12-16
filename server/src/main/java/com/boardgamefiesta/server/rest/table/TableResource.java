@@ -120,6 +120,28 @@ public class TableResource {
     }
 
     @POST
+    @Path("/{id}/join")
+    @Transactional
+    public void join(@PathParam("id") String id) {
+        handleConcurrentModification(Table.Id.of(id), table ->
+                table.join(currentUserId()));
+    }
+
+    @POST
+    @Path("/{id}/public")
+    @Transactional
+    public void makePublic(@PathParam("id") String id) {
+        handleConcurrentModification(Table.Id.of(id), Table::makePublic);
+    }
+
+    @POST
+    @Path("/{id}/private")
+    @Transactional
+    public void makePrivate(@PathParam("id") String id) {
+        handleConcurrentModification(Table.Id.of(id), Table::makePrivate);
+    }
+
+    @POST
     @Path("/{id}/perform")
     @Transactional
     public void perform(@PathParam("id") String id, ActionRequest request) {

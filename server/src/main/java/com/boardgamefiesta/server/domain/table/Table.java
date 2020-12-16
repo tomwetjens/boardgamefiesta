@@ -42,11 +42,15 @@ public class Table {
 
     @Getter
     @NonNull
-    private final Type type;
+    private Type type;
 
     @Getter
     @NonNull
-    private final Mode mode;
+    private Mode mode;
+
+    @Getter
+    @NonNull
+    private Visibility visibility;
 
     @Getter
     @NonNull
@@ -104,6 +108,7 @@ public class Table {
                 .game(game)
                 .type(Type.REALTIME)
                 .mode(mode)
+                .visibility(Visibility.PRIVATE)
                 .status(Status.NEW)
                 .options(options)
                 .created(created)
@@ -283,6 +288,10 @@ public class Table {
 
         player.leave();
 
+        if (status == Status.NEW) {
+            players.remove(player);
+        }
+
         if (status == Status.STARTED) {
             if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
@@ -296,7 +305,6 @@ public class Table {
         }
 
         new Left(id, userId).fire();
-
 
         updated = Instant.now();
     }
@@ -475,7 +483,7 @@ public class Table {
             throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
         }
 
-        if (players.stream().anyMatch(player -> user.getId().equals(player.getUserId().orElse(null)))) {
+        if (isPlayer(user.getId())) {
             throw APIException.badRequest(APIError.ALREADY_INVITED);
         }
 
@@ -504,6 +512,55 @@ public class Table {
 
             new Kicked(this.id, userId).fire();
         }
+    }
+
+    public void join(@NonNull User.Id userId) {
+        if (status != Status.NEW) {
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
+        }
+
+        if (visibility != Visibility.PUBLIC) {
+            throw APIException.badRequest(APIError.NOT_PUBLIC);
+        }
+
+        if (players.size() == game.getMaxNumberOfPlayers()) {
+            throw APIException.badRequest(APIError.EXCEEDS_MAX_PLAYERS);
+        }
+
+        if (isPlayer(userId)) {
+            throw APIException.badRequest(APIError.ALREADY_RESPONDED);
+        }
+
+        var player = Player.accepted(userId);
+        players.add(player);
+
+        log.add(new LogEntry(player, LogEntry.Type.JOIN, List.of(userId)));
+
+        new Joined(id, userId).fire();
+    }
+
+    private boolean isPlayer(User.@NonNull Id userId) {
+        return players.stream().anyMatch(player -> userId.equals(player.getUserId().orElse(null)));
+    }
+
+    public void makePublic() {
+        if (status != Status.NEW) {
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
+        }
+
+        visibility = Visibility.PUBLIC;
+
+        new VisibilityChanged(id).fire();
+    }
+
+    public void makePrivate() {
+        if (status != Status.NEW) {
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
+        }
+
+        visibility = Visibility.PRIVATE;
+
+        new VisibilityChanged(id).fire();
     }
 
     public void addComputer() {
@@ -590,6 +647,11 @@ public class Table {
         return players.stream().anyMatch(player -> player.getType() == Player.Type.COMPUTER);
     }
 
+    public boolean canJoin(User.Id userId) {
+        return status == Status.NEW && visibility == Visibility.PUBLIC
+                && !isPlayer(userId) && players.size() < game.getMaxNumberOfPlayers();
+    }
+
     public enum Status {
         NEW,
         STARTED,
@@ -606,6 +668,11 @@ public class Table {
         TRAINING
     }
 
+    public enum Visibility {
+        PUBLIC,
+        PRIVATE
+    }
+
     @Value(staticConstructor = "of")
     public static class Id {
         String id;
@@ -617,6 +684,12 @@ public class Table {
 
     @Value
     public static class Invited implements DomainEvent {
+        Table.Id tableId;
+        User.Id userId;
+    }
+
+    @Value
+    public static class Joined implements DomainEvent {
         Table.Id tableId;
         User.Id userId;
     }
@@ -651,6 +724,11 @@ public class Table {
 
     @Value
     public static class StateChanged implements DomainEvent {
+        Table.Id tableId;
+    }
+
+    @Value
+    public static class VisibilityChanged implements DomainEvent {
         Table.Id tableId;
     }
 
@@ -796,4 +874,5 @@ public class Table {
         }
 
     }
+
 }

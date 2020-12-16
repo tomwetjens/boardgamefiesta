@@ -198,6 +198,7 @@ public class TableDynamoDbRepository implements Tables {
         item.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
         item.put("Type", AttributeValue.builder().s(table.getType().name()).build());
         item.put("Mode", AttributeValue.builder().s(table.getMode().name()).build());
+        item.put("Visibility", AttributeValue.builder().s(table.getVisibility().name()).build());
         item.put("Status", AttributeValue.builder().s(table.getStatus().name()).build());
         item.put("Options", mapFromOptions(table.getOptions()));
         item.put("Created", AttributeValue.builder().n(Long.toString(table.getCreated().getEpochSecond())).build());
@@ -304,8 +305,13 @@ public class TableDynamoDbRepository implements Tables {
         var expressionAttributeValues = new HashMap<String, AttributeValue>();
         var expressionAttributeNames = new HashMap<String, String>();
         expressionAttributeNames.put("#Status", "Status");
+        expressionAttributeNames.put("#Type", "Type");
+        expressionAttributeNames.put("#Mode", "Mode");
 
         var updateExpression = "SET Version=:Version" +
+                ",#Type=:Type" +
+                ",#Mode=:Mode" +
+                ",Visibility=:Visibility" +
                 ",#Status=:Status" +
                 ",Updated=:Updated" +
                 ",Expires=:Expires" +
@@ -316,6 +322,9 @@ public class TableDynamoDbRepository implements Tables {
         expressionAttributeValues.put(":Version", AttributeValue.builder().n(
                 // TODO Version can become required after backwards compatibility period
                 Integer.toString(table.getVersion() != null ? table.getVersion() + 1 : FIRST_VERSION)).build());
+        expressionAttributeValues.put(":Type", AttributeValue.builder().s(table.getType().name()).build());
+        expressionAttributeValues.put(":Mode", AttributeValue.builder().s(table.getMode().name()).build());
+        expressionAttributeValues.put(":Visibility", AttributeValue.builder().s(table.getVisibility().name()).build());
         expressionAttributeValues.put(":Status", AttributeValue.builder().s(table.getStatus().name()).build());
         expressionAttributeValues.put(":Updated", AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build());
         expressionAttributeValues.put(":Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
@@ -508,6 +517,7 @@ public class TableDynamoDbRepository implements Tables {
                 .version(item.get("Version") != null ? Integer.valueOf(item.get("Version").n()) : null)
                 .type(Table.Type.valueOf(item.get("Type").s()))
                 .mode(Table.Mode.valueOf(item.get("Mode").s()))
+                .visibility(item.get("Visibility") != null ? Table.Visibility.valueOf(item.get("Visibility").s()) : Table.Visibility.PRIVATE)
                 .game(game)
                 .status(Table.Status.valueOf(item.get("Status").s()))
                 .options(new Options(item.get("Options").m().entrySet().stream()

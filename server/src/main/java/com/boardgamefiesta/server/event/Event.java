@@ -28,6 +28,6 @@ public class Event {
         OPTIONS_CHANGED,
         COMPUTER_ADDED,
         ABANDONED,
-        ADDED_AS_FRIEND
+        JOINED, VISIBILITY_CHANGED, ADDED_AS_FRIEND
     }
 }

@@ -92,6 +92,14 @@ public class TableEventsEndpoint {
         broadcast(event.getTableId(), new Event(Event.EventType.UNINVITED, event.getTableId().getId(), event.getUserId().getId()));
     }
 
+    void joined(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Joined event) {
+        broadcast(event.getTableId(), new Event(Event.EventType.JOINED, event.getTableId().getId(), event.getUserId().getId()));
+    }
+
+    void visibilityChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.VisibilityChanged event) {
+        broadcast(event.getTableId(), new Event(Event.EventType.VISIBILITY_CHANGED, event.getTableId().getId(), null));
+    }
+
     void left(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Left event) {
         broadcast(event.getTableId(), new Event(Event.EventType.LEFT, event.getTableId().getId(), event.getUserId().getId()));
     }
