@@ -102,6 +102,7 @@ class TableTest {
                     .id(Table.Id.of("tableId"))
                     .type(Table.Type.REALTIME)
                     .mode(Table.Mode.NORMAL)
+                    .visibility(Table.Visibility.PRIVATE)
                     .game(game)
                     .options(new Options(Collections.emptyMap()))
                     .created(Instant.now())
