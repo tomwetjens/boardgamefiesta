@@ -131,14 +131,22 @@ public class TableResource {
     @Path("/{id}/public")
     @Transactional
     public void makePublic(@PathParam("id") String id) {
-        handleConcurrentModification(Table.Id.of(id), Table::makePublic);
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
+
+            table.makePublic();
+        });
     }
 
     @POST
     @Path("/{id}/private")
     @Transactional
     public void makePrivate(@PathParam("id") String id) {
-        handleConcurrentModification(Table.Id.of(id), Table::makePrivate);
+        handleConcurrentModification(Table.Id.of(id), table ->{
+            checkOwner(table);
+
+            table.makePrivate();
+        });
     }
 
     @POST
