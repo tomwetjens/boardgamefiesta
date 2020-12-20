@@ -1551,6 +1551,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    public static final class Gain12Dollars extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().gainDollars(12);
+
+            game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngineAtMost4Forward extends Action {

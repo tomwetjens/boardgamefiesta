@@ -97,7 +97,7 @@ public class Game implements State {
                 .playerOrder(playerOrder)
                 .playerStates(playerStates)
                 .currentPlayer(playerOrder.get(0))
-                .railroadTrack(new RailroadTrack(players, random))
+                .railroadTrack(new RailroadTrack(players, options, random))
                 .kansasCitySupply(kansasCitySupply)
                 .trail(new Trail(options.getBuildings() == Options.Buildings.BEGINNER, random))
                 .jobMarket(new JobMarket(players.size()))
@@ -718,6 +718,18 @@ public class Game implements State {
         @Builder.Default
         Variant variant = Variant.ORIGINAL;
 
+        @NonNull
+        @Builder.Default
+        boolean stationMasterPromos = false;
+
+        @NonNull
+        @Builder.Default
+        boolean building11 = false;
+
+        @NonNull
+        @Builder.Default
+        boolean building13 = false;
+
         public enum Buildings {
             BEGINNER,
             RANDOMIZED
@@ -737,6 +749,7 @@ public class Game implements State {
             ORIGINAL,
             BALANCED
         }
+
     }
 
 }

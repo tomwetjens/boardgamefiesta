@@ -77,14 +77,16 @@ public class RailroadTrack {
         }
     }
 
-    RailroadTrack(@NonNull Set<Player> players, @NonNull Random random) {
-        this(createInitialStations(random), createInitialCities());
+    RailroadTrack(@NonNull Set<Player> players, @NonNull Game.Options options, @NonNull Random random) {
+        this(createInitialStations(options, random), createInitialCities());
 
         players.forEach(player -> currentSpaces.put(player, start));
     }
 
-    private static List<Station> createInitialStations(Random random) {
-        List<StationMaster> stationMasters = Arrays.asList(StationMaster.values());
+    private static List<Station> createInitialStations(@NonNull Game.Options options, Random random) {
+        List<StationMaster> stationMasters = options.isStationMasterPromos()
+                ? Stream.concat(StationMaster.ORIGINAL.stream(), StationMaster.PROMOS.stream()).collect(Collectors.toList())
+                : new ArrayList<>(StationMaster.ORIGINAL);
         Collections.shuffle(stationMasters, random);
 
         return Arrays.asList(

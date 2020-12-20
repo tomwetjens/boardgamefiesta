@@ -368,7 +368,8 @@ public class PlayerState {
     public int permanentCertificates() {
         return (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS) ? 1 : 0)
                 + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_HAZARDS) ? 1 : 0)
-                + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_TEEPEE_PAIRS) ? 1 : 0);
+                + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_TEEPEE_PAIRS) ? 1 : 0)
+                + (stationMasters.contains(StationMaster.TWO_PERM_CERTS) ? 2 : 0);
     }
 
     void unlock(Unlockable unlockable) {

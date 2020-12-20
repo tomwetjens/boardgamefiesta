@@ -22,6 +22,8 @@ import static org.mockito.Mockito.lenient;
 @ExtendWith(MockitoExtension.class)
 class RailroadTrackTest {
 
+    private static final Game.Options ORIGINAL = Game.Options.builder().build();
+
     private RailroadTrack railroadTrack;
     private Player playerA = new Player("Player A", PlayerColor.BLUE);
     private Player playerB = new Player("Player B", PlayerColor.RED);
@@ -30,7 +32,7 @@ class RailroadTrackTest {
 
     @BeforeEach
     void setUp() {
-        railroadTrack = new RailroadTrack(new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC, playerD)), new Random(0));
+        railroadTrack = new RailroadTrack(new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC, playerD)), ORIGINAL, new Random(0));
     }
 
     @Test
@@ -290,7 +292,7 @@ class RailroadTrackTest {
 
         @Test
         void turnOutAndNormalJumpOverOtherPlayer() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(3), 0, 6);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(4), 0, 6);
 
@@ -302,7 +304,7 @@ class RailroadTrackTest {
 
         @Test
         void fromStartAllSpaces() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
 
             assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getStart(), 0, 36)).containsExactlyInAnyOrderElementsOf(
                     Stream.concat(IntStream.rangeClosed(1, 36).mapToObj(railroadTrack::getSpace),
@@ -312,7 +314,7 @@ class RailroadTrackTest {
 
         @Test
         void fromStartToTurnout3() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
 
             assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getStart(), 0, 14))
                     .contains(railroadTrack.getTurnouts().get(3));
@@ -324,7 +326,7 @@ class RailroadTrackTest {
 
         @Test
         void exactly1JumpOverOtherPlayer() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(16), 0, 16);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(15), 0, 15);
 
@@ -334,7 +336,7 @@ class RailroadTrackTest {
 
         @Test
         void exactly2JumpOverOtherPlayer() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(16), 0, 16);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(15), 0, 15);
 
@@ -345,7 +347,7 @@ class RailroadTrackTest {
 
         @Test
         void exactly2FromTurnoutJumpOverOtherPlayer() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), ORIGINAL, new Random(0));
             var from = railroadTrack.getTurnouts().get(3);
             railroadTrack.moveEngineForward(playerA, from, 0, 14);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace(13), 0, 13);
@@ -379,7 +381,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween4And5() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(0), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(2);
@@ -387,7 +389,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween7And8() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(1), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(4);
@@ -395,7 +397,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween10And11() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(2), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(6);
@@ -403,7 +405,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween13And14() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(3), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(8);
@@ -411,7 +413,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween16And17() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(4), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(10);
@@ -419,7 +421,7 @@ class RailroadTrackTest {
 
         @Test
         void at16() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(16), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(9);
@@ -427,7 +429,7 @@ class RailroadTrackTest {
 
         @Test
         void at17() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(17), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(10);
@@ -435,7 +437,7 @@ class RailroadTrackTest {
 
         @Test
         void at18() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace(18), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(11);
@@ -458,7 +460,7 @@ class RailroadTrackTest {
 
         @Test
         void kansasCity() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.KANSAS_CITY, game);
             railroadTrack.deliverToCity(playerA, City.KANSAS_CITY, game);
 
@@ -468,7 +470,7 @@ class RailroadTrackTest {
 
         @Test
         void topekaAndWichita() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.TOPEKA, game);
             railroadTrack.deliverToCity(playerA, City.WICHITA, game);
 
@@ -478,7 +480,7 @@ class RailroadTrackTest {
 
         @Test
         void wichitaAndColoradoSprings() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.WICHITA, game);
             railroadTrack.deliverToCity(playerA, City.COLORADO_SPRINGS, game);
 
@@ -488,7 +490,7 @@ class RailroadTrackTest {
 
         @Test
         void albuquerqueAndElPaso() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.ALBUQUERQUE, game);
             railroadTrack.deliverToCity(playerA, City.EL_PASO, game);
 
@@ -498,7 +500,7 @@ class RailroadTrackTest {
 
         @Test
         void elPasoAndSanDiego() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.EL_PASO, game);
             railroadTrack.deliverToCity(playerA, City.SAN_DIEGO, game);
 
@@ -508,7 +510,7 @@ class RailroadTrackTest {
 
         @Test
         void sanDiegoAndSacramento() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.SAN_DIEGO, game);
             railroadTrack.deliverToCity(playerA, City.SACRAMENTO, game);
 
@@ -518,7 +520,7 @@ class RailroadTrackTest {
 
         @Test
         void sanFrancisco() {
-            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), new Random(0));
+            RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.SAN_FRANCISCO, game);
             railroadTrack.deliverToCity(playerA, City.SAN_FRANCISCO, game);
 

@@ -53,6 +53,7 @@ public enum ActionType {
     GAIN_2_CERTIFICATES_AND_2_DOLLARS_PER_TEEPEE_PAIR(Action.Gain2CertificatesAnd2DollarsPerTeepeePair.class),
     GAIN_2_DOLLARS(Action.Gain2Dollars.class),
     GAIN_4_DOLLARS(Action.Gain4Dollars.class),
+    GAIN_12_DOLLARS(Action.Gain12Dollars.class),
     HIRE_WORKER_MINUS_1(Action.HireWorkerMinus1.class),
     HIRE_WORKER_MINUS_2(Action.HireWorkerMinus2.class),
     HIRE_WORKER_PLUS_2(Action.HireWorkerPlus2.class),
@@ -197,6 +198,8 @@ public enum ActionType {
                 return new Action.Gain2Dollars();
             case GAIN_4_DOLLARS:
                 return new Action.Gain4Dollars();
+            case GAIN_12_DOLLARS:
+                return new Action.Gain12Dollars();
             case HIRE_WORKER_MINUS_1:
                 return new Action.HireWorkerMinus1(getInt(jsonObject, JsonProperties.ROW), getEnum(jsonObject, JsonProperties.WORKER, Worker.class));
             case HIRE_WORKER_MINUS_2:
