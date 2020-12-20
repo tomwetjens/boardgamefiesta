@@ -28,6 +28,7 @@ public enum ActionType {
     DISCARD_1_DUTCH_BELT_TO_GAIN_3_DOLLARS(Action.Discard1DutchBeltToGain3Dollars.class),
     DISCARD_1_GUERNSEY(Action.Discard1Guernsey.class),
     DISCARD_1_HOLSTEIN_TO_GAIN_10_DOLLARS(Action.Discard1HolsteinToGain10Dollars.class),
+    DISCARD_1_JERSEY_FOR_SINGLE_AUXILIARY_ACTION(Action.Discard1JerseyForSingleAuxiliaryAction.class),
     DISCARD_1_JERSEY_TO_GAIN_1_CERTIFICATE(Action.Discard1JerseyToGain1Certificate.class),
     DISCARD_1_JERSEY_TO_GAIN_1_CERTIFICATE_AND_2_DOLLARS(Action.Discard1JerseyToGain1CertificateAnd2Dollars.class),
     DISCARD_1_JERSEY_TO_GAIN_2_CERTIFICATES(Action.Discard1JerseyToGain2Certificates.class),
@@ -52,6 +53,7 @@ public enum ActionType {
     GAIN_1_DOLLAR_PER_ENGINEER(Action.Gain1DollarPerEngineer.class),
     GAIN_2_CERTIFICATES_AND_2_DOLLARS_PER_TEEPEE_PAIR(Action.Gain2CertificatesAnd2DollarsPerTeepeePair.class),
     GAIN_2_DOLLARS(Action.Gain2Dollars.class),
+    GAIN_2_DOLLARS_PER_STATION(Action.Gain2DollarsPerStation.class),
     GAIN_4_DOLLARS(Action.Gain4Dollars.class),
     GAIN_12_DOLLARS(Action.Gain12Dollars.class),
     HIRE_WORKER_MINUS_1(Action.HireWorkerMinus1.class),
@@ -77,6 +79,7 @@ public enum ActionType {
     MOVE_ENGINE_AT_MOST_4_FORWARD(Action.MoveEngineAtMost4Forward.class),
     MOVE_ENGINE_FORWARD(Action.MoveEngineForward.class),
     MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS(Action.MoveEngineForwardUpToNumberOfBuildingsInWoods.class),
+    MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_HAZARDS(Action.MoveEngineForwardUpToNumberOfHazards.class),
     PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE(Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate.class),
     PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD(Action.Pay1DollarToMoveEngine1Forward.class),
     PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES(Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates.class),
@@ -86,6 +89,7 @@ public enum ActionType {
     PLAY_OBJECTIVE_CARD(Action.PlayObjectiveCard.class),
     REMOVE_CARD(Action.RemoveCard.class),
     REMOVE_HAZARD(Action.RemoveHazard.class),
+    REMOVE_HAZARD_FOR_2_DOLLARS(Action.RemoveHazardFor2Dollars.class),
     REMOVE_HAZARD_FOR_5_DOLLARS(Action.RemoveHazardFor5Dollars.class),
     REMOVE_HAZARD_FOR_FREE(Action.RemoveHazardForFree.class),
     SINGLE_AUXILIARY_ACTION(Action.SingleAuxiliaryAction.class),
@@ -148,6 +152,8 @@ public enum ActionType {
                 return new Action.Discard1Guernsey();
             case DISCARD_1_HOLSTEIN_TO_GAIN_10_DOLLARS:
                 return new Action.Discard1HolsteinToGain10Dollars();
+            case DISCARD_1_JERSEY_FOR_SINGLE_AUXILIARY_ACTION:
+                return new Action.Discard1JerseyForSingleAuxiliaryAction();
             case DISCARD_1_JERSEY_TO_GAIN_1_CERTIFICATE:
                 return new Action.Discard1JerseyToGain1Certificate();
             case DISCARD_1_JERSEY_TO_GAIN_1_CERTIFICATE_AND_2_DOLLARS:
@@ -196,6 +202,8 @@ public enum ActionType {
                 return new Action.Gain2CertificatesAnd2DollarsPerTeepeePair();
             case GAIN_2_DOLLARS:
                 return new Action.Gain2Dollars();
+            case GAIN_2_DOLLARS_PER_STATION:
+                return new Action.Gain2DollarsPerStation();
             case GAIN_4_DOLLARS:
                 return new Action.Gain4Dollars();
             case GAIN_12_DOLLARS:
@@ -246,6 +254,8 @@ public enum ActionType {
                 return new Action.MoveEngineForward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS:
                 return new Action.MoveEngineForwardUpToNumberOfBuildingsInWoods(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+            case MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_HAZARDS:
+                return new Action.MoveEngineForwardUpToNumberOfHazards(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
             case PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE:
                 return new Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
             case PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD:
@@ -264,6 +274,8 @@ public enum ActionType {
                 return new Action.RemoveCard(findCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.CARD)));
             case REMOVE_HAZARD:
                 return new Action.RemoveHazard((Location.HazardLocation) game.getTrail().getLocation(getString(jsonObject, JsonProperties.LOCATION)));
+            case REMOVE_HAZARD_FOR_2_DOLLARS:
+                return new Action.RemoveHazardFor2Dollars((Location.HazardLocation) game.getTrail().getLocation(getString(jsonObject, JsonProperties.LOCATION)));
             case REMOVE_HAZARD_FOR_5_DOLLARS:
                 return new Action.RemoveHazardFor5Dollars((Location.HazardLocation) game.getTrail().getLocation(getString(jsonObject, JsonProperties.LOCATION)));
             case REMOVE_HAZARD_FOR_FREE:

@@ -80,9 +80,7 @@ public class Game implements State {
         var playerOrder = new LinkedList<>(players);
         Collections.shuffle(playerOrder, random);
 
-        PlayerBuilding.BuildingSet buildings = options.getBuildings() == Options.Buildings.BEGINNER
-                ? PlayerBuilding.BuildingSet.beginner()
-                : PlayerBuilding.BuildingSet.random(random);
+        PlayerBuilding.BuildingSet buildings = PlayerBuilding.BuildingSet.from(options, random);
 
         var playerStates = players.stream()
                 .collect(Collectors.toMap(Function.identity(), player -> new PlayerState(player, 0, random, buildings)));

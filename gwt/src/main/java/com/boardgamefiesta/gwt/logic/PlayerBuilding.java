@@ -3,10 +3,7 @@ package com.boardgamefiesta.gwt.logic;
 import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,6 +66,14 @@ public abstract class PlayerBuilding extends Building {
                 return new PlayerBuilding.Building9B(player);
             case "10b":
                 return new PlayerBuilding.Building10B(player);
+            case "11a":
+                return new PlayerBuilding.Building11A(player);
+            case "11b":
+                return new PlayerBuilding.Building11B(player);
+            case "13a":
+                return new PlayerBuilding.Building13A(player);
+            case "13b":
+                return new PlayerBuilding.Building13B(player);
             default:
                 throw new IllegalArgumentException("Unknown player building: " + name);
         }
@@ -93,19 +98,31 @@ public abstract class PlayerBuilding extends Building {
     public static final class BuildingSet {
 
         public static final List<Integer> ALL = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        public static final List<Integer> ORIGINAL = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+        public static final BuildingSet BEGINNER = new BuildingSet(ORIGINAL.stream()
+                .map(number -> number + "a")
+                .collect(Collectors.toList()));
 
         @NonNull List<String> names;
 
-        public static BuildingSet beginner() {
-            return new BuildingSet(ALL.stream()
-                    .map(number -> number + "a")
+        public static BuildingSet random(@NonNull Game.Options options, @NonNull Random random) {
+            var numbers = new ArrayList<>(ORIGINAL);
+            if (options.isBuilding11()) {
+                numbers.add(11);
+            }
+            if (options.isBuilding13()) {
+                numbers.add(13);
+            }
+            return new BuildingSet(numbers.stream()
+                    .map(number -> number + (random.nextBoolean() ? "a" : "b"))
                     .collect(Collectors.toList()));
         }
 
-        public static BuildingSet random(@NonNull Random random) {
-            return new BuildingSet(ALL.stream()
-                    .map(number -> number + (random.nextBoolean() ? "a" : "b"))
-                    .collect(Collectors.toList()));
+        public static BuildingSet from(Game.Options options, @NonNull Random random) {
+            return options.getBuildings() == Game.Options.Buildings.BEGINNER
+                    ? BEGINNER
+                    : random(options, random);
         }
 
         public Set<PlayerBuilding> createPlayerBuildings(@NonNull Player player) {
@@ -387,6 +404,58 @@ public abstract class PlayerBuilding extends Building {
         @Override
         PossibleAction getPossibleAction(Game game) {
             return PossibleAction.any(Action.Gain4Dollars.class, Action.MoveEngineAtMost4Forward.class, Action.Move4Forward.class);
+        }
+    }
+
+    static class Building11A extends PlayerBuilding {
+
+        Building11A(Player player) {
+            super(Name.of(11, Side.A), player, Hand.NONE, 12, 25);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(Game game) {
+            return PossibleAction.optional(Action.RemoveHazardFor2Dollars.class);
+        }
+    }
+
+    static class Building11B extends PlayerBuilding {
+
+        Building11B(Player player) {
+            super(Name.of(11, Side.B), player, Hand.NONE, 5, 10);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(Game game) {
+            return PossibleAction.optional(Action.MoveEngineForwardUpToNumberOfHazards.class);
+        }
+    }
+
+    static class Building13A extends PlayerBuilding {
+
+        Building13A(Player player) {
+            super(Name.of(13, Side.A), player, Hand.NONE, 4, 5);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(Game game) {
+            return PossibleAction.any(
+                    Action.Discard1JerseyForSingleAuxiliaryAction.class,
+                    Action.PlaceCheapBuilding.class);
+        }
+    }
+
+    static class Building13B extends PlayerBuilding {
+
+        Building13B(Player player) {
+            super(Name.of(13, Side.B), player, Hand.NONE, 2, 4);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(Game game) {
+            return PossibleAction.any(
+                    Action.Gain2DollarsPerStation.class,
+                    Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }
 }

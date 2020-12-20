@@ -336,6 +336,14 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     }
 
+    public static final class RemoveHazardFor2Dollars extends RemoveHazard {
+
+        public RemoveHazardFor2Dollars(Location.HazardLocation location) {
+            super(location, 2);
+        }
+
+    }
+
     public static final class Discard1Guernsey extends Action {
 
         @Override
@@ -1343,6 +1351,21 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    public static final class Gain2DollarsPerStation extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            var stations = game.getRailroadTrack().numberOfUpgradedStations(game.getCurrentPlayer());
+
+            var amount = stations * 2;
+            game.currentPlayerState().gainDollars(amount);
+
+            game.fireActionEvent(this, List.of(Integer.toString(amount)));
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
     public static final class Gain2CertificatesAnd2DollarsPerTeepeePair extends Action {
 
         @Override
@@ -1401,6 +1424,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.fireActionEvent(this, Collections.emptyList());
 
             return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(MoveEngine1Forward.class)));
+        }
+    }
+
+    public static final class Discard1JerseyForSingleAuxiliaryAction extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
+
+            game.fireActionEvent(this, Collections.emptyList());
+
+            return new SingleAuxiliaryAction().perform(game, random);
         }
     }
 
@@ -1476,6 +1511,23 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             int buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, buildingsInWoods);
+
+            game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(move.getImmediateActions());
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class MoveEngineForwardUpToNumberOfHazards extends Action {
+
+        @NonNull RailroadTrack.Space to;
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            int hazards = game.currentPlayerState().numberOfHazards();
+            var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, hazards);
 
             game.fireActionEvent(this, Collections.emptyList());
 

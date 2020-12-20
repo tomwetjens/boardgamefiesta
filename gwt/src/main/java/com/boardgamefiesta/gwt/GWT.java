@@ -53,6 +53,8 @@ public class GWT implements GameProvider<Game> {
                 .playerOrder(options.getEnum("playerOrder", Game.Options.PlayerOrder.class, Game.Options.PlayerOrder.RANDOMIZED))
                 .variant(options.getEnum("variant", Game.Options.Variant.class, Game.Options.Variant.ORIGINAL))
                 .stationMasterPromos(options.getBoolean("stationMasterPromos", false))
+                .building11(options.getBoolean("building11", false))
+                .building13(options.getBoolean("building13", false))
                 .build(), random);
     }
 

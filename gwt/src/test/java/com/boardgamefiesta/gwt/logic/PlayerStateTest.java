@@ -26,7 +26,7 @@ class PlayerStateTest {
 
         @Test
         void create() {
-            PlayerState playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            PlayerState playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.BEGINNER);
 
             assertThat(playerState.getBalance()).isEqualTo(6);
             assertThat(playerState.getTempCertificates()).isEqualTo(0);
@@ -52,7 +52,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.BEGINNER);
         }
 
         @Test
@@ -366,7 +366,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+            playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.BEGINNER);
         }
 
         @Test
@@ -430,7 +430,7 @@ class PlayerStateTest {
 
     @Test
     void payDollarsNegative() {
-        var playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+        var playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.BEGINNER);
 
         assertThatThrownBy(() -> playerState.payDollars(-1))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -440,7 +440,7 @@ class PlayerStateTest {
 
     @Test
     void gainDollarsNegative() {
-        var playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.beginner());
+        var playerState = new PlayerState(player, 6, new Random(0), PlayerBuilding.BuildingSet.BEGINNER);
 
         assertThatThrownBy(() -> playerState.gainDollars(-1))
                 .isInstanceOf(IllegalArgumentException.class);
