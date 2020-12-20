@@ -647,7 +647,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                     if (fillUpCattleMarket) {
                         game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.FILL_UP_CATTLE_MARKET, Collections.emptyList());
 
-                        game.getCattleMarket().fillUp();
+                        game.getCattleMarket().fillUp(game.getPlayerOrder().size());
                     }
 
                     if (jobMarket.isClosed()) {

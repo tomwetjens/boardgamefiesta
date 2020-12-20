@@ -87,7 +87,9 @@ public class Game implements State {
         var playerStates = players.stream()
                 .collect(Collectors.toMap(Function.identity(), player -> new PlayerState(player, 0, random, buildings)));
 
-        var kansasCitySupply = new KansasCitySupply(random);
+        var kansasCitySupply = options.getVariant() == Options.Variant.BALANCED
+                ? KansasCitySupply.balanced(players.size(), random)
+                : KansasCitySupply.original(random);
 
         var game = builder()
                 .mode(options.getMode())
@@ -100,7 +102,9 @@ public class Game implements State {
                 .trail(new Trail(options.getBuildings() == Options.Buildings.BEGINNER, random))
                 .jobMarket(new JobMarket(players.size()))
                 .foresights(new Foresights(kansasCitySupply))
-                .cattleMarket(new CattleMarket(players.size(), random))
+                .cattleMarket(options.getVariant() == Options.Variant.BALANCED
+                        ? CattleMarket.balanced(players.size(), random)
+                        : CattleMarket.original(players.size(), random))
                 .objectiveCards(new ObjectiveCards(random))
                 .actionStack(ActionStack.initial(Collections.emptyList()))
                 .canUndo(false)
@@ -543,7 +547,7 @@ public class Game implements State {
                 .trail(trail)
                 .jobMarket(JobMarket.deserialize(players.size(), jsonObject.getJsonObject("jobMarket")))
                 .foresights(Foresights.deserialize(kansasCitySupply, jsonObject.getJsonObject("foresights")))
-                .cattleMarket(CattleMarket.deserialize(players.size(), jsonObject.getJsonObject("cattleMarket")))
+                .cattleMarket(CattleMarket.deserialize(jsonObject.getJsonObject("cattleMarket")))
                 .objectiveCards(ObjectiveCards.deserialize(jsonObject.getJsonObject("objectiveCards")))
                 .actionStack(ActionStack.deserialize(jsonObject.getJsonObject("actionStack")))
                 .status(jsonObject.containsKey("status")
@@ -710,6 +714,10 @@ public class Game implements State {
         @Builder.Default
         PlayerOrder playerOrder = PlayerOrder.RANDOMIZED;
 
+        @NonNull
+        @Builder.Default
+        Variant variant = Variant.ORIGINAL;
+
         public enum Buildings {
             BEGINNER,
             RANDOMIZED
@@ -723,6 +731,11 @@ public class Game implements State {
         public enum PlayerOrder {
             RANDOMIZED,
             BIDDING
+        }
+
+        public enum Variant {
+            ORIGINAL,
+            BALANCED
         }
     }
 

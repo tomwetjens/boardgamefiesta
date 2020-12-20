@@ -12,9 +12,9 @@ class CattleMarketTest {
     @Test
     void fillUpDrawStackEmpty() {
         var lastCattleCard = new Card.CattleCard(CattleType.AYRSHIRE, 3);
-        var cattleMarket = new CattleMarket(2, new LinkedList<>(List.of(lastCattleCard)), new HashSet<>());
+        var cattleMarket = new CattleMarket(new LinkedList<>(List.of(lastCattleCard)), new HashSet<>());
 
-        cattleMarket.fillUp();
+        cattleMarket.fillUp(2);
 
         assertThat(cattleMarket.getMarket()).contains(lastCattleCard);
         assertThat(cattleMarket.getDrawStackSize()).isEqualTo(0);
@@ -22,7 +22,7 @@ class CattleMarketTest {
 
     @Test
     void drawDrawStackEmpty() {
-        var cattleMarket = new CattleMarket(2, new LinkedList<>(), new HashSet<>());
+        var cattleMarket = new CattleMarket(new LinkedList<>(), new HashSet<>());
 
         cattleMarket.draw();
 
@@ -32,7 +32,7 @@ class CattleMarketTest {
 
     @Test
     void serializeDrawStackEmpty() {
-        var cattleMarket = new CattleMarket(2, new LinkedList<>(), Set.of(new Card.CattleCard(CattleType.AYRSHIRE, 3)));
+        var cattleMarket = new CattleMarket(new LinkedList<>(), Set.of(new Card.CattleCard(CattleType.AYRSHIRE, 3)));
 
         var jsonObject = cattleMarket.serialize(Json.createBuilderFactory(Collections.emptyMap()));
 
@@ -42,7 +42,7 @@ class CattleMarketTest {
 
     @Test
     void serializeMarketEmpty() {
-        var cattleMarket = new CattleMarket(2, new LinkedList<>(), Collections.emptySet());
+        var cattleMarket = new CattleMarket(new LinkedList<>(), Collections.emptySet());
 
         var jsonObject = cattleMarket.serialize(Json.createBuilderFactory(Collections.emptyMap()));
 
@@ -54,7 +54,7 @@ class CattleMarketTest {
     void buy2WestHighlandAsCheapAsPossible() {
         var westHighland1 = new Card.CattleCard(CattleType.WEST_HIGHLAND, 4);
         var westHighland2 = new Card.CattleCard(CattleType.WEST_HIGHLAND, 4);
-        var cattleMarket = new CattleMarket(4, new LinkedList<>(), new HashSet<>(Set.of(
+        var cattleMarket = new CattleMarket(new LinkedList<>(), new HashSet<>(Set.of(
                 westHighland1,
                 westHighland2
         )));
