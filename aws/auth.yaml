@@ -6,38 +6,312 @@ Parameters:
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
 Resources:
+  #  MigrateUserLambdaTriggerRole:
+  #    Type: AWS::IAM::Role
+  #    Properties:
+  #      AssumeRolePolicyDocument:
+  #        Version: '2012-10-17'
+  #        Statement:
+  #          - Effect: Allow
+  #            Principal:
+  #              Service:
+  #                - lambda.amazonaws.com
+  #            Action:
+  #              - sts:AssumeRole
+  #      Path: "/"
+  #      Policies:
+  #        - PolicyName: root
+  #          PolicyDocument:
+  #            Version: '2012-10-17'
+  #            Statement:
+  #              - Effect: Allow
+  #                Action:
+  #                  - logs:CreateLogGroup
+  #                  - logs:CreateLogStream
+  #                  - logs:PutLogEvents
+  #                Resource: arn:aws:logs:*:*:*
+  #              - Effect: Allow
+  #                Action:
+  #                  - cognito-idp:AdminInitiateAuth
+  #                  - cognito-idp:AdminGetUser
+  #                Resource: '*'
+  #
+  #  MigrateUserLambdaTrigger:
+  #    Type: AWS::Lambda::Function
+  #    Properties:
+  #      Handler: index.handler
+  #      MemorySize: 128
+  #      Role: !GetAtt MigrateUserLambdaTriggerRole.Arn
+  #      Runtime: nodejs12.x
+  #      Code:
+  #        ZipFile: |
+  #          exports.handler = (event, context, callback) => {
+  #
+  #              var user;
+  #
+  #              if ( event.triggerSource == "UserMigration_Authentication" ) {
+  #
+  #                  // authenticate the user with your existing user directory service
+  #                  user = authenticateUser(event.userName, event.request.password);
+  #                  if ( user ) {
+  #                      event.response.userAttributes = {
+  #                          "email": user.emailAddress,
+  #                          "email_verified": "true"
+  #                      };
+  #                      event.response.finalUserStatus = "CONFIRMED";
+  #                      event.response.messageAction = "SUPPRESS";
+  #                      context.succeed(event);
+  #                  }
+  #                  else {
+  #                      // Return error to Amazon Cognito
+  #                      callback("Bad password");
+  #                  }
+  #              }
+  #              else if ( event.triggerSource == "UserMigration_ForgotPassword" ) {
+  #
+  #                  // Lookup the user in your existing user directory service
+  #                  user = lookupUser(event.userName);
+  #                  if ( user ) {
+  #                      event.response.userAttributes = {
+  #                          "email": user.emailAddress,
+  #                          // required to enable password-reset code to be sent to user
+  #                          "email_verified": "true"
+  #                      };
+  #                      event.response.messageAction = "SUPPRESS";
+  #                      context.succeed(event);
+  #                  }
+  #                  else {
+  #                      // Return error to Amazon Cognito
+  #                      callback("Bad password");
+  #                  }
+  #              }
+  #              else {
+  #                  // Return error to Amazon Cognito
+  #                  callback("Bad triggerSource " + event.triggerSource);
+  #              }
+  #          };
+
+  PreSignUpTriggerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '${AWS::StackName}-PreSignUpTrigger'
+      RetentionInDays: 7
+
+  PreSignUpTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt PreSignUpTriggerLogGroup.Arn
+
+  PreSignUpTriggerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-PreSignUpTrigger'
+      Handler: index.handler
+      MemorySize: 128
+      Role: !GetAtt PreSignUpTriggerRole.Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          URL: !Join [ '', [ 'https://api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com/cognito/presignup' ] ]
+      Code:
+        ZipFile: |
+          const https = require('https');
+
+          exports.handler = (event, context, callback) => {
+              const url = process.env.URL;
+              const options = {method: 'POST', headers: {'Content-Type': 'application/json'}};
+              const requestBody = JSON.stringify(event);
+
+              console.log('Requesting ' + options.method + ' ' + url + ':', requestBody);
+              const req = https.request(url, options, res => {
+                  let body = '';
+                  console.log('Status:', res.statusCode);
+                  console.log('Headers:', JSON.stringify(res.headers));
+                  res.setEncoding('utf8');
+                  res.on('data', chunk => body += chunk);
+                  res.on('end', () => {
+                      // If we know it's JSON, parse it
+                      if (res.headers['content-type'] === 'application/json') {
+                          body = JSON.parse(body);
+                      }
+
+                      if (res.statusCode >= 400) {
+                          console.error('Error response:', res.statusCode, body);
+                          callback(body.errorCode || body || res.statusCode, event);
+                          return;
+                      }
+
+                      console.log('Success response:', res.statusCode, body);
+
+                      // Return to Amazon Cognito
+                      if (body && body !== '') {
+                          event.response = body;
+                      }
+                      callback(null, event);
+                  });
+              });
+              req.on('error', callback);
+              req.write(requestBody);
+              req.end();
+          };
+
+  PostConfirmationTriggerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '${AWS::StackName}-PostConfirmationTrigger'
+      RetentionInDays: 7
+
+  PostConfirmationTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt PostConfirmationTriggerLogGroup.Arn
+
+  PostConfirmationTriggerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-PostConfirmationTrigger'
+      Handler: index.handler
+      MemorySize: 128
+      Role: !GetAtt PostConfirmationTriggerRole.Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          URL: !Join [ '', [ 'https://api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com/cognito/postconfirmation' ] ]
+      Code:
+        ZipFile: |
+          const https = require('https');
+
+          exports.handler = (event, context, callback) => {
+              const url = process.env.URL;
+              const options = {method: 'POST', headers: {'Content-Type': 'application/json'}};
+              const requestBody = JSON.stringify(event);
+
+              console.log('Requesting ' + options.method + ' ' + url + ':', requestBody);
+              const req = https.request(url, options, res => {
+                  let body = '';
+                  console.log('Status:', res.statusCode);
+                  console.log('Headers:', JSON.stringify(res.headers));
+                  res.setEncoding('utf8');
+                  res.on('data', chunk => body += chunk);
+                  res.on('end', () => {
+                      // If we know it's JSON, parse it
+                      if (res.headers['content-type'] === 'application/json') {
+                          body = JSON.parse(body);
+                      }
+
+                      if (res.statusCode >= 400) {
+                          console.error('Error response:', res.statusCode, body);
+                          callback(body.errorCode || body || res.statusCode, event);
+                          return;
+                      }
+
+                      console.log('Success response:', res.statusCode, body);
+
+                      // Return to Amazon Cognito
+                      if (body && body !== '') {
+                          event.response = body;
+                      }
+                      callback(null, event);
+                  });
+              });
+              req.on('error', callback);
+              req.write(requestBody);
+              req.end();
+          };
+
   UserPool:
     Type: AWS::Cognito::UserPool
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
       UserPoolName: !Sub 'boardgamefiesta-${Environment}'
+      UsernameAttributes:
+        - email
       AccountRecoverySetting:
         RecoveryMechanisms:
           - Name: verified_email
             Priority: 1
       AdminCreateUserConfig:
-        AllowAdminCreateUserOnly: False
+        AllowAdminCreateUserOnly: false
       AutoVerifiedAttributes:
         - email
       EmailConfiguration:
         EmailSendingAccount: DEVELOPER
         From: info@boardgamefiesta.com
         SourceArn: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/info@boardgamefiesta.com'
-#      LambdaConfig:
-        # TODO Replace this with !Ref to actual Lambda
-#        PostConfirmation: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-PostConfirmation'
-#        PreSignUp: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-PreSignUp'
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUpTriggerFunction.Arn
+        PostConfirmation: !GetAtt PostConfirmationTriggerFunction.Arn
       Policies:
         PasswordPolicy:
           MinimumLength: 8
-          RequireLowercase: False
-          RequireNumbers: False
-          RequireSymbols: False
-          RequireUppercase: False
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+          RequireUppercase: false
           TemporaryPasswordValidityDays: 7
       UsernameConfiguration:
-        CaseSensitive: False
+        CaseSensitive: true
+
+  PreSignUpTriggerPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PreSignUpTriggerFunction
+      - UserPool
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PreSignUpTriggerFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  PostConfirmationTriggerPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PostConfirmationTriggerFunction
+      - UserPool
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PostConfirmationTriggerFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
 
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
@@ -61,15 +335,21 @@ Resources:
       CallbackURLs:
         - !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
         - !Join [ '', [ 'https://www.', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+        # TODO Localhost URL only for dev
+        - 'http://localhost:4200'
       LogoutURLs:
         - !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
         - !Join [ '', [ 'https://www.', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+        # TODO Localhost URL only for dev
+        - 'http://localhost:4200'
       ClientName: 'webapp'
       DefaultRedirectURI: !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
       ExplicitAuthFlows:
         - ALLOW_REFRESH_TOKEN_AUTH
       GenerateSecret: True
       RefreshTokenValidity: 30
+      SupportedIdentityProviders:
+        - COGNITO
       UserPoolId: !Ref UserPool
 
   DescribeUserPoolDomainRole:

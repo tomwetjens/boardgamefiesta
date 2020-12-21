@@ -1,16 +1,16 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Database for Board Game Fiesta
 Parameters:
-  Suffix:
+  Environment:
     Type: String
 Conditions:
-  IsProduction: !Equals [ !Ref Suffix, '' ]
+  IsProduction: !Equals [ !Ref Environment, 'prod' ]
 Resources:
   UserTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub 'boardgamefiesta${Suffix}-user'
+      TableName: !Sub 'boardgamefiesta-${Environment}-user'
       AttributeDefinitions:
         - AttributeName: Id
           AttributeType: S
@@ -43,7 +43,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub 'boardgamefiesta${Suffix}-table'
+      TableName: !Sub 'boardgamefiesta-${Environment}-table'
       AttributeDefinitions:
         - AttributeName: Id
           AttributeType: S
@@ -85,7 +85,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub 'boardgamefiesta${Suffix}-state'
+      TableName: !Sub 'boardgamefiesta-${Environment}-state'
       AttributeDefinitions:
         - AttributeName: TableId
           AttributeType: S
@@ -106,7 +106,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub 'boardgamefiesta${Suffix}-log'
+      TableName: !Sub 'boardgamefiesta-${Environment}-log'
       AttributeDefinitions:
         - AttributeName: TableId
           AttributeType: S
@@ -123,7 +123,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub 'boardgamefiesta${Suffix}-rating'
+      TableName: !Sub 'boardgamefiesta-${Environment}-rating'
       AttributeDefinitions:
         - AttributeName: UserIdGameId
           AttributeType: S
@@ -153,7 +153,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub 'boardgamefiesta${Suffix}-ranking'
+      TableName: !Sub 'boardgamefiesta-${Environment}-ranking'
       AttributeDefinitions:
         - AttributeName: UserId
           AttributeType: S
@@ -181,7 +181,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub 'boardgamefiesta${Suffix}-friend'
+      TableName: !Sub 'boardgamefiesta-${Environment}-friend'
       AttributeDefinitions:
         - AttributeName: UserId
           AttributeType: S
