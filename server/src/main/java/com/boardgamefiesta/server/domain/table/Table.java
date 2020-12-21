@@ -9,6 +9,8 @@ import com.boardgamefiesta.server.domain.game.Game;
 import com.boardgamefiesta.server.domain.user.User;
 import lombok.*;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -30,7 +32,15 @@ public class Table {
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.DAYS);
     private static final TemporalAmount RETENTION_HISTORIC_STATE = RETENTION_AFTER_ACTION;
 
-    private static final Random RANDOM = new Random();
+    private static final SecureRandom RANDOM;
+
+    static {
+        try {
+            RANDOM = SecureRandom.getInstance("NativePRNGNonBlocking");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Could not initialize PRNG", e);
+        }
+    }
 
     @Getter
     @NonNull
