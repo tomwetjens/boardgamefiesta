@@ -20,7 +20,7 @@ public class RailroadTrack {
 
     private static final int MAX_SPACE = 39;
 
-    public static final List<Integer> TURNOUTS = Arrays.asList(4, 7, 10, 13, 16, 21, 25, 29, 33);
+    private static final List<Integer> TURNOUTS = Arrays.asList(4, 7, 10, 13, 16, 21, 25, 29, 33);
 
     // numbers of the spaces that have a signal between it and the next space
     private static final List<Integer> SIGNALS = Arrays.asList(3, 4, 5, 7, 9, 10, 11, 13, 15, 16, 17);

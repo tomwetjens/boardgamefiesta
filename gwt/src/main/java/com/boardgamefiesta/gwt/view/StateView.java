@@ -2,6 +2,7 @@ package com.boardgamefiesta.gwt.view;
 
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.gwt.logic.Game;
+import com.boardgamefiesta.gwt.logic.RailroadTrack;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
@@ -32,7 +33,7 @@ public class StateView {
     Set<PossibleMoveView> possibleMoves;
     Set<PossibleBuyView> possibleBuys;
     Set<PossibleDeliveryView> possibleDeliveries;
-    Map<ActionType, Set<RailroadTrackView.SpaceView>> possibleSpaces;
+    Map<ActionType, Set<String>> possibleSpaces;
 
     public StateView(Game state, Player viewingPlayer) {
         status = state.getStatus();
@@ -185,15 +186,15 @@ public class StateView {
         }
     }
 
-    private Set<RailroadTrackView.SpaceView> getPossibleSpacesForward(Game state, Player player, int atLeast, int atMost) {
+    private Set<String> getPossibleSpacesForward(Game state, Player player, int atLeast, int atMost) {
         return state.getRailroadTrack().reachableSpacesForward(state.getRailroadTrack().currentSpace(player), atLeast, atMost).stream()
-                .map(space -> new RailroadTrackView.SpaceView(state.getRailroadTrack(), space))
+                .map(RailroadTrack.Space::getName)
                 .collect(Collectors.toSet());
     }
 
-    private Set<RailroadTrackView.SpaceView> getPossibleSpacesBackwards(Game state, Player player, int atLeast, int atMost) {
+    private Set<String> getPossibleSpacesBackwards(Game state, Player player, int atLeast, int atMost) {
         return state.getRailroadTrack().reachableSpacesBackwards(state.getRailroadTrack().currentSpace(player), atLeast, atMost).stream()
-                .map(space -> new RailroadTrackView.SpaceView(state.getRailroadTrack(), space))
+                .map(RailroadTrack.Space::getName)
                 .collect(Collectors.toSet());
     }
 

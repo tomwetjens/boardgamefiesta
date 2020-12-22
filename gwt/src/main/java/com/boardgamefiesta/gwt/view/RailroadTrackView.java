@@ -13,13 +13,13 @@ import java.util.stream.Collectors;
 @Value
 public class RailroadTrackView {
 
-    Map<PlayerColor, SpaceView> players;
+    Map<PlayerColor, String> players;
     List<StationView> stations;
     Map<City, List<PlayerColor>> cities;
 
     RailroadTrackView(RailroadTrack railroadTrack) {
         players = railroadTrack.getPlayers().stream()
-                .collect(Collectors.toMap(Player::getColor, player -> new SpaceView(railroadTrack, railroadTrack.currentSpace(player))));
+                .collect(Collectors.toMap(Player::getColor, player -> railroadTrack.currentSpace(player).getName()));
 
         stations = railroadTrack.getStations().stream().map(StationView::new).collect(Collectors.toList());
 
@@ -27,28 +27,6 @@ public class RailroadTrackView {
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
                         .map(Player::getColor)
                         .collect(Collectors.toList())));
-    }
-
-    @Value
-    public static class SpaceView {
-        // TODO Flatten this class into just a String
-        Integer number;
-        Integer turnout;
-
-        SpaceView(RailroadTrack railroadTrack, RailroadTrack.Space space) {
-            if (space.getName().contains(".")) { // TODO Workaround, deprecated
-                turnout = RailroadTrack.TURNOUTS.indexOf((int) Float.parseFloat(space.getName()));
-                number = null;
-            } else {
-                number = Integer.valueOf(space.getName());
-                turnout = null;
-            }
-        }
-
-        public enum Type {
-            NORMAL,
-            TURNOUT;
-        }
     }
 
     @Value
