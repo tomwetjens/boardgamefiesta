@@ -189,7 +189,7 @@ public enum ActionType {
             case DRAW_2_CATTLE_CARDS:
                 return new Action.Draw2CattleCards();
             case EXTRAORDINARY_DELIVERY:
-                return new Action.ExtraordinaryDelivery(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.ExtraordinaryDelivery(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case GAIN_1_CERTIFICATE:
                 return new Action.Gain1Certificate();
             case GAIN_1_DOLLAR:
@@ -233,37 +233,37 @@ public enum ActionType {
             case MOVE_5_FORWARD:
                 return new Action.Move5Forward(getSteps(jsonObject, game));
             case MOVE_ENGINE_1_FORWARD:
-                return new Action.MoveEngine1Forward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngine1Forward(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS:
-                return new Action.MoveEngine1BackwardsToGain3Dollars(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngine1BackwardsToGain3Dollars(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD:
-                return new Action.MoveEngine1BackwardsToRemove1Card(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngine1BackwardsToRemove1Card(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS:
-                return new Action.MoveEngine2BackwardsToRemove2Cards(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngine2BackwardsToRemove2Cards(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_2_OR_3_FORWARD:
-                return new Action.MoveEngine2Or3Forward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngine2Or3Forward(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS:
-                return new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_AT_MOST_2_FORWARD:
-                return new Action.MoveEngineAtMost2Forward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngineAtMost2Forward(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_AT_MOST_3_FORWARD:
-                return new Action.MoveEngineAtMost3Forward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngineAtMost3Forward(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_AT_MOST_4_FORWARD:
-                return new Action.MoveEngineAtMost4Forward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngineAtMost4Forward(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_FORWARD:
-                return new Action.MoveEngineForward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngineForward(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS:
-                return new Action.MoveEngineForwardUpToNumberOfBuildingsInWoods(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngineForwardUpToNumberOfBuildingsInWoods(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_HAZARDS:
-                return new Action.MoveEngineForwardUpToNumberOfHazards(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.MoveEngineForwardUpToNumberOfHazards(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE:
-                return new Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.Pay1DollarAndMoveEngine1BackwardsToGain1Certificate(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD:
-                return new Action.Pay1DollarToMoveEngine1Forward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.Pay1DollarToMoveEngine1Forward(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES:
-                return new Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD:
-                return new Action.Pay2DollarsToMoveEngine2Forward(findSpace(game, getJsonObject(jsonObject, JsonProperties.TO)));
+                return new Action.Pay2DollarsToMoveEngine2Forward(findSpace(game, getValue(jsonObject, JsonProperties.TO)));
             case PLACE_BUILDING:
                 return new Action.PlaceBuilding((Location.BuildingLocation) game.getTrail().getLocation(getString(jsonObject, JsonProperties.LOCATION)), findPlayerBuilding(game, getString(jsonObject, JsonProperties.BUILDING)));
             case PLACE_CHEAP_BUILDING:
@@ -347,13 +347,18 @@ public enum ActionType {
                 .orElseThrow(() -> new JsonException("Building not available"));
     }
 
-    private static RailroadTrack.Space findSpace(Game game, JsonObject jsonObject) {
-        if (jsonObject.containsKey(JsonProperties.NUMBER) && jsonObject.get(JsonProperties.NUMBER).getValueType() == JsonValue.ValueType.NUMBER) {
-            int number = getInt(jsonObject, JsonProperties.NUMBER);
-            return game.getRailroadTrack().getSpace(Integer.toString(number));
-        } else {
-            return game.getRailroadTrack().getSpace(RailroadTrack.TURNOUTS.get(getInt(jsonObject, JsonProperties.TURNOUT)) + ".5");
+    private static RailroadTrack.Space findSpace(Game game, JsonValue jsonValue) {
+        if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT) {
+            // TODO Remove after frontend only sends Space as string
+            var jsonObject = jsonValue.asJsonObject();
+            if (jsonObject.containsKey(JsonProperties.NUMBER) && jsonObject.get(JsonProperties.NUMBER).getValueType() == JsonValue.ValueType.NUMBER) {
+                int number = getInt(jsonObject, JsonProperties.NUMBER);
+                return game.getRailroadTrack().getSpace(Integer.toString(number));
+            } else {
+                return game.getRailroadTrack().getSpace(RailroadTrack.TURNOUTS.get(getInt(jsonObject, JsonProperties.TURNOUT)) + ".5");
+            }
         }
+        return game.getRailroadTrack().getSpace(((JsonString) jsonValue).getString());
     }
 
     private static Card.CattleCard findCattleCardInHand(Collection<Card> hand, JsonObject jsonObject) {
