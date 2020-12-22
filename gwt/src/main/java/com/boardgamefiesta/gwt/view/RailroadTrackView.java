@@ -23,7 +23,7 @@ public class RailroadTrackView {
 
         stations = railroadTrack.getStations().stream().map(StationView::new).collect(Collectors.toList());
 
-        cities = railroadTrack.getCities().entrySet().stream()
+        cities = railroadTrack.getDeliveries().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
                         .map(Player::getColor)
                         .collect(Collectors.toList())));

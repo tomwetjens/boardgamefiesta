@@ -460,7 +460,7 @@ public class Game implements State {
 
         for (City city : City.values()) {
             stats.value("deliveries." + city.name(),
-                    railroadTrack.getCities().get(city).stream()
+                    railroadTrack.getDeliveries().get(city).stream()
                             .filter(delivery -> delivery == player)
                             .count());
         }

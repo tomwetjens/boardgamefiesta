@@ -14,7 +14,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class RailroadTrack {
 
@@ -22,8 +21,10 @@ public class RailroadTrack {
 
     private static final List<Integer> TURNOUTS = Arrays.asList(4, 7, 10, 13, 16, 21, 25, 29, 33);
 
-    // numbers of the spaces that have a signal between it and the next space
-    private static final List<Integer> SIGNALS = Arrays.asList(3, 4, 5, 7, 9, 10, 11, 13, 15, 16, 17);
+    /**
+     * Numbers of the spaces that have a signal between it and the next space
+     */
+    private static final List<Integer> SIGNALS = List.of(3, 4, 5, 7, 9, 10, 11, 13, 15, 16, 17);
 
     static final int MAX_HAND_VALUE = 28;
     static final int MIN_HAND_VALUE = 5;
@@ -37,20 +38,20 @@ public class RailroadTrack {
     private final Space end;
     private final Map<String, Space> spaces = new HashMap<>();
     private final List<Space.StationSpace> turnouts = new ArrayList<>(TURNOUTS.size());
-    private final Map<Player, Space> currentSpaces = new HashMap<>();
+    private final Map<Player, Space> engines = new HashMap<>();
+    private final Map<City, List<Player>> deliveries;
 
-    private final Map<City, List<Player>> cities;
-
-    private RailroadTrack(List<Station> stations, Map<City, List<Player>> cities) {
+    @Builder(access = AccessLevel.PACKAGE)
+    private RailroadTrack(@NonNull List<Station> stations, @NonNull Map<City, List<Player>> deliveries) {
         this.stations = stations;
-        this.cities = cities;
+        this.deliveries = deliveries;
 
         end = new Space.StationSpace(Integer.toString(MAX_SPACE), stations.get(stations.size() - 1), Collections.emptySet(), Collections.emptySet());
         spaces.put(end.getName(), end);
 
         Space last = end;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
-            var current = new Space(Integer.toString(number), SIGNALS.contains(number), Collections.singleton(last), new HashSet<>());
+            var current = new Space(Integer.toString(number), Collections.singleton(last), new HashSet<>());
 
             last.previous.add(current);
             last = current;
@@ -58,7 +59,7 @@ public class RailroadTrack {
             spaces.put(current.getName(), current);
         }
 
-        start = new Space("0", false, Collections.singleton(last), Collections.emptySet());
+        start = new Space("0", Collections.singleton(last), Collections.emptySet());
         last.previous.add(start);
         spaces.put(start.getName(), start);
 
@@ -82,7 +83,7 @@ public class RailroadTrack {
     RailroadTrack(@NonNull Set<Player> players, @NonNull Game.Options options, @NonNull Random random) {
         this(createInitialStations(options, random), createInitialCities());
 
-        players.forEach(player -> currentSpaces.put(player, start));
+        players.forEach(player -> engines.put(player, start));
     }
 
     private static List<Station> createInitialStations(@NonNull Game.Options options, Random random) {
@@ -116,8 +117,8 @@ public class RailroadTrack {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
                 .add("stations", serializer.fromCollection(stations, Station::serialize))
-                .add("cities", serializer.fromMap(cities, City::name, players -> serializer.fromStrings(players, Player::getName)))
-                .add("currentSpaces", serializer.fromStringMap(currentSpaces, Player::getName, Space::getName))
+                .add("cities", serializer.fromMap(deliveries, City::name, players -> serializer.fromStrings(players, Player::getName)))
+                .add("currentSpaces", serializer.fromStringMap(engines, Player::getName, Space::getName))
                 .build();
     }
 
@@ -131,7 +132,7 @@ public class RailroadTrack {
                         .asMap(City::valueOf, jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
                                 .map(playerMap::get).collect(Collectors.toList())));
 
-        railroadTrack.currentSpaces.putAll(JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces"))
+        railroadTrack.engines.putAll(JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces"))
                 .asStringMap(playerMap::get, railroadTrack::getSpace));
 
         return railroadTrack;
@@ -150,11 +151,11 @@ public class RailroadTrack {
     }
 
     public Set<Player> getPlayers() {
-        return Collections.unmodifiableSet(currentSpaces.keySet());
+        return Collections.unmodifiableSet(engines.keySet());
     }
 
     public Space currentSpace(Player player) {
-        return currentSpaces.getOrDefault(player, start);
+        return engines.getOrDefault(player, start);
     }
 
     public Station currentStation(Player player) {
@@ -199,7 +200,7 @@ public class RailroadTrack {
                 .min(Comparator.comparingInt(ReachableSpace::getSteps))
                 .orElseThrow(() -> new GWTException(GWTError.SPACE_NOT_REACHABLE));
 
-        currentSpaces.put(player, to);
+        engines.put(player, to);
 
         var immediateActions = ImmediateActions.none();
 
@@ -279,7 +280,7 @@ public class RailroadTrack {
     }
 
     private Optional<Player> playerAt(@NonNull Space space) {
-        return currentSpaces.entrySet().stream()
+        return engines.entrySet().stream()
                 .filter(entry -> entry.getValue() == space)
                 .map(Map.Entry::getKey)
                 .findAny();
@@ -303,12 +304,12 @@ public class RailroadTrack {
                 .collect(Collectors.toSet());
     }
 
-    public Map<City, List<Player>> getCities() {
-        return Collections.unmodifiableMap(cities);
+    public Map<City, List<Player>> getDeliveries() {
+        return Collections.unmodifiableMap(deliveries);
     }
 
     private boolean hasMadeDelivery(Player player, City city) {
-        return cities.computeIfAbsent(city, k -> new LinkedList<>()).contains(player);
+        return deliveries.computeIfAbsent(city, k -> new LinkedList<>()).contains(player);
     }
 
     ImmediateActions deliverToCity(Player player, City city, Game game) {
@@ -316,7 +317,7 @@ public class RailroadTrack {
             throw new GWTException(GWTError.ALREADY_DELIVERED_TO_CITY);
         }
 
-        cities.computeIfAbsent(city, k -> new LinkedList<>()).add(player);
+        deliveries.computeIfAbsent(city, k -> new LinkedList<>()).add(player);
 
         switch (city) {
             case COLORADO_SPRINGS:
@@ -358,18 +359,8 @@ public class RailroadTrack {
     }
 
     int signalsPassed(Player player) {
-        Space current = currentSpace(player);
-        if (current == null) {
-            return 0;
-        }
-        return (int) spacesWithSignalsUpUntil(current).count();
-    }
-
-    private Stream<Space> spacesWithSignalsUpUntil(Space current) {
-        return current.getPrevious().stream()
-                .flatMap(previous -> Stream.concat(Stream.of(previous), spacesWithSignalsUpUntil(previous)))
-                .distinct()
-                .filter(Space::hasSignal);
+        var current = Math.ceil(Float.parseFloat(currentSpace(player).getName()));
+        return (int) SIGNALS.stream().takeWhile(signal -> signal < current).count();
     }
 
     Score score(Player player) {
@@ -419,7 +410,7 @@ public class RailroadTrack {
     }
 
     int numberOfDeliveries(Player player, City city) {
-        return (int) cities.get(city).stream().filter(p -> p == player).count();
+        return (int) deliveries.get(city).stream().filter(p -> p == player).count();
     }
 
     @Value
@@ -433,13 +424,11 @@ public class RailroadTrack {
 
         @Getter
         private final String name;
-        private final boolean signal;
         final Set<Space> next;
         final Set<Space> previous;
 
-        private Space(String name, boolean signal, Set<Space> next, Set<Space> previous) {
+        private Space(String name, Set<Space> next, Set<Space> previous) {
             this.name = name;
-            this.signal = signal;
             this.next = new HashSet<>(next);
             this.previous = new HashSet<>(previous);
         }
@@ -452,10 +441,6 @@ public class RailroadTrack {
             return Collections.unmodifiableSet(previous);
         }
 
-        public boolean hasSignal() {
-            return signal;
-        }
-
         public boolean isAfter(Space space) {
             return previous.stream().anyMatch(prev -> prev == space || prev.isAfter(space));
         }
@@ -466,7 +451,7 @@ public class RailroadTrack {
             private final Station station;
 
             private StationSpace(String name, @NonNull Station station, @NonNull Set<Space> previous, @NonNull Set<Space> next) {
-                super(name, false, next, previous);
+                super(name, next, previous);
                 this.station = station;
             }
 

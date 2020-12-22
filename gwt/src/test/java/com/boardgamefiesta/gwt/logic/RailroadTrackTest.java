@@ -18,6 +18,7 @@ import static com.boardgamefiesta.gwt.logic.RailroadTrack.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class RailroadTrackTest {
@@ -219,9 +220,20 @@ class RailroadTrackTest {
     @Nested
     class PossibleDeliveries {
 
+        private List<Station> stations = List.of(
+                mock(Station.class),
+                mock(Station.class),
+                mock(Station.class),
+                mock(Station.class),
+                mock(Station.class),
+                mock(Station.class),
+                mock(Station.class),
+                mock(Station.class),
+                mock(Station.class));
+
         @Test
         void minHandValue() {
-            var railroadTrack = RailroadTrack.builder().cities(new HashMap<>()).build();
+            var railroadTrack = RailroadTrack.builder().stations(stations).deliveries(new HashMap<>()).build();
 
             var possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MIN_HAND_VALUE, 0);
 
@@ -236,7 +248,7 @@ class RailroadTrackTest {
         void alreadyDelivered() {
             var cities = new HashMap<City, List<Player>>();
             cities.put(City.TOPEKA, new LinkedList<>(Collections.singleton(playerA)));
-            var railroadTrack = RailroadTrack.builder().cities(cities).build();
+            var railroadTrack = RailroadTrack.builder().stations(stations).deliveries(cities).build();
 
             var possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MAX_HAND_VALUE, 0);
 
@@ -247,7 +259,7 @@ class RailroadTrackTest {
         void alreadyDeliveredKansasCity() {
             var cities = new HashMap<City, List<Player>>();
             cities.put(City.KANSAS_CITY, new LinkedList<>(Collections.singleton(playerA)));
-            var railroadTrack = RailroadTrack.builder().cities(cities).build();
+            var railroadTrack = RailroadTrack.builder().stations(stations).deliveries(cities).build();
 
             var possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MAX_HAND_VALUE, 0);
 
@@ -258,7 +270,7 @@ class RailroadTrackTest {
         void alreadyDeliveredSanFrancisco() {
             var cities = new HashMap<City, List<Player>>();
             cities.put(City.SAN_FRANCISCO, new LinkedList<>(Collections.singleton(playerA)));
-            var railroadTrack = RailroadTrack.builder().cities(cities).build();
+            var railroadTrack = builder().stations(stations).deliveries(cities).build();
 
             var possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MAX_HAND_VALUE, 0);
 
@@ -268,7 +280,8 @@ class RailroadTrackTest {
         @Test
         void minHandValueMaxCertificates() {
             var railroadTrack = RailroadTrack.builder()
-                    .cities(new HashMap<>())
+                    .stations(stations)
+                    .deliveries(new HashMap<>())
                     .build();
 
             var possibleDeliveries = railroadTrack.possibleDeliveries(playerA, MIN_HAND_VALUE, MAX_CERTIFICATES);
@@ -278,7 +291,7 @@ class RailroadTrackTest {
 
         @Test
         void sanDiegoWithHandValue7() {
-            var railroadTrack = RailroadTrack.builder().cities(new HashMap<>()).build();
+            var railroadTrack = RailroadTrack.builder().stations(stations).deliveries(new HashMap<>()).build();
 
             var possibleDeliveries = railroadTrack.possibleDeliveries(playerA, 7, 8);
 
