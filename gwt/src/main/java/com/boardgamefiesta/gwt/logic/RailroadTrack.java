@@ -21,6 +21,8 @@ public class RailroadTrack {
     private static final int MAX_SPACE = 39;
 
     private static final List<Integer> TURNOUTS = Arrays.asList(4, 7, 10, 13, 16, 21, 25, 29, 33);
+
+    // numbers of the spaces that have a signal between it and the next space
     private static final List<Integer> SIGNALS = Arrays.asList(3, 4, 5, 7, 9, 10, 11, 13, 15, 16, 17);
 
     static final int MAX_HAND_VALUE = 28;
@@ -30,9 +32,9 @@ public class RailroadTrack {
     private final List<Station> stations;
 
     @Getter
-    private final Space.StartSpace start;
+    private final Space start;
     @Getter
-    private final Space.EndSpace end;
+    private final Space end;
     private final Map<String, Space> spaces = new HashMap<>();
     private final List<Space.TurnoutSpace> turnouts = new ArrayList<>(TURNOUTS.size());
     private final Map<Player, Space> currentSpaces = new HashMap<>();
@@ -43,12 +45,12 @@ public class RailroadTrack {
         this.stations = stations;
         this.cities = cities;
 
-        end = new Space.EndSpace(MAX_SPACE, stations.get(stations.size() - 1));
+        end = new Space(Integer.toString(MAX_SPACE), false, stations.get(stations.size() - 1), Collections.emptySet(), Collections.emptySet());
         spaces.put(end.getName(), end);
 
-        Space.NumberedSpace last = end;
+        Space last = end;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
-            Space.NumberedSpace current = new Space.NumberedSpace(SIGNALS.contains(number), number, Collections.singleton(last));
+            var current = new Space(Integer.toString(number), SIGNALS.contains(number), null, Collections.singleton(last), new HashSet<>());
 
             last.previous.add(current);
             last = current;
@@ -56,18 +58,18 @@ public class RailroadTrack {
             spaces.put(current.getName(), current);
         }
 
-        start = new Space.StartSpace(last);
+        start = new Space("0", false, null, Collections.singleton(last), Collections.emptySet());
         last.previous.add(start);
         spaces.put(start.getName(), start);
 
         // Turn outs
         for (int i = 0; i < TURNOUTS.size(); i++) {
-            int number = TURNOUTS.get(i);
+            var number = TURNOUTS.get(i);
 
-            Space previous = spaces.get(Integer.toString(number));
-            Space next = spaces.get(Integer.toString(number + 1));
+            var previous = spaces.get(Integer.toString(number));
+            var next = spaces.get(Integer.toString(number + 1));
 
-            Space.TurnoutSpace turnout = new Space.TurnoutSpace(previous, next, stations.get(i));
+            var turnout = new Space.TurnoutSpace(previous, next, stations.get(i));
 
             previous.next.add(turnout);
             next.previous.add(turnout);
@@ -129,7 +131,8 @@ public class RailroadTrack {
                         .asMap(City::valueOf, jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
                                 .map(playerMap::get).collect(Collectors.toList())));
 
-        railroadTrack.currentSpaces.putAll(JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces")).asStringMap(playerMap::get, railroadTrack::getSpace));
+        railroadTrack.currentSpaces.putAll(JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces"))
+                .asStringMap(playerMap::get, railroadTrack::getSpace));
 
         return railroadTrack;
     }
@@ -139,15 +142,11 @@ public class RailroadTrack {
     }
 
     public Space getSpace(String name) {
-        Space space = spaces.get(name);
+        var space = spaces.get(name);
         if (space == null) {
             throw new GWTException(GWTError.NO_SUCH_SPACE);
         }
         return space;
-    }
-
-    public Space.NumberedSpace getSpace(int number) {
-        return (Space.NumberedSpace) getSpace(Integer.toString(number));
     }
 
     public List<Space.TurnoutSpace> getTurnouts() {
@@ -170,7 +169,7 @@ public class RailroadTrack {
         return moveEngine(player, to, atLeast, atMost, Space::getPrevious);
     }
 
-    private EngineMove moveEngine(@NonNull Player player, @NonNull RailroadTrack.@NonNull Space to, int atLeast, int atMost, Function<Space, Set<Space>> direction) {
+    private EngineMove moveEngine(@NonNull Player player, @NonNull Space to, int atLeast, int atMost, Function<Space, Set<Space>> direction) {
         if (atLeast < 0 || atLeast > 6) {
             throw new IllegalArgumentException("Must move at least 0..6, but was: " + atLeast);
         }
@@ -183,7 +182,7 @@ public class RailroadTrack {
             throw new GWTException(GWTError.ALREADY_PLAYER_ON_SPACE);
         }
 
-        Space from = currentSpace(player);
+        var from = currentSpace(player);
 
         if (to == from) {
             throw new GWTException(GWTError.ALREADY_AT_SPACE);
@@ -421,17 +420,21 @@ public class RailroadTrack {
         int reward;
     }
 
-    public static abstract class Space {
+    public static class Space {
 
+        @Getter
+        private final String name;
         private final boolean signal;
         private final Station station;
-        private final Set<Space> next;
-        protected final Set<Space> previous = new HashSet<>();
+        final Set<Space> next;
+        final Set<Space> previous;
 
-        private Space(boolean signal, Station station, Collection<Space> next) {
+        private Space(String name, boolean signal, Station station, Set<Space> next, Set<Space> previous) {
+            this.name = name;
             this.signal = signal;
             this.station = station;
             this.next = new HashSet<>(next);
+            this.previous = new HashSet<>(previous);
         }
 
         public Optional<Station> getStation() {
@@ -454,59 +457,10 @@ public class RailroadTrack {
             return previous.stream().anyMatch(prev -> prev == space || prev.isAfter(space));
         }
 
-        public abstract String getName();
-
-        @Override
-        public String toString() {
-            return getName();
-        }
-
-        @Getter
-        public static class NumberedSpace extends Space {
-
-            @Getter
-            private final int number;
-
-            private NumberedSpace(boolean signal, int number, @NonNull Collection<Space> next) {
-                this(signal, number, null, next);
-            }
-
-            private NumberedSpace(boolean signal, int number, Station station, @NonNull Collection<Space> next) {
-                super(signal, station, next);
-                this.number = number;
-            }
-
-            @Override
-            public String getName() {
-                return Integer.toString(number);
-            }
-        }
-
-        @ToString
-        public static final class StartSpace extends NumberedSpace {
-
-            private StartSpace(@NonNull NumberedSpace next) {
-                super(false, 0, Collections.singleton(next));
-            }
-        }
-
         public static final class TurnoutSpace extends Space {
 
-            public TurnoutSpace(@NonNull Space previous, @NonNull Space next, @NonNull Station station) {
-                super(false, station, Collections.singleton(next));
-                this.previous.add(previous);
-            }
-
-            @Override
-            public String getName() {
-                return previous.iterator().next().getName() + ".5";
-            }
-        }
-
-        @ToString
-        public static final class EndSpace extends NumberedSpace {
-            public EndSpace(int number, @NonNull Station station) {
-                super(false, number, station, Collections.emptySet());
+            private TurnoutSpace(@NonNull Space previous, @NonNull Space next, @NonNull Station station) {
+                super(previous.getName() + ".5", false, station, Collections.singleton(next), Collections.singleton(previous));
             }
         }
     }

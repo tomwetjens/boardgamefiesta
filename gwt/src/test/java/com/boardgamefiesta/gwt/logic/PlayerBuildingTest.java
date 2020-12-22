@@ -173,7 +173,7 @@ class PlayerBuildingTest {
             var a1 = game.getTrail().getBuildingLocation("A-1").get();
             a1.placeBuilding(new PlayerBuilding.Building9B(player));
 
-            var space = game.getRailroadTrack().getSpace(18);
+            var space = game.getRailroadTrack().getSpace("18");
             game.getRailroadTrack().moveEngineForward(player, space, 0, Integer.MAX_VALUE);
 
             // When

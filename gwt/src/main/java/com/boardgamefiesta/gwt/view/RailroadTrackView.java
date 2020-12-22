@@ -31,16 +31,17 @@ public class RailroadTrackView {
 
     @Value
     public static class SpaceView {
+        // TODO Flatten this class into just a String
         Integer number;
         Integer turnout;
 
         SpaceView(RailroadTrack railroadTrack, RailroadTrack.Space space) {
-            if (space instanceof RailroadTrack.Space.NumberedSpace) {
-                number = ((RailroadTrack.Space.NumberedSpace) space).getNumber();
-                turnout = null;
-            } else {
+            if (space instanceof RailroadTrack.Space.TurnoutSpace) {
                 turnout = railroadTrack.getTurnouts().indexOf(space);
                 number = null;
+            } else {
+                number = Integer.valueOf(space.getName());
+                turnout = null;
             }
         }
 

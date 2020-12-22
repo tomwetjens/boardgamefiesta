@@ -350,7 +350,7 @@ public enum ActionType {
     private static RailroadTrack.Space findSpace(Game game, JsonObject jsonObject) {
         if (jsonObject.containsKey(JsonProperties.NUMBER) && jsonObject.get(JsonProperties.NUMBER).getValueType() == JsonValue.ValueType.NUMBER) {
             int number = getInt(jsonObject, JsonProperties.NUMBER);
-            return game.getRailroadTrack().getSpace(number);
+            return game.getRailroadTrack().getSpace(Integer.toString(number));
         } else {
             return game.getRailroadTrack().getTurnouts().get(getInt(jsonObject, JsonProperties.TURNOUT));
         }

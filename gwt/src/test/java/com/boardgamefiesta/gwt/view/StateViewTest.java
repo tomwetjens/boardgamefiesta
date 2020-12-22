@@ -74,10 +74,10 @@ class StateViewTest {
                     Action.MoveEngine2BackwardsToRemove2Cards.class
             ));
 
-            var space1 = mock(RailroadTrack.Space.NumberedSpace.class);
-            when(space1.getNumber()).thenReturn(1);
-            var space2 = mock(RailroadTrack.Space.NumberedSpace.class);
-            when(space2.getNumber()).thenReturn(2);
+            var space1 = mock(RailroadTrack.Space.class);
+            when(space1.getName()).thenReturn("1");
+            var space2 = mock(RailroadTrack.Space.class);
+            when(space2.getName()).thenReturn("2");
 
             when(railroadTrack.reachableSpacesForward(any(), eq(1), eq(1))).thenReturn(Set.of(space1));
             when(railroadTrack.reachableSpacesForward(any(), eq(1), eq(2))).thenReturn(Set.of(space1, space2));
