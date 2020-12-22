@@ -352,7 +352,7 @@ public enum ActionType {
             int number = getInt(jsonObject, JsonProperties.NUMBER);
             return game.getRailroadTrack().getSpace(Integer.toString(number));
         } else {
-            return game.getRailroadTrack().getTurnouts().get(getInt(jsonObject, JsonProperties.TURNOUT));
+            return game.getRailroadTrack().getSpace(RailroadTrack.TURNOUTS.get(getInt(jsonObject, JsonProperties.TURNOUT)) + ".5");
         }
     }
 

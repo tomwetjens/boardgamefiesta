@@ -297,7 +297,7 @@ class RailroadTrackTest {
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace("4"), 0, 6);
 
             assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getSpace("3"), 1, 2)).containsExactlyInAnyOrder(
-                    railroadTrack.getTurnouts().get(0),
+                    railroadTrack.getSpace("4.5"),
                     railroadTrack.getSpace("5"),
                     railroadTrack.getSpace("6"));
         }
@@ -308,7 +308,7 @@ class RailroadTrackTest {
 
             assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getStart(), 0, 36)).containsExactlyInAnyOrderElementsOf(
                     Stream.concat(IntStream.rangeClosed(1, 36).mapToObj(Integer::toString).map(railroadTrack::getSpace),
-                            railroadTrack.getTurnouts().stream())
+                            Stream.of("4.5", "7.5", "10.5", "13.5", "16.5", "21.5", "25.5", "29.5", "33.5").map(railroadTrack::getSpace))
                             .collect(Collectors.toSet()));
         }
 
@@ -317,7 +317,7 @@ class RailroadTrackTest {
             RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
 
             assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getStart(), 0, 14))
-                    .contains(railroadTrack.getTurnouts().get(3));
+                    .contains(railroadTrack.getSpace("13.5"));
         }
     }
 
@@ -342,13 +342,13 @@ class RailroadTrackTest {
 
             assertThat(railroadTrack.reachableSpacesBackwards(railroadTrack.getSpace("16"), 2, 2)).containsExactlyInAnyOrder(
                     railroadTrack.getSpace("13"),
-                    railroadTrack.getTurnouts().get(3));
+                    railroadTrack.getSpace("13.5"));
         }
 
         @Test
         void exactly2FromTurnoutJumpOverOtherPlayer() {
             RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA, playerB), ORIGINAL, new Random(0));
-            var from = railroadTrack.getTurnouts().get(3);
+            var from = railroadTrack.getSpace("13.5");
             railroadTrack.moveEngineForward(playerA, from, 0, 14);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace("13"), 0, 13);
 
@@ -368,7 +368,7 @@ class RailroadTrackTest {
         @Test
         void shouldAllowDippingThroughTurnoutWhenPossibleMovesExactly2BackwardsButTurnoutIsNotAvailable() {
             var game = TestHelper.givenAGame();
-            game.getRailroadTrack().moveEngineForward(game.getNextPlayer(), game.getRailroadTrack().getTurnouts().get(7), 0, Integer.MAX_VALUE);
+            game.getRailroadTrack().moveEngineForward(game.getNextPlayer(), game.getRailroadTrack().getSpace("29.5"), 0, Integer.MAX_VALUE);
 
             var reachableSpaces = game.getRailroadTrack().reachableSpacesBackwards(game.getRailroadTrack().getSpace("30"), 2, 2);
 
@@ -382,7 +382,7 @@ class RailroadTrackTest {
         @Test
         void atTurnoutBetween4And5() {
             RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
-            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(0), 0, Integer.MAX_VALUE);
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("4.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(2);
         }
@@ -390,7 +390,7 @@ class RailroadTrackTest {
         @Test
         void atTurnoutBetween7And8() {
             RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
-            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(1), 0, Integer.MAX_VALUE);
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("7.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(4);
         }
@@ -398,7 +398,7 @@ class RailroadTrackTest {
         @Test
         void atTurnoutBetween10And11() {
             RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
-            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(2), 0, Integer.MAX_VALUE);
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("10.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(6);
         }
@@ -406,7 +406,7 @@ class RailroadTrackTest {
         @Test
         void atTurnoutBetween13And14() {
             RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
-            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(3), 0, Integer.MAX_VALUE);
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("13.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(8);
         }
@@ -414,7 +414,7 @@ class RailroadTrackTest {
         @Test
         void atTurnoutBetween16And17() {
             RailroadTrack railroadTrack = new RailroadTrack(Set.of(playerA), ORIGINAL, new Random(0));
-            railroadTrack.moveEngineForward(playerA, railroadTrack.getTurnouts().get(4), 0, Integer.MAX_VALUE);
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("16.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(10);
         }
@@ -610,7 +610,7 @@ class RailroadTrackTest {
             game.skip(new Random(0));
             assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
-            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getTurnouts().get(0)), new Random(0));
+            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
             assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(3);
         }
@@ -630,7 +630,7 @@ class RailroadTrackTest {
             game.skip(new Random(0));
             assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
-            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getTurnouts().get(0)), new Random(0));
+            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
             assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(3);
 
@@ -660,7 +660,7 @@ class RailroadTrackTest {
             game.skip(new Random(0));
             assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
-            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getTurnouts().get(0)), new Random(0));
+            game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
             assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
 
             game.skip(new Random(0));

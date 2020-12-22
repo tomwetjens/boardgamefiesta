@@ -36,8 +36,8 @@ public class RailroadTrackView {
         Integer turnout;
 
         SpaceView(RailroadTrack railroadTrack, RailroadTrack.Space space) {
-            if (space instanceof RailroadTrack.Space.TurnoutSpace) {
-                turnout = railroadTrack.getTurnouts().indexOf(space);
+            if (space.getName().contains(".")) { // TODO Workaround, deprecated
+                turnout = RailroadTrack.TURNOUTS.indexOf((int) Float.parseFloat(space.getName()));
                 number = null;
             } else {
                 number = Integer.valueOf(space.getName());

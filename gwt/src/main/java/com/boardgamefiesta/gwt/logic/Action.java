@@ -557,8 +557,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(@NonNull Game game, Random random) {
-            RailroadTrack.Space current = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
-            Station station = current.getStation().orElseThrow(() -> new GWTException(GWTError.NOT_AT_STATION));
+            Station station = game.getRailroadTrack().currentStation(game.getCurrentPlayer());
 
             var immediateActions = station.upgrade(game);
 
@@ -605,8 +604,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         private Station getStation(Game game) {
             return game.currentPlayerState().getLastUpgradedStation()
                     // For backwards compatibility (can be removed if all player states in active games have a last remembered station):
-                    .orElseGet(() -> game.getRailroadTrack().currentSpace(game.getCurrentPlayer()).getStation()
-                            .orElseThrow(() -> new GWTException(GWTError.NOT_AT_STATION)));
+                    .orElseGet(() -> game.getRailroadTrack().currentStation(game.getCurrentPlayer()));
         }
     }
 
