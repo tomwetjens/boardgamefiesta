@@ -424,21 +424,17 @@ public class RailroadTrack {
 
         @Getter
         private final String name;
-        final Set<Space> next;
-        final Set<Space> previous;
+
+        @Getter(AccessLevel.PRIVATE)
+        private final Set<Space> next;
+
+        @Getter(AccessLevel.PRIVATE)
+        private final Set<Space> previous;
 
         private Space(String name, Set<Space> next, Set<Space> previous) {
             this.name = name;
             this.next = new HashSet<>(next);
             this.previous = new HashSet<>(previous);
-        }
-
-        public Set<Space> getNext() {
-            return Collections.unmodifiableSet(next);
-        }
-
-        public Set<Space> getPrevious() {
-            return Collections.unmodifiableSet(previous);
         }
 
         public boolean isAfter(Space space) {
