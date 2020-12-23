@@ -291,7 +291,7 @@ public enum ActionType {
             case TRADE_WITH_TRIBES:
                 return new Action.TradeWithTribes(getInt(jsonObject, JsonProperties.REWARD));
             case UPGRADE_ANY_STATION_BEHIND_ENGINE:
-                return new Action.UpgradeAnyStationBehindEngine(game.getRailroadTrack().getStations().get(getInt(jsonObject, JsonProperties.STATION)));
+                return new Action.UpgradeAnyStationBehindEngine(findStation(game, getInt(jsonObject, JsonProperties.STATION)));
             case UPGRADE_STATION:
                 return new Action.UpgradeStation();
             case USE_ADJACENT_BUILDING:

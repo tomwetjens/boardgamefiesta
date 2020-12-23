@@ -5,149 +5,181 @@ import com.boardgamefiesta.api.repository.JsonDeserializer;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.*;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
+import javax.json.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class RailroadTrack {
-
-    private static final int MAX_SPACE = 39;
-
-    private static final List<Integer> TURNOUTS = Arrays.asList(4, 7, 10, 13, 16, 21, 25, 29, 33);
 
     /**
      * Numbers of the spaces that have a signal between it and the next space
      */
     private static final List<Integer> SIGNALS = List.of(3, 4, 5, 7, 9, 10, 11, 13, 15, 16, 17);
 
-    static final int MAX_HAND_VALUE = 28;
-    static final int MIN_HAND_VALUE = 5;
-    static final int MAX_CERTIFICATES = 6;
+    private static final List<Station> STATIONS = List.of(
+            new Station(2, 1, EnumSet.of(DiscColor.WHITE)), // 4.5
+            new Station(2, 1, EnumSet.of(DiscColor.WHITE)), // 7.5
+            new Station(4, 2, EnumSet.of(DiscColor.WHITE)), // 10.5
+            new Station(4, 2, EnumSet.of(DiscColor.WHITE)), // 13.5
+            new Station(6, 3, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 16.5
+            new Station(8, 5, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 21.5
+            new Station(7, 6, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 25.5
+            new Station(6, 7, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 29.5
+            new Station(5, 8, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 33.5
+            new Station(3, 9, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)) // 39
+    );
 
-    private final List<Station> stations;
+    private static final int MAX_SPACE = 39;
+    private static final Space START;
+    private static final Space END;
+    private static final Map<String, Space> SPACES = new HashMap<>();
 
-    @Getter
-    private final Space start;
-    @Getter
-    private final Space end;
-    private final Map<String, Space> spaces = new HashMap<>();
-    private final List<Space.StationSpace> turnouts = new ArrayList<>(TURNOUTS.size());
-    private final Map<Player, Space> engines = new HashMap<>();
-    private final Map<City, List<Player>> deliveries;
+    static {
+        END = new Space.StationSpace(Integer.toString(MAX_SPACE), STATIONS.get(9), Collections.emptySet(), Collections.emptySet());
+        SPACES.put(END.getName(), END);
 
-    @Builder(access = AccessLevel.PACKAGE)
-    private RailroadTrack(@NonNull List<Station> stations, @NonNull Map<City, List<Player>> deliveries) {
-        this.stations = stations;
-        this.deliveries = deliveries;
-
-        end = new Space.StationSpace(Integer.toString(MAX_SPACE), stations.get(stations.size() - 1), Collections.emptySet(), Collections.emptySet());
-        spaces.put(end.getName(), end);
-
-        Space last = end;
+        Space last = END;
         for (int number = MAX_SPACE - 1; number > 0; number--) {
             var current = new Space(Integer.toString(number), Collections.singleton(last), new HashSet<>());
 
             last.previous.add(current);
             last = current;
 
-            spaces.put(current.getName(), current);
+            SPACES.put(current.getName(), current);
         }
 
-        start = new Space("0", Collections.singleton(last), Collections.emptySet());
-        last.previous.add(start);
-        spaces.put(start.getName(), start);
+        START = new Space("0", Collections.singleton(last), Collections.emptySet());
+        last.previous.add(START);
+        SPACES.put(START.getName(), START);
 
-        // Turn outs
-        for (int i = 0; i < TURNOUTS.size(); i++) {
-            var number = TURNOUTS.get(i);
+        Stream.of(
+                turnout(STATIONS.get(0), SPACES.get("4"), SPACES.get("5")),
+                turnout(STATIONS.get(1), SPACES.get("7"), SPACES.get("8")),
+                turnout(STATIONS.get(2), SPACES.get("10"), SPACES.get("11")),
+                turnout(STATIONS.get(3), SPACES.get("13"), SPACES.get("14")),
+                turnout(STATIONS.get(4), SPACES.get("16"), SPACES.get("17")),
+                turnout(STATIONS.get(5), SPACES.get("21"), SPACES.get("22")),
+                turnout(STATIONS.get(6), SPACES.get("25"), SPACES.get("26")),
+                turnout(STATIONS.get(7), SPACES.get("29"), SPACES.get("30")),
+                turnout(STATIONS.get(8), SPACES.get("33"), SPACES.get("34"))
+        ).forEach(turnout -> {
+            turnout.previous.forEach(previous -> previous.next.add(turnout));
+            turnout.next.forEach(next -> next.previous.add(turnout));
 
-            var previous = spaces.get(Integer.toString(number));
-            var next = spaces.get(Integer.toString(number + 1));
-
-            var turnout = new Space.StationSpace(previous.getName() + ".5", stations.get(i), Collections.singleton(previous), Collections.singleton(next));
-
-            previous.next.add(turnout);
-            next.previous.add(turnout);
-
-            turnouts.add(turnout);
-            spaces.put(turnout.getName(), turnout);
-        }
+            SPACES.put(turnout.getName(), turnout);
+        });
     }
 
-    RailroadTrack(@NonNull Set<Player> players, @NonNull Game.Options options, @NonNull Random random) {
-        this(createInitialStations(options, random), createInitialCities());
+    @Builder.Default
+    private final Map<Player, Space> engines = new HashMap<>();
 
-        players.forEach(player -> engines.put(player, start));
+    @Builder.Default
+    private final Map<City, List<Player>> deliveries = new EnumMap<>(City.class);
+
+    @Builder.Default
+    private final Map<Station, StationMaster> stationMasters = new HashMap<>();
+    @Builder.Default
+    private final Map<Station, Worker> workers = new HashMap<>();
+    @Builder.Default
+    private final Map<Station, Set<Player>> upgrades = new HashMap<>();
+
+    private static Space.StationSpace turnout(Station station, Space previous, Space next) {
+        return new Space.StationSpace(previous.getName() + ".5", station, Set.of(previous), Set.of(next));
     }
 
-    private static List<Station> createInitialStations(@NonNull Game.Options options, Random random) {
-        List<StationMaster> stationMasters = options.isStationMasterPromos()
-                ? Stream.concat(StationMaster.ORIGINAL.stream(), StationMaster.PROMOS.stream()).collect(Collectors.toList())
-                : new ArrayList<>(StationMaster.ORIGINAL);
+    static RailroadTrack initial(@NonNull Set<Player> players, @NonNull Game.Options options, @NonNull Random random) {
+        var engines = players.stream().collect(Collectors.toMap(Function.identity(), player -> START));
+
+        var stationMastersSet = createStationMastersSet(options, random);
+        var stationMasters = new HashMap<Station, StationMaster>();
+
+        STATIONS.forEach(station -> {
+            var stationMaster = stationMastersSet.poll();
+            if (stationMaster != null) {
+                stationMasters.put(station, stationMaster);
+            }
+        });
+
+        return new RailroadTrack(engines, new EnumMap<>(City.class), stationMasters, new HashMap<>(), new HashMap<>());
+    }
+
+    private static Queue<StationMaster> createStationMastersSet(@NonNull Game.Options options, Random random) {
+        var stationMasters = options.isStationMasterPromos()
+                ? Stream.concat(StationMaster.ORIGINAL.stream(), StationMaster.PROMOS.stream()).collect(Collectors.toCollection(LinkedList::new))
+                : new LinkedList<>(StationMaster.ORIGINAL);
         Collections.shuffle(stationMasters, random);
-
-        return Arrays.asList(
-                Station.initial(2, 1, Collections.singleton(DiscColor.WHITE), stationMasters.get(0)),
-                Station.initial(2, 1, Collections.singleton(DiscColor.WHITE), stationMasters.get(1)),
-                Station.initial(4, 2, Collections.singleton(DiscColor.WHITE), stationMasters.get(2)),
-                Station.initial(4, 2, Collections.singleton(DiscColor.WHITE), stationMasters.get(3)),
-                Station.initial(6, 3, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), stationMasters.get(4)),
-                Station.initial(8, 5, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
-                Station.initial(7, 6, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
-                Station.initial(6, 7, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
-                Station.initial(5, 8, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null),
-                Station.initial(3, 9, Arrays.asList(DiscColor.WHITE, DiscColor.BLACK), null));
-    }
-
-    private static Map<City, List<Player>> createInitialCities() {
-        var cities = new EnumMap<City, List<Player>>(City.class);
-        for (City city : City.values()) {
-            cities.put(city, new LinkedList<>());
-        }
-        return cities;
+        return stationMasters;
     }
 
     JsonObject serialize(JsonBuilderFactory factory) {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
-                .add("stations", serializer.fromCollection(stations, Station::serialize))
+                .add("stations", serializer.fromCollection(STATIONS, station ->
+                        factory.createObjectBuilder()
+                                .add("players", JsonSerializer.forFactory(factory).fromStrings(upgrades.getOrDefault(station, Collections.emptySet()), Player::getName))
+                                .add("stationMaster", Optional.ofNullable(stationMasters.get(station)).map(StationMaster::name).orElse(null))
+                                .add("worker", Optional.ofNullable(workers.get(station)).map(Worker::name).orElse(null))
+                                .build()))
                 .add("cities", serializer.fromMap(deliveries, City::name, players -> serializer.fromStrings(players, Player::getName)))
                 .add("currentSpaces", serializer.fromStringMap(engines, Player::getName, Space::getName))
                 .build();
     }
 
     static RailroadTrack deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
-        var railroadTrack = new RailroadTrack(
-                jsonObject.getJsonArray("stations").stream()
-                        .map(JsonValue::asJsonObject)
-                        .map(obj -> Station.deserialize(playerMap, obj))
-                        .collect(Collectors.toList()),
-                JsonDeserializer.forObject(jsonObject.getJsonObject("cities"))
-                        .asMap(City::valueOf, jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
-                                .map(playerMap::get).collect(Collectors.toList())));
+        var engines = JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces"))
+                .asStringMap(playerMap::get, SPACES::get);
 
-        railroadTrack.engines.putAll(JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces"))
-                .asStringMap(playerMap::get, railroadTrack::getSpace));
+        var deliveries = JsonDeserializer.forObject(jsonObject.getJsonObject("cities"))
+                .asMap(City::valueOf, jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
+                        .map(playerMap::get).collect(Collectors.toList()));
 
-        return railroadTrack;
+        var upgrades = new HashMap<Station, Set<Player>>();
+        var stationMasters = new HashMap<Station, StationMaster>();
+        var workers = new HashMap<Station, Worker>();
+
+        var stationsArray = jsonObject.getJsonArray("stations");
+        for (var i = 0; i < stationsArray.size(); i++) {
+            var station = STATIONS.get(i);
+            var obj = stationsArray.get(i).asJsonObject();
+
+            upgrades.put(station, obj.getJsonArray("players").stream()
+                    .map(JsonString.class::cast)
+                    .map(JsonString::getString)
+                    .map(playerMap::get)
+                    .collect(Collectors.toCollection(HashSet::new)));
+
+            if (obj.getString("stationMaster") != null) {
+                stationMasters.put(station, StationMaster.valueOf(obj.getString("stationMaster")));
+            }
+            if (obj.getString("worker") != null) {
+                workers.put(station, Worker.valueOf(obj.getString("worker")));
+            }
+        }
+
+        return new RailroadTrack(engines, deliveries, stationMasters, workers, upgrades);
     }
 
-    public List<Station> getStations() {
-        return Collections.unmodifiableList(stations);
+    public Station getStation(Space space) {
+        if (!(space instanceof Space.StationSpace)) {
+            throw new GWTException(GWTError.STATION_NOT_ON_TRACK);
+        }
+        return ((Space.StationSpace) space).getStation();
     }
 
     public Space getSpace(String name) {
-        var space = spaces.get(name);
+        var space = SPACES.get(name);
         if (space == null) {
             throw new GWTException(GWTError.NO_SUCH_SPACE);
         }
         return space;
+    }
+
+    public Space getStart() {
+        return START;
     }
 
     public Set<Player> getPlayers() {
@@ -155,7 +187,7 @@ public class RailroadTrack {
     }
 
     public Space currentSpace(Player player) {
-        return engines.getOrDefault(player, start);
+        return engines.getOrDefault(player, START);
     }
 
     public Station currentStation(Player player) {
@@ -183,7 +215,7 @@ public class RailroadTrack {
             throw new IllegalArgumentException("Must be able to move >=1");
         }
 
-        if (to != start && playerAt(to).isPresent()) {
+        if (to != START && playerAt(to).isPresent()) {
             throw new GWTException(GWTError.ALREADY_PLAYER_ON_SPACE);
         }
 
@@ -207,11 +239,11 @@ public class RailroadTrack {
         if (to instanceof Space.StationSpace) {
             var station = ((Space.StationSpace) to).getStation();
 
-            if (!station.hasUpgraded(player)) {
+            if (!hasUpgraded(station, player)) {
                 immediateActions = ImmediateActions.of(PossibleAction.optional(Action.UpgradeStation.class));
             }
 
-            if (to == end) {
+            if (to == END) {
                 immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class));
             }
         }
@@ -220,14 +252,22 @@ public class RailroadTrack {
     }
 
     public Space getSpace(Station station) {
-        return turnouts.stream()
-                .filter(space -> space.getStation() == station)
+        return SPACES.values().stream()
+                .filter(space -> space instanceof Space.StationSpace && ((Space.StationSpace) space).getStation() == station)
                 .findAny()
                 .orElseThrow(() -> new GWTException(GWTError.STATION_NOT_ON_TRACK));
     }
 
     int numberOfUpgradedStations(Player player) {
-        return (int) stations.stream().filter(station -> station.hasUpgraded(player)).count();
+        return (int) upgrades.values().stream().filter(players -> players.contains(player)).count();
+    }
+
+    public Optional<StationMaster> getStationMaster(Station station) {
+        return Optional.ofNullable(stationMasters.get(station));
+    }
+
+    public Optional<Worker> getWorker(Station station) {
+        return Optional.ofNullable(workers.get(station));
     }
 
     @Value
@@ -251,7 +291,7 @@ public class RailroadTrack {
     private Set<ReachableSpace> reachableSpaces(@NonNull Space from, @NonNull Space current, int atLeast, int atMost, int steps, Function<Space, Set<Space>> direction) {
         Set<ReachableSpace> reachable = new HashSet<>();
 
-        boolean available = current != from && (current == start || playerAt(current).isEmpty());
+        boolean available = current != from && (current == START || playerAt(current).isEmpty());
         boolean possible = available && atLeast <= 1;
 
         if (possible) {
@@ -369,8 +409,9 @@ public class RailroadTrack {
     }
 
     private int scoreStations(Player player) {
-        return stations.stream()
-                .filter(station -> station.hasUpgraded(player))
+        return upgrades.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(player))
+                .map(Map.Entry::getKey)
                 .mapToInt(Station::getPoints)
                 .sum();
     }
@@ -410,7 +451,69 @@ public class RailroadTrack {
     }
 
     int numberOfDeliveries(Player player, City city) {
-        return (int) deliveries.get(city).stream().filter(p -> p == player).count();
+        return (int) deliveries.computeIfAbsent(city, k -> new LinkedList<>()).stream().filter(p -> p == player).count();
+    }
+
+    /**
+     * @return the index of the station can be used as identifier
+     */
+    public List<Station> getStations() {
+        return STATIONS;
+    }
+
+    boolean hasUpgraded(@NonNull Station station, @NonNull Player player) {
+        return getUpgradedBy(station).contains(player);
+    }
+
+    ImmediateActions upgradeStation(@NonNull Game game, @NonNull Station station) {
+        var player = game.getCurrentPlayer();
+        var upgradedBy = getUpgradedBy(station);
+
+        if (upgradedBy.contains(player)) {
+            throw new GWTException(GWTError.ALREADY_UPGRADED_STATION);
+        }
+
+        var playerState = game.currentPlayerState();
+        playerState.payDollars(station.getCost());
+        playerState.rememberLastUpgradedStation(station);
+
+        upgradedBy.add(player);
+
+        ImmediateActions placeDiscActions = game.removeDisc(station.getDiscColors());
+
+        var stationMaster = stationMasters.get(station);
+
+        if (stationMaster != null) {
+            game.fireEvent(player, GWTEvent.Type.MAY_APPOINT_STATION_MASTER, List.of(stationMaster.name()));
+            return placeDiscActions.andThen(PossibleAction.optional(Action.AppointStationMaster.class));
+        }
+        return placeDiscActions;
+    }
+
+    public Set<Player> getUpgradedBy(@NonNull Station station) {
+        return upgrades.computeIfAbsent(station, k -> new HashSet<>());
+    }
+
+    ImmediateActions appointStationMaster(@NonNull Game game, @NonNull Station station, @NonNull Worker worker) {
+        game.currentPlayerState().removeWorker(worker);
+
+        workers.put(station, worker);
+
+        StationMaster reward = stationMasters.get(station);
+
+        game.currentPlayerState().addStationMaster(reward);
+        stationMasters.remove(station);
+
+        return reward.activate(game);
+    }
+
+    void downgradeStation(@NonNull Game game, @NonNull Station station) {
+        var player = game.getCurrentPlayer();
+        var upgradedBy = getUpgradedBy(station);
+
+        if (!upgradedBy.remove(player)) {
+            throw new GWTException(GWTError.STATION_NOT_UPGRADED_BY_PLAYER);
+        }
     }
 
     @Value
@@ -426,10 +529,10 @@ public class RailroadTrack {
         private final String name;
 
         @Getter(AccessLevel.PRIVATE)
-        private final Set<Space> next;
+        protected final Set<Space> next;
 
         @Getter(AccessLevel.PRIVATE)
-        private final Set<Space> previous;
+        protected final Set<Space> previous;
 
         private Space(String name, Set<Space> next, Set<Space> previous) {
             this.name = name;

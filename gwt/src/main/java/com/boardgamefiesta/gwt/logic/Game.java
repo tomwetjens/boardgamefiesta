@@ -95,7 +95,7 @@ public class Game implements State {
                 .playerOrder(playerOrder)
                 .playerStates(playerStates)
                 .currentPlayer(playerOrder.get(0))
-                .railroadTrack(new RailroadTrack(players, options, random))
+                .railroadTrack(RailroadTrack.initial(players, options, random))
                 .kansasCitySupply(kansasCitySupply)
                 .trail(new Trail(options.getBuildings() == Options.Buildings.BEGINNER, random))
                 .jobMarket(new JobMarket(players.size()))
@@ -618,7 +618,7 @@ public class Game implements State {
             } else {
                 // If player MUST remove a disc, but has no more discs to remove from player board,
                 // then player MUST remove the disc from one of his stations
-                if (railroadTrack.getStations().stream().anyMatch(station -> station.getPlayers().contains(currentPlayer))) {
+                if (railroadTrack.numberOfUpgradedStations(currentPlayer) > 0) {
                     fireEvent(currentPlayer, GWTEvent.Type.MUST_REMOVE_DISC_FROM_STATION, Collections.emptyList());
                     return ImmediateActions.of(PossibleAction.mandatory(Action.DowngradeStation.class));
                 } else {

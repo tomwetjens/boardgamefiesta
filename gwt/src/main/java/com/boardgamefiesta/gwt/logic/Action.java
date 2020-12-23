@@ -559,7 +559,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(@NonNull Game game, Random random) {
             Station station = game.getRailroadTrack().currentStation(game.getCurrentPlayer());
 
-            var immediateActions = station.upgrade(game);
+            var immediateActions = game.getRailroadTrack().upgradeStation(game, station);
 
             game.fireActionEvent(this, Collections.emptyList());
 
@@ -575,7 +575,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         ActionResult perform(Game game, Random random) {
-            station.downgrade(game);
+            game.getRailroadTrack().downgradeStation(game, station);
 
             game.fireActionEvent(this, Collections.emptyList());
 
@@ -593,8 +593,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(@NonNull Game game, Random random) {
             Station station = getStation(game);
 
-            var stationMaster = station.getStationMaster().orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
-            var immediateActions = station.appointStationMaster(game, worker);
+            var stationMaster = game.getRailroadTrack().getStationMaster(station).orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
+            var immediateActions = game.getRailroadTrack().appointStationMaster(game, station, worker);
 
             game.fireActionEvent(this, List.of(worker.name(), stationMaster.name()));
 
@@ -1581,7 +1581,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new GWTException(GWTError.STATION_MUST_BE_BEHIND_ENGINE);
             }
 
-            var immediateActions = station.upgrade(game);
+            var immediateActions = game.getRailroadTrack().upgradeStation(game, station);
 
             game.fireActionEvent(this, Collections.emptyList());
 

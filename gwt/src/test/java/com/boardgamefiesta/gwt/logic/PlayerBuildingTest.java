@@ -178,7 +178,8 @@ class PlayerBuildingTest {
 
             // When
             game.perform(new Action.Move(List.of(a1)), new Random(0));
-            game.perform(new Action.UpgradeAnyStationBehindEngine(game.getRailroadTrack().getStations().get(0)), new Random(0));
+            var station = game.getRailroadTrack().getStations().get(0);
+            game.perform(new Action.UpgradeAnyStationBehindEngine(station), new Random(0));
             game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
             game.perform(new Action.AppointStationMaster(Worker.ENGINEER), new Random(0));
 
@@ -186,9 +187,9 @@ class PlayerBuildingTest {
             assertThat(game.playerState(player).getBalance()).isEqualTo(startBalance - 2);
             assertThat(game.playerState(player).getNumberOfEngineers()).isEqualTo(1);
             assertThat(game.getRailroadTrack().currentSpace(player)).isSameAs(space);
-            assertThat(game.getRailroadTrack().getStations().get(0).getPlayers()).contains(player);
-            assertThat(game.getRailroadTrack().getStations().get(0).getStationMaster()).isEmpty();
-            assertThat(game.getRailroadTrack().getStations().get(0).getWorker()).contains(Worker.ENGINEER);
+            assertThat(game.getRailroadTrack().getUpgradedBy(station)).contains(player);
+            assertThat(game.getRailroadTrack().getStationMaster(station)).isEmpty();
+            assertThat(game.getRailroadTrack().getWorker(station)).contains(Worker.ENGINEER);
         }
     }
 

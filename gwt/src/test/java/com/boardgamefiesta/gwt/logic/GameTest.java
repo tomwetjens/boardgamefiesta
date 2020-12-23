@@ -194,7 +194,7 @@ class GameTest {
             game.currentPlayerState().unlock(Unlockable.EXTRA_CARD);
 
             // Place one on a station
-            game.getRailroadTrack().getStations().get(0).upgrade(game);
+            game.getRailroadTrack().upgradeStation(game, game.getRailroadTrack().getStation(game.getRailroadTrack().getSpace("4.5")));
 
             // Player is forced to remove disc from station
             assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.DowngradeStation.class);
