@@ -47,7 +47,7 @@ public class Automa {
             game.perform(new Action.UnlockWhite(chooseWhiteDisc(currentPlayerState)), random);
         } else if (possibleActions.contains(Action.UnlockBlackOrWhite.class)) {
             game.perform(new Action.UnlockBlackOrWhite(chooseBlackOrWhiteDisc(currentPlayerState)), random);
-        } else if (possibleActions.contains(Action.TakeObjectiveCard.class)) {
+        } else if (possibleActions.contains(Action.TakeObjectiveCard.class) && !game.getObjectiveCards().getAvailable().isEmpty()) {
             // TODO Just pick any now
             var objectiveCard = game.getObjectiveCards().getAvailable().iterator().next();
             game.perform(new Action.TakeObjectiveCard(objectiveCard), random);
