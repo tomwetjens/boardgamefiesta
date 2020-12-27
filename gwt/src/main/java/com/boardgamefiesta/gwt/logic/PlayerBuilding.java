@@ -434,7 +434,7 @@ public abstract class PlayerBuilding extends Building {
     static class Building13A extends PlayerBuilding {
 
         Building13A(Player player) {
-            super(Name.of(13, Side.A), player, Hand.NONE, 4, 5);
+            super(Name.of(13, Side.A), player, Hand.GREEN, 4, 5);
         }
 
         @Override
