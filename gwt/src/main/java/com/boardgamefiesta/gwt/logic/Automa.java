@@ -44,9 +44,9 @@ public class Automa {
                     .map(possibleDelivery -> new Action.DeliverToCity(possibleDelivery.getCity(), possibleDelivery.getCertificates()))
                     .orElse(new Action.DeliverToCity(City.KANSAS_CITY, 0)), random);
         } else if (possibleActions.contains(Action.UnlockWhite.class)) {
-            game.perform(new Action.UnlockWhite(chooseWhiteDisc(currentPlayerState)), random);
+            game.perform(new Action.UnlockWhite(chooseWhiteDisc(currentPlayerState, game)), random);
         } else if (possibleActions.contains(Action.UnlockBlackOrWhite.class)) {
-            game.perform(new Action.UnlockBlackOrWhite(chooseBlackOrWhiteDisc(currentPlayerState)), random);
+            game.perform(new Action.UnlockBlackOrWhite(chooseBlackOrWhiteDisc(currentPlayerState, game)), random);
         } else if (possibleActions.contains(Action.TakeObjectiveCard.class) && !game.getObjectiveCards().getAvailable().isEmpty()) {
             // TODO Just pick any now
             var objectiveCard = game.getObjectiveCards().getAvailable().iterator().next();
@@ -112,36 +112,36 @@ public class Automa {
                 .getSteps();
     }
 
-    private Unlockable chooseWhiteDisc(PlayerState playerState) {
-        if (playerState.canUnlock(Unlockable.AUX_GAIN_DOLLAR)) {
+    private Unlockable chooseWhiteDisc(PlayerState playerState, Game game) {
+        if (playerState.canUnlock(Unlockable.AUX_GAIN_DOLLAR, game)) {
             return Unlockable.AUX_GAIN_DOLLAR;
         }
-        if (playerState.canUnlock(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD)) {
+        if (playerState.canUnlock(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, game)) {
             return Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD;
         }
-        if (playerState.canUnlock(Unlockable.CERT_LIMIT_4)) {
+        if (playerState.canUnlock(Unlockable.CERT_LIMIT_4, game)) {
             return Unlockable.CERT_LIMIT_4;
         }
 
         // TODO Just pick any now
         return Arrays.stream(Unlockable.values())
                 .filter(unlockable -> unlockable.getDiscColor() == DiscColor.WHITE)
-                .filter(playerState::canUnlock)
+                .filter(unlockable1 -> playerState.canUnlock(unlockable1, game))
                 .findAny()
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
     }
 
-    private Unlockable chooseBlackOrWhiteDisc(PlayerState playerState) {
-        if (playerState.canUnlock(Unlockable.EXTRA_STEP_DOLLARS)) {
+    private Unlockable chooseBlackOrWhiteDisc(PlayerState playerState, Game game) {
+        if (playerState.canUnlock(Unlockable.EXTRA_STEP_DOLLARS, game)) {
             return Unlockable.EXTRA_STEP_DOLLARS;
         }
-        if (playerState.canUnlock(Unlockable.EXTRA_CARD)) {
+        if (playerState.canUnlock(Unlockable.EXTRA_CARD, game)) {
             return Unlockable.EXTRA_CARD;
         }
 
         // TODO Just pick any now
         return Arrays.stream(Unlockable.values())
-                .filter(playerState::canUnlock)
+                .filter(unlockable -> playerState.canUnlock(unlockable, game))
                 .findAny()
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
     }

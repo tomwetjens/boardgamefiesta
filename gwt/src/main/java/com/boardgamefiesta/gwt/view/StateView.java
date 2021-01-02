@@ -34,9 +34,13 @@ public class StateView {
     Set<PossibleBuyView> possibleBuys;
     Set<PossibleDeliveryView> possibleDeliveries;
     Map<ActionType, Set<String>> possibleSpaces;
+    Map<ActionType, Set<String>> possibleTowns;
+    boolean railsToTheNorth;
 
     public StateView(Game state, Player viewingPlayer) {
         status = state.getStatus();
+
+        railsToTheNorth = state.isRailsToTheNorth();
 
         if (state.getStartingObjectiveCards() != null) {
             startingObjectiveCards = state.getStartingObjectiveCards().stream()
@@ -90,9 +94,9 @@ public class StateView {
 
         if (viewingPlayer == state.getCurrentPlayer()) {
             actions = state.possibleActions().stream()
-                    .map(ActionType::of)
-                    .sorted(Comparator.comparing(Enum::name))
-                    .collect(Collectors.toList());
+                .map(ActionType::of)
+                .sorted(Comparator.comparing(Enum::name))
+                .collect(Collectors.toList());
 
             turn = true;
 
@@ -182,6 +186,14 @@ public class StateView {
             if (actions.contains(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS)) {
                 possibleSpaces.put(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS,
                         getPossibleSpacesBackwards(state, viewingPlayer, 2, 2));
+            }
+
+            possibleTowns = new HashMap<>();
+
+            if (actions.contains(ActionType.PLACE_BRANCHLET)) {
+                possibleTowns.put(ActionType.PLACE_BRANCHLET, state.getRailroadTrack().possibleTowns(viewingPlayer)
+                        .map(RailroadTrack.Town::getName)
+                        .collect(Collectors.toSet()));
             }
         }
     }

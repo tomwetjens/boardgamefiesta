@@ -131,10 +131,6 @@ public class CattleMarket {
             throw new GWTException(GWTError.NOT_PAIR);
         }
 
-        if (!market.contains(card) || (secondCard != null && !market.contains(secondCard))) {
-            throw new GWTException(GWTError.CATTLE_CARD_NOT_AVAILABLE);
-        }
-
         var result = COSTS.get(card.getType().getValue()).stream()
                 .filter(cost -> cost.isPair() == (secondCard != null))
                 .filter(cost -> cost.getCowboys() == cowboys)
@@ -142,12 +138,19 @@ public class CattleMarket {
                 .findAny()
                 .orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
 
-        market.remove(card);
+        take(card);
+
         if (secondCard != null) {
-            market.remove(secondCard);
+            take(secondCard);
         }
 
         return result;
+    }
+
+    void take(Card.CattleCard card) {
+        if (!market.remove(card)) {
+            throw new GWTException(GWTError.CATTLE_CARD_NOT_AVAILABLE);
+        }
     }
 
     void fillUp(int playerCount) {

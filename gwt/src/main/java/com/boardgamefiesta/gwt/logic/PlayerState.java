@@ -55,6 +55,14 @@ public class PlayerState {
     private int lastEngineMove;
     @Getter
     private Optional<Station> lastUpgradedStation;
+    @Getter
+    private Optional<RailroadTrack.Town> lastPlacedBranchlet;
+
+    @Getter
+    private int exchangeTokens;
+
+    @Getter
+    private int branchlets;
 
     PlayerState(@NonNull Player player, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
         this.player = player;
@@ -75,6 +83,7 @@ public class PlayerState {
         this.unlocked = new EnumMap<>(Unlockable.class);
         this.unlocked.put(Unlockable.AUX_GAIN_DOLLAR, 1);
         this.unlocked.put(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, 1);
+        this.unlocked.put(Unlockable.AUX_DISCARD_CATTLE_CARD_TO_PLACE_BRANCHLET, 1);
 
         this.objectives = new HashSet<>();
 
@@ -85,6 +94,12 @@ public class PlayerState {
         this.locationsActivatedInTurn = new LinkedList<>();
 
         this.lastUpgradedStation = Optional.empty();
+
+        this.lastPlacedBranchlet = Optional.empty();
+
+        this.exchangeTokens = 1;
+
+        this.branchlets = 15;
 
         drawUpToHandLimit(random);
     }
@@ -111,6 +126,9 @@ public class PlayerState {
                 .add("locationsActivatedInTurn", serializer.fromStrings(locationsActivatedInTurn.stream().map(Location::getName)))
                 .add("lastEngineMove", lastEngineMove)
                 .add("lastUpgradedStation", lastUpgradedStation.map(railroadTrack.getStations()::indexOf).orElse(-1))
+                .add("lastPlacedBranchlet", lastPlacedBranchlet.map(RailroadTrack.Town::getName).orElse(null))
+                .add("exchangeTokens", exchangeTokens)
+                .add("branchlets", branchlets)
                 .build();
     }
 
@@ -147,7 +165,10 @@ public class PlayerState {
                                 .map(trail::getLocation)
                                 .collect(Collectors.toCollection(LinkedList::new)) : new LinkedList<>(),
                 jsonObject.getInt("lastEngineMove", 0),
-                JsonDeserializer.getInt("lastUpgradedStation", jsonObject).filter(index -> index >= 0).map(railroadTrack.getStations()::get));
+                JsonDeserializer.getInt("lastUpgradedStation", jsonObject).filter(index -> index >= 0).map(railroadTrack.getStations()::get),
+                Optional.ofNullable(jsonObject.getString("lastPlacedBranchlet")).map(railroadTrack::getTown),
+                jsonObject.getInt("exchangeTokens", 0),
+                jsonObject.getInt("branchlets", 0));
     }
 
     void placeBid(Bid bid) {
@@ -369,7 +390,8 @@ public class PlayerState {
         return (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS) ? 1 : 0)
                 + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_HAZARDS) ? 1 : 0)
                 + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_TEEPEE_PAIRS) ? 1 : 0)
-                + (stationMasters.contains(StationMaster.TWO_PERM_CERTS) ? 2 : 0);
+                + (stationMasters.contains(StationMaster.TWO_PERM_CERTS) ? 2 : 0)
+                + (stationMasters.contains(StationMaster.PERM_CERT_POINTS_PER_2_STATIONS) ? 1 : 0);
     }
 
     void unlock(Unlockable unlockable) {
@@ -454,7 +476,7 @@ public class PlayerState {
         return buildings.contains(building);
     }
 
-    Set<PossibleAction> unlockedSingleAuxiliaryActions() {
+    Set<PossibleAction> unlockedSingleAuxiliaryActions(boolean railsToTheNorth) {
         Set<PossibleAction> actions = new HashSet<>();
 
         actions.add(PossibleAction.optional(Action.Gain1Dollar.class));
@@ -469,10 +491,15 @@ public class PlayerState {
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
             actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1Card.class));
         }
+
+        if (railsToTheNorth) {
+            actions.add(PossibleAction.optional(Action.DiscardCattleCardToPlaceBranchlet.class));
+        }
+
         return actions;
     }
 
-    Set<PossibleAction> unlockedSingleOrDoubleAuxiliaryActions() {
+    Set<PossibleAction> unlockedSingleOrDoubleAuxiliaryActions(boolean railsToTheNorth) {
         Set<PossibleAction> actions = new HashSet<>();
 
         if (hasUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
@@ -507,6 +534,14 @@ public class PlayerState {
         }
         if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
             actions.add(PossibleAction.optional(Action.MoveEngine2BackwardsToRemove2Cards.class));
+        }
+
+        if (railsToTheNorth) {
+            if (hasAllUnlocked(Unlockable.AUX_DISCARD_CATTLE_CARD_TO_PLACE_BRANCHLET)) {
+                actions.add(PossibleAction.repeat(0, 2, Action.DiscardCattleCardToPlaceBranchlet.class));
+            } else {
+                actions.add(PossibleAction.optional(Action.DiscardCattleCardToPlaceBranchlet.class));
+            }
         }
 
         return actions;
@@ -661,14 +696,15 @@ public class PlayerState {
                 new Card.CattleCard(CattleType.GUERNSEY, 0)));
     }
 
-    boolean canRemoveDisc(Collection<DiscColor> discColors) {
+    boolean canRemoveDisc(Collection<DiscColor> discColors, Game game) {
         return Arrays.stream(Unlockable.values())
-                .filter(this::canUnlock)
+                .filter(unlockable -> canUnlock(unlockable, game))
                 .anyMatch(unlockable -> discColors.contains(unlockable.getDiscColor()));
     }
 
-    public boolean canUnlock(Unlockable unlockable) {
-        return unlocked.getOrDefault(unlockable, 0) < unlockable.getCount()
+    public boolean canUnlock(Unlockable unlockable, Game game) {
+        return (unlockable != Unlockable.AUX_DISCARD_CATTLE_CARD_TO_PLACE_BRANCHLET || game.isRailsToTheNorth())
+                && unlocked.getOrDefault(unlockable, 0) < unlockable.getCount()
                 && balance >= unlockable.getCost();
     }
 
@@ -716,5 +752,42 @@ public class PlayerState {
 
     public Optional<Bid> getBid() {
         return Optional.ofNullable(bid);
+    }
+
+    void gainExchangeTokens(int amount) {
+        exchangeTokens += amount;
+    }
+
+    void payExchangeTokens(int amount) {
+        if (exchangeTokens < amount) {
+            throw new GWTException(GWTError.NOT_ENOUGH_EXCHANGE_TOKENS);
+        }
+        exchangeTokens -= amount;
+    }
+
+    ImmediateActions removeBranchlet() {
+        if (branchlets < 1) {
+            throw new GWTException(GWTError.NO_BRANCHLETS);
+        }
+        branchlets--;
+
+        return branchlets == 9 || branchlets == 0 ? ImmediateActions.of(PossibleAction.optional(Action.GainExchangeToken.class))
+                : ImmediateActions.none();
+    }
+
+    public int numberOfBells() {
+        return 5 - (int) Math.ceil((double) branchlets / 3);
+    }
+
+    public int getNumberOfWorkers() {
+        return getNumberOfCowboys() + getNumberOfCraftsmen() + getNumberOfEngineers();
+    }
+
+    public int certificates() {
+        return getTempCertificates() + permanentCertificates();
+    }
+
+    void rememberLastPlacedBranchlet(RailroadTrack.Town town) {
+        lastPlacedBranchlet = Optional.of(town);
     }
 }

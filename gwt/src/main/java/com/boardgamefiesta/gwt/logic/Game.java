@@ -25,6 +25,9 @@ public class Game implements State {
     @Getter
     private final Options.Mode mode;
 
+    @Getter
+    private final boolean railsToTheNorth;
+
     private final Set<Player> players;
 
     private final Map<Player, PlayerState> playerStates;
@@ -91,6 +94,7 @@ public class Game implements State {
 
         var game = builder()
                 .mode(options.getMode())
+                .railsToTheNorth(options.isRailsToTheNorth())
                 .players(players)
                 .playerOrder(playerOrder)
                 .playerStates(playerStates)
@@ -224,18 +228,14 @@ public class Game implements State {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
-        if (action instanceof Action.PlayObjectiveCard) {
-            if (!canPlayObjectiveCard()) {
-                throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
-            }
+        if (action instanceof Action.PlayObjectiveCard && !canPlayObjectiveCard()) {
+            throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
+        }
 
-            var actionResult = action.perform(this, random);
-
-            actionStack.addImmediateActions(actionResult.getImmediateActions());
-            actionStack.addActions(actionResult.getNewActions());
-
-            canUndo = actionResult.canUndo();
-        } else {
+        // If the action is not an action that can be performed at any time (i.e. that is not in the stack)
+        // or we are not started yet, but still bidding, then we MUST check that the action is in the stack
+        // and also update the stack
+        if (!isAnytimeAction(action) || status == Status.BIDDING) {
             if (!actionStack.canPerform(action.getClass())) {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
@@ -243,18 +243,23 @@ public class Game implements State {
             // Action can possibly modify the action queue, so first get this action off the queue
             // before executing it
             actionStack.perform(action.getClass());
-
-            var actionResult = action.perform(this, random);
-
-            actionStack.addImmediateActions(actionResult.getImmediateActions());
-            actionStack.addActions(actionResult.getNewActions());
-
-            canUndo = actionResult.canUndo();
         }
+
+        var actionResult = action.perform(this, random);
+
+        actionStack.addImmediateActions(actionResult.getImmediateActions());
+        actionStack.addActions(actionResult.getNewActions());
+
+        canUndo = actionResult.canUndo();
 
         if (!canUndo) {
             endTurnIfNoMoreActions(random);
         }
+    }
+
+    private static boolean isAnytimeAction(Action action) {
+        return action instanceof Action.PlayObjectiveCard
+                || action instanceof Action.UseExchangeToken;
     }
 
     @Override
@@ -399,15 +404,18 @@ public class Game implements State {
             return Collections.emptySet();
         }
 
-        var possibleActions = actionStack.getPossibleActions();
+        var possibleActions = new HashSet<>(actionStack.getPossibleActions());
 
-        if (canPlayObjectiveCard()) {
-            possibleActions = new HashSet<>(possibleActions);
-            possibleActions.add(Action.PlayObjectiveCard.class);
-            return Collections.unmodifiableSet(possibleActions);
+        if (status == Status.STARTED) {
+            if (canPlayObjectiveCard()) {
+                possibleActions.add(Action.PlayObjectiveCard.class);
+            }
+            if (Action.UseExchangeToken.canPerform(this)) {
+                possibleActions.add(Action.UseExchangeToken.class);
+            }
         }
 
-        return possibleActions;
+        return Collections.unmodifiableSet(possibleActions);
     }
 
     private boolean canPlayObjectiveCard() {
@@ -428,8 +436,9 @@ public class Game implements State {
     }
 
     public Optional<Score> scoreDetails(Player player) {
+        var playerState = playerState(player);
         return isEnded() || mode == Options.Mode.STRATEGIC
-                ? Optional.of(playerState(player).score(this).add(trail.score(player)).add(railroadTrack.score(player)))
+                ? Optional.of(playerState.score(this).add(trail.score(player)).add(railroadTrack.score(player, playerState)))
                 : Optional.empty();
     }
 
@@ -496,6 +505,7 @@ public class Game implements State {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
                 .add("mode", mode.name())
+                .add("railsToTheNorth", railsToTheNorth)
                 .add("players", serializer.fromCollection(players, Player::serialize))
                 .add("playerOrder", serializer.fromStrings(playerOrder.stream().map(Player::getName)))
                 .add("playerStates", serializer.fromMap(playerStates, Player::getName, playerState -> playerState.serialize(factory, railroadTrack)))
@@ -530,12 +540,15 @@ public class Game implements State {
 
         var kansasCitySupply = KansasCitySupply.deserialize(jsonObject.getJsonObject("kansasCitySupply"));
 
-        var railroadTrack = RailroadTrack.deserialize(playerMap, jsonObject.getJsonObject("railroadTrack"));
+        var railsToTheNorth = jsonObject.getBoolean("railsToTheNorth", false);
+
+        var railroadTrack = RailroadTrack.deserialize(railsToTheNorth, playerMap, jsonObject.getJsonObject("railroadTrack"));
 
         var trail = Trail.deserialize(playerMap, jsonObject.getJsonObject("trail"));
 
         return builder()
                 .mode(Options.Mode.valueOf(jsonObject.getString("mode", Options.Mode.STRATEGIC.name())))
+                .railsToTheNorth(railsToTheNorth)
                 .players(players)
                 .playerOrder(playerOrder)
                 .playerStates(deserializePlayerStates(playerMap, railroadTrack, trail, jsonObject.getJsonObject("playerStates")))
@@ -607,12 +620,12 @@ public class Game implements State {
     }
 
     ImmediateActions removeDisc(Collection<DiscColor> discColors) {
-        if (currentPlayerState().canRemoveDisc(discColors)) {
+        if (currentPlayerState().canRemoveDisc(discColors, this)) {
             return ImmediateActions.of(PossibleAction.mandatory(discColors.contains(DiscColor.BLACK) ? Action.UnlockBlackOrWhite.class : Action.UnlockWhite.class));
         } else {
             // If player MUST remove WHITE disc, but player only has BLACK discs left,
             // then by exception the player may remove a BLACK disc
-            if (currentPlayerState().canRemoveDisc(Collections.singleton(DiscColor.BLACK))) {
+            if (currentPlayerState().canRemoveDisc(Collections.singleton(DiscColor.BLACK), this)) {
                 fireEvent(currentPlayer, GWTEvent.Type.MAY_REMOVE_BLACK_DISC_INSTEAD_OF_WHITE, Collections.emptyList());
                 return ImmediateActions.of(PossibleAction.mandatory(Action.UnlockBlackOrWhite.class));
             } else {
@@ -727,6 +740,10 @@ public class Game implements State {
         @NonNull
         @Builder.Default
         boolean building13 = false;
+
+        @NonNull
+        @Builder.Default
+        boolean railsToTheNorth = false;
 
         public enum Buildings {
             BEGINNER,

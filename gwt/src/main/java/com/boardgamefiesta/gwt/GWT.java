@@ -55,6 +55,7 @@ public class GWT implements GameProvider<Game> {
                 .stationMasterPromos(options.getBoolean("stationMasterPromos", false))
                 .building11(options.getBoolean("building11", false))
                 .building13(options.getBoolean("building13", false))
+                .railsToTheNorth(options.getBoolean("railsToTheNorth", false))
                 .build(), random);
     }
 

@@ -104,7 +104,20 @@ public enum ActionType {
     CHOOSE_FORESIGHT_3(Action.ChooseForesight3.class),
     UNLOCK_BLACK_OR_WHITE(Action.UnlockBlackOrWhite.class),
     UNLOCK_WHITE(Action.UnlockWhite.class),
-    DOWNGRADE_STATION(Action.DowngradeStation.class);
+    DOWNGRADE_STATION(Action.DowngradeStation.class),
+    PLACE_BRANCHLET(Action.PlaceBranchlet.class),
+    DISCARD_CATTLE_CARD_TO_PLACE_BRANCHLET(Action.DiscardCattleCardToPlaceBranchlet.class),
+    TAKE_BONUS_STATION_MASTER(Action.TakeBonusStationMaster.class),
+    USE_EXCHANGE_TOKEN(Action.UseExchangeToken.class),
+    GAIN_EXCHANGE_TOKEN(Action.GainExchangeToken.class),
+    GAIN_1_DOLLAR_PER_CRAFTSMAN(Action.Gain1DollarPerCraftsman.class),
+    GAIN_1_CERTIFICATE_AND_1_DOLLAR_PER_BELL(Action.Gain1CertificateAnd1DollarPerBell.class),
+    GAIN_2_CERTIFICATES(Action.Gain2Certificates.class),
+    GAIN_3_DOLLARS(Action.Gain3Dollars.class),
+    GAIN_5_DOLLARS(Action.Gain5Dollars.class),
+    UPGRADE_STATION_TOWN(Action.UpgradeStationTown.class),
+    PLACE_BUILDING_FOR_FREE(Action.PlaceBuildingForFree.class),
+    TAKE_BREEDING_VALUE_3_CATTLE_CARD(Action.TakeBreedingValue3CattleCard.class);
 
     @Getter
     Class<? extends Action> action;
@@ -310,6 +323,35 @@ public enum ActionType {
                 return new Action.UnlockWhite(getEnum(jsonObject, JsonProperties.UNLOCK, Unlockable.class));
             case DOWNGRADE_STATION:
                 return new Action.DowngradeStation(findStation(game, getInt(jsonObject, JsonProperties.STATION)));
+            case PLACE_BRANCHLET:
+                return new Action.PlaceBranchlet(game.getRailroadTrack().getTown(getString(jsonObject, JsonProperties.TOWN)));
+            case DISCARD_CATTLE_CARD_TO_PLACE_BRANCHLET:
+                return new Action.DiscardCattleCardToPlaceBranchlet(CattleType.valueOf(getString(jsonObject, JsonProperties.CATTLE_TYPE)));
+            case TAKE_BONUS_STATION_MASTER:
+                return new Action.TakeBonusStationMaster(StationMaster.valueOf(getString(jsonObject, JsonProperties.STATION_MASTER)));
+            case USE_EXCHANGE_TOKEN:
+                return new Action.UseExchangeToken();
+            case GAIN_EXCHANGE_TOKEN:
+                return new Action.GainExchangeToken();
+            case GAIN_1_DOLLAR_PER_CRAFTSMAN:
+                return new Action.Gain1DollarPerCraftsman();
+            case GAIN_1_CERTIFICATE_AND_1_DOLLAR_PER_BELL:
+                return new Action.Gain1CertificateAnd1DollarPerBell();
+            case GAIN_2_CERTIFICATES:
+                return new Action.Gain2Certificates();
+            case GAIN_3_DOLLARS:
+                return new Action.Gain3Dollars();
+            case UPGRADE_STATION_TOWN:
+                return new Action.UpgradeStationTown();
+            case GAIN_5_DOLLARS:
+                return new Action.Gain5Dollars();
+            case PLACE_BUILDING_FOR_FREE:
+                return new Action.PlaceBuildingForFree(
+                        (Location.BuildingLocation) game.getTrail().getLocation(getString(jsonObject, JsonProperties.LOCATION)),
+                        findPlayerBuilding(game, getString(jsonObject, JsonProperties.BUILDING)));
+            case TAKE_BREEDING_VALUE_3_CATTLE_CARD:
+                return new Action.TakeBreedingValue3CattleCard(findCattleCard(game.getCattleMarket().getMarket(),
+                        getJsonObject(jsonObject, JsonProperties.CATTLE_CARD)));
             default:
                 return null;
         }
@@ -400,20 +442,24 @@ public enum ActionType {
         return cattleCards.stream()
                 .map(JsonValue::asJsonObject)
                 .map(jsonObject -> {
-                    CattleType type = getEnum(jsonObject, JsonProperties.TYPE, CattleType.class);
-                    int points = getInt(jsonObject, JsonProperties.POINTS);
-
-                    var card = available.stream()
-                            .filter(cattleCard -> cattleCard.getType() == type)
-                            .filter(cattleCard -> cattleCard.getPoints() == points)
-                            .findAny()
-                            .orElseThrow(() -> new JsonException("Cattle card not available"));
+                    var card = findCattleCard(available, jsonObject);
 
                     available.remove(card);
 
                     return card;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private static Card.CattleCard findCattleCard(Collection<Card.CattleCard> available, JsonObject jsonObject) {
+        CattleType type = getEnum(jsonObject, JsonProperties.TYPE, CattleType.class);
+        int points = getInt(jsonObject, JsonProperties.POINTS);
+
+        return available.stream()
+                .filter(cattleCard -> cattleCard.getType() == type)
+                .filter(cattleCard -> cattleCard.getPoints() == points)
+                .findAny()
+                .orElseThrow(() -> new JsonException("Cattle card not available"));
     }
 
     private static String getString(JsonObject jsonObject, String key) {
@@ -477,6 +523,9 @@ public enum ActionType {
     }
 
     private static class JsonProperties {
+        private static final String CATTLE_CARD = "cattleCard";
+        private static final String STATION_MASTER = "stationMaster";
+        private static final String TOWN = "town";
         private static final String POSITION = "position";
         private static final String DOLLARS = "dollars";
         private static final String COWBOYS = "cowboys";

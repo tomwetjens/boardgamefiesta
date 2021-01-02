@@ -89,7 +89,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions()));
+            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions(game.isRailsToTheNorth())));
         }
     }
 
@@ -105,13 +105,25 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    public static final class Gain3Dollars extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().gainDollars(3);
+
+            game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
     public static final class SingleOrDoubleAuxiliaryAction extends Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions()));
+            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions(game.isRailsToTheNorth())));
         }
     }
 
@@ -232,6 +244,24 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.fireActionEvent(this, Collections.emptyList());
 
             return ActionResult.undoNotAllowed(ImmediateActions.none());
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class TakeBreedingValue3CattleCard extends Action {
+
+        @NonNull
+        Card.CattleCard card;
+
+        @Override
+        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+            game.fireActionEvent(this, Collections.singletonList(card.getType().name()));
+
+            game.getCattleMarket().take(card);
+            game.currentPlayerState().gainCard(card);
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
         }
     }
 
@@ -380,7 +410,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.getJobMarket().takeWorker(rowIndex, worker);
 
-            game.fireActionEvent(this, List.of(worker.name()));
+            game.fireActionEvent(this, List.of(worker.name(), Integer.toString(cost)));
 
             return ActionResult.undoAllowed(game.currentPlayerState().gainWorker(worker, game));
         }
@@ -398,6 +428,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         public PlaceCheapBuilding(Location.BuildingLocation location, PlayerBuilding building) {
             super(location, building, 1);
+        }
+    }
+
+    public static final class PlaceBuildingForFree extends PlaceBuilding {
+
+        public PlaceBuildingForFree(Location.BuildingLocation location, PlayerBuilding building) {
+            super(location, building, 0);
         }
     }
 
@@ -517,7 +554,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             location.placeBuilding(building);
 
-            game.fireActionEvent(this, List.of(building.getName(), location.getName()));
+            game.fireActionEvent(this, List.of(building.getName(), location.getName(), Integer.toString(cost)));
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
@@ -562,6 +599,24 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var immediateActions = game.getRailroadTrack().upgradeStation(game, station);
 
             game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(immediateActions);
+        }
+    }
+
+    public static final class UpgradeStationTown extends Action {
+
+        @Override
+        public ActionResult perform(@NonNull Game game, Random random) {
+            var town = game.currentPlayerState().getLastPlacedBranchlet()
+                    .orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
+
+            var station = game.getRailroadTrack().getStation(town)
+                    .orElseThrow(() -> new GWTException(GWTError.NOT_AT_STATION));
+
+            var immediateActions = game.getRailroadTrack().upgradeStation(game, station);
+
+            game.fireActionEvent(this, List.of(town.getName(), Integer.toString(station.getCost())));
 
             return ActionResult.undoAllowed(immediateActions);
         }
@@ -716,7 +771,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new GWTException(GWTError.NOT_ENOUGH_BREEDING_VALUE);
             }
 
-            var transportCosts = Math.max(0, city.getSignals() - game.getRailroadTrack().signalsPassed(game.getCurrentPlayer()));
+            var transportCosts = game.getRailroadTrack().transportCosts(game.getCurrentPlayer(), city);
 
             var payout = breedingValue - transportCosts;
             if (city == City.KANSAS_CITY) {
@@ -1019,6 +1074,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         @Override
         public ActionResult perform(Game game, Random random) {
             game.currentPlayerState().gainTempCertificates(1);
+
+            game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
+    public static final class Gain2Certificates extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().gainTempCertificates(2);
 
             game.fireActionEvent(this, Collections.emptyList());
 
@@ -1387,6 +1454,21 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    public static final class Gain1CertificateAnd1DollarPerBell extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            var playerState = game.currentPlayerState();
+            int bells = playerState.numberOfBells();
+            playerState.gainTempCertificates(bells);
+            playerState.gainDollars(bells);
+
+            game.fireActionEvent(this, Collections.singletonList(Integer.toString(bells)));
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class Discard1ObjectiveCardToGain2Certificates extends Action {
@@ -1481,6 +1563,21 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             playerState.gainDollars(playerState.getNumberOfEngineers());
 
             game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
+    public static final class Gain1DollarPerCraftsman extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            var playerState = game.currentPlayerState();
+
+            var amount = playerState.getNumberOfCraftsmen();
+            playerState.gainDollars(amount);
+
+            game.fireActionEvent(this, Collections.singletonList(Integer.toString(amount)));
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
@@ -1609,6 +1706,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    public static final class Gain5Dollars extends Action {
+
+        @Override
+        public ActionResult perform(Game game, Random random) {
+            game.currentPlayerState().gainDollars(5);
+
+            game.fireActionEvent(this, Collections.emptyList());
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
     public static final class Gain12Dollars extends Action {
 
         @Override
@@ -1716,6 +1825,95 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.placeBid(bid);
 
             return ActionResult.undoNotAllowed(ImmediateActions.none()); // cannot undo so turn is ended automatically
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class PlaceBranchlet extends Action {
+
+        @NonNull
+        RailroadTrack.Town town;
+
+        @Override
+        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+            game.fireActionEvent(this, List.of(town.getName()));
+
+            var immediateActions = game.currentPlayerState().removeBranchlet();
+
+            return ActionResult.undoAllowed(game.getRailroadTrack().placeBranchlet(game, town)
+                    .andThen(immediateActions));
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class DiscardCattleCardToPlaceBranchlet extends Action {
+
+        @NonNull
+        CattleType cattleType;
+
+        @Override
+        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+            game.fireActionEvent(this, List.of(cattleType.name()));
+
+            if (cattleType.getValue() != 2) {
+                throw new GWTException(GWTError.INVALID_CATTLE_TYPE);
+            }
+
+            game.currentPlayerState().discardCattleCards(cattleType, 1);
+
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.optional(Action.PlaceBranchlet.class)));
+        }
+    }
+
+    public static class GainExchangeToken extends Action {
+
+        @Override
+        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+            game.fireActionEvent(this, Collections.emptyList());
+
+            game.currentPlayerState().gainExchangeTokens(1);
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
+    public static class UseExchangeToken extends Action {
+
+        static boolean canPerform(Game game) {
+            return game.currentPlayerState().getExchangeTokens() > 0
+                    && !game.getActionStack().canPerform(Action.DrawCard.class)
+                    && !game.getActionStack().canPerform(Action.Draw2Cards.class)
+                    && !game.getActionStack().canPerform(Action.DiscardCard.class)
+                    && !game.currentPlayerState().getHand().isEmpty();
+        }
+
+        @Override
+        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+            game.fireActionEvent(this, Collections.emptyList());
+
+            game.currentPlayerState().payExchangeTokens(1);
+
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.choice(DrawCard.class, Draw2Cards.class)));
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class TakeBonusStationMaster extends Action {
+
+        @NonNull
+        StationMaster stationMaster;
+
+        @Override
+        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+            game.fireActionEvent(this, Collections.singletonList(stationMaster.name()));
+
+            game.getRailroadTrack().takeBonusStationMaster(stationMaster);
+            game.currentPlayerState().addStationMaster(stationMaster);
+
+            return ActionResult.undoAllowed(stationMaster.activate(game));
         }
     }
 

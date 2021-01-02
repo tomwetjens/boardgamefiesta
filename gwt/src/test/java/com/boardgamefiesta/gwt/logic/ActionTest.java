@@ -88,7 +88,7 @@ class ActionTest {
         @Test
         void passedAllSignals() {
             when(currentPlayerState.handValue()).thenReturn(11);
-            when(railroadTrack.signalsPassed(currentPlayer)).thenReturn(7);
+            when(railroadTrack.transportCosts(currentPlayer, City.EL_PASO)).thenReturn(0);
             when(trail.atKansasCity(currentPlayer)).thenReturn(true);
 
             Action.DeliverToCity deliverToCity = new Action.DeliverToCity(City.EL_PASO, 1);
@@ -340,13 +340,13 @@ class ActionTest {
             var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.PlayObjectiveCard(objectiveCard), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.Move3ForwardWithoutFees(List.of(game.getTrail().getLocation("A"))), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.Move(List.of(game.getTrail().getLocation("B"))), new Random(0));
             assertThat(game.possibleActions()).isNotEmpty();
@@ -364,7 +364,7 @@ class ActionTest {
             var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.Move(List.of(a1)), new Random(0));
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(
@@ -374,10 +374,10 @@ class ActionTest {
                     Action.DrawCard.class);
 
             game.perform(new Action.PlayObjectiveCard(objectiveCard), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.Move3ForwardWithoutFees(List.of(a2)), new Random(0));
-            assertThat(game.possibleActions()).isEmpty();
+            assertThat(game.possibleActions()).containsExactly(Action.UseExchangeToken.class);
         }
 
         @Test
@@ -387,16 +387,17 @@ class ActionTest {
             var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.Move(List.of(game.getTrail().getLocation("G"))), new Random(0));
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(
                     Action.PlayObjectiveCard.class,
                     Action.MoveEngineForward.class,
-                    Action.SingleOrDoubleAuxiliaryAction.class);
+                    Action.SingleOrDoubleAuxiliaryAction.class,
+                    Action.UseExchangeToken.class);
 
             game.perform(new Action.PlayObjectiveCard(objectiveCard), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class, Action.UseExchangeToken.class);
 
             assertThatThrownBy(() -> game.perform(new Action.Move3ForwardWithoutFees(List.of(game.getTrail().getKansasCity())), new Random(0)))
                     .isInstanceOf(GWTException.class)

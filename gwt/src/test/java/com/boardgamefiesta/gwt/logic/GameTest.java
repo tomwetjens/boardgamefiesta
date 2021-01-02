@@ -61,7 +61,7 @@ class GameTest {
             // Player buildings should not be randomized
             assertThat(game.currentPlayerState().getBuildings()).extracting(PlayerBuilding::getClass).containsExactlyInAnyOrder(A_BUILDINGS);
 
-            assertThat(game.possibleActions()).containsExactly(Action.Move.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
         }
 
         @Test
@@ -71,7 +71,7 @@ class GameTest {
             assertThat(game.getStatus()).isEqualTo(Game.Status.STARTED);
             assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
-            assertThat(game.possibleActions()).containsExactly(Action.Move.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
 
             // Neutral buildings should be randomized
             assertThat(Arrays.asList(
@@ -194,7 +194,7 @@ class GameTest {
             game.currentPlayerState().unlock(Unlockable.EXTRA_CARD);
 
             // Place one on a station
-            game.getRailroadTrack().upgradeStation(game, game.getRailroadTrack().getStation(game.getRailroadTrack().getSpace("4.5")));
+            game.getRailroadTrack().upgradeStation(game, game.getRailroadTrack().getStations().get(0));
 
             // Player is forced to remove disc from station
             assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.DowngradeStation.class);
@@ -258,7 +258,7 @@ class GameTest {
             game.perform(new Action.PlaceBid(new Bid(0, 0)), new Random(0));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerA);
-            assertThat(game.possibleActions()).containsExactly(Action.Move.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
         }
 
         @Test
@@ -288,7 +288,7 @@ class GameTest {
             game.perform(new Action.PlaceBid(new Bid(2, 0)), new Random(0));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerC);
-            assertThat(game.possibleActions()).containsExactly(Action.Move.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
         }
     }
 }

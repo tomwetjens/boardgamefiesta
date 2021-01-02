@@ -43,6 +43,9 @@ public class PlayerStateView {
     List<Teepee> teepees;
     List<ObjectiveView> objectives;
 
+    int exchangeTokens;
+    int branchlets;
+
     PlayerStateView(@NonNull Game state, @NonNull PlayerState playerState, Player viewingPlayer) {
         player = new PlayerView(playerState.getPlayer());
 
@@ -125,5 +128,9 @@ public class PlayerStateView {
         if (state.isEnded()) {
             winner = state.winners().contains(playerState.getPlayer());
         }
+
+        exchangeTokens = playerState.getExchangeTokens();
+
+        branchlets = playerState.getBranchlets();
     }
 }

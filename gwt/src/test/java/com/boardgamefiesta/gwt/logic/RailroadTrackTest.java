@@ -18,7 +18,7 @@ import static com.boardgamefiesta.gwt.logic.RailroadTrack.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class RailroadTrackTest {
@@ -458,6 +458,9 @@ class RailroadTrackTest {
         @Mock
         ObjectiveCards objectiveCards;
 
+        @Mock
+        PlayerState playerState;
+
         @BeforeEach
         void setUp() {
             lenient().when(game.getObjectiveCards()).thenReturn(objectiveCards);
@@ -469,8 +472,8 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.KANSAS_CITY, game);
             railroadTrack.deliverToCity(playerA, City.KANSAS_CITY, game);
 
-            assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(-12);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, -12);
+            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(-12);
+            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -12);
         }
 
         @Test
@@ -479,8 +482,8 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.TOPEKA, game);
             railroadTrack.deliverToCity(playerA, City.WICHITA, game);
 
-            assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(-3);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, -3);
+            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(-3);
+            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -3);
         }
 
         @Test
@@ -489,8 +492,8 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.WICHITA, game);
             railroadTrack.deliverToCity(playerA, City.COLORADO_SPRINGS, game);
 
-            assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(-1);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, -1);
+            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(-1);
+            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -1);
         }
 
         @Test
@@ -499,8 +502,8 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.ALBUQUERQUE, game);
             railroadTrack.deliverToCity(playerA, City.EL_PASO, game);
 
-            assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(6);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 6);
+            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(6);
+            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 6);
         }
 
         @Test
@@ -509,8 +512,8 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.EL_PASO, game);
             railroadTrack.deliverToCity(playerA, City.SAN_DIEGO, game);
 
-            assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(8);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 8);
+            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(8);
+            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 8);
         }
 
         @Test
@@ -519,8 +522,8 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.SAN_DIEGO, game);
             railroadTrack.deliverToCity(playerA, City.SACRAMENTO, game);
 
-            assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(10);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 10);
+            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(10);
+            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 10);
         }
 
         @Test
@@ -529,8 +532,8 @@ class RailroadTrackTest {
             railroadTrack.deliverToCity(playerA, City.SAN_FRANCISCO, game);
             railroadTrack.deliverToCity(playerA, City.SAN_FRANCISCO, game);
 
-            assertThat(railroadTrack.score(playerA).getTotal()).isEqualTo(18);
-            assertThat(railroadTrack.score(playerA).getCategories()).containsEntry(ScoreCategory.CITIES, 18);
+            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(18);
+            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 18);
         }
     }
 
@@ -547,17 +550,17 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.UpgradeStation(), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UnlockBlackOrWhite.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.UnlockBlackOrWhite(Unlockable.EXTRA_STEP_POINTS), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("38")), new Random(0));
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(startBalance);
-            assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class, Action.UseExchangeToken.class);
         }
 
         @Test
@@ -570,14 +573,14 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("38")), new Random(0));
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(startBalance + 3);
-            assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class, Action.UseExchangeToken.class);
         }
 
         @Test
@@ -590,10 +593,10 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
 
             assertThatThrownBy(() -> game.skip(new Random(0)))
                     .isInstanceOf(GWTException.class)
@@ -610,13 +613,13 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(3);
         }
 
@@ -630,24 +633,24 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(3);
 
             game.perform(new Action.UpgradeStation(), new Random(0));
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(1);
-            assertThat(game.possibleActions()).containsExactly(Action.UnlockWhite.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UnlockWhite.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.AppointStationMaster.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.AppointStationMaster.class, Action.UseExchangeToken.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class, Action.UseExchangeToken.class);
         }
 
         @Test
@@ -660,16 +663,286 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UpgradeStation.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.SingleOrDoubleAuxiliaryAction.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class, Action.UseExchangeToken.class);
+        }
+    }
+
+    @Nested
+    class BranchletTest {
+
+        @Mock
+        Game game;
+
+        @Mock
+        PlayerState currentPlayerState;
+
+        Game.Options options = Game.Options.builder().railsToTheNorth(true).build();
+
+        RailroadTrack railroadTrack;
+
+        @BeforeEach
+        void setUp() {
+            railroadTrack = RailroadTrack.initial(Set.of(playerA, playerB, playerC, playerD), options, new Random(0));
+
+            lenient().when(game.getCurrentPlayer()).thenReturn(playerA);
+            lenient().when(game.getRailroadTrack()).thenReturn(railroadTrack);
+            lenient().when(game.currentPlayerState()).thenReturn(currentPlayerState);
+        }
+
+        @Test
+        void initial() {
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42");
+        }
+
+        @Test
+        void afterPlaceBranchlet42() {
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("42"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("43", "MEM");
+
+            assertThat(railroadTrack.possibleDeliveries(playerA, Integer.MAX_VALUE, 0)).extracting(PossibleDelivery::getCity).doesNotContain(City.MEMPHIS);
+        }
+
+        @Test
+        void afterPlaceBranchletMemphis() {
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("42"));
+            var immediateActions = railroadTrack.placeBranchlet(game, railroadTrack.getTown("MEM"));
+            assertThat(immediateActions.getActions().get(0).canPerform(Action.Gain2Dollars.class)).isTrue();
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("43", "40", "44");
+
+            assertThat(railroadTrack.possibleDeliveries(playerA, 3, 0)).contains(
+                    new PossibleDelivery(City.MEMPHIS, 0, 3));
+        }
+
+        @Test
+        void afterDeliveryToColumbia() {
+            railroadTrack.deliverToCity(playerA, City.COLUMBIA, game);
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "MEM");
+        }
+
+        @Test
+        void afterDeliveryToStLouis() {
+            railroadTrack.deliverToCity(playerA, City.ST_LOUIS, game);
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "MEM", "45");
+        }
+
+        @Test
+        void afterPlaceBranchlet45() {
+            railroadTrack.deliverToCity(playerA, City.ST_LOUIS, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("45"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "MEM", "46");
+        }
+
+        @Test
+        void afterDeliveryToChicago() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "47", "MIL");
+        }
+
+        @Test
+        void afterPlaceBranchlet47() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("47"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "48", "49", "DEN", "MIL");
+        }
+
+        @Test
+        void afterPlaceBranchlet49() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("47"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("49"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "48", "DEN", "SFO", "MIL");
+
+            assertThat(railroadTrack.possibleDeliveries(playerA, Integer.MAX_VALUE, 0)).extracting(PossibleDelivery::getCity).doesNotContain(City.SAN_FRANCISCO);
+        }
+
+        @Test
+        void afterPlaceBranchletSanFrancisco() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("47"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("49"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("SFO"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "48", "DEN", "MIL");
+
+            assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).contains(
+                    new PossibleDelivery(City.SAN_FRANCISCO, 0, 7)); // because 11 signals between nose of engine and space 18
+        }
+
+        @Test
+        void afterPlaceBranchletMilwaukee() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("MIL"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "47", "50");
+        }
+
+        @Test
+        void afterPlaceBranchletMilwaukeeAnd50() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("MIL"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("50"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "47", "41", "GBY");
+        }
+
+        @Test
+        void afterPlaceBranchletMilwaukeeAnd50AndGreenBay() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("MIL"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("50"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("GBY"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "47", "41", "51");
+        }
+
+        @Test
+        void afterPlaceBranchletMilwaukeeAnd50AndGreenBayAnd51() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("MIL"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("50"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("GBY"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("51"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "47", "41", "52", "53", "54");
+        }
+
+        @Test
+        void afterPlaceBranchletMilwaukeeAnd50AndGreenBayAnd51And53() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("MIL"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("50"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("GBY"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("51"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("53"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "47", "41", "52", "MIN", "54");
+        }
+
+        @Test
+        void afterPlaceBranchletMilwaukeeAnd50AndGreenBayAnd51And54() {
+            railroadTrack.deliverToCity(playerA, City.CHICAGO, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("MIL"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("50"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("GBY"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("51"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("54"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "47", "41", "52", "TOR", "53", "55", "MON");
+        }
+
+        @Test
+        void afterDeliveryToDetroit() {
+            railroadTrack.deliverToCity(playerA, City.DETROIT, game);
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "56");
+        }
+
+        @Test
+        void afterPlaceBranchlet56() {
+            railroadTrack.deliverToCity(playerA, City.DETROIT, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("56"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "57");
+        }
+
+        @Test
+        void afterDeliveryToCleveland() {
+            railroadTrack.deliverToCity(playerA, City.CLEVELAND, game);
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "TOR");
+        }
+
+        @Test
+        void afterPlaceBranchletToronto() {
+            railroadTrack.deliverToCity(playerA, City.CLEVELAND, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("TOR"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "54");
+        }
+
+        @Test
+        void afterPlaceBranchletTorontoAnd54() {
+            railroadTrack.deliverToCity(playerA, City.CLEVELAND, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("TOR"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("54"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "51", "55", "MON");
+        }
+
+        @Test
+        void afterPlaceBranchletTorontoAnd54And51() {
+            railroadTrack.deliverToCity(playerA, City.CLEVELAND, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("TOR"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("54"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("51"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "52", "GBY", "53", "55", "MON");
+        }
+
+        @Test
+        void afterPlaceBranchletTorontoAnd54And51And53() {
+            railroadTrack.deliverToCity(playerA, City.CLEVELAND, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("TOR"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("54"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("51"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("53"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "52", "GBY", "MIN", "55", "MON");
+        }
+
+        @Test
+        void afterPlaceBranchletTorontoAnd54And51AndGreenBay() {
+            railroadTrack.deliverToCity(playerA, City.CLEVELAND, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("TOR"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("54"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("51"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("GBY"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "52", "41", "50", "53", "55", "MON");
+        }
+
+        @Test
+        void afterPlaceBranchletTorontoAnd54And51AndGreenBayAnd50() {
+            railroadTrack.deliverToCity(playerA, City.CLEVELAND, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("TOR"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("54"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("51"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("GBY"));
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("50"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "52", "41", "MIL", "53", "55", "MON");
+        }
+
+        @Test
+        void afterDeliveryToPittsburgh() {
+            railroadTrack.deliverToCity(playerA, City.PITTSBURGH, game);
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "58");
+        }
+
+        @Test
+        void afterPlaceBranchlet58() {
+            railroadTrack.deliverToCity(playerA, City.PITTSBURGH, game);
+            railroadTrack.placeBranchlet(game, railroadTrack.getTown("58"));
+
+            assertThat(railroadTrack.possibleTowns(playerA)).extracting(Town::getName).containsExactlyInAnyOrder("42", "59");
         }
     }
 

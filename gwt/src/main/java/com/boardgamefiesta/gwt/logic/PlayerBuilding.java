@@ -70,6 +70,10 @@ public abstract class PlayerBuilding extends Building {
                 return new PlayerBuilding.Building11A(player);
             case "11b":
                 return new PlayerBuilding.Building11B(player);
+            case "12a":
+                return new PlayerBuilding.Building12A(player);
+            case "12b":
+                return new PlayerBuilding.Building12B(player);
             case "13a":
                 return new PlayerBuilding.Building13A(player);
             case "13b":
@@ -113,6 +117,10 @@ public abstract class PlayerBuilding extends Building {
             }
             if (options.isBuilding13()) {
                 numbers.add(13);
+            }
+            if (options.isRailsToTheNorth()) {
+                numbers.add(11);
+                numbers.add(12);
             }
             return new BuildingSet(numbers.stream()
                     .map(number -> number + (random.nextBoolean() ? "a" : "b"))
@@ -428,6 +436,32 @@ public abstract class PlayerBuilding extends Building {
         @Override
         PossibleAction getPossibleAction(Game game) {
             return PossibleAction.optional(Action.MoveEngineForwardUpToNumberOfHazards.class);
+        }
+    }
+
+    static class Building12A extends PlayerBuilding {
+
+        Building12A(Player player) {
+            super(Name.of(12, Side.A), player, Hand.NONE, 3, 4);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(Game game) {
+            return PossibleAction.optional(Action.Gain1CertificateAnd1DollarPerBell.class);
+        }
+    }
+
+    static class Building12B extends PlayerBuilding {
+
+        Building12B(Player player) {
+            super(Name.of(12, Side.B), player, Hand.NONE, 3, 4);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(Game game) {
+            return PossibleAction.any(
+                    Action.Gain1DollarPerCraftsman.class,
+                    Action.PlaceBranchlet.class);
         }
     }
 

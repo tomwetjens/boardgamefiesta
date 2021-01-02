@@ -33,7 +33,8 @@ class PlayerBuildingTest {
                     Action.Discard1Guernsey.class,
                     Action.HireWorker.class,
                     Action.HireWorkerPlus2.class,
-                    Action.SingleAuxiliaryAction.class);
+                    Action.SingleAuxiliaryAction.class,
+                    Action.UseExchangeToken.class);
         }
 
         @Test
@@ -57,7 +58,8 @@ class PlayerBuildingTest {
                     Action.Discard1JerseyToGain1CertificateAnd2Dollars.class,
                     // Copied adjacent building actions
                     Action.Gain2DollarsPerBuildingInWoods.class,
-                    Action.SingleAuxiliaryAction.class);
+                    Action.SingleAuxiliaryAction.class,
+                    Action.UseExchangeToken.class);
         }
 
         @Test
@@ -83,7 +85,8 @@ class PlayerBuildingTest {
             // Then
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(
                     // Original risk action
-                    Action.Discard1JerseyToGain1CertificateAnd2Dollars.class);
+                    Action.Discard1JerseyToGain1CertificateAnd2Dollars.class,
+                    Action.UseExchangeToken.class);
         }
 
         @Test
@@ -108,7 +111,8 @@ class PlayerBuildingTest {
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(
                     Action.Discard1DutchBeltToGain2Dollars.class,
                     Action.PlaceBuilding.class,
-                    Action.SingleAuxiliaryAction.class);
+                    Action.SingleAuxiliaryAction.class,
+                    Action.UseExchangeToken.class);
         }
 
         @Test
@@ -154,7 +158,8 @@ class PlayerBuildingTest {
                     Action.Gain4Dollars.class,
                     Action.MoveEngineAtMost4Forward.class,
                     Action.Move4Forward.class,
-                    Action.SingleAuxiliaryAction.class);
+                    Action.SingleAuxiliaryAction.class,
+                    Action.UseExchangeToken.class);
         }
 
     }
