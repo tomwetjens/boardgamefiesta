@@ -624,9 +624,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                     ? tile.getTeepee().name() : tile.getWorker() != null
                     ? tile.getWorker().name() : tile.getHazard().getType().name()));
 
-            placeTile(game, tile);
+            var undoAllowed = placeTile(game, tile);
 
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(getNextAction(game, columnIndex))));
+            var immediateActions = ImmediateActions.of(PossibleAction.mandatory(getNextAction(game, columnIndex)));
+
+            return undoAllowed ? ActionResult.undoAllowed(immediateActions) : ActionResult.undoNotAllowed(immediateActions);
         }
 
         private static Class<? extends Action> getNextAction(Game game, int columnIndex) {
@@ -643,7 +645,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             }
         }
 
-        private void placeTile(Game game, KansasCitySupply.Tile tile) {
+        private boolean placeTile(Game game, KansasCitySupply.Tile tile) {
+            var undoAllowed = true;
+
             if (tile.getWorker() != null) {
                 JobMarket jobMarket = game.getJobMarket();
 
@@ -654,6 +658,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                         game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.FILL_UP_CATTLE_MARKET, Collections.emptyList());
 
                         game.getCattleMarket().fillUp(game.getPlayerOrder().size());
+
+                        undoAllowed = false;
                     }
 
                     if (jobMarket.isClosed()) {
@@ -668,6 +674,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             } else {
                 game.getTrail().placeTeepee(tile.getTeepee());
             }
+
+            return undoAllowed;
         }
     }
 
