@@ -101,17 +101,17 @@ public abstract class PlayerBuilding extends Building {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class BuildingSet {
 
-        public static final List<Integer> ALL = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        public static final List<Integer> ORIGINAL = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        public static final Set<Integer> ALL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        public static final Set<Integer> ORIGINAL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
         public static final BuildingSet BEGINNER = new BuildingSet(ORIGINAL.stream()
                 .map(number -> number + "a")
-                .collect(Collectors.toList()));
+                .collect(Collectors.toSet()));
 
-        @NonNull List<String> names;
+        @NonNull Set<String> names;
 
         public static BuildingSet random(@NonNull Game.Options options, @NonNull Random random) {
-            var numbers = new ArrayList<>(ORIGINAL);
+            var numbers = new HashSet<>(ORIGINAL);
             if (options.isBuilding11()) {
                 numbers.add(11);
             }
@@ -124,7 +124,7 @@ public abstract class PlayerBuilding extends Building {
             }
             return new BuildingSet(numbers.stream()
                     .map(number -> number + (random.nextBoolean() ? "a" : "b"))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toSet()));
         }
 
         public static BuildingSet from(Game.Options options, @NonNull Random random) {
