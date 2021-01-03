@@ -607,7 +607,7 @@ public class PlayerState {
                 ScoreCategory.DOLLARS, balance / 5,
                 ScoreCategory.CATTLE_CARDS, scoreCattleCards(),
                 ScoreCategory.OBJECTIVE_CARDS, objectives.getTotal(),
-                ScoreCategory.STATION_MASTERS, scoreStationMasters(objectives.getCommitted()),
+                ScoreCategory.STATION_MASTERS, scoreStationMasters(game, objectives.getCommitted()),
                 ScoreCategory.WORKERS, scoreWorkers(),
                 ScoreCategory.HAZARDS, scoreHazards(),
                 ScoreCategory.EXTRA_STEP_POINTS, hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0,
@@ -646,7 +646,7 @@ public class PlayerState {
                 .collect(Collectors.toSet());
     }
 
-    private int scoreStationMasters(Set<ObjectiveCard> committed) {
+    private int scoreStationMasters(Game game, Set<ObjectiveCard> committed) {
         int result = 0;
         if (stationMasters.contains(StationMaster.GAIN_2_DOLLARS_POINT_FOR_EACH_WORKER)) {
             result += getNumberOfCowboys() + getNumberOfCraftsmen() + getNumberOfEngineers();
@@ -663,6 +663,20 @@ public class PlayerState {
         if (stationMasters.contains(StationMaster.PERM_CERT_POINTS_FOR_EACH_2_CERTS)) {
             result += ((tempCertificates + permanentCertificates()) / 2) * 3;
         }
+
+        if (stationMasters.contains(StationMaster.PERM_CERT_POINTS_PER_2_STATIONS)) {
+            result += (game.getRailroadTrack().numberOfUpgradedStations(player) / 2) * 3;
+        }
+        if (stationMasters.contains(StationMaster.GAIN_2_CERTS_POINTS_PER_BUILDING)) {
+            result += game.getTrail().numberOfBuildings(player) * 2;
+        }
+        if (stationMasters.contains(StationMaster.PLACE_BRANCHLET_POINTS_PER_2_EXCHANGE_TOKENS)) {
+            result += (exchangeTokens / 2) * 5;
+        }
+        if (stationMasters.contains(StationMaster.GAIN_EXCHANGE_TOKEN_POINTS_PER_AREA)) {
+            result += game.getRailroadTrack().numberOfAreas(player) * 2;
+        }
+
         return result;
     }
 

@@ -14,7 +14,7 @@ public enum MediumTownTile {
     GAIN_5_DOLLARS_OR_TAKE_CATTLE_CARD(PossibleAction.choice(
             Action.Gain5Dollars.class,
             Action.TakeBreedingValue3CattleCard.class)),
-    HIRE_WORKER_PLUS_2(PossibleAction.optional(Action.HireWorkerPlus2.class)),
+    HIRE_WORKER_PLUS_2(PossibleAction.optional(Action.HireWorkerMinus2.class)),
     REMOVE_2_CARDS(PossibleAction.repeat(0, 2, Action.RemoveCard.class)),
     MOVE_ENGINE_3_FORWARD(PossibleAction.optional(Action.MoveEngineAtMost3Forward.class)),
     PLACE_BUILDING_FOR_FREE(PossibleAction.optional(Action.PlaceBuildingForFree.class));

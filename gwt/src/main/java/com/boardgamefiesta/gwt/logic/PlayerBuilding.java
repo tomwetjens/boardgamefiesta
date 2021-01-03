@@ -101,7 +101,7 @@ public abstract class PlayerBuilding extends Building {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class BuildingSet {
 
-        public static final Set<Integer> ALL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        public static final Set<Integer> ALL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
         public static final Set<Integer> ORIGINAL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
         public static final BuildingSet BEGINNER = new BuildingSet(ORIGINAL.stream()
@@ -112,16 +112,18 @@ public abstract class PlayerBuilding extends Building {
 
         public static BuildingSet random(@NonNull Game.Options options, @NonNull Random random) {
             var numbers = new HashSet<>(ORIGINAL);
-            if (options.isBuilding11()) {
-                numbers.add(11);
-            }
-            if (options.isBuilding13()) {
-                numbers.add(13);
-            }
+
             if (options.isRailsToTheNorth()) {
                 numbers.add(11);
                 numbers.add(12);
+            } else if (options.isBuilding11()) {
+                numbers.add(11);
             }
+
+            if (options.isBuilding13()) {
+                numbers.add(13);
+            }
+
             return new BuildingSet(numbers.stream()
                     .map(number -> number + (random.nextBoolean() ? "a" : "b"))
                     .collect(Collectors.toSet()));
