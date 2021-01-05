@@ -685,6 +685,9 @@ class RailroadTrackTest {
         @Mock
         PlayerState currentPlayerState;
 
+        @Mock
+        ObjectiveCards objectiveCards;
+
         Game.Options options = Game.Options.builder().railsToTheNorth(true).build();
 
         RailroadTrack railroadTrack;
@@ -696,6 +699,7 @@ class RailroadTrackTest {
             lenient().when(game.getCurrentPlayer()).thenReturn(playerA);
             lenient().when(game.getRailroadTrack()).thenReturn(railroadTrack);
             lenient().when(game.currentPlayerState()).thenReturn(currentPlayerState);
+            lenient().when(game.getObjectiveCards()).thenReturn(objectiveCards);
         }
 
         @Test
