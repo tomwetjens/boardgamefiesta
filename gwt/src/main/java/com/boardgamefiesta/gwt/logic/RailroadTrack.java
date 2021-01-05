@@ -598,6 +598,8 @@ public class RailroadTrack {
 
         deliveries.computeIfAbsent(city, k -> new LinkedList<>()).add(player);
 
+        var immediateActions = ImmediateActions.none();
+
         switch (city) {
             case COLORADO_SPRINGS:
             case ALBUQUERQUE:
@@ -607,8 +609,6 @@ public class RailroadTrack {
                 }
                 break;
             case SANTA_FE:
-                ImmediateActions immediateActions = ImmediateActions.none();
-
                 if (hasMadeDelivery(player, City.COLORADO_SPRINGS) && !game.getObjectiveCards().isEmpty()) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.COLORADO_SPRINGS.name(), city.name()));
                     immediateActions = ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
@@ -649,7 +649,10 @@ public class RailroadTrack {
                 break;
             case DETROIT:
                 if (hasMadeDelivery(player, City.CHICAGO)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.GainExchangeToken.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.GainExchangeToken.class));
+                }
+                if (!game.getObjectiveCards().isEmpty()) {
+                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.TakeObjectiveCard.class));
                 }
                 break;
             case CLEVELAND:
@@ -672,7 +675,7 @@ public class RailroadTrack {
                 return ImmediateActions.of(PossibleAction.any(Action.TakeObjectiveCard.class, Action.Gain3Dollars.class));
         }
 
-        return ImmediateActions.none();
+        return immediateActions;
     }
 
     private boolean hasBranchlet(Town town, Player player) {
