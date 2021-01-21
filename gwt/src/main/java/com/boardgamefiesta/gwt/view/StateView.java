@@ -94,9 +94,9 @@ public class StateView {
 
         if (viewingPlayer == state.getCurrentPlayer()) {
             actions = state.possibleActions().stream()
-                .map(ActionType::of)
-                .sorted(Comparator.comparing(Enum::name))
-                .collect(Collectors.toList());
+                    .map(ActionType::of)
+                    .sorted(Comparator.comparing(Enum::name))
+                    .collect(Collectors.toList());
 
             turn = true;
 
@@ -155,7 +155,11 @@ public class StateView {
             }
             if (actions.contains(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS)) {
                 possibleSpaces.put(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS,
-                        getPossibleSpacesForward(state, viewingPlayer, 1, state.getTrail().buildingsInWoods(viewingPlayer)));
+                        getPossibleSpacesForward(state, viewingPlayer, 0, state.getTrail().buildingsInWoods(viewingPlayer)));
+            }
+            if (actions.contains(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_HAZARDS)) {
+                possibleSpaces.put(ActionType.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_HAZARDS,
+                        getPossibleSpacesForward(state, viewingPlayer, 0, state.playerState(viewingPlayer).numberOfHazards()));
             }
             if (actions.contains(ActionType.EXTRAORDINARY_DELIVERY)) {
                 possibleSpaces.put(ActionType.EXTRAORDINARY_DELIVERY,

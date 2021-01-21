@@ -507,7 +507,7 @@ public class RailroadTrack {
         Set<ReachableSpace> reachable = new HashSet<>();
 
         boolean available = current != from && (current == START || playerAt(current).isEmpty());
-        boolean possible = available && atLeast <= 1;
+        boolean possible = available && atLeast <= 1 && atMost > 0;
 
         if (possible) {
             reachable.add(new ReachableSpace(current, steps + 1));

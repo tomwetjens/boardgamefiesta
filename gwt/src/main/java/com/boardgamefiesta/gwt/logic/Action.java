@@ -269,7 +269,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngineForward extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -285,7 +286,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngine1Forward extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -301,7 +303,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class RemoveCard extends Action {
 
-        @NonNull Card card;
+        @NonNull
+        Card card;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -346,7 +349,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class DiscardCard extends Action {
 
-        @NonNull Card card;
+        @NonNull
+        Card card;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -395,7 +399,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class HireWorker extends Action {
 
         int rowIndex;
-        @NonNull Worker worker;
+        @NonNull
+        Worker worker;
         int modifier;
 
         public HireWorker(int rowIndex, Worker worker) {
@@ -528,8 +533,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class PlaceBuilding extends Action {
 
-        @NonNull Location.BuildingLocation location;
-        @NonNull PlayerBuilding building;
+        @NonNull
+        Location.BuildingLocation location;
+        @NonNull
+        PlayerBuilding building;
         int costPerCraftsman;
 
         public PlaceBuilding(Location.BuildingLocation location, PlayerBuilding building) {
@@ -626,7 +633,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class DowngradeStation extends Action {
 
-        @NonNull Station station;
+        @NonNull
+        Station station;
 
         @Override
         ActionResult perform(Game game, Random random) {
@@ -642,7 +650,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class AppointStationMaster extends Action {
 
-        @NonNull Worker worker;
+        @NonNull
+        Worker worker;
 
         @Override
         public ActionResult perform(@NonNull Game game, Random random) {
@@ -756,7 +765,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class DeliverToCity extends Action {
 
-        @NonNull City city;
+        @NonNull
+        City city;
         int certificates; // temp + perm player wants to use
 
         @Override
@@ -814,7 +824,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class UnlockWhite extends Action {
 
-        @NonNull Unlockable unlock;
+        @NonNull
+        Unlockable unlock;
 
         @Override
         ActionResult perform(Game game, Random random) {
@@ -835,7 +846,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class UnlockBlackOrWhite extends Action {
 
-        @NonNull Unlockable unlock;
+        @NonNull
+        Unlockable unlock;
 
         @Override
         ActionResult perform(Game game, Random random) {
@@ -852,7 +864,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngineAtLeast1BackwardsAndGain3Dollars extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -870,7 +883,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngine2BackwardsToRemove2Cards extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -888,7 +902,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngine2Or3Forward extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -916,7 +931,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class Pay1DollarAndMoveEngine1BackwardsToGain1Certificate extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -936,7 +952,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class Pay2DollarsAndMoveEngine2BackwardsToGain2Certificates extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -956,7 +973,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class Pay1DollarToMoveEngine1Forward extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -974,7 +992,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngine1BackwardsToRemove1Card extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -992,7 +1011,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class DiscardPairToGain4Dollars extends Action {
 
-        @NonNull CattleType type;
+        @NonNull
+        CattleType type;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1013,7 +1033,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class RemoveHazard extends Action {
 
-        @NonNull Location.HazardLocation location;
+        @NonNull
+        Location.HazardLocation location;
         int cost;
 
         public RemoveHazard(Location.HazardLocation location) {
@@ -1043,7 +1064,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class PlayObjectiveCard extends Action {
 
-        @NonNull ObjectiveCard objectiveCard;
+        @NonNull
+        ObjectiveCard objectiveCard;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1147,7 +1169,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static class Move extends Action {
 
-        @NonNull List<Location> steps;
+        @NonNull
+        List<Location> steps;
         Integer atMost;
         boolean payFeesAndActivate;
 
@@ -1349,7 +1372,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngineAtMost2Forward extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1365,7 +1389,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngineAtMost3Forward extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1381,7 +1406,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class ExtraordinaryDelivery extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1472,7 +1498,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @Value
     @EqualsAndHashCode(callSuper = false)
     public static class Discard1ObjectiveCardToGain2Certificates extends Action {
-        @NonNull ObjectiveCard card;
+        @NonNull
+        ObjectiveCard card;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1490,7 +1517,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngine1BackwardsToGain3Dollars extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1587,7 +1615,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand extends Action {
 
-        @NonNull CattleType cattleType;
+        @NonNull
+        CattleType cattleType;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1608,14 +1637,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngineForwardUpToNumberOfBuildingsInWoods extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
             int buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, buildingsInWoods);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(this, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1625,14 +1655,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngineForwardUpToNumberOfHazards extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
             int hazards = game.currentPlayerState().numberOfHazards();
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, hazards);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(this, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1675,7 +1706,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class UpgradeAnyStationBehindEngine extends Action {
 
-        @NonNull Station station;
+        @NonNull
+        Station station;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1734,7 +1766,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class MoveEngineAtMost4Forward extends Action {
 
-        @NonNull RailroadTrack.Space to;
+        @NonNull
+        RailroadTrack.Space to;
 
         @Override
         public ActionResult perform(Game game, Random random) {
@@ -1750,7 +1783,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class Discard1CattleCardToGain1Certificate extends Action {
 
-        @NonNull CattleType cattleType;
+        @NonNull
+        CattleType cattleType;
 
         @Override
         ActionResult perform(Game game, Random random) {
