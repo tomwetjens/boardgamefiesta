@@ -37,8 +37,8 @@ public class TableDynamoDbRepository implements Tables {
 
     private static final int FIRST_VERSION = 1;
 
-    private static final int MAX_ACTIVE_REALTIME_GAMES = 1;
     private static final int MAX_ACTIVE_GAMES = 10;
+    private static final int MAX_ACTIVE_REALTIME_GAMES = MAX_ACTIVE_GAMES;
 
     private final Games games;
     private final DynamoDbClient dynamoDbClient;
