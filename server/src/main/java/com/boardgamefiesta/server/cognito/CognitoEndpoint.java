@@ -46,7 +46,9 @@ public class CognitoEndpoint {
             var username = event.getUserName();
             var email = event.getRequest().getUserAttributes().get("email");
 
-            User.validateBeforeCreate(username, email);
+            User.validateBeforeCreate(username);
+
+            users.validateBeforeAdd(username, email);
 
             var response = new PreSignUpResponse();
             log.info("Returning from Pre Sign-up trigger: {}", response);

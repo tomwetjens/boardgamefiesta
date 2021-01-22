@@ -25,6 +25,8 @@ public interface Users extends DomainService {
 
     void updateLastSeen(User user) throws UserConcurrentlyModifiedException;
 
+    void validateBeforeAdd(String username, String email);
+
     class UserConcurrentlyModifiedException extends Exception {
         public UserConcurrentlyModifiedException(Throwable cause) {
             super(cause);

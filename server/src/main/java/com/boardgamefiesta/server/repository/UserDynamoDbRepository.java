@@ -1,5 +1,7 @@
 package com.boardgamefiesta.server.repository;
 
+import com.boardgamefiesta.server.domain.APIError;
+import com.boardgamefiesta.server.domain.APIException;
 import com.boardgamefiesta.server.domain.user.User;
 import com.boardgamefiesta.server.domain.user.Users;
 import lombok.NonNull;
@@ -31,6 +33,13 @@ public class UserDynamoDbRepository implements Users {
     public UserDynamoDbRepository(@NonNull DynamoDbClient dynamoDbClient, @NonNull DynamoDbConfiguration config) {
         this.dynamoDbClient = dynamoDbClient;
         this.tableName = TABLE_NAME + config.getTableSuffix().orElse("");
+    }
+
+    @Override
+    public void validateBeforeAdd(String username, String email) {
+        findByEmail(email).ifPresent(user -> {
+            throw APIException.badRequest(APIError.EMAIL_ALREADY_IN_USE);
+        });
     }
 
     @Override
@@ -67,6 +76,8 @@ public class UserDynamoDbRepository implements Users {
 
     @Override
     public void add(User user) {
+        validateBeforeAdd(user.getUsername(), user.getEmail());
+
         var item = new HashMap<>(key(user.getId()));
         item.put("Version", AttributeValue.builder().n(user.getVersion().toString()).build());
         item.put("Username", AttributeValue.builder().s(user.getUsername()).build());
@@ -86,6 +97,12 @@ public class UserDynamoDbRepository implements Users {
 
     @Override
     public void update(User user) throws UserConcurrentlyModifiedException {
+        findByEmail(user.getEmail())
+                .filter(existingUser -> !existingUser.getUsername().equals(user.getUsername()))
+                .ifPresent(existingUser -> {
+                    throw APIException.badRequest(APIError.EMAIL_ALREADY_IN_USE);
+                });
+
         var expressionAttributeValues = new HashMap<String, AttributeValue>();
         expressionAttributeValues.put(":Version", AttributeValue.builder().n(Integer.toString(user.getVersion() != null ? user.getVersion() + 1 : FIRST_VERSION)).build());
         expressionAttributeValues.put(":Username", AttributeValue.builder().s(user.getUsername().toLowerCase()).build());

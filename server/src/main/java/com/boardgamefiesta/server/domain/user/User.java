@@ -72,7 +72,7 @@ public class User {
     private String language;
 
     public static User createAutomatically(@NonNull Id id, @NonNull String username, @NonNull String email) {
-        validateBeforeCreate(username, email);
+        validateBeforeCreate(username);
 
         var created = Instant.now();
 
@@ -109,31 +109,19 @@ public class User {
         }
     }
 
-    public static void validateBeforeCreate(@NonNull String username, @NonNull String email) {
+    public static void validateBeforeCreate(@NonNull String username) {
         User.validateUsername(username);
-
-        Users.instance().findByEmail(email).ifPresent(user -> {
-            throw APIException.badRequest(APIError.EMAIL_ALREADY_IN_USE);
-        });
-    }
-
-    public void changeUsername(String username) {
-        this.username = username;
-        updated = Instant.now();
     }
 
     public void changeEmail(String email) {
         this.email = email;
         this.updated = Instant.now();
 
-        new EmailChanged(id, email).fire();
+        new EmailChanged(username, email).fire();
     }
 
-    public void confirmEmail(String email) {
-        this.email = email;
-        this.updated = Instant.now();
-
-        new EmailConfirmed(id, email).fire();
+    public void changePassword(String password) {
+        new PasswordChanged(username, password).fire();
     }
 
     public void changeLanguage(String language) {
@@ -186,13 +174,13 @@ public class User {
 
     @Value
     public static class EmailChanged implements DomainEvent {
-        User.Id userId;
+        String username;
         String email;
     }
 
     @Value
-    public static class EmailConfirmed implements DomainEvent {
-        User.Id userId;
-        String email;
+    public static class PasswordChanged implements DomainEvent {
+        String username;
+        String password;
     }
 }

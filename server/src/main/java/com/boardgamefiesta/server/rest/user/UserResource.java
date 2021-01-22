@@ -8,6 +8,7 @@ import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -77,6 +78,28 @@ public class UserResource {
 
         handleConcurrentModification(userId, user ->
                 user.changeLanguage(request.getLanguage()));
+    }
+
+    @POST
+    @Path("/{id}/change-email")
+    public void changeEmail(@PathParam("id") String id, @Valid ChangeEmailRequest request) {
+        var userId = User.Id.of(id);
+
+        checkCurrentUser(userId);
+
+        handleConcurrentModification(userId, user ->
+                user.changeEmail(request.getEmail()));
+    }
+
+    @POST
+    @Path("/{id}/change-password")
+    public void changePassword(@PathParam("id") String id, @Valid ChangePasswordRequest request) {
+        var userId = User.Id.of(id);
+
+        checkCurrentUser(userId);
+
+        handleConcurrentModification(userId, user ->
+                user.changePassword(request.getPassword()));
     }
 
     private void checkCurrentUser(User.Id userId) {
