@@ -11,9 +11,7 @@ import com.boardgamefiesta.server.domain.table.Table;
 import com.boardgamefiesta.server.domain.table.Tables;
 import com.boardgamefiesta.server.domain.user.User;
 import com.boardgamefiesta.server.domain.user.Users;
-import com.boardgamefiesta.server.rest.table.command.ActionRequest;
-import com.boardgamefiesta.server.rest.table.command.CreateTableRequest;
-import com.boardgamefiesta.server.rest.table.command.InviteRequest;
+import com.boardgamefiesta.server.rest.table.command.*;
 import com.boardgamefiesta.server.rest.table.view.LogEntryView;
 import com.boardgamefiesta.server.rest.table.view.TableView;
 import lombok.extern.slf4j.Slf4j;
@@ -271,6 +269,17 @@ public class TableResource {
             checkOwner(table);
 
             table.changeOptions(new Options(request.getOptions()));
+        });
+    }
+
+    @POST
+    @Path("/{id}/change-type")
+    @Transactional
+    public void changeType(@PathParam("id") String id, @NotNull @Valid ChangeTypeRequest request) {
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
+
+            table.changeType(request.getType());
         });
     }
 

@@ -228,8 +228,6 @@ public class Table {
         currentState = Optional.of(newState);
         historicStates.add(HistoricState.from(newState));
 
-        afterStateChange();
-
         // TODO Move this into afterStateChange to also support undoing after turn ends
         if (!state.isEnded()) {
             var newCurrentPlayer = getCurrentPlayer();
@@ -239,11 +237,17 @@ public class Table {
 
                 if (newCurrentPlayer != null) {
                     newCurrentPlayer.beginTurn(game.getTimeLimit(options));
+
+                    new BeginTurn(game.getId(), id, type, newCurrentPlayer.getUserId(),
+                            newCurrentPlayer.getTurnLimit().orElse(null),
+                            started).fire();
                 }
             }
         } else {
             currentPlayer.endTurn();
         }
+
+        afterStateChange();
     }
 
     public void skip() {
@@ -662,6 +666,16 @@ public class Table {
                 && !isPlayer(userId) && players.size() < game.getMaxNumberOfPlayers();
     }
 
+    public void changeType(Type type) {
+        if (status != Status.NEW) {
+            throw APIException.badRequest(APIError.GAME_ALREADY_STARTED_OR_ENDED);
+        }
+
+        this.type = type;
+
+        new OptionsChanged(id).fire();
+    }
+
     public enum Status {
         NEW,
         STARTED,
@@ -670,7 +684,8 @@ public class Table {
     }
 
     public enum Type {
-        REALTIME
+        REALTIME,
+        TURN_BASED
     }
 
     public enum Mode {
@@ -784,6 +799,16 @@ public class Table {
     @Value
     public static class OptionsChanged implements DomainEvent {
         @NonNull Table.Id tableId;
+    }
+
+    @Value
+    public static class BeginTurn implements DomainEvent {
+        @NonNull Game.Id gameId;
+        @NonNull Table.Id tableId;
+        @NonNull Table.Type type;
+        @NonNull Optional<User.Id> userId;
+        @NonNull Instant limit;
+        @NonNull Instant started;
     }
 
     @Value(staticConstructor = "of")

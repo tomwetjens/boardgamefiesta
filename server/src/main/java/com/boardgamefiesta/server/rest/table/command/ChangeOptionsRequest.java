@@ -1,4 +1,4 @@
-package com.boardgamefiesta.server.rest.table;
+package com.boardgamefiesta.server.rest.table.command;
 
 import lombok.Data;
 
