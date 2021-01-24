@@ -57,7 +57,7 @@ class TurnBasedEmailerTest {
 
     @Test
     void newYork() {
-        when(user.getLocale()).thenReturn(Locale.forLanguageTag("en"));
+        when(user.getLocale()).thenReturn(Locale.forLanguageTag("en-US"));
         when(user.getTimeZone()).thenReturn(ZoneId.of("America/New_York"));
 
         turnBasedEmailer.beginTurn(new Table.BeginTurn(
@@ -78,7 +78,7 @@ class TurnBasedEmailerTest {
 
     @Test
     void amsterdam() {
-        when(user.getLocale()).thenReturn(Locale.forLanguageTag("nl"));
+        when(user.getLocale()).thenReturn(Locale.forLanguageTag("nl-NL"));
         when(user.getTimeZone()).thenReturn(ZoneId.of("Europe/Amsterdam"));
 
         turnBasedEmailer.beginTurn(new Table.BeginTurn(
@@ -94,6 +94,6 @@ class TurnBasedEmailerTest {
 
         var sendEmailRequest = sendEmailRequestCaptor.getValue();
 
-        assertThat(sendEmailRequest.message().subject().data()).isEqualTo("Jouw beurt om te spelen bij Ranchers Of The Old West gestart op 24-01-2021 15:00");
+        assertThat(sendEmailRequest.message().subject().data()).startsWith("Jouw beurt om te spelen bij Ranchers Of The Old West gestart op 24-01-2");
     }
 }
