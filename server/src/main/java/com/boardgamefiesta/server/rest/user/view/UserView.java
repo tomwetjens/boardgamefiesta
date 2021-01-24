@@ -18,6 +18,7 @@ public class UserView {
     String language;
     String email;
     String location;
+    String timeZone;
 
     public UserView(User user) {
         this(user.getId(), user, null);
@@ -32,6 +33,7 @@ public class UserView {
             this.avatarUrl = user.getAvatarUrl().toString();
             this.language = user.getLanguage();
             this.location = user.getLocation().orElse(null);
+            this.timeZone = user.getTimeZone().getId();
 
             if (user.getId().equals(viewer)) {
                 this.email = user.getEmail();

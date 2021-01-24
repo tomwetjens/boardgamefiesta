@@ -12,6 +12,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,6 +89,7 @@ public class UserDynamoDbRepository implements Users {
         item.put("Expires", AttributeValue.builder().n(Long.toString(user.getExpires().getEpochSecond())).build());
         item.put("Language", AttributeValue.builder().s(user.getLanguage()).build());
         item.put("Location", user.getLocation().map(location -> AttributeValue.builder().s(location).build()).orElse(null));
+        item.put("TimeZone", AttributeValue.builder().s(user.getTimeZone().getId()).build());
 
         dynamoDbClient.putItem(PutItemRequest.builder()
                 .tableName(tableName)
@@ -115,6 +117,7 @@ public class UserDynamoDbRepository implements Users {
         expressionAttributeValues.put(":Location", user.getLocation()
                 .map(location -> AttributeValue.builder().s(location).build())
                 .orElse(AttributeValue.builder().nul(true).build()));
+        expressionAttributeValues.put(":TimeZone", AttributeValue.builder().s(user.getTimeZone().getId()).build());
 
         var builder = UpdateItemRequest.builder()
                 .tableName(tableName)
@@ -134,10 +137,12 @@ public class UserDynamoDbRepository implements Users {
                         ",LastSeen=:LastSeen" +
                         ",Expires=:Expires" +
                         ",#Language=:Language" +
-                        ",#Location=:Location")
+                        ",#Location=:Location" +
+                        ",#TimeZone=:TimeZone")
                 .expressionAttributeNames(Map.of(
                         "#Language", "Language",
-                        "#Location", "Location"
+                        "#Location", "Location",
+                        "#TimeZone", "TimeZone"
                 ))
                 .expressionAttributeValues(expressionAttributeValues)
                 .build();
@@ -207,6 +212,7 @@ public class UserDynamoDbRepository implements Users {
                 .email(item.get("Email").s())
                 .language(item.get("Language") != null ? item.get("Language").s() : User.DEFAULT_LANGUAGE)
                 .location(item.get("Location") != null ? item.get("Location").s() : null)
+                .timeZone(item.get("TimeZone") != null ? ZoneId.of(item.get("TimeZone").s()) : null)
                 .build();
     }
 

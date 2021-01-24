@@ -13,6 +13,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -78,6 +80,23 @@ public class UserResource {
 
         handleConcurrentModification(userId, user ->
                 user.changeLanguage(request.getLanguage()));
+    }
+
+    @POST
+    @Path("/{id}/change-time-zone")
+    public void changeLanguage(@PathParam("id") String id, ChangeTimeZoneRequest request) {
+        var userId = User.Id.of(id);
+
+        checkCurrentUser(userId);
+
+        try {
+            var zoneId = ZoneId.of(request.getTimeZone());
+
+            handleConcurrentModification(userId, user ->
+                    user.changeTimeZone(zoneId));
+        } catch (DateTimeException e) {
+            throw APIException.badRequest(APIError.INVALID_TIME_ZONE);
+        }
     }
 
     @POST

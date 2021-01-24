@@ -11,10 +11,13 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -70,6 +73,8 @@ public class User {
     @Getter
     @NonNull
     private String language;
+
+    private ZoneId timeZone;
 
     public static User createAutomatically(@NonNull Id id, @NonNull String username, @NonNull String email) {
         validateBeforeCreate(username);
@@ -148,8 +153,25 @@ public class User {
         this.updated = Instant.now();
     }
 
+    public Locale getLocale() {
+        return language != null ? Locale.forLanguageTag(language) : Locale.ENGLISH;
+    }
+
+    public ZoneId getTimeZone() {
+        try {
+            return timeZone != null ? timeZone : ZoneId.systemDefault();
+        } catch (DateTimeException e) {
+            return ZoneId.systemDefault();
+        }
+    }
+
     private static Instant calculateExpires(Instant lastSeen) {
         return lastSeen.plus(RETENTION_AFTER_LAST_SEEN);
+    }
+
+    public void changeTimeZone(@NonNull ZoneId timeZone) {
+        this.timeZone = timeZone;
+        this.updated = Instant.now();
     }
 
     @Value(staticConstructor = "of")
