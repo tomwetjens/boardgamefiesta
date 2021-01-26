@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
 public class UserRatingResource {
 
     @Inject
-    private Ratings ratings;
+    Ratings ratings;
 
     @Inject
-    private Users users;
+    Users users;
 
     @GET
     public List<RatingView> getRatings(@PathParam("userId") String userId,

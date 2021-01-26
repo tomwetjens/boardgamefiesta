@@ -23,13 +23,13 @@ import java.util.stream.Collectors;
 public class FriendsResource {
 
     @Inject
-    private Users users;
+    Users users;
 
     @Inject
-    private Friends friends;
+    Friends friends;
 
     @Context
-    private SecurityContext securityContext;
+    SecurityContext securityContext;
 
     @GET
     public List<UserView> get() {

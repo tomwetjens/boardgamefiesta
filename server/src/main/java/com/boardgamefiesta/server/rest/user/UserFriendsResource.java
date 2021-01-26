@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 public class UserFriendsResource {
 
     @Inject
-    private Friends friends;
+    Friends friends;
 
     @Inject
-    private Users users;
+    Users users;
 
     @GET
     public List<UserView> get(@PathParam("userId") String userId) {

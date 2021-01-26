@@ -31,10 +31,10 @@ public class UserResource {
     private static final int MAX_SEARCH_RESULTS = 5;
 
     @Inject
-    private Users users;
+    Users users;
 
     @Context
-    private SecurityContext securityContext;
+    SecurityContext securityContext;
 
     @GET
     public List<UserView> searchUsers(@QueryParam("q") String q) {

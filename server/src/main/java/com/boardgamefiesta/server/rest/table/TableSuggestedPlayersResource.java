@@ -25,13 +25,13 @@ import java.util.stream.Stream;
 public class TableSuggestedPlayersResource {
 
     @Inject
-    private Friends friends;
+    Friends friends;
 
     @Inject
-    private Users users;
+    Users users;
 
     @Inject
-    private Tables tables;
+    Tables tables;
 
     @Context
     private SecurityContext securityContext;

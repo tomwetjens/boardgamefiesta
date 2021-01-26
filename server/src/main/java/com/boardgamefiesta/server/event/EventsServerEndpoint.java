@@ -5,6 +5,8 @@ import com.boardgamefiesta.server.domain.table.Table;
 import com.boardgamefiesta.server.domain.table.Tables;
 import com.boardgamefiesta.server.domain.user.Friend;
 import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.server.event.domain.WebSocketConnection;
+import com.boardgamefiesta.server.event.domain.WebSocketConnections;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,12 +16,10 @@ import javax.enterprise.event.TransactionPhase;
 import javax.inject.Inject;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
+import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,31 +32,51 @@ public class EventsServerEndpoint {
     private static final Jsonb JSONB = JsonbBuilder.create();
 
     private static final Map<User.Id, Session> USER_SESSIONS = new ConcurrentHashMap<>();
-    private static final Map<String, Session> ANONYMOUS_SESSIONS = new ConcurrentHashMap<>();
 
+    private final WebSocketConnections webSocketConnections;
     private final Tables tables;
 
     @Inject
-    public EventsServerEndpoint(@NonNull Tables tables) {
+    public EventsServerEndpoint(@NonNull WebSocketConnections webSocketConnections,
+                                @NonNull Tables tables) {
+        this.webSocketConnections = webSocketConnections;
         this.tables = tables;
     }
 
     @OnOpen
     public void onOpen(Session session) {
-        currentUserId(session).ifPresentOrElse(userId -> USER_SESSIONS.put(userId, session),
-                () -> ANONYMOUS_SESSIONS.put(session.getId(), session));
+        currentUserId(session).ifPresent(userId -> {
+            USER_SESSIONS.put(userId, session);
+            webSocketConnections.add(WebSocketConnection.create(session.getId(), userId));
+        });
     }
 
     @OnClose
     public void onClose(Session session) {
-        currentUserId(session).ifPresentOrElse(USER_SESSIONS::remove,
-                () -> ANONYMOUS_SESSIONS.put(session.getId(), session));
+        currentUserId(session).ifPresent(USER_SESSIONS::remove);
+
+        webSocketConnections.remove(session.getId());
+    }
+
+    @OnMessage
+    public void onMessage(Session session, String data) {
+        var clientEvent = JSONB.fromJson(data, ClientEvent.class);
+
+        switch (clientEvent.getType()) {
+            case ACTIVE:
+                webSocketConnections.updateStatus(session.getId(), Instant.now(), WebSocketConnection.Status.ACTIVE);
+                break;
+            case INACTIVE:
+                webSocketConnections.updateStatus(session.getId(), Instant.now(), WebSocketConnection.Status.INACTIVE);
+                break;
+        }
     }
 
     @OnError
     public void onError(Session session, Throwable throwable) {
-        currentUserId(session).ifPresentOrElse(USER_SESSIONS::remove,
-                () -> ANONYMOUS_SESSIONS.put(session.getId(), session));
+        currentUserId(session).ifPresent(USER_SESSIONS::remove);
+
+        webSocketConnections.remove(session.getId());
     }
 
     void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted event) {
