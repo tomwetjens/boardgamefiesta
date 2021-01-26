@@ -73,12 +73,14 @@ public class WebSocketConnectionRepository implements WebSocketConnections {
         return dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
                 .indexName(USER_ID_INDEX)
+                .keyConditionExpression("UserId = :UserId")
                 .filterExpression("#Status = :Active AND #Updated >= :After")
                 .expressionAttributeNames(Map.of(
                         "#Status", "Status",
                         "#Updated", "Updated"
                 ))
                 .expressionAttributeValues(Map.of(
+                        ":UserId", AttributeValue.builder().s(userId.getId()).build(),
                         ":Active", AttributeValue.builder().s(WebSocketConnection.Status.ACTIVE.name()).build(),
                         ":After", AttributeValue.builder().n(Long.toString(after.getEpochSecond())).build()
                 ))
