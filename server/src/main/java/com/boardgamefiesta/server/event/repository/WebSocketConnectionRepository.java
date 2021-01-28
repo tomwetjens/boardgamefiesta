@@ -38,7 +38,8 @@ public class WebSocketConnectionRepository implements WebSocketConnections {
                         "UserId", AttributeValue.builder().s(webSocketConnection.getUserId().getId()).build(),
                         "Status", AttributeValue.builder().s(webSocketConnection.getStatus().name()).build(),
                         "Created", AttributeValue.builder().n(Long.toString(webSocketConnection.getCreated().getEpochSecond())).build(),
-                        "Updated", AttributeValue.builder().n(Long.toString(webSocketConnection.getUpdated().getEpochSecond())).build()
+                        "Updated", AttributeValue.builder().n(Long.toString(webSocketConnection.getUpdated().getEpochSecond())).build(),
+                        "Expires", AttributeValue.builder().n(Long.toString(webSocketConnection.getExpires().getEpochSecond())).build()
                 ))
                 .build());
     }
@@ -56,14 +57,16 @@ public class WebSocketConnectionRepository implements WebSocketConnections {
         dynamoDbClient.updateItem(UpdateItemRequest.builder()
                 .tableName(tableName)
                 .key(Map.of("Id", AttributeValue.builder().s(id).build()))
-                .updateExpression("SET #Status=:Status, #Updated=:Updated")
+                .updateExpression("SET #Status=:Status, #Updated=:Updated, #Expires=:Expires")
                 .expressionAttributeNames(Map.of(
                         "#Status", "Status",
-                        "#Updated", "Updated"
+                        "#Updated", "Updated",
+                        "#Expires", "Expires"
                 ))
                 .expressionAttributeValues(Map.of(
                         ":Status", AttributeValue.builder().s(status.name()).build(),
-                        ":Updated", AttributeValue.builder().n(Long.toString(updated.getEpochSecond())).build()
+                        ":Updated", AttributeValue.builder().n(Long.toString(updated.getEpochSecond())).build(),
+                        ":Expires", AttributeValue.builder().n(Long.toString(WebSocketConnection.calculateExpires(updated).getEpochSecond())).build()
                 ))
                 .build());
     }

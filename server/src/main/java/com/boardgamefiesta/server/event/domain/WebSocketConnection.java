@@ -7,6 +7,7 @@ import lombok.NonNull;
 
 import javax.websocket.Session;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Builder
 public class WebSocketConnection {
@@ -39,6 +40,14 @@ public class WebSocketConnection {
                 .created(Instant.now())
                 .updated(Instant.now())
                 .build();
+    }
+
+    public Instant getExpires() {
+        return calculateExpires(updated);
+    }
+
+    public static Instant calculateExpires(Instant updated) {
+        return updated.plus(2, ChronoUnit.MINUTES);
     }
 
     public enum Status {
