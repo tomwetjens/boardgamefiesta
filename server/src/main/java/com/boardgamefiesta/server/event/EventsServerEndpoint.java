@@ -173,7 +173,10 @@ public class EventsServerEndpoint {
     }
 
     private Optional<User.Id> currentUserId(Session session) {
-        return Optional.ofNullable(session.getUserPrincipal()).map(Principal::getName).map(User.Id::of);
+        return Optional.ofNullable(session.getUserPrincipal())
+                .map(Principal::getName)
+                .filter(name -> !name.isBlank())
+                .map(User.Id::of);
     }
 
 }
