@@ -87,6 +87,6 @@ public class WebSocketConnectionRepository implements WebSocketConnections {
                 .limit(1)
                 .select(Select.COUNT)
                 .build())
-                .count() == 0;
+                .count() > 0;
     }
 }
