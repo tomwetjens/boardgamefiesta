@@ -506,7 +506,7 @@ public class Table {
 
         log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getId().getId())));
 
-        new Invited(id, user.getId()).fire();
+        new Invited(id, user.getId(), game.getId(), ownerId).fire();
     }
 
     public void kick(Player player) {
@@ -711,6 +711,8 @@ public class Table {
     public static class Invited implements DomainEvent {
         Table.Id tableId;
         User.Id userId;
+        Game.Id gameId;
+        User.Id hostId;
     }
 
     @Value
