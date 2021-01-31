@@ -104,13 +104,21 @@ public abstract class PlayerBuilding extends Building {
         public static final Set<Integer> ALL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
         public static final Set<Integer> ORIGINAL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
-        public static final BuildingSet BEGINNER = new BuildingSet(ORIGINAL.stream()
-                .map(number -> number + "a")
-                .collect(Collectors.toSet()));
-
         @NonNull Set<String> names;
 
+        public static BuildingSet beginner(@NonNull Game.Options options) {
+            return new BuildingSet(buildingsForOptions(options).stream()
+                    .map(number -> number + "a")
+                    .collect(Collectors.toSet()));
+        }
+
         public static BuildingSet random(@NonNull Game.Options options, @NonNull Random random) {
+            return new BuildingSet(buildingsForOptions(options).stream()
+                    .map(number -> number + (random.nextBoolean() ? "a" : "b"))
+                    .collect(Collectors.toSet()));
+        }
+
+        private static HashSet<Integer> buildingsForOptions(Game.@NonNull Options options) {
             var numbers = new HashSet<>(ORIGINAL);
 
             if (options.isRailsToTheNorth()) {
@@ -123,15 +131,12 @@ public abstract class PlayerBuilding extends Building {
             if (options.isBuilding13()) {
                 numbers.add(13);
             }
-
-            return new BuildingSet(numbers.stream()
-                    .map(number -> number + (random.nextBoolean() ? "a" : "b"))
-                    .collect(Collectors.toSet()));
+            return numbers;
         }
 
         public static BuildingSet from(Game.Options options, @NonNull Random random) {
             return options.getBuildings() == Game.Options.Buildings.BEGINNER
-                    ? BEGINNER
+                    ? beginner(options)
                     : random(options, random);
         }
 
