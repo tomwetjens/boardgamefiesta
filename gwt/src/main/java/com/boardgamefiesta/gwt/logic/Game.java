@@ -219,7 +219,16 @@ public class Game implements State {
     }
 
     @Override
-    public void perform(@NonNull com.boardgamefiesta.api.domain.Action action, @NonNull Random random) {
+    public Set<Player> getCurrentPlayers() {
+        return Collections.singleton(currentPlayer);
+    }
+
+    @Override
+    public void perform(Player player, @NonNull com.boardgamefiesta.api.domain.Action action, @NonNull Random random) {
+        if (player != currentPlayer) {
+            throw new GWTException(GWTError.NOT_CURRENT_PLAYER);
+        }
+
         perform((Action) action, random);
     }
 
@@ -294,11 +303,10 @@ public class Game implements State {
         if (actionStack.isEmpty() && !canPlayObjectiveCard()) {
             // Can only automatically end turn when no actions remaining,
             // and player cannot (optionally) play an objective card
-            endTurn(random);
+            endTurn(currentPlayer, random);
         }
     }
 
-    @Override
     public void skip(@NonNull Random random) {
         if (isEnded()) {
             throw new GWTException(GWTError.GAME_ENDED);
@@ -311,12 +319,21 @@ public class Game implements State {
 
             endTurnIfNoMoreActions(random);
         } else {
-            endTurn(random);
+            endTurn(currentPlayer, random);
         }
     }
 
     @Override
-    public void endTurn(@NonNull Random random) {
+    public void skip(@NonNull Player player, @NonNull Random random) {
+        if (currentPlayer != player) {
+            throw new GWTException(GWTError.NOT_CURRENT_PLAYER);
+        }
+
+        skip(random);
+    }
+
+    @Override
+    public void endTurn(Player player, @NonNull Random random) {
         if (isEnded()) {
             throw new GWTException(GWTError.GAME_ENDED);
         }

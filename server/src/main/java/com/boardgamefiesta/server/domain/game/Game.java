@@ -42,8 +42,8 @@ public class Game {
         return provider.start(players, options, random);
     }
 
-    public void executeAutoma(State state, Random random) {
-        provider.executeAutoma(state, random);
+    public void executeAutoma(State state, Player player, Random random) {
+        provider.executeAutoma(state, player, random);
     }
 
     public boolean hasAutoma() {

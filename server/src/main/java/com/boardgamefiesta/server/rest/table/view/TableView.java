@@ -10,6 +10,7 @@ import lombok.Value;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,7 +43,13 @@ public class TableView {
     Map<String, Object> options;
 
     Boolean turn;
+
+    /**
+     * Deprecated in favor of {@link #currentPlayers}.
+     */
+    @Deprecated
     String currentPlayer;
+    Set<String> currentPlayers;
     Boolean canUndo;
 
     int minNumberOfPlayers;
@@ -97,14 +104,19 @@ public class TableView {
         maxNumberOfPlayers = table.getGame().getMaxNumberOfPlayers();
 
         if (table.getStatus() == Table.Status.STARTED) {
-            var currentPlayer = table.getCurrentPlayer();
+            var currentPlayers = table.getCurrentPlayers();
 
-            this.turn = currentUserId.equals(currentPlayer.getUserId().orElse(null));
-            this.currentPlayer = currentPlayer.getId().getId();
+            this.turn = currentPlayers.stream().map(Player::getUserId).flatMap(Optional::stream).anyMatch(userId -> userId.equals(currentUserId));
+
+            // For backwards compatibility
+            this.currentPlayer = !currentPlayers.isEmpty() ? currentPlayers.iterator().next().getId().getId() : null;
+
+            this.currentPlayers = table.getCurrentPlayers().stream().map(Player::getId).map(Player.Id::getId).collect(Collectors.toSet());
             this.canUndo = table.canUndo();
         } else {
             this.turn = null;
             this.currentPlayer = null;
+            this.currentPlayers = null;
             this.canUndo = null;
         }
     }

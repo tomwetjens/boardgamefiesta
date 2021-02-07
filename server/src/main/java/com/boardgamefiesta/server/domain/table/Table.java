@@ -168,7 +168,7 @@ public class Table {
 
         new Started(id).fire();
 
-        getCurrentPlayer().beginTurn(game.getTimeLimit(options));
+        getCurrentPlayers().forEach(player -> player.beginTurn(game.getTimeLimit(options)));
     }
 
     public Instant getExpires() {
@@ -184,36 +184,44 @@ public class Table {
         }
     }
 
-    public void perform(Action action) {
+    public void perform(@NonNull Player player, @NonNull Action action) {
         if (status != Status.STARTED) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
 
+        if (!isCurrentPlayer(player)) {
+            throw APIException.forbidden(APIError.NOT_YOUR_TURN);
+        }
+
         try {
-            runStateChange(state -> state.perform(action, RANDOM));
+            runStateChange(state -> state.perform(state.getPlayerByName(player.getId().getId())
+                    .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME)), action, RANDOM));
         } catch (InGameException e) {
             throw APIException.inGame(e, game.getId());
         }
     }
 
-    public void executeAutoma() {
+    public void executeAutoma(Player player) {
         if (status != Status.STARTED) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
 
-        var currentPlayer = getCurrentPlayer();
-        if (currentPlayer.getType() != Player.Type.COMPUTER) {
-            throw new IllegalStateException("Current player is not computer");
+        if (!isCurrentPlayer(player)) {
+            throw APIException.badRequest(APIError.NOT_YOUR_TURN);
         }
 
-        runStateChange(state -> game.executeAutoma(state, RANDOM));
+        if (player.getType() != Player.Type.COMPUTER) {
+            throw new IllegalStateException("Player is not computer");
+        }
+
+        runStateChange(state -> game.executeAutoma(state, getPlayer(player), RANDOM));
     }
 
     private void runStateChange(Consumer<State> change) {
         var beginState = this.currentState.orElseThrow(() -> APIException.internalError(APIError.GAME_NOT_STARTED));
         var state = beginState.getState();
 
-        var currentPlayer = getCurrentPlayer();
+        var currentPlayers = getCurrentPlayers();
 
         EventListener eventListener = event -> log.add(new LogEntry(this, event));
         state.addEventListener(eventListener);
@@ -229,48 +237,50 @@ public class Table {
         historicStates.add(HistoricState.from(newState));
 
         // TODO Move this into afterStateChange to also support undoing after turn ends
+        var newCurrentPlayers = getCurrentPlayers();
+
+        currentPlayers.stream()
+                .filter(player -> state.isEnded() || !newCurrentPlayers.contains(player))
+                .forEach(Player::endTurn);
+
         if (!state.isEnded()) {
-            var newCurrentPlayer = getCurrentPlayer();
+            newCurrentPlayers.stream()
+                    .filter(newCurrentPlayer -> !currentPlayers.contains(newCurrentPlayer))
+                    .forEach(player -> {
+                        player.beginTurn(game.getTimeLimit(options));
 
-            if (newCurrentPlayer != currentPlayer) {
-                currentPlayer.endTurn();
-
-                if (newCurrentPlayer != null) {
-                    newCurrentPlayer.beginTurn(game.getTimeLimit(options));
-
-                    new BeginTurn(game.getId(), id, type, newCurrentPlayer.getUserId(),
-                            newCurrentPlayer.getTurnLimit().orElse(null),
-                            started).fire();
-                }
-            }
-        } else {
-            currentPlayer.endTurn();
+                        new BeginTurn(game.getId(), id, type, player.getUserId(),
+                                player.getTurnLimit().orElse(null),
+                                started).fire();
+                    });
         }
 
         afterStateChange();
     }
 
-    public void skip() {
+    public void skip(Player player) {
         if (status != Status.STARTED) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
 
+        if (!isCurrentPlayer(player)) {
+            throw APIException.forbidden(APIError.NOT_YOUR_TURN);
+        }
+
         try {
-            runStateChange(state -> state.skip(RANDOM));
+            runStateChange(state -> state.skip(getPlayer(player), RANDOM));
         } catch (InGameException e) {
             throw APIException.inGame(e, game.getId());
         }
     }
 
-    public void endTurn() {
+    public void endTurn(Player player) {
         if (status != Status.STARTED) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
 
-        var player = getCurrentPlayer();
-
         try {
-            runStateChange(state -> state.endTurn(RANDOM));
+            runStateChange(state -> state.endTurn(getPlayer(player), RANDOM));
         } catch (InGameException e) {
             throw APIException.inGame(e, game.getId());
         }
@@ -470,12 +480,16 @@ public class Table {
                 .findAny();
     }
 
-    public Player getCurrentPlayer() {
+    public Set<Player> getCurrentPlayers() {
         var state = this.currentState.map(CurrentState::getState)
                 .orElseThrow(() -> APIException.badRequest(APIError.GAME_NOT_STARTED));
 
-        return getPlayerById(Player.Id.of(state.getCurrentPlayer().getName()))
-                .orElseThrow(() -> APIException.internalError(APIError.NOT_PLAYER_IN_GAME));
+        return state.getCurrentPlayers().stream()
+                .map(com.boardgamefiesta.api.domain.Player::getName)
+                .map(Player.Id::of)
+                .map(this::getPlayerById)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
     }
 
     public State getState() {
@@ -625,16 +639,19 @@ public class Table {
         afterStateChange();
     }
 
-    public void undo() {
+    public void undo(Player player) {
         if (status != Status.STARTED) {
             throw APIException.badRequest(APIError.GAME_NOT_STARTED);
         }
 
         var currentState = this.currentState
                 .orElseThrow(() -> APIException.internalError(APIError.GAME_NOT_STARTED));
-        var currentPlayer = getCurrentPlayer();
 
-        if (!currentState.canUndo()) {
+        if (!isCurrentPlayer(player)) {
+            throw APIException.forbidden(APIError.NOT_YOUR_TURN);
+        }
+
+        if (!currentState.canUndo() || currentState.getState().getCurrentPlayers().size() > 1) {
             throw APIException.badRequest(APIError.CANNOT_UNDO);
         }
 
@@ -642,15 +659,28 @@ public class Table {
                 .flatMap(historicStates::get)
                 .orElseThrow(() -> APIException.badRequest(APIError.HISTORY_NOT_AVAILABLE));
 
-        log.add(new LogEntry(currentPlayer, LogEntry.Type.UNDO));
+        log.add(new LogEntry(player, LogEntry.Type.UNDO));
 
         this.currentState = Optional.of(currentState.revertTo(historicState));
 
         afterStateChange();
     }
 
+    private boolean isCurrentPlayer(Player player) {
+        var state = currentState.orElseThrow(() -> APIException.internalError(APIError.GAME_NOT_STARTED)).getState();
+        return state.getCurrentPlayers().contains(getPlayer(player));
+    }
+
+    private com.boardgamefiesta.api.domain.Player getPlayer(Player player) {
+        var state = currentState.orElseThrow(() -> APIException.internalError(APIError.GAME_NOT_STARTED)).getState();
+        return state.getPlayerByName(player.getId().getId())
+                .orElseThrow(() -> APIException.forbidden(APIError.NOT_PLAYER_IN_GAME));
+    }
+
     public boolean canUndo() {
-        return currentState.map(CurrentState::canUndo).orElse(false);
+        return currentState.map(CurrentState::getState)
+                .map(state -> state.canUndo() && state.getCurrentPlayers().size() == 1)
+                .orElse(false);
     }
 
     public boolean isActive() {

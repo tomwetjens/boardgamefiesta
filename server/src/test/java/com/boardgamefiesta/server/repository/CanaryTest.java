@@ -35,7 +35,7 @@ public class CanaryTest {
                 .filter(table -> table.getStatus() == Table.Status.STARTED || table.getStatus() == Table.Status.ENDED)
                 .peek(table -> {
                     try {
-                        table.getCurrentPlayer();
+                        table.getCurrentPlayers();
                     } catch (Exception e) {
                         throw new AssertionError("Failed: " + table.getId(), e);
                     }

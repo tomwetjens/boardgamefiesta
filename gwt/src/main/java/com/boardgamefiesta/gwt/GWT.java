@@ -60,8 +60,8 @@ public class GWT implements GameProvider<Game> {
     }
 
     @Override
-    public void executeAutoma(Game state, Random random) {
-        new Automa().execute(state, random);
+    public void executeAutoma(Game state, Player player, Random random) {
+        new Automa().execute(state, player, random);
     }
 
     @Override

@@ -33,7 +33,7 @@ public interface GameProvider<T extends State> {
 
     ViewMapper<T> getViewMapper();
 
-    void executeAutoma(T state, Random random);
+    void executeAutoma(T state, Player player, Random random);
 
     boolean hasAutoma();
 

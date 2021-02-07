@@ -152,9 +152,10 @@ public class TableResource {
     @Transactional
     public void perform(@PathParam("id") String id, ActionRequest request) {
         handleConcurrentModification(Table.Id.of(id), table -> {
-            checkTurn(table);
+            var player = determinePlayer(table);
+            checkTurn(table, player);
 
-            table.perform(request.toAction(table.getGame(), table.getState()));
+            table.perform(player, request.toAction(table.getGame(), table.getState()));
         });
     }
 
@@ -163,9 +164,10 @@ public class TableResource {
     @Transactional
     public void skip(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
-            checkTurn(table);
+            var player = determinePlayer(table);
+            checkTurn(table, player);
 
-            table.skip();
+            table.skip(player);
         });
     }
 
@@ -174,9 +176,10 @@ public class TableResource {
     @Transactional
     public void endTurn(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
-            checkTurn(table);
+            var player = determinePlayer(table);
+            checkTurn(table, player);
 
-            table.endTurn();
+            table.endTurn(player);
         });
     }
 
@@ -185,9 +188,10 @@ public class TableResource {
     @Transactional
     public void undo(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
-            checkTurn(table);
+            var player = determinePlayer(table);
+            checkTurn(table, player);
 
-            table.undo();
+            table.undo(player);
         });
     }
 
@@ -296,7 +300,7 @@ public class TableResource {
             throw new NotFoundException();
         }
 
-        var viewingPlayer = determinePlayer(table);
+        var viewingPlayer = determineViewingPlayer(table);
 
         return table.getGame().getProvider().getViewMapper().toView(state, viewingPlayer
                 .map(Player::getId)
@@ -348,7 +352,13 @@ public class TableResource {
         }
     }
 
-    private Optional<Player> determinePlayer(Table table) {
+    private Player determinePlayer(Table table) {
+        var currentUserId = currentUserId();
+
+        return table.getPlayerByUserId(currentUserId).orElseThrow(() -> APIException.forbidden(APIError.NOT_PLAYER_IN_GAME));
+    }
+
+    private Optional<Player> determineViewingPlayer(Table table) {
         var currentUserId = currentUserId();
 
         return table.getPlayerByUserId(currentUserId);
@@ -374,11 +384,10 @@ public class TableResource {
                 .orElseThrow(() -> APIException.internalError(APIError.NO_SUCH_USER));
     }
 
-    private void checkTurn(Table table) {
-        var performingPlayer = determinePlayer(table);
-        var currentPlayer = table.getCurrentPlayer();
+    private void checkTurn(Table table, Player player) {
+        var currentPlayer = table.getCurrentPlayers();
 
-        if (currentPlayer == null || !currentPlayer.equals(performingPlayer.orElse(null))) {
+        if (currentPlayer == null || !currentPlayer.contains(player)) {
             throw APIException.forbidden(APIError.NOT_YOUR_TURN);
         }
     }

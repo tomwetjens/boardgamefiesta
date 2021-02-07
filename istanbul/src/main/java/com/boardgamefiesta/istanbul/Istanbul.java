@@ -52,7 +52,7 @@ public class Istanbul implements GameProvider<Game> {
     }
 
     @Override
-    public void executeAutoma(Game state, Random random) {
+    public void executeAutoma(Game state, Player player, Random random) {
         throw new UnsupportedOperationException();
     }
 

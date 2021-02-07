@@ -90,13 +90,16 @@ class TableTest {
         void undo() {
             when(currentPlayer.getName()).thenReturn("playerA");
 
-            when(currentState.getCurrentPlayer()).thenReturn(currentPlayer);
+            when(currentState.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentState.canUndo()).thenReturn(true);
+            when(currentState.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
 
-            when(currentMinus1.getCurrentPlayer()).thenReturn(currentPlayer);
+            when(currentMinus1.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentMinus1.canUndo()).thenReturn(true);
+            when(currentMinus1.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
 
-            when(currentMinus2.getCurrentPlayer()).thenReturn(currentPlayer);
+            when(currentMinus2.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
+            when(currentMinus2.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
 
             var table = Table.builder()
                     .id(Table.Id.of("tableId"))
@@ -118,18 +121,18 @@ class TableTest {
                             Table.HistoricState.of(T_MINUS_2, Optional.empty(), currentMinus2)))
                     .build();
 
-            table.undo();
+            table.undo(playerA);
 
             assertThat(table.getState()).isSameAs(currentMinus1);
             assertThat(table.getCurrentState().get().getTimestamp()).isSameAs(T_MINUS_1);
 
-            table.undo();
+            table.undo(playerA);
 
             assertThat(table.getState()).isSameAs(currentMinus2);
             assertThat(table.getCurrentState().get().getTimestamp()).isSameAs(T_MINUS_2);
 
             var beforePerform = Instant.now();
-            table.perform(action);
+            table.perform(playerA, action);
 
             assertThat(table.getState()).isSameAs(currentMinus2);
             assertThat(table.getCurrentState().get().getTimestamp()).isAfterOrEqualTo(beforePerform);

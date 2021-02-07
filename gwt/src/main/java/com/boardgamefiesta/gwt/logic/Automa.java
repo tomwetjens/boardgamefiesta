@@ -1,12 +1,14 @@
 package com.boardgamefiesta.gwt.logic;
 
+import com.boardgamefiesta.api.domain.Player;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Automa {
 
-    public void execute(Game game, Random random) {
+    public void execute(Game game, Player player, Random random) {
         // TODO Currently a super stupid implementation
         var currentPlayerState = game.currentPlayerState();
         var possibleActions = game.possibleActions();
@@ -18,19 +20,19 @@ public class Automa {
                 game.perform(new Action.PlaceBid(lowestBidPossible(game)), random);
             }
         } else if (possibleActions.contains(Action.Move.class)) {
-            game.perform(new Action.Move(calculateMove(game)), random);
+            game.perform(new Action.Move(calculateMove(game, player)), random);
         } else if (possibleActions.contains(Action.Move1Forward.class)) {
-            game.perform(new Action.Move1Forward(calculateMove(game)), random);
+            game.perform(new Action.Move1Forward(calculateMove(game, player)), random);
         } else if (possibleActions.contains(Action.Move2Forward.class)) {
-            game.perform(new Action.Move2Forward(calculateMove(game)), random);
+            game.perform(new Action.Move2Forward(calculateMove(game, player)), random);
         } else if (possibleActions.contains(Action.Move3Forward.class)) {
-            game.perform(new Action.Move3Forward(calculateMove(game)), random);
+            game.perform(new Action.Move3Forward(calculateMove(game, player)), random);
         } else if (possibleActions.contains(Action.Move3ForwardWithoutFees.class)) {
-            game.perform(new Action.Move3ForwardWithoutFees(calculateMoveWithoutFees(game)), random);
+            game.perform(new Action.Move3ForwardWithoutFees(calculateMoveWithoutFees(game, player)), random);
         } else if (possibleActions.contains(Action.Move4Forward.class)) {
-            game.perform(new Action.Move4Forward(calculateMove(game)), random);
+            game.perform(new Action.Move4Forward(calculateMove(game, player)), random);
         } else if (possibleActions.contains(Action.Move5Forward.class)) {
-            game.perform(new Action.Move5Forward(calculateMove(game)), random);
+            game.perform(new Action.Move5Forward(calculateMove(game, player)), random);
         } else if (possibleActions.contains(Action.ChooseForesight1.class)) {
             game.perform(new Action.ChooseForesight1(chooseForesight(game.getForesights().choices(0), random)), random);
         } else if (possibleActions.contains(Action.ChooseForesight2.class)) {
@@ -39,7 +41,7 @@ public class Automa {
             game.perform(new Action.ChooseForesight3(chooseForesight(game.getForesights().choices(2), random)), random);
         } else if (possibleActions.contains(Action.DeliverToCity.class)) {
             // TODO Pick highest possible city for now
-            var possibleDeliveries = game.possibleDeliveries(game.getCurrentPlayer());
+            var possibleDeliveries = game.possibleDeliveries(player);
             game.perform(possibleDeliveries.stream().max(Comparator.comparingInt(RailroadTrack.PossibleDelivery::getReward))
                     .map(possibleDelivery -> new Action.DeliverToCity(possibleDelivery.getCity(), possibleDelivery.getCertificates()))
                     .orElse(new Action.DeliverToCity(City.KANSAS_CITY, 0)), random);
@@ -64,7 +66,7 @@ public class Automa {
                 }
             }
             // TODO For now just stupidly end turn
-            game.endTurn(random);
+            game.endTurn(player, random);
         }
     }
 
@@ -85,14 +87,14 @@ public class Automa {
                         .orElse(new Bid(0, 0)));
     }
 
-    private List<Location> calculateMove(Game game) {
+    private List<Location> calculateMove(Game game, Player player) {
         // TODO For now just go to the nearest own player/neutral building, using the cheapest route
-        return game.possibleMoves(game.getCurrentPlayer()).stream()
+        return game.possibleMoves(player).stream()
                 .min(Comparator.comparingInt((PossibleMove possibleMove) ->
                         possibleMove.getTo() instanceof Location.BuildingLocation
                                 ? ((Location.BuildingLocation) possibleMove.getTo()).getBuilding()
                                 .map(building -> building instanceof PlayerBuilding
-                                        ? ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer() ? 0
+                                        ? ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayers() ? 0
                                         : 2 // Other player's building
                                         : 1) // Neutral building
                                 .orElse(2) // Empty, shouldn't happen
@@ -103,9 +105,9 @@ public class Automa {
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
     }
 
-    private List<Location> calculateMoveWithoutFees(Game game) {
+    private List<Location> calculateMoveWithoutFees(Game game, Player player) {
         // TODO For now just go to closest location past the highest fees
-        return game.possibleMoves(game.getCurrentPlayer()).stream()
+        return game.possibleMoves(player).stream()
                 .max(Comparator.comparingInt(PossibleMove::getCost)
                         .thenComparing(Comparator.comparingInt((PossibleMove possibleMove) -> possibleMove.getSteps().size()).reversed()))
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS))

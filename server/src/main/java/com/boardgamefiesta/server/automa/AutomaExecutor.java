@@ -34,11 +34,15 @@ class AutomaExecutor {
                     return;
                 }
 
-                if (table.getCurrentPlayer().getType() != Player.Type.COMPUTER) {
+                if (request.getPlayer().getType() != Player.Type.COMPUTER) {
                     return;
                 }
 
-                table.executeAutoma();
+                if (!table.getCurrentPlayers().contains(request.getPlayer())) {
+                    return;
+                }
+
+                table.executeAutoma(request.getPlayer());
 
                 try {
                     tables.update(table);

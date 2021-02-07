@@ -169,7 +169,7 @@ public class Game implements State {
     }
 
     @Override
-    public void perform(com.boardgamefiesta.api.domain.Action action, Random random) {
+    public void perform(Player player, com.boardgamefiesta.api.domain.Action action, Random random) {
         perform((Action) action, random);
     }
 
@@ -234,8 +234,13 @@ public class Game implements State {
         actionQueue.addFirst(actionResult.getFollowUpActions());
 
         if (!canPerformAnotherAction()) {
-            endTurn(random);
+            endTurn(currentPlayer, random);
         }
+    }
+
+    @Override
+    public Set<Player> getCurrentPlayers() {
+        return Collections.singleton(currentPlayer);
     }
 
     private boolean canPerformAnotherAction() {
@@ -251,15 +256,23 @@ public class Game implements State {
     }
 
     @Override
+    public void skip(@NonNull Player player, @NonNull Random random) {
+        skip(random);
+    }
+
     public void skip(@NonNull Random random) {
         actionQueue.skip();
 
         if (actionQueue.isEmpty()) {
-            endTurn(random);
+            endTurn(currentPlayer, random);
         }
     }
 
     @Override
+    public void endTurn(Player player, @NonNull Random random) {
+        endTurn(random);
+    }
+
     public void endTurn(@NonNull Random random) {
         actionQueue.skipAll();
 

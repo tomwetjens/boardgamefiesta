@@ -8,15 +8,15 @@ import java.util.Random;
 import java.util.Set;
 
 public interface State {
-    void perform(@NonNull Action action, @NonNull Random random);
+    void perform(Player player, Action action, Random random);
 
     void addEventListener(EventListener eventListener);
 
     void removeEventListener(EventListener eventListener);
 
-    void skip(@NonNull Random random);
+    void skip(Player player, Random random);
 
-    void endTurn(@NonNull Random random);
+    void endTurn(Player player, Random random);
 
     List<Player> getPlayers();
 
@@ -28,7 +28,7 @@ public interface State {
 
     boolean canUndo();
 
-    Player getCurrentPlayer();
+    Set<Player> getCurrentPlayers();
 
     default Optional<Player> getPlayerByName(@NonNull String name) {
         return getPlayers().stream().filter(player -> name.equals(player.getName())).findAny();
