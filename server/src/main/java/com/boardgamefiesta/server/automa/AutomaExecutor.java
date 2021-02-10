@@ -38,7 +38,7 @@ class AutomaExecutor {
                     return;
                 }
 
-                if (!table.getCurrentPlayers().contains(request.getPlayer())) {
+                if (table.getCurrentPlayers().stream().noneMatch(player -> player.getId().equals(request.getPlayer().getId()))) {
                     return;
                 }
 
