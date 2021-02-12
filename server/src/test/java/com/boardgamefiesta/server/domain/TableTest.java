@@ -97,6 +97,7 @@ class TableTest {
             when(currentMinus1.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentMinus1.canUndo()).thenReturn(true);
             when(currentMinus1.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
+            when(currentMinus1.getPlayerByName("playerB")).thenReturn(Optional.empty());
 
             when(currentMinus2.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentMinus2.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
