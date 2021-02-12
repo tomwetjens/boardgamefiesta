@@ -1413,9 +1413,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             RailroadTrack.EngineMove engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, Integer.MAX_VALUE);
 
-            game.fireActionEvent(this, List.of(Integer.toString(engineMove.getSteps()), to.getName()));
+            game.fireActionEvent(this, List.of(Integer.toString(engineMove.getStepsNotCountingTurnouts()), to.getName()));
 
-            game.currentPlayerState().setLastEngineMove(engineMove.getSteps());
+            game.currentPlayerState().setLastEngineMove(engineMove.getStepsNotCountingTurnouts());
 
             return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(DeliverToCity.class))
                     .andThen(engineMove.getImmediateActions()));

@@ -391,7 +391,7 @@ public class RailroadTrack {
             }
         }
 
-        return new EngineMove(immediateActions, reachableSpace.getSteps());
+        return new EngineMove(from, to, immediateActions, reachableSpace.getSteps());
     }
 
     public Space getSpace(Station station) {
@@ -487,8 +487,15 @@ public class RailroadTrack {
 
     @Value
     public static class EngineMove {
+        Space from;
+        Space to;
         ImmediateActions immediateActions;
         int steps;
+
+        int getStepsNotCountingTurnouts() {
+            return to.isTurnout() ? steps - 1 : steps;
+        }
+
     }
 
     public Set<Space> reachableSpacesForward(@NonNull Space from, int atLeast, int atMost) {
@@ -930,6 +937,11 @@ public class RailroadTrack {
         Space to(Space other) {
             next.add(other);
             return this;
+        }
+
+        public boolean isTurnout() {
+            return previous.size() == 1 && next.size() == 1 &&
+                    previous.iterator().next().next.contains(next.iterator().next());
         }
 
         private static final class Turnout extends Space {

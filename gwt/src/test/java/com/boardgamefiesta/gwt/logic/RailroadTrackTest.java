@@ -218,6 +218,34 @@ class RailroadTrackTest {
     }
 
     @Nested
+    class MoveEngineBackwardsTest {
+
+        @Test
+        void moveBackwardsNotIntoTurnout() {
+            // Given
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("25"), 1, Integer.MAX_VALUE);
+
+            // When
+            var engineMove = railroadTrack.moveEngineBackwards(playerA, railroadTrack.getSpace("21"), 0, Integer.MAX_VALUE);
+
+            // Then
+            assertThat(engineMove.getStepsNotCountingTurnouts()).isEqualTo(4);
+        }
+
+        @Test
+        void moveBackwardsIntoTurnout() {
+            // Given
+            railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("25"), 1, Integer.MAX_VALUE);
+
+            // When
+            var engineMove = railroadTrack.moveEngineBackwards(playerA, railroadTrack.getSpace("21.5"), 0, Integer.MAX_VALUE);
+
+            // Then
+            assertThat(engineMove.getStepsNotCountingTurnouts()).isEqualTo(3);
+        }
+    }
+
+    @Nested
     class PossibleDeliveries {
 
         static final int MAX_HAND_VALUE = 28;
