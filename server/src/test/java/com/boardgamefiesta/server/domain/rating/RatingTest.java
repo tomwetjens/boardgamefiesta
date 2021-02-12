@@ -22,6 +22,7 @@ class RatingTest {
     private static final User.Id A = User.Id.of("A");
     private static final User.Id B = User.Id.of("B");
     private static final User.Id C = User.Id.of("C");
+    private static final User.Id D = User.Id.of("D");
 
     @Nested
     class Initial {
@@ -111,8 +112,8 @@ class RatingTest {
             var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
             var b2 = b1.adjust(ratings, TABLE_ID, scores, 0);
 
-            assertThat(a2.getRating()).isEqualTo(66f, STRICT);
-            assertThat(a2.getDeltas().get(B)).isEqualTo(16f, STRICT);
+            assertThat(a2.getRating()).isEqualTo(58f, STRICT);
+            assertThat(a2.getDeltas().get(B)).isEqualTo(8f, STRICT);
 
             assertThat(b2.getRating()).isEqualTo(50f, STRICT);
             assertThat(b2.getDeltas().get(A)).isEqualTo(0, STRICT);
@@ -139,9 +140,9 @@ class RatingTest {
             assertThat(b2.getDeltas().get(A)).isEqualTo(0, STRICT);
             assertThat(b2.getDeltas().get(C)).isEqualTo(10.24f, STRICT);
 
-            assertThat(c2.getRating()).isEqualTo(180.62f, STRICT);
-            assertThat(c2.getDeltas().get(A)).isEqualTo(-9.14f, STRICT);
-            assertThat(c2.getDeltas().get(B)).isEqualTo(-10.24f, STRICT);
+            assertThat(c2.getRating()).isEqualTo(185.46f, STRICT);
+            assertThat(c2.getDeltas().get(A)).isEqualTo(-6.85f, STRICT);
+            assertThat(c2.getDeltas().get(B)).isEqualTo(-7.68f, STRICT);
         }
 
         @Test
@@ -194,6 +195,22 @@ class RatingTest {
             var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
 
             assertThat(a2.getRating()).isGreaterThan(a1.getRating());
+        }
+
+        @Test
+        void gainMoreWhenWinningAgainstMoreHigherRatedPlayers() {
+            var a1 = Rating.initial(A, GAME_ID, 100);
+            var b1 = Rating.initial(B, GAME_ID, 200);
+            var c1 = Rating.initial(C, GAME_ID, 200);
+            var d1 = Rating.initial(D, GAME_ID, 200);
+
+            var adjustedAfterWinningAgainst1Opponent = a1.adjust(Set.of(a1, b1), TABLE_ID,
+                    Map.of(A, 4, B, 3), 4);
+            var adjustedAfterWinningAgainst3Opponents = a1.adjust(Set.of(a1, b1, c1, d1), TABLE_ID,
+                    Map.of(A, 4, B, 3, C, 2, D, 1), 4);
+
+            assertThat(adjustedAfterWinningAgainst3Opponents.getRating())
+                    .isGreaterThan(adjustedAfterWinningAgainst1Opponent.getRating());
         }
     }
 }
