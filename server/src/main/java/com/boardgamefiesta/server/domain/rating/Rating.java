@@ -20,7 +20,6 @@ public class Rating {
 
     private static final float INITIAL_RATING = 0;
     private static final float MIN_RATING = 100;
-    public static final float K_FACTOR = 32f;
 
     @NonNull
     User.Id userId;
@@ -57,8 +56,6 @@ public class Rating {
 
         var numberOfOpponents = opponents.size();
 
-        var kFactor = calculateKFactor(numberOfOpponents);
-
         // Assume 1v1 sub matches for now, no teams
         // So each player's score is considered against each other player's score individually
 
@@ -72,6 +69,7 @@ public class Rating {
                     var actualScore = actualScores.get(entry.getKey());
                     var expectedScore = expectedScores.get(entry.getKey());
 
+                    var kFactor = calculateKFactor(numberOfOpponents);
                     var delta = kFactor * (actualScore - expectedScore);
 
                     // Below a certain rating, a player cannot lose any points
@@ -97,8 +95,8 @@ public class Rating {
 
     private float calculateKFactor(int numberOfOpponents) {
         // TODO How to determine K factor
-        // Now assuming, the more opponents a player has, the more difficult, therefore less rating to lose
-        return K_FACTOR / numberOfOpponents;
+        // For now, the higher a player's rating the less he should gain or lose
+        return rating < 200 ? 16 : rating < 400 ? 12 : 8;
     }
 
 }
