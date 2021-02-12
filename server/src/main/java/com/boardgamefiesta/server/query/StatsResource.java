@@ -5,6 +5,8 @@ import com.boardgamefiesta.server.domain.game.Game;
 import com.boardgamefiesta.server.domain.table.Player;
 import com.boardgamefiesta.server.domain.table.Table;
 import com.boardgamefiesta.server.domain.table.Tables;
+import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.server.domain.user.Users;
 import lombok.NonNull;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -18,6 +20,7 @@ import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 // Disabled because it took the server down due to memory issues
@@ -27,15 +30,22 @@ public class StatsResource {
 
     Tables tables;
 
+    Users users;
+
     @Inject
-    public StatsResource(@NonNull Tables tables) {
+    public StatsResource(@NonNull Tables tables,
+                         @NonNull Users users) {
         this.tables = tables;
+        this.users = users;
     }
 
     @GET
     @Produces("text/csv")
     public Response get(@PathParam("gameId") String gameId) {
         return Response.ok((StreamingOutput) outputStream -> {
+
+            var userMap = new HashMap<User.Id, User>();
+
             try (PrintWriter writer = new PrintWriter(outputStream)) {
                 List<String> keys = new ArrayList<>();
 
@@ -51,14 +61,16 @@ public class StatsResource {
                                 writeHeader(writer, keys);
                             }
 
-                            writeRow(writer, keys, table, player, stats);
+                            var user = userMap.computeIfAbsent(player.getUserId().get(), userId -> users.findById(userId, false));
+
+                            writeRow(writer, keys, table, player, user, stats);
                         }));
             }
         }).header("Content-Disposition", "attachment; filename=\"" + gameId + "_" + Instant.now().toString().replace(":", "") + ".csv\"").build();
     }
 
     private void writeHeader(PrintWriter writer, List<String> keys) {
-        writer.print("tableId,time,score,winner");
+        writer.print("tableId,started,time,username,score,winner");
         keys.forEach(key -> {
             writer.print(',');
             writer.print(key);
@@ -66,10 +78,14 @@ public class StatsResource {
         writer.println();
     }
 
-    private void writeRow(PrintWriter writer, List<String> keys, Table table, Player player, Stats stats) {
+    private void writeRow(PrintWriter writer, List<String> keys, Table table, Player player, User user, Stats stats) {
         writer.print(table.getId().getId());
         writer.print(',');
+        writer.print(table.getStarted().toString());
+        writer.print(',');
         writer.print(Duration.between(table.getStarted(), table.getEnded()).toMinutes());
+        writer.print(',');
+        writer.print(user.getUsername());
         writer.print(',');
         writer.print(player.getScore().map(score -> Integer.toString(score)).orElse(""));
         writer.print(',');
