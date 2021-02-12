@@ -469,6 +469,7 @@ public class Game implements State {
         var playerState = playerState(player);
 
         var stats = Stats.builder()
+                .value("rttn", railsToTheNorth ? 'Y' : 'N')
                 .value("players", playerOrder.size())
                 .value("seat", playerOrder.indexOf(player) + 1)
                 .value("cowboys", playerState.getNumberOfCowboys())
@@ -485,10 +486,11 @@ public class Game implements State {
                         stats.value("score." + category.name(), value)));
 
         for (City city : City.values()) {
-            stats.value("deliveries." + city.name(),
-                    railroadTrack.getDeliveries().get(city).stream()
+            var players = railroadTrack.getDeliveries().get(city);
+            stats.value("deliveries." + city.name(), players != null ?
+                    players.stream()
                             .filter(delivery -> delivery == player)
-                            .count());
+                            .count() : 0);
         }
 
         for (String name : List.of("A", "B", "C", "D", "E", "F", "G")) {
@@ -499,8 +501,8 @@ public class Game implements State {
                     .orElse(""));
         }
 
-        for (var number : PlayerBuilding.BuildingSet.ALL) {
-            for (var side : PlayerBuilding.Side.values()) {
+        for (var number : PlayerBuilding.BuildingSet.ALL.stream().sorted().collect(Collectors.toList())) {
+            for (var side : Arrays.stream(PlayerBuilding.Side.values()).sorted().collect(Collectors.toList())) {
                 var name = PlayerBuilding.Name.of(number, side).toString();
 
                 stats.value("building." + name, trail.getBuildingLocations().stream()
