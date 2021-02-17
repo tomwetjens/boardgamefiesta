@@ -9,7 +9,7 @@ public class EloRatingSystem implements RatingSystem {
     }
 
     @Override
-    public int calc(float actualScore, Rating currentRating, Rating opponentRating, int numberOfPlayers) {
+    public int calculateNewRating(float actualScore, Rating currentRating, Rating opponentRating, int numberOfPlayers) {
         var expectedScore = 1f / (1f + (float) Math.pow(10, ((opponentRating.getRating() - currentRating.getRating()) / 400f)));
 
         var kFactor = 64f / numberOfPlayers;

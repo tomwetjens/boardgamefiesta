@@ -57,12 +57,12 @@ public class Rating {
                 .filter(entry -> !entry.getKey().equals(userId))
                 .collect(Collectors.toMap(Map.Entry::getKey, opponentScore -> {
                     var actualScore = actualScore(scores.get(userId), opponentScore.getValue());
-                    return RATING_SYSTEM.calc(actualScore, this, currentRatings.get(opponentScore.getKey()), numberOfPlayers) - rating;
+                    return RATING_SYSTEM.calculateNewRating(actualScore, this, currentRatings.get(opponentScore.getKey()), numberOfPlayers) - rating;
                 }));
 
         var rating = this.rating + deltas.values().stream().reduce(Integer::sum).orElse(0);
 
-        return new Rating(this.userId, table.getEnded(), this.gameId, tableId, rating, deltas);
+        return new Rating(userId, table.getEnded(), table.getGame().getId(), table.getId(), rating, deltas);
     }
 
     private float actualScore(int score, int opponentScore) {
