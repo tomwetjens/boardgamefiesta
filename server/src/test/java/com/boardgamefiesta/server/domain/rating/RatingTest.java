@@ -27,6 +27,9 @@ class RatingTest {
     private static final User.Id D = User.Id.of("D");
 
     @Mock
+    Game game;
+
+    @Mock
     Table table;
 
     @Nested
@@ -42,6 +45,10 @@ class RatingTest {
 
         @BeforeEach
         void setUp() {
+            when(game.getId()).thenReturn(GAME_ID);
+
+            when(table.getId()).thenReturn(Table.Id.of("aTable"));
+            when(table.getGame()).thenReturn(game);
             when(table.getEnded()).thenReturn(Instant.now());
         }
 
