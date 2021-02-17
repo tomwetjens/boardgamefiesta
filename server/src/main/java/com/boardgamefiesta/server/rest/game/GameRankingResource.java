@@ -30,8 +30,8 @@ public class GameRankingResource {
     @GET
     public List<RankingView> getRanking(@PathParam("gameId") String gameId) {
         return ratings.findRanking(Game.Id.of(gameId), 10)
-                .flatMap(userId -> users.findOptionallyById(userId)
-                        .map(user -> new RankingView(user, ratings.findLatest(userId, Game.Id.of(gameId))))
+                .flatMap(ranking -> users.findOptionallyById(ranking.getUserId())
+                        .map(user -> new RankingView(user, ranking.getRating()))
                         .stream())
                 .collect(Collectors.toList());
     }

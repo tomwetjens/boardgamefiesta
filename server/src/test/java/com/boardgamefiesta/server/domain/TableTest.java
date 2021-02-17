@@ -101,6 +101,7 @@ class TableTest {
 
             when(currentMinus2.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentMinus2.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
+            when(currentMinus2.getPlayerByName("playerB")).thenReturn(Optional.empty());
 
             var table = Table.builder()
                     .id(Table.Id.of("tableId"))

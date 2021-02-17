@@ -17,6 +17,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class UserTablesResource {
 
     private Map<User.Id, Rating> getRatingMap(Table table, Map<User.Id, Rating> ratingMap) {
         table.getPlayers().forEach(player -> player.getUserId().ifPresent(userId ->
-                ratingMap.computeIfAbsent(userId, k -> ratings.findLatest(userId, table.getGame().getId()))));
+                ratingMap.computeIfAbsent(userId, k -> ratings.findLatest(userId, table.getGame().getId(), Instant.now()))));
         return ratingMap;
     }
 }

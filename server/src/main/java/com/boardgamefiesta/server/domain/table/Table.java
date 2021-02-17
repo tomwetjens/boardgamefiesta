@@ -706,6 +706,15 @@ public class Table {
         new OptionsChanged(id).fire();
     }
 
+    public Map<User.Id, Integer> getUserScores() {
+        return players.stream()
+                .filter(player -> player.getType() == Player.Type.USER)
+                .filter(Player::isPlaying)
+                .collect(Collectors.toMap(
+                        player -> player.getUserId().orElseThrow(),
+                        player -> player.getScore().orElseThrow()));
+    }
+
     public enum Status {
         NEW,
         STARTED,

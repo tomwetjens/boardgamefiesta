@@ -401,7 +401,7 @@ public class TableResource {
     private Map<User.Id, Rating> getRatingMap(Table table) {
         return table.getPlayers().stream()
                 .flatMap(player -> player.getUserId().stream())
-                .map(userId -> ratings.findLatest(userId, table.getGame().getId()))
+                .map(userId -> ratings.findLatest(userId, table.getGame().getId(), Instant.now()))
                 .collect(Collectors.toMap(Rating::getUserId, Function.identity()));
     }
 }

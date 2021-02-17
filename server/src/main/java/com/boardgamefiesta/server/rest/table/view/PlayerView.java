@@ -19,7 +19,7 @@ public class PlayerView {
     Player.Type type;
     UserView user;
     Player.Status status;
-    Float rating;
+    Integer rating;
     Instant turnLimit;
     Integer score;
     Boolean winner;

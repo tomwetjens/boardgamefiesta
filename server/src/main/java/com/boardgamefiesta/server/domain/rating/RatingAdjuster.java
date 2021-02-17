@@ -10,6 +10,10 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.event.TransactionPhase;
 import javax.inject.Inject;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -32,39 +36,38 @@ public class RatingAdjuster {
         try {
             var table = tables.findById(event.getTableId(), true);
 
-            if (table.getStatus() != Table.Status.ENDED) {
-                // Ignore
-                return;
+            var result = adjustRatings(table);
+
+            if (!result.isEmpty()) {
+                ratings.addAll(result);
             }
-
-            if (table.getMode() != Table.Mode.NORMAL) {
-                // Ignore training mode
-                return;
-            }
-
-            var playerRatings = table.getPlayers().stream()
-                    .filter(Player::isPlaying)
-                    // Only users can have ratings
-                    .flatMap(player -> player.getUserId().stream())
-                    .map(userId -> ratings.findLatest(userId, table.getGame().getId()))
-                    .collect(Collectors.toList());
-
-            var playerScores = table.getPlayers().stream()
-                    // Computer players have no rating and therefore cannot be considered
-                    .filter(player -> player.getType() == Player.Type.USER)
-                    .filter(Player::isPlaying)
-                    .collect(Collectors.toMap(
-                            player -> player.getUserId().orElseThrow(),
-                            player -> player.getScore().orElseThrow()));
-
-            ratings.addAll(playerRatings.stream()
-                    .map(rating -> rating.adjust(playerRatings, table.getId(), playerScores, playerScores.get(rating.getUserId())))
-                    // If no deltas (no change), then no need to add to repository
-                    .filter(rating -> !rating.getDeltas().isEmpty())
-                    .collect(Collectors.toList()));
         } catch (RuntimeException e) {
             log.error("Error while adjusting rating after: {}", event, e);
         }
+    }
+
+    public Set<Rating> adjustRatings(Table table) {
+        if (table.getStatus() != Table.Status.ENDED) {
+            // Ignore
+            return Collections.emptySet();
+        }
+
+        if (table.getMode() != Table.Mode.NORMAL) {
+            // Ignore training mode
+            return Collections.emptySet();
+        }
+
+        var playerRatings = table.getPlayers().stream()
+                .filter(Player::isPlaying)
+                // Only users can have ratings
+                .flatMap(player -> player.getUserId().stream())
+                .collect(Collectors.toMap(Function.identity(), userId -> ratings.findLatest(userId, table.getGame().getId(), table.getEnded())));
+
+        return playerRatings.values().stream()
+                .map(rating -> rating.adjust(playerRatings, table))
+                // If no deltas (no change), then no need to add to repository
+                .filter(rating -> !rating.getDeltas().isEmpty())
+                .collect(Collectors.toSet());
     }
 
 }

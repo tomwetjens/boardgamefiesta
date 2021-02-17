@@ -3,120 +3,46 @@ package com.boardgamefiesta.server.domain.rating;
 import com.boardgamefiesta.server.domain.game.Game;
 import com.boardgamefiesta.server.domain.table.Table;
 import com.boardgamefiesta.server.domain.user.User;
-import org.assertj.core.data.Offset;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class RatingTest {
 
-    private static final Offset<Float> STRICT = Offset.strictOffset(0.01f);
-
     private static final Game.Id GAME_ID = Game.Id.of("aGame");
-    private static final Table.Id TABLE_ID = Table.Id.of("aTable");
 
     private static final User.Id A = User.Id.of("A");
     private static final User.Id B = User.Id.of("B");
     private static final User.Id C = User.Id.of("C");
     private static final User.Id D = User.Id.of("D");
 
+    @Mock
+    Table table;
+
     @Nested
     class Initial {
         @Test
         void initial() {
-            assertThat(Rating.initial(A, GAME_ID).getRating()).isEqualTo(0, STRICT);
-        }
-    }
-
-    @Nested
-    class ExpectedScoreAgainst {
-
-        @Test
-        void bothEqual() {
-            var a = Rating.initial(A, GAME_ID, 100);
-            var b = Rating.initial(B, GAME_ID, 100);
-
-            assertThat(a.expectedAgainst(b)).isEqualTo(0.5f, STRICT);
-        }
-
-        @Test
-        void difference50() {
-            var a = Rating.initial(A, GAME_ID, 150);
-            var b = Rating.initial(B, GAME_ID, 100);
-
-            assertThat(a.expectedAgainst(b)).isEqualTo(0.57f, STRICT);
-        }
-
-        @Test
-        void difference300() {
-            var a = Rating.initial(A, GAME_ID, 400);
-            var b = Rating.initial(B, GAME_ID, 100);
-
-            assertThat(a.expectedAgainst(b)).isEqualTo(0.85f, STRICT);
-        }
-
-        @Test
-        void difference1000() {
-            var a = Rating.initial(A, GAME_ID, 1100);
-            var b = Rating.initial(B, GAME_ID, 100);
-
-            assertThat(a.expectedAgainst(b)).isEqualTo(0.99f, STRICT);
-        }
-
-        @Test
-        void total() {
-            var a1 = Rating.initial(A, GAME_ID, 150);
-            var b1 = Rating.initial(B, GAME_ID, 100);
-            var c1 = Rating.initial(C, GAME_ID, 200);
-
-            var aAgainstB = a1.expectedAgainst(b1);
-            assertThat(aAgainstB).isEqualTo(0.57f, STRICT);
-
-            var aAgainstC = a1.expectedAgainst(c1);
-            assertThat(aAgainstC).isEqualTo(0.43f, STRICT);
-
-            var bAgainstA = b1.expectedAgainst(a1);
-            assertThat(bAgainstA).isEqualTo(0.43f, STRICT);
-
-            var bAgainstC = b1.expectedAgainst(c1);
-            assertThat(bAgainstC).isEqualTo(0.36f, STRICT);
-
-            var cAgainstA = c1.expectedAgainst(a1);
-            assertThat(cAgainstA).isEqualTo(0.57f, STRICT);
-
-            var cAgainstB = c1.expectedAgainst(b1);
-            assertThat(cAgainstB).isEqualTo(0.64f, STRICT);
-
-            assertThat(bAgainstA + aAgainstB).isEqualTo(1);
-            assertThat(cAgainstA + aAgainstC).isEqualTo(1);
-            assertThat(cAgainstB + bAgainstC).isEqualTo(1);
-            assertThat(aAgainstC + cAgainstA).isEqualTo(1);
+            assertThat(Rating.initial(A, GAME_ID).getRating()).isEqualTo(1000);
         }
     }
 
     @Nested
     class Adjust {
 
-        @Test
-        void belowMinRating() {
-            var a1 = Rating.initial(A, GAME_ID, 50);
-            var b1 = Rating.initial(B, GAME_ID, 50);
-
-            var ratings = Set.of(a1, b1);
-            var scores = Map.of(A, 1, B, 0);
-
-            var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
-            var b2 = b1.adjust(ratings, TABLE_ID, scores, 0);
-
-            assertThat(a2.getRating()).isEqualTo(58f, STRICT);
-            assertThat(a2.getDeltas().get(B)).isEqualTo(8f, STRICT);
-
-            assertThat(b2.getRating()).isEqualTo(50f, STRICT);
-            assertThat(b2.getDeltas().get(A)).isEqualTo(0, STRICT);
+        @BeforeEach
+        void setUp() {
+            when(table.getEnded()).thenReturn(Instant.now());
         }
 
         @Test
@@ -125,76 +51,25 @@ class RatingTest {
             var b1 = Rating.initial(B, GAME_ID, 100);
             var c1 = Rating.initial(C, GAME_ID, 200);
 
-            var ratings = Set.of(a1, b1, c1);
+            var ratings = Map.of(A, a1, B, b1, C, c1);
             var scores = Map.of(A, 112, B, 90, C, 64);
+            when(table.getUserScores()).thenReturn(scores);
 
-            var a2 = a1.adjust(ratings, TABLE_ID, scores, 112);
-            var b2 = b1.adjust(ratings, TABLE_ID, scores, 90);
-            var c2 = c1.adjust(ratings, TABLE_ID, scores, 64);
+            var a2 = a1.adjust(ratings, table);
+            var b2 = b1.adjust(ratings, table);
+            var c2 = c1.adjust(ratings, table);
 
-            assertThat(a2.getRating()).isEqualTo(166f, STRICT);
-            assertThat(a2.getDeltas().get(B)).isEqualTo(6.86f, STRICT);
-            assertThat(a2.getDeltas().get(C)).isEqualTo(9.14f, STRICT);
+            assertThat(a2.getRating()).isEqualTo(171);
+            assertThat(a2.getDeltas().get(B)).isEqualTo(9);
+            assertThat(a2.getDeltas().get(C)).isEqualTo(12);
 
-            assertThat(b2.getRating()).isEqualTo(110.24f, STRICT);
-            assertThat(b2.getDeltas().get(A)).isEqualTo(0, STRICT);
-            assertThat(b2.getDeltas().get(C)).isEqualTo(10.24f, STRICT);
+            assertThat(b2.getRating()).isEqualTo(105);
+            assertThat(b2.getDeltas().get(A)).isEqualTo(-9);
+            assertThat(b2.getDeltas().get(C)).isEqualTo(14);
 
-            assertThat(c2.getRating()).isEqualTo(185.46f, STRICT);
-            assertThat(c2.getDeltas().get(A)).isEqualTo(-6.85f, STRICT);
-            assertThat(c2.getDeltas().get(B)).isEqualTo(-7.68f, STRICT);
-        }
-
-        @Test
-        void cannotLoseBelowMinRating() {
-            var a1 = Rating.initial(A, GAME_ID, 50);
-            var b1 = Rating.initial(B, GAME_ID, 100);
-
-            var ratings = Set.of(a1, b1);
-            var scores = Map.of(A, 0, B, 1);
-
-            var a2 = a1.adjust(ratings, TABLE_ID, scores, 0);
-
-            assertThat(a2.getRating()).isEqualTo(a1.getRating());
-        }
-
-        @Test
-        void cannotLoseAtMinRating() {
-            var a1 = Rating.initial(A, GAME_ID, 100);
-            var b1 = Rating.initial(B, GAME_ID, 100);
-
-            var ratings = Set.of(a1, b1);
-            var scores = Map.of(A, 0, B, 1);
-
-            var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
-
-            assertThat(a2.getRating()).isEqualTo(a1.getRating());
-        }
-
-        @Test
-        void canStillGainFromPlayerBelowMinRating() {
-            var a1 = Rating.initial(A, GAME_ID, 100);
-            var b1 = Rating.initial(B, GAME_ID, 50);
-
-            var ratings = Set.of(a1, b1);
-            var scores = Map.of(A, 1, B, 0);
-
-            var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
-
-            assertThat(a2.getRating()).isGreaterThan(a1.getRating());
-        }
-
-        @Test
-        void canStillGainFromPlayerAtMinRating() {
-            var a1 = Rating.initial(A, GAME_ID, 100);
-            var b1 = Rating.initial(B, GAME_ID, 100);
-
-            var ratings = Set.of(a1, b1);
-            var scores = Map.of(A, 1, B, 0);
-
-            var a2 = a1.adjust(ratings, TABLE_ID, scores, 1);
-
-            assertThat(a2.getRating()).isGreaterThan(a1.getRating());
+            assertThat(c2.getRating()).isEqualTo(174);
+            assertThat(c2.getDeltas().get(A)).isEqualTo(-12);
+            assertThat(c2.getDeltas().get(B)).isEqualTo(-14);
         }
 
         @Test
@@ -204,13 +79,59 @@ class RatingTest {
             var c1 = Rating.initial(C, GAME_ID, 200);
             var d1 = Rating.initial(D, GAME_ID, 200);
 
-            var adjustedAfterWinningAgainst1Opponent = a1.adjust(Set.of(a1, b1), TABLE_ID,
-                    Map.of(A, 4, B, 3), 4);
-            var adjustedAfterWinningAgainst3Opponents = a1.adjust(Set.of(a1, b1, c1, d1), TABLE_ID,
-                    Map.of(A, 4, B, 3, C, 2, D, 1), 4);
+            when(table.getUserScores()).thenReturn(Map.of(A, 4, B, 3));
+            var adjustedAfterWinningAgainst1Opponent = a1.adjust(Map.of(A, a1, B, b1), table);
+
+            when(table.getUserScores()).thenReturn(Map.of(A, 4, B, 3, C, 2, D, 1));
+            var adjustedAfterWinningAgainst3Opponents = a1.adjust(Map.of(A, a1, B, b1, C, c1, D, d1), table);
 
             assertThat(adjustedAfterWinningAgainst3Opponents.getRating())
                     .isGreaterThan(adjustedAfterWinningAgainst1Opponent.getRating());
+        }
+
+        @Test
+        void fernando2P() {
+            var a = Rating.initial(A, GAME_ID, 1000);
+            var b = Rating.initial(B, GAME_ID, 1000);
+
+            var scores = Map.of(A, 1, B, 0);
+            var ratings = Map.of(A, a, B, b);
+            when(table.getUserScores()).thenReturn(scores);
+
+            assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1016);
+            assertThat(b.adjust(ratings, table).getRating()).isEqualTo(984);
+        }
+
+        @Test
+        void fernando3P() {
+            var a = Rating.initial(A, GAME_ID, 1000);
+            var b = Rating.initial(B, GAME_ID, 1000);
+            var c = Rating.initial(C, GAME_ID, 1000);
+
+            var scores = Map.of(A, 30, B, 20, C, 10);
+            var ratings = Map.of(A, a, B, b, C, c);
+            when(table.getUserScores()).thenReturn(scores);
+
+            assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1022);
+            assertThat(b.adjust(ratings, table).getRating()).isEqualTo(1000);
+            assertThat(c.adjust(ratings, table).getRating()).isEqualTo(978);
+        }
+
+        @Test
+        void fernando4P() {
+            var a = Rating.initial(A, GAME_ID, 1000);
+            var b = Rating.initial(B, GAME_ID, 1000);
+            var c = Rating.initial(C, GAME_ID, 1000);
+            var d = Rating.initial(D, GAME_ID, 1000);
+
+            var scores = Map.of(A, 30, B, 20, C, 10, D, 0);
+            var ratings = Map.of(A, a, B, b, C, c, D, d);
+            when(table.getUserScores()).thenReturn(scores);
+
+            assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1024);
+            assertThat(b.adjust(ratings, table).getRating()).isEqualTo(1008);
+            assertThat(c.adjust(ratings, table).getRating()).isEqualTo(992);
+            assertThat(d.adjust(ratings, table).getRating()).isEqualTo(976);
         }
     }
 }

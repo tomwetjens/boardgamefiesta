@@ -1,10 +1,11 @@
 package com.boardgamefiesta.server.repository;
 
 import com.boardgamefiesta.server.domain.game.Game;
-import com.boardgamefiesta.server.domain.table.Table;
-import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.server.domain.rating.Ranking;
 import com.boardgamefiesta.server.domain.rating.Rating;
 import com.boardgamefiesta.server.domain.rating.Ratings;
+import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.server.domain.user.User;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
@@ -71,12 +72,17 @@ public class RatingDynamoDbRepository implements Ratings {
     }
 
     @Override
-    public Rating findLatest(User.Id userId, Game.Id gameId) {
+    public Rating findLatest(User.Id userId, Game.Id gameId, Instant before) {
         var response = dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
-                .keyConditionExpression("UserIdGameId = :UserIdGameId")
-                .expressionAttributeValues(Collections.singletonMap(":UserIdGameId",
-                        AttributeValue.builder().s(partitionKey(userId, gameId)).build()))
+                .keyConditionExpression("UserIdGameId = :UserIdGameId and #Timestamp < :Before")
+                .expressionAttributeNames(Map.of(
+                        "#Timestamp", "Timestamp"
+                ))
+                .expressionAttributeValues(Map.of(
+                        ":UserIdGameId", AttributeValue.builder().s(partitionKey(userId, gameId)).build(),
+                        ":Before", AttributeValue.builder().n(Long.toString(before.toEpochMilli())).build()
+                ))
                 .scanIndexForward(false) // Descending to find latest
                 .limit(1)
                 .build());
@@ -114,7 +120,17 @@ public class RatingDynamoDbRepository implements Ratings {
     }
 
     @Override
-    public Stream<User.Id> findRanking(Game.Id gameId, int maxResults) {
+    public void delete(Rating rating) {
+        dynamoDbClient.deleteItem(DeleteItemRequest.builder()
+                .tableName(tableName)
+                .key(Map.of(
+                        "UserIdGameId", AttributeValue.builder().s(partitionKey(rating.getUserId(), rating.getGameId())).build(),
+                        "Timestamp", AttributeValue.builder().n(Long.toString(rating.getTimestamp().toEpochMilli())).build()))
+                .build());
+    }
+
+    @Override
+    public Stream<Ranking> findRanking(Game.Id gameId, int maxResults) {
         return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(rankingTableName)
                 .indexName(GAME_ID_RANK_ORDER_INDEX)
@@ -126,40 +142,20 @@ public class RatingDynamoDbRepository implements Ratings {
                 .items()
                 .stream()
                 .limit(maxResults)
-                .map(item -> User.Id.of(item.get("UserId").s()));
+                .map(this::mapToRanking);
     }
 
     @Override
-    public Optional<Integer> findRank(User.Id userId, Game.Id gameId) {
-        return findRankOrder(userId, gameId)
-                .map(rankOrder -> dynamoDbClient.query(QueryRequest.builder()
-                        .tableName(rankingTableName)
-                        .indexName(GAME_ID_RANK_ORDER_INDEX)
-                        .keyConditionExpression("GameId = :GameId AND RankOrder > :RankOrder")
-                        .expressionAttributeValues(Map.of("RankOrder", AttributeValue.builder().s(rankOrder).build()))
-                        .select(Select.COUNT)
-                        .build())
-                        .count() + 1);
+    public Stream<Rating> findAll() {
+        return null;
     }
 
-    private Optional<String> findRankOrder(User.Id userId, Game.Id gameId) {
-        var response = dynamoDbClient.query(QueryRequest.builder()
-                .tableName(rankingTableName)
-                .keyConditionExpression("UserId = :UserId AND GameId = :GameId")
-                .expressionAttributeValues(Map.of(
-                        ":UserId", AttributeValue.builder().s(userId.getId()).build(),
-                        ":GameId", AttributeValue.builder().s(gameId.getId()).build()
-                ))
-                .attributesToGet("RankOrder")
-                .limit(1)
-                .build());
-
-        if (!response.hasItems()) {
-            return Optional.empty();
-        }
-        return response.items().stream()
-                .map(item -> item.get("RankOrder").s())
-                .findFirst();
+    private Ranking mapToRanking(Map<String, AttributeValue> item) {
+        return Ranking.builder()
+                .gameId(Game.Id.of(item.get("GameId").s()))
+                .userId(User.Id.of(item.get("UserId").s()))
+                .rating(rankOrderToRating(item.get("RankOrder").s()))
+                .build();
     }
 
     private String partitionKey(User.Id userId, Game.Id gameId) {
@@ -172,14 +168,14 @@ public class RatingDynamoDbRepository implements Ratings {
                 .gameId(Game.Id.of(attributeValues.get("GameId").s()))
                 .timestamp(Instant.ofEpochMilli(Long.parseLong(attributeValues.get("Timestamp").n())))
                 .tableId(attributeValues.containsKey("TableId") ? Table.Id.of(attributeValues.get("TableId").s()) : null)
-                .rating(Float.parseFloat(attributeValues.get("Rating").n()))
+                .rating(Math.round(Float.parseFloat(attributeValues.get("Rating").n())))
                 .deltas(attributeValues.containsKey("Deltas") ? mapToDeltas(attributeValues.get("Deltas").m()) : Collections.emptyMap())
                 .build();
     }
 
-    private Map<User.Id, Float> mapToDeltas(Map<String, AttributeValue> attributeValues) {
+    private Map<User.Id, Integer> mapToDeltas(Map<String, AttributeValue> attributeValues) {
         return attributeValues.entrySet().stream()
-                .collect(Collectors.toMap(entry -> User.Id.of(entry.getKey()), entry -> Float.parseFloat(entry.getValue().n())));
+                .collect(Collectors.toMap(entry -> User.Id.of(entry.getKey()), entry -> Math.round(Float.parseFloat(entry.getValue().n()))));
     }
 
     private Map<String, AttributeValue> mapFromRating(Rating rating) {
@@ -194,11 +190,11 @@ public class RatingDynamoDbRepository implements Ratings {
         return map;
     }
 
-    private AttributeValue mapFromDeltas(Map<User.Id, Float> deltas) {
+    private AttributeValue mapFromDeltas(Map<User.Id, Integer> deltas) {
         return AttributeValue.builder()
                 .m(deltas.entrySet().stream().collect(Collectors.toMap(
                         entry -> entry.getKey().getId(),
-                        entry -> AttributeValue.builder().n(Float.toString(entry.getValue())).build())))
+                        entry -> AttributeValue.builder().n(Integer.toString(entry.getValue())).build())))
                 .build();
     }
 
@@ -214,9 +210,13 @@ public class RatingDynamoDbRepository implements Ratings {
         // 1. By rating, with leading zeros (because String sorting)
         // 2. Then by timestamp, with leading zeros (because String sorting), in case 2 users have the same rating
         // 3. Then by user id, to make it guaranteed unique, in case 2 users have the same rating at the same time
-        return String.format(Locale.ENGLISH, "%010.2f %019d %s",
+        return String.format(Locale.ENGLISH, "%010d %019d %s",
                 rating.getRating(),
                 rating.getTimestamp().toEpochMilli(),
                 rating.getUserId().getId());
+    }
+
+    private int rankOrderToRating(String rankOrder) {
+        return Math.round(Float.parseFloat(rankOrder.split(" ")[0]));
     }
 }

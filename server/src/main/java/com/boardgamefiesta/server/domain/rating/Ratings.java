@@ -15,12 +15,13 @@ public interface Ratings {
 
     Optional<Rating> findByTable(User.Id userId, Table.Id tableId);
 
-    Rating findLatest(User.Id userId, Game.Id gameId);
+    Rating findLatest(User.Id userId, Game.Id gameId, Instant before);
 
     void addAll(Collection<Rating> ratings);
 
-    Stream<User.Id> findRanking(Game.Id gameId, int maxResults);
+    Stream<Ranking> findRanking(Game.Id gameId, int maxResults);
 
-    Optional<Integer> findRank(User.Id userId, Game.Id gameId);
+    Stream<Rating> findAll();
 
+    void delete(Rating rating);
 }

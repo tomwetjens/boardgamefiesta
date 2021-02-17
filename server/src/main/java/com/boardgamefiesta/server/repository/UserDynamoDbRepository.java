@@ -49,6 +49,15 @@ public class UserDynamoDbRepository implements Users {
     }
 
     @Override
+    public Stream<User> findAll() {
+        return dynamoDbClient.scanPaginator(ScanRequest.builder()
+                .tableName(tableName)
+                .build())
+                .items().stream()
+                .map(this::mapToUser);
+    }
+
+    @Override
     public Stream<User> findByUsernameStartsWith(String username) {
         return dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)

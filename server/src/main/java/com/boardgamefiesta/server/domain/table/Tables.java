@@ -23,6 +23,8 @@ public interface Tables {
 
     Stream<Table> findAll(Game.Id gameId);
 
+    Stream<Table> findAllEndedSortedByEndedAscending();
+
     class TableConcurrentlyModifiedException extends Exception {
         public TableConcurrentlyModifiedException(Throwable cause) {
             super(cause);

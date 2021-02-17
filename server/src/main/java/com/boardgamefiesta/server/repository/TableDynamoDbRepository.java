@@ -14,6 +14,7 @@ import com.boardgamefiesta.server.domain.table.Tables;
 import com.boardgamefiesta.server.domain.user.User;
 import com.boardgamefiesta.server.repository.json.DynamoDbJson;
 import lombok.NonNull;
+import lombok.Value;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -34,6 +35,7 @@ public class TableDynamoDbRepository implements Tables {
 
     private static final String USER_ID_ID_INDEX = "UserId-Id-index";
     private static final String USER_ID_CREATED_INDEX = "UserId-Created-index";
+    private static final String TABLE_ID_ENDED_INDEX = "TableId-Ended-index";
 
     private static final int FIRST_VERSION = 1;
 
@@ -116,10 +118,39 @@ public class TableDynamoDbRepository implements Tables {
                 .tableName(tableName)
                 // Filter out the adjacency list items
                 .filterExpression("begins_with(UserId, :UserIdBeginsWith)")
-                .expressionAttributeValues(Map.of(":UserIdBeginsWith", AttributeValue.builder().s("Table-").build()))
+                .expressionAttributeValues(Map.of(
+                        ":UserIdBeginsWith", AttributeValue.builder().s("Table-").build()
+                ))
                 .build())
                 .items().stream()
                 .map(this::mapToTable);
+    }
+
+    @Value
+    class TableSummary {
+        Table.Id id;
+        Instant ended;
+    }
+
+    @Override
+    public Stream<Table> findAllEndedSortedByEndedAscending() {
+        return dynamoDbClient.scanPaginator(ScanRequest.builder()
+                .tableName(tableName)
+                // Filter out the adjacency list items
+                .filterExpression("begins_with(UserId, :UserIdBeginsWith) and #Status = :Ended")
+                .expressionAttributeNames(Map.of(
+                        "#Status", "Status"
+                ))
+                .expressionAttributeValues(Map.of(
+                        ":UserIdBeginsWith", AttributeValue.builder().s("Table-").build(),
+                        ":Ended", AttributeValue.builder().s(Table.Status.ENDED.name()).build()
+                ))
+                .projectionExpression("Id, Ended")
+                .build())
+                .items().stream()
+                .map(item -> new TableSummary(Table.Id.of(item.get("Id").s()), Instant.ofEpochMilli(Long.parseLong(item.get("Ended").n()))))
+                .sorted(Comparator.comparing(TableSummary::getEnded))
+                .map(tableSummary -> findById(tableSummary.getId(), false));
     }
 
     @Override

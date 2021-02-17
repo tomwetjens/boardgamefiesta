@@ -27,6 +27,8 @@ public interface Users extends DomainService {
 
     void validateBeforeAdd(String username, String email);
 
+    Stream<User> findAll();
+
     class UserConcurrentlyModifiedException extends Exception {
         public UserConcurrentlyModifiedException(Throwable cause) {
             super(cause);
