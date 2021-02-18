@@ -4,10 +4,7 @@ import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import javax.json.JsonArray;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonValue;
+import javax.json.*;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -43,7 +40,7 @@ public final class JsonSerializer {
         map.forEach((key, value) -> builder.add(keyMapper.apply(key), valueMapper.apply(value, jsonBuilderFactory)));
         return builder.build();
     }
-    
+
     public <K, V> JsonObject fromStringMap(Map<K, String> map, Function<K, String> keyMapper) {
         var builder = jsonBuilderFactory.createObjectBuilder();
         map.forEach((key, value) -> builder.add(keyMapper.apply(key), value));

@@ -28,8 +28,9 @@
     <modules>
         <module>api</module>
         <module>gwt</module>
-        <module>server</module>
         <module>istanbul</module>
+        <module>powergrid</module>
+        <module>server</module>
     </modules>
 
     <dependencyManagement>
@@ -47,6 +48,11 @@
             <dependency>
                 <groupId>com.boardgamefiesta</groupId>
                 <artifactId>istanbul</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>powergrid</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

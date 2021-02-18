@@ -1,0 +1,226 @@
+---
+name: germany
+
+areas:
+- &ne
+  name: 'NE'
+- &nw
+  name: 'NW'
+- &e
+  name: 'E'
+- &w
+  name: 'W'
+- &sw
+  name: 'SW'
+- &se
+  name: 'SE'
+
+cities:
+- &flensburg
+  name: 'Flensburg'
+  area: *nw
+- &kiel
+  name: 'Kiel'
+  area: *nw
+- &hamburg
+  name: 'Hamburg'
+  area: *nw
+- &cukhaven
+  name: 'Cukhaven'
+  area: *nw
+- &bremen
+  name: 'Bremen'
+  area: *nw
+- &hannover
+  name: 'Hannover'
+  area: *nw
+- &wilhelmshaven
+  name: 'Wilhelmshaven'
+  area: *nw
+- &osnabrueck
+  name: 'Osnabrück'
+  area: *w
+- &muenster
+  name: 'Münster'
+  area: *w
+- &dortmund
+  name: 'Dortmund'
+  area: *w
+- &essen
+  name: 'Essen'
+  area: *w
+- &duisburg
+  name: 'Duisburg'
+  area: *w
+- &duesseldorf
+  name: 'Düsseldorf'
+  area: *w
+- &koeln
+  name: 'Köln'
+  area: *sw
+- &aachen
+  name: 'Aachen'
+  area: *sw
+- &kassel
+  name: 'Kassel'
+  area: *w
+- &frankfurtm
+  name: 'FrankmurtM'
+  area: *sw
+- &fulda
+  name: 'Fulda'
+  area: *e
+- &wiesbaden
+  name: 'Wiesbaden'
+  area: *sw
+- &trier
+  name: 'Trier'
+  area: *sw
+- &mannheim
+  name: 'Mannheim'
+  area: *sw
+- &saarbruecken
+  name: 'Saarbrücken'
+  area: *sw
+- &stuttgart
+  name: 'Stuttgart'
+  area: *se
+- &freiburg
+  name: 'Freiburg'
+  area: *se
+- &konstanz
+  name: 'Konstanz'
+  area: *se
+- &augsburg
+  name: 'Augsburg'
+  area: *se
+- &wuerzburg
+  name: 'Würzburg'
+  area: *e
+- &regensburg
+  name: 'Regensburg'
+  area: *se
+- &passau
+  name: 'Passau'
+  area: *se
+- &nuernberg
+  name: 'Nürnberg'
+  area: *e
+- &erfurt
+  name: 'Erfurt'
+  area: *e
+- &dresden
+  name: 'Dresden'
+  area: *e
+- &halle
+  name: 'Halle'
+  area: *e
+- &leipzig
+  name: 'Leipzig'
+  area: *e
+- &frankfurto
+  name: 'FrankfurtO'
+  area: *ne
+- &magdeburg
+  name: 'Magdeburg'
+  area: *ne
+- &berlin
+  name: 'Berlin'
+  area: *ne
+- &schwerin
+  name: 'Schwerin'
+  area: *ne
+- &lubeck
+  name: 'Lubeck'
+  area: *ne
+- &rostock
+  name: 'Rostock'
+  area: *ne
+- &torgelow
+  name: 'Torgelow'
+  area: *ne
+- &muenchen
+  name: 'München'
+  area: *se
+
+connections:
+- { from: *flensburg, to: *kiel, cost: 4}
+- { from: *kiel, to: *hamburg, cost: 8}
+- { from: *hamburg, to: *cukhaven, cost: 11}
+- { from: *hamburg, to: *bremen, cost: 11}
+- { from: *hamburg, to: *hannover, cost: 17}
+- { from: *cukhaven, to: *bremen, cost: 8}
+- { from: *bremen, to: *hannover, cost: 10}
+- { from: *bremen, to: *wilhelmshaven, cost: 11}
+- { from: *bremen, to: *osnabrueck, cost: 11}
+- { from: *osnabrueck, to: *wilhelmshaven, cost: 14}
+- { from: *hannover, to: *osnabrueck, cost: 16}
+- { from: *osnabrueck, to: *muenster, cost: 7}
+- { from: *muenster, to: *dortmund, cost: 2}
+- { from: *muenster, to: *essen, cost: 6}
+- { from: *essen, to: *duisburg, cost: 0}
+- { from: *essen, to: *duesseldorf, cost: 2}
+- { from: *duesseldorf, to: *koeln, cost: 4}
+- { from: *duesseldorf, to: *aachen, cost: 9}
+- { from: *dortmund, to: *koeln, cost: 10}
+- { from: *koeln, to: *aachen, cost: 7}
+- { from: *dortmund, to: *kassel, cost: 18}
+- { from: *dortmund, to: *frankfurtm, cost: 20}
+- { from: *hannover, to: *kassel, cost: 15}
+- { from: *kassel, to: *fulda, cost: 8}
+- { from: *kassel, to: *frankfurtm, cost: 13}
+- { from: *fulda, to: *frankfurtm, cost: 8}
+- { from: *frankfurtm, to: *wiesbaden, cost: 0}
+- { from: *koeln, to: *wiesbaden, cost: 21}
+- { from: *koeln, to: *trier, cost: 20}
+- { from: *aachen, to: *trier, cost: 19}
+- { from: *wiesbaden, to: *trier, cost: 18}
+- { from: *wiesbaden, to: *mannheim, cost: 11}
+- { from: *wiesbaden, to: *saarbruecken, cost: 10}
+- { from: *trier, to: *saarbruecken, cost: 11}
+- { from: *mannheim, to: *saarbruecken, cost: 11}
+- { from: *mannheim, to: *stuttgart, cost: 6}
+- { from: *saarbruecken, to: *stuttgart, cost: 17}
+- { from: *stuttgart, to: *freiburg, cost: 16}
+- { from: *stuttgart, to: *konstanz, cost: 16}
+- { from: *freiburg, to: *konstanz, cost: 14}
+- { from: *konstanz, to: *augsburg, cost: 17}
+- { from: *stuttgart, to: *augsburg, cost: 15}
+- { from: *wuerzburg, to: *augsburg, cost: 19}
+- { from: *stuttgart, to: *wuerzburg, cost: 12}
+- { from: *mannheim, to: *wuerzburg, cost: 10}
+- { from: *frankfurtm, to: *wuerzburg, cost: 13}
+- { from: *wuerzburg, to: *fulda, cost: 11}
+- { from: *augsburg, to: *muenchen, cost: 6}
+- { from: *augsburg, to: *regensburg, cost: 13}
+- { from: *muenchen, to: *regensburg, cost: 10}
+- { from: *muenchen, to: *passau, cost: 14}
+- { from: *regensburg, to: *passau, cost: 12}
+- { from: *augsburg, to: *nuernberg, cost: 18}
+- { from: *regensburg, to: *nuernberg, cost: 12}
+- { from: *nuernberg, to: *wuerzburg, cost: 8}
+- { from: *nuernberg, to: *erfurt, cost: 21}
+- { from: *erfurt, to: *fulda, cost: 13}
+- { from: *erfurt, to: *kassel, cost: 15}
+- { from: *erfurt, to: *hannover, cost: 19}
+- { from: *erfurt, to: *dresden, cost: 19}
+- { from: *erfurt, to: *halle, cost: 6}
+- { from: *halle, to: *leipzig, cost: 0}
+- { from: *leipzig, to: *dresden, cost: 13}
+- { from: *dresden, to: *frankfurto, cost: 16}
+- { from: *leipzig, to: *frankfurto, cost: 21}
+- { from: *halle, to: *berlin, cost: 17}
+- { from: *halle, to: *magdeburg, cost: 11}
+- { from: *berlin, to: *frankfurto, cost: 6}
+- { from: *magdeburg, to: *berlin, cost: 10}
+- { from: *hannover, to: *magdeburg, cost: 15}
+- { from: *hannover, to: *schwerin, cost: 19}
+- { from: *hamburg, to: *schwerin, cost: 8}
+- { from: *hamburg, to: *lubeck, cost: 6}
+- { from: *lubeck, to: *schwerin, cost: 6}
+- { from: *schwerin, to: *rostock, cost: 6}
+- { from: *schwerin, to: *berlin, cost: 18}
+- { from: *schwerin, to: *magdeburg, cost: 16}
+- { from: *rostock, to: *torgelow, cost: 19}
+- { from: *schwerin, to: *torgelow, cost: 19}
+- { from: *torgelow, to: *berlin, cost: 15}
