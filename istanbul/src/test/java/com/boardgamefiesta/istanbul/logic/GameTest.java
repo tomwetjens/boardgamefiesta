@@ -13,9 +13,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class GameTest {
 
-    private Player playerRed = new Player("Red", PlayerColor.RED);
-    private Player playerGreen = new Player("Green", PlayerColor.GREEN);
-    private Player playerBlue = new Player("Blue", PlayerColor.BLUE);
+    private Player playerRed = new Player("Red", PlayerColor.RED, Player.Type.HUMAN);
+    private Player playerGreen = new Player("Green", PlayerColor.GREEN, Player.Type.HUMAN);
+    private Player playerBlue = new Player("Blue", PlayerColor.BLUE, Player.Type.HUMAN);
 
     @Nested
     class BonusCards {
