@@ -777,13 +777,14 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         private ImmediateActions normalDelivery(Game game) {
             var breedingValue = game.currentPlayerState().handValue() + certificates;
-            if (breedingValue < city.getValue()) {
+            if (breedingValue < city.getValue()
+                    && game.getCurrentPlayer().getType() != Player.Type.COMPUTER) {
                 throw new GWTException(GWTError.NOT_ENOUGH_BREEDING_VALUE);
             }
 
             var transportCosts = game.getRailroadTrack().transportCosts(game.getCurrentPlayer(), city);
 
-            var payout = breedingValue - transportCosts;
+            var payout = Math.max(0, breedingValue - transportCosts);
             if (city == City.KANSAS_CITY) {
                 payout += 6;
             }

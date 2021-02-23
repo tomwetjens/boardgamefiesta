@@ -84,6 +84,10 @@ public class PossibleMove {
         return steps.get(steps.size() - 1);
     }
 
+    public int getNumberOfSteps() {
+        return steps.size();
+    }
+
     @Value
     private static class PlayerFee {
         Player player;

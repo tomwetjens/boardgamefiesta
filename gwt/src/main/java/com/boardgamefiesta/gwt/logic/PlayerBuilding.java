@@ -140,12 +140,17 @@ public abstract class PlayerBuilding extends Building {
                     : random(options, random);
         }
 
-        public Set<PlayerBuilding> createPlayerBuildings(@NonNull Player player) {
+        public Set<PlayerBuilding> createBuildings(@NonNull Player player) {
             return names.stream()
                     .map(name -> PlayerBuilding.forName(name, player))
                     .collect(Collectors.toSet());
         }
 
+        public Set<PlayerBuilding> createSide(Side side, Player player) {
+            return names.stream()
+                    .map(name -> PlayerBuilding.forName(name.replace("a", side.name().toLowerCase()), player))
+                    .collect(Collectors.toSet());
+        }
     }
 
     public static final class Building1A extends PlayerBuilding {

@@ -26,10 +26,10 @@ class RailroadTrackTest {
     private static final Game.Options ORIGINAL = Game.Options.builder().build();
 
     private RailroadTrack railroadTrack;
-    private Player playerA = new Player("Player A", PlayerColor.BLUE);
-    private Player playerB = new Player("Player B", PlayerColor.RED);
-    private Player playerC = new Player("Player C", PlayerColor.WHITE);
-    private Player playerD = new Player("Player D", PlayerColor.YELLOW);
+    private Player playerA = new Player("Player A", PlayerColor.BLUE, Player.Type.HUMAN);
+    private Player playerB = new Player("Player B", PlayerColor.RED, Player.Type.HUMAN);
+    private Player playerC = new Player("Player C", PlayerColor.WHITE, Player.Type.HUMAN);
+    private Player playerD = new Player("Player D", PlayerColor.YELLOW, Player.Type.HUMAN);
 
     @BeforeEach
     void setUp() {

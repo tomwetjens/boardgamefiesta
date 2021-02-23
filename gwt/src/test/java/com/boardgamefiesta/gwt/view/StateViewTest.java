@@ -39,8 +39,8 @@ class StateViewTest {
     @Mock
     JobMarket jobMarket;
 
-    Player playerA = new Player("Player A", PlayerColor.WHITE);
-    Player playerB = new Player("Player B", PlayerColor.RED);
+    Player playerA = new Player("Player A", PlayerColor.WHITE, Player.Type.HUMAN);
+    Player playerB = new Player("Player B", PlayerColor.RED, Player.Type.HUMAN);
 
     @BeforeEach
     void setUp() {

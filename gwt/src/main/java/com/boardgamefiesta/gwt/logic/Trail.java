@@ -267,7 +267,7 @@ public class Trail {
                 .collect(Collectors.toSet());
     }
 
-    private Stream<List<Location>> reachableLocations(Location from, int stepLimit) {
+    private static Stream<List<Location>> reachableLocations(Location from, int stepLimit) {
         if (stepLimit <= 0) {
             return Stream.empty();
         }
@@ -369,4 +369,5 @@ public class Trail {
     public boolean atKansasCity(Player player) {
         return playerLocations.get(player) == kansasCity;
     }
+
 }

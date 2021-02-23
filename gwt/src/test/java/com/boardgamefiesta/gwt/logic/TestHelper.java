@@ -25,10 +25,10 @@ public class TestHelper {
             .buildings(Game.Options.Buildings.BEGINNER)
             .build();
 
-    static final Player PLAYER_A = new Player("Player A", PlayerColor.WHITE);
-    static final Player PLAYER_B = new Player("Player B", PlayerColor.YELLOW);
-    static final Player PLAYER_C = new Player("Player C", PlayerColor.BLUE);
-    static final Player PLAYER_D = new Player("Player D", PlayerColor.RED);
+    static final Player PLAYER_A = new Player("Player A", PlayerColor.WHITE, Player.Type.HUMAN);
+    static final Player PLAYER_B = new Player("Player B", PlayerColor.YELLOW, Player.Type.HUMAN);
+    static final Player PLAYER_C = new Player("Player C", PlayerColor.BLUE, Player.Type.HUMAN);
+    static final Player PLAYER_D = new Player("Player D", PlayerColor.RED, Player.Type.HUMAN);
 
     static Game givenAGame() {
         return Game.start(Set.of(PLAYER_A, PLAYER_B, PLAYER_C, PLAYER_D), BEGINNER, new Random(0));

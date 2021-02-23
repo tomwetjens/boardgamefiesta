@@ -38,8 +38,8 @@ class ActionTest {
                 .map(Arguments::of);
     }
 
-    Player currentPlayer = new Player("Player A", PlayerColor.RED);
-    Player otherPlayer = new Player("Player B", PlayerColor.BLUE);
+    Player currentPlayer = new Player("Player A", PlayerColor.RED, Player.Type.HUMAN);
+    Player otherPlayer = new Player("Player B", PlayerColor.BLUE, Player.Type.HUMAN);
 
     @Mock
     Game game;

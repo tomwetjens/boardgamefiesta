@@ -234,11 +234,16 @@ public abstract class Location {
             this.hazard = hazard;
         }
 
-        void removeHazard() {
+        Hazard removeHazard() {
             if (this.hazard == null) {
                 throw new GWTException(GWTError.LOCATION_EMPTY);
             }
+
+            var hazard = this.hazard;
+
             this.hazard = null;
+
+            return hazard;
         }
     }
 
@@ -312,11 +317,16 @@ public abstract class Location {
             this.teepee = teepee;
         }
 
-        void removeTeepee() {
+        Teepee removeTeepee() {
             if (this.teepee == null) {
                 throw new GWTException(GWTError.LOCATION_EMPTY);
             }
+
+            var teepee = this.teepee;
+
             this.teepee = null;
+
+            return teepee;
         }
     }
 }

@@ -46,17 +46,17 @@ public class RailroadTrack {
     private static final Map<String, MediumTown> MEDIUM_TOWNS = new HashMap<>();
     private static final Map<City, BigTown> BIG_TOWNS = new HashMap<>();
 
-    private static final BigTown MEMPHIS = Space.bigTown("MEM", Area.GREEN, City.MEMPHIS, RailroadTrack::firstPlayerGains2Dollars);
-    private static final BigTown SAN_FRANCISCO = Space.bigTown("SFO", Area.BLUE, City.SAN_FRANCISCO);
-    private static final BigTown DENVER = Space.bigTown("DEN", Area.BLUE, City.DENVER, RailroadTrack::pay1Or2Or3Dollars);
-    private static final BigTown MILWAUKEE = Space.bigTown("MIL", Area.RED, City.MILWAUKEE);
-    private static final BigTown GREEN_BAY = Space.bigTown("GBY", Area.RED, City.GREEN_BAY);
-    private static final BigTown TORONTO = Space.bigTown("TOR", Area.RED, City.TORONTO);
-    private static final BigTown MINNEAPOLIS = Space.bigTown("MIN", Area.RED, City.MINNEAPOLIS, RailroadTrack::pay1Or3Or4Dollars);
-    private static final BigTown MONTREAL = Space.bigTown("MON", Area.RED, City.MONTREAL, RailroadTrack::pay1Or3Or4Dollars);
+    static final BigTown MEMPHIS = Space.bigTown("MEM", Area.GREEN, City.MEMPHIS, RailroadTrack::firstPlayerGains2Dollars);
+    static final BigTown SAN_FRANCISCO = Space.bigTown("SFO", Area.BLUE, City.SAN_FRANCISCO);
+    static final BigTown DENVER = Space.bigTown("DEN", Area.BLUE, City.DENVER, RailroadTrack::pay1Or2Or3Dollars);
+    static final BigTown MILWAUKEE = Space.bigTown("MIL", Area.RED, City.MILWAUKEE);
+    static final BigTown GREEN_BAY = Space.bigTown("GBY", Area.RED, City.GREEN_BAY);
+    static final BigTown TORONTO = Space.bigTown("TOR", Area.RED, City.TORONTO);
+    static final BigTown MINNEAPOLIS = Space.bigTown("MIN", Area.RED, City.MINNEAPOLIS, RailroadTrack::pay1Or3Or4Dollars);
+    static final BigTown MONTREAL = Space.bigTown("MON", Area.RED, City.MONTREAL, RailroadTrack::pay1Or3Or4Dollars);
 
-    private static final Space GREEN_STATION_TOWN = Space.stationTown("40", Area.GREEN, STATIONS.get(10));
-    private static final Space RED_STATION_TOWN = Space.stationTown("41", Area.RED, STATIONS.get(11));
+    static final StationTown GREEN_STATION_TOWN = Space.stationTown("40", Area.GREEN, STATIONS.get(10));
+    static final StationTown RED_STATION_TOWN = Space.stationTown("41", Area.RED, STATIONS.get(11));
 
     private static final Space START = Space.numbered("0")
             .to(Space.smallTown("42", Area.GREEN)
@@ -325,6 +325,10 @@ public class RailroadTrack {
         return START;
     }
 
+    public Space getEnd() {
+        return END;
+    }
+
     public Set<Player> getPlayers() {
         return Collections.unmodifiableSet(engines.keySet());
     }
@@ -577,7 +581,8 @@ public class RailroadTrack {
     }
 
     private boolean isAccessible(Player player, City city) {
-        return cityStrip.contains(city) || hasBranchlet(BIG_TOWNS.get(city), player);
+        return cityStrip.contains(city) || hasBranchlet(BIG_TOWNS.get(city), player)
+                || (city == City.SAN_FRANCISCO && player.getType() == Player.Type.COMPUTER);
     }
 
     public Map<City, List<Player>> getDeliveries() {
@@ -675,7 +680,10 @@ public class RailroadTrack {
                 }
                 break;
             case NEW_YORK_CITY:
-                return ImmediateActions.of(PossibleAction.optional(Action.TakeBonusStationMaster.class));
+                if (!bonusStationMasters.isEmpty()) {
+                    immediateActions = ImmediateActions.of(PossibleAction.optional(Action.TakeBonusStationMaster.class));
+                }
+                break;
             case MEMPHIS:
                 return ImmediateActions.of(PossibleAction.any(Action.TakeObjectiveCard.class, Action.Gain2Dollars.class));
             case MILWAUKEE:
@@ -685,7 +693,7 @@ public class RailroadTrack {
         return immediateActions;
     }
 
-    private boolean hasBranchlet(Town town, Player player) {
+    boolean hasBranchlet(Town town, Player player) {
         return getBranchlets(town).contains(player);
     }
 
@@ -741,8 +749,7 @@ public class RailroadTrack {
             result += 6;
         }
 
-        result += numberOfDeliveries(player, City.SAN_FRANCISCO) *
-                (isRailsToTheNorth() ? playerState.numberOfBells() * 2 : 9);
+        result += scoreSanFrancisco(player, playerState);
 
         if (hasMadeDelivery(player, City.COLUMBIA) && hasMadeDelivery(player, City.ST_LOUIS)) {
             result -= 5;
@@ -781,6 +788,11 @@ public class RailroadTrack {
         }
 
         return result;
+    }
+
+    int scoreSanFrancisco(Player player, PlayerState playerState) {
+        return numberOfDeliveries(player, City.SAN_FRANCISCO) *
+                (isRailsToTheNorth() ? playerState.numberOfBells() * 2 : 9);
     }
 
     public boolean isRailsToTheNorth() {
@@ -832,13 +844,17 @@ public class RailroadTrack {
     }
 
     ImmediateActions appointStationMaster(@NonNull Game game, @NonNull Station station, @NonNull Worker worker) {
-        game.currentPlayerState().removeWorker(worker);
+        var playerState = game.currentPlayerState();
+
+        if (playerState.getPlayer().getType() != Player.Type.COMPUTER) {
+            playerState.removeWorker(worker);
+        }
 
         workers.put(station, worker);
 
         StationMaster reward = stationMasters.get(station);
 
-        game.currentPlayerState().addStationMaster(reward);
+        playerState.addStationMaster(reward);
         stationMasters.remove(station);
 
         return reward.activate(game);
@@ -900,7 +916,7 @@ public class RailroadTrack {
             return new SmallTown(name, area, activate);
         }
 
-        static Space stationTown(String name, Area area, Station station) {
+        static StationTown stationTown(String name, Area area, Station station) {
             return new StationTown(name, area, station);
         }
 
@@ -944,7 +960,7 @@ public class RailroadTrack {
                     previous.iterator().next().next.contains(next.iterator().next());
         }
 
-        private static final class Turnout extends Space {
+        static final class Turnout extends Space {
 
             @Getter
             private final Station station;

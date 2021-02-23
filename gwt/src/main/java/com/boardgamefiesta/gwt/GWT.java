@@ -10,6 +10,7 @@ import com.boardgamefiesta.api.repository.StateSerializer;
 import com.boardgamefiesta.api.spi.GameProvider;
 import com.boardgamefiesta.gwt.logic.Automa;
 import com.boardgamefiesta.gwt.logic.Game;
+import com.boardgamefiesta.gwt.logic.Garth;
 import com.boardgamefiesta.gwt.view.ActionType;
 import com.boardgamefiesta.gwt.view.StateView;
 
@@ -56,12 +57,19 @@ public class GWT implements GameProvider<Game> {
                 .building11(options.getBoolean("building11", false))
                 .building13(options.getBoolean("building13", false))
                 .railsToTheNorth(options.getBoolean("railsToTheNorth", false))
+                .difficulty(options.getEnum("difficulty", Garth.Difficulty.class, Garth.Difficulty.EASY))
                 .build(), random);
     }
 
     @Override
     public void executeAutoma(Game state, Player player, Random random) {
-        new Automa().execute(state, player, random);
+        var automaState = state.playerState(player).getAutomaState();
+        if (automaState != null) {
+            automaState.execute(state, random);
+        } else {
+            // For backwards compatibility
+            new Automa().execute(state, player, random);
+        }
     }
 
     @Override

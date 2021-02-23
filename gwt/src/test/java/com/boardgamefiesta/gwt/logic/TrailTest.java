@@ -15,10 +15,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TrailTest {
 
-    Player playerA = new Player("Player A", PlayerColor.BLUE);
-    Player playerB = new Player("Player B", PlayerColor.RED);
-    Player playerC = new Player("Player C", PlayerColor.YELLOW);
-    Player playerD = new Player("Player D", PlayerColor.WHITE);
+    Player playerA = new Player("Player A", PlayerColor.BLUE, Player.Type.HUMAN);
+    Player playerB = new Player("Player B", PlayerColor.RED, Player.Type.HUMAN);
+    Player playerC = new Player("Player C", PlayerColor.YELLOW, Player.Type.HUMAN);
+    Player playerD = new Player("Player D", PlayerColor.WHITE, Player.Type.HUMAN);
 
     Trail trail;
 

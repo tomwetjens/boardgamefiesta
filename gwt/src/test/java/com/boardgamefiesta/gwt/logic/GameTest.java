@@ -32,9 +32,9 @@ class GameTest {
             .buildings(Game.Options.Buildings.RANDOMIZED)
             .build();
 
-    private Player playerA = new Player("Player A", PlayerColor.WHITE);
-    private Player playerB = new Player("Player B", PlayerColor.YELLOW);
-    private Player playerC = new Player("Player C", PlayerColor.BLUE);
+    private Player playerA = new Player("Player A", PlayerColor.WHITE, Player.Type.HUMAN);
+    private Player playerB = new Player("Player B", PlayerColor.YELLOW, Player.Type.HUMAN);
+    private Player playerC = new Player("Player C", PlayerColor.BLUE, Player.Type.HUMAN);
 
     @Nested
     class Create {

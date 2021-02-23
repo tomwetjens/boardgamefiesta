@@ -19,18 +19,20 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PlayerStateTest {
 
-    private static final PlayerBuilding.BuildingSet BUILDING_SET = PlayerBuilding.BuildingSet.from(Game.Options.builder()
+    static final PlayerBuilding.BuildingSet BUILDING_SET = PlayerBuilding.BuildingSet.from(Game.Options.builder()
             .buildings(Game.Options.Buildings.BEGINNER)
             .build(), new Random(0));
 
-    private Player player = new Player("A", PlayerColor.WHITE);
+    static final Game.Options OPTIONS = Game.Options.builder().build();
+
+    private Player player = new Player("A", PlayerColor.WHITE, Player.Type.HUMAN);
 
     @Nested
     class Create {
 
         @Test
         void create() {
-            PlayerState playerState = new PlayerState(player, 6, new Random(0),
+            PlayerState playerState = new PlayerState(player, OPTIONS, 6, new Random(0),
                     BUILDING_SET);
 
             assertThat(playerState.getBalance()).isEqualTo(6);
@@ -57,7 +59,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, new Random(0), BUILDING_SET);
+            playerState = new PlayerState(player, OPTIONS, 6, new Random(0), BUILDING_SET);
         }
 
         @Test
@@ -371,7 +373,7 @@ class PlayerStateTest {
 
         @BeforeEach
         void setUp() {
-            playerState = new PlayerState(player, 6, new Random(0), BUILDING_SET);
+            playerState = new PlayerState(player, OPTIONS, 6, new Random(0), BUILDING_SET);
         }
 
         @Test
@@ -435,7 +437,7 @@ class PlayerStateTest {
 
     @Test
     void payDollarsNegative() {
-        var playerState = new PlayerState(player, 6, new Random(0), BUILDING_SET);
+        var playerState = new PlayerState(player, OPTIONS, 6, new Random(0), BUILDING_SET);
 
         assertThatThrownBy(() -> playerState.payDollars(-1))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -445,7 +447,7 @@ class PlayerStateTest {
 
     @Test
     void gainDollarsNegative() {
-        var playerState = new PlayerState(player, 6, new Random(0), BUILDING_SET);
+        var playerState = new PlayerState(player, OPTIONS, 6, new Random(0), BUILDING_SET);
 
         assertThatThrownBy(() -> playerState.gainDollars(-1))
                 .isInstanceOf(IllegalArgumentException.class);

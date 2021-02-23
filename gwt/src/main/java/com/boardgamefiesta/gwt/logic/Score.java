@@ -26,5 +26,10 @@ public class Score {
         return categories.values().stream().mapToInt(Integer::intValue).sum();
     }
 
+    public Score set(ScoreCategory category, int value) {
+        var map = new HashMap<>(categories);
+        map.put(category, value);
+        return new Score(map);
+    }
 }
 

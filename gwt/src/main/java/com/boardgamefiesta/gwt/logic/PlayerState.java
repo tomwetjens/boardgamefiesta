@@ -64,9 +64,12 @@ public class PlayerState {
     @Getter
     private int branchlets;
 
-    PlayerState(@NonNull Player player, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildings) {
+    @Getter
+    private Garth automaState;
+
+    PlayerState(@NonNull Player player, @NonNull Game.Options options, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildingSet) {
         this.player = player;
-        this.balance = balance;
+        this.balance = player.getType() == Player.Type.COMPUTER ? 999 : balance;
         this.tempCertificates = 0;
 
         this.drawStack = createDrawStack(random);
@@ -79,7 +82,9 @@ public class PlayerState {
         this.workers.put(Worker.CRAFTSMAN, 1);
         this.workers.put(Worker.ENGINEER, 1);
 
-        this.buildings = new HashSet<>(buildings.createPlayerBuildings(player));
+        this.buildings = new HashSet<>(player.getType() == Player.Type.COMPUTER
+                ? buildingSet.createSide(PlayerBuilding.Side.B, player)
+                : buildingSet.createBuildings(player));
         this.unlocked = new EnumMap<>(Unlockable.class);
         this.unlocked.put(Unlockable.AUX_GAIN_DOLLAR, 1);
         this.unlocked.put(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, 1);
@@ -100,6 +105,10 @@ public class PlayerState {
         this.exchangeTokens = 1;
 
         this.branchlets = 15;
+
+        if (player.getType() == Player.Type.COMPUTER) {
+            this.automaState = Garth.create(this, random, options.getDifficulty() != null ? options.getDifficulty() : Garth.Difficulty.EASY);
+        }
 
         drawUpToHandLimit(random);
     }
@@ -129,6 +138,7 @@ public class PlayerState {
                 .add("lastPlacedBranchlet", lastPlacedBranchlet.map(RailroadTrack.Town::getName).orElse(null))
                 .add("exchangeTokens", exchangeTokens)
                 .add("branchlets", branchlets)
+                .add("automaState", automaState != null ? automaState.serialize(factory) : null)
                 .build();
     }
 
@@ -168,7 +178,9 @@ public class PlayerState {
                 JsonDeserializer.getInt("lastUpgradedStation", jsonObject).filter(index -> index >= 0).map(railroadTrack.getStations()::get),
                 Optional.ofNullable(jsonObject.getString("lastPlacedBranchlet")).map(railroadTrack::getTown),
                 jsonObject.getInt("exchangeTokens", 0),
-                jsonObject.getInt("branchlets", 0));
+                jsonObject.getInt("branchlets", 0),
+                jsonObject.get("automaState") != null && jsonObject.get("automaState") != JsonValue.NULL
+                        ? Garth.deserialize(player, jsonObject.getJsonObject("automaState")) : null);
     }
 
     void placeBid(Bid bid) {
@@ -252,11 +264,9 @@ public class PlayerState {
     }
 
     ImmediateActions gainWorker(Worker worker, Game game) {
-        if (workers.get(worker) == 6) {
-            throw new GWTException(GWTError.WORKERS_EXCEED_LIMIT);
-        }
+        addWorker(worker);
 
-        int count = workers.compute(worker, (k, v) -> v + 1);
+        var count = workers.get(worker);
 
         if (worker == Worker.COWBOY) {
             if (count == 4) {
@@ -290,6 +300,14 @@ public class PlayerState {
             }
         }
         return ImmediateActions.none();
+    }
+
+    void addWorker(Worker worker) {
+        if (hasMaxWorkers(worker)) {
+            throw new GWTException(GWTError.WORKERS_EXCEED_LIMIT);
+        }
+
+        workers.compute(worker, (k, v) -> v + 1);
     }
 
     void removeBuilding(PlayerBuilding building) {
@@ -556,7 +574,9 @@ public class PlayerState {
     }
 
     public int getStepLimit(int playerCount) {
-        if (playerCount == 2) {
+        if (player.getType() == Player.Type.COMPUTER) {
+            return Integer.MAX_VALUE;
+        } else if (playerCount == 2) {
             return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
         } else if (playerCount == 3) {
             return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) * 2 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
@@ -602,7 +622,7 @@ public class PlayerState {
 
     Score score(Game game) {
         var objectives = scoreObjectives(game);
-        return new Score(Map.of(
+        var score = new Score(Map.of(
                 ScoreCategory.BID, bid != null ? -bid.getPoints() : 0,
                 ScoreCategory.DOLLARS, balance / 5,
                 ScoreCategory.CATTLE_CARDS, scoreCattleCards(),
@@ -612,6 +632,12 @@ public class PlayerState {
                 ScoreCategory.HAZARDS, scoreHazards(),
                 ScoreCategory.EXTRA_STEP_POINTS, hasUnlocked(Unlockable.EXTRA_STEP_POINTS) ? 3 : 0,
                 ScoreCategory.JOB_MARKET_TOKEN, jobMarketToken ? 2 : 0));
+
+        if (automaState != null) {
+            score = automaState.adjustScore(score, game, this);
+        }
+
+        return score;
     }
 
     public ObjectiveCard.Score scoreObjectives(Game game) {
@@ -803,5 +829,13 @@ public class PlayerState {
 
     void rememberLastPlacedBranchlet(RailroadTrack.Town town) {
         lastPlacedBranchlet = Optional.of(town);
+    }
+
+    int getNumberOfWorkers(Worker worker) {
+        return workers.getOrDefault(worker, 0);
+    }
+
+    boolean hasMaxWorkers(Worker worker) {
+        return getNumberOfWorkers(worker) >= 6;
     }
 }

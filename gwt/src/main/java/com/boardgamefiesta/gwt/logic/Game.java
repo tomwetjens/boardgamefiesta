@@ -86,7 +86,7 @@ public class Game implements State {
         PlayerBuilding.BuildingSet buildings = PlayerBuilding.BuildingSet.from(options, random);
 
         var playerStates = players.stream()
-                .collect(Collectors.toMap(Function.identity(), player -> new PlayerState(player, 0, random, buildings)));
+                .collect(Collectors.toMap(Function.identity(), player -> new PlayerState(player, options, 0, random, buildings)));
 
         var kansasCitySupply = options.getVariant() == Options.Variant.BALANCED
                 ? KansasCitySupply.balanced(players.size(), random)
@@ -292,7 +292,11 @@ public class Game implements State {
     }
 
     void fireActionEvent(Action action, List<String> params) {
-        fireActionEvent(ActionType.of(action.getClass()).name(), params);
+        fireActionEvent(action.getClass(), params);
+    }
+
+    void fireActionEvent(Class<? extends Action> actionClass, List<String> params) {
+        fireActionEvent(ActionType.of(actionClass).name(), params);
     }
 
     void fireActionEvent(String name, List<String> params) {
@@ -454,9 +458,13 @@ public class Game implements State {
 
     public Optional<Score> scoreDetails(Player player) {
         var playerState = playerState(player);
-        return isEnded() || mode == Options.Mode.STRATEGIC
-                ? Optional.of(playerState.score(this).add(trail.score(player)).add(railroadTrack.score(player, playerState)))
-                : Optional.empty();
+
+        if (isEnded() || mode == Options.Mode.STRATEGIC) {
+            return Optional.of(playerState.score(this)
+                    .add(trail.score(player))
+                    .add(railroadTrack.score(player, playerState)));
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -763,6 +771,10 @@ public class Game implements State {
         @NonNull
         @Builder.Default
         boolean railsToTheNorth = false;
+
+        @NonNull
+        @Builder.Default
+        Garth.Difficulty difficulty = Garth.Difficulty.EASY;
 
         public enum Buildings {
             BEGINNER,
