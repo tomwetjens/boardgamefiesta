@@ -157,7 +157,10 @@ public class Table {
         updated = started;
 
         CurrentState initialState = CurrentState.initial(game.start(players.stream()
-                .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor()))
+                .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor(),
+                        player.getType() == Player.Type.COMPUTER
+                                ? com.boardgamefiesta.api.domain.Player.Type.COMPUTER
+                                : com.boardgamefiesta.api.domain.Player.Type.HUMAN))
                 .collect(Collectors.toSet()), options, RANDOM));
         currentState = Optional.of(initialState);
         historicStates = HistoricStates.initial(initialState);
@@ -713,6 +716,13 @@ public class Table {
                 .collect(Collectors.toMap(
                         player -> player.getUserId().orElseThrow(),
                         player -> player.getScore().orElseThrow()));
+    }
+
+    public boolean canLeave(User.Id userId) {
+        return (status == Status.NEW || status == Status.STARTED)
+                && getPlayerByUserId(userId)
+                .map(Player::isPlaying)
+                .orElse(false);
     }
 
     public enum Status {

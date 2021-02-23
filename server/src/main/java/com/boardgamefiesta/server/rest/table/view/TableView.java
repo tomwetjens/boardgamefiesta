@@ -90,9 +90,7 @@ public class TableView {
         canAccept = table.getPlayerByUserId(currentUserId)
                 .map(player -> player.getStatus() == Player.Status.INVITED)
                 .orElse(false);
-        canLeave = table.getPlayerByUserId(currentUserId)
-                .map(Player::isPlaying)
-                .orElse(false);
+        canLeave = table.canLeave(currentUserId);
 
         // TODO Remove when frontend is using canStart and canAccept
         startable = canStart;
