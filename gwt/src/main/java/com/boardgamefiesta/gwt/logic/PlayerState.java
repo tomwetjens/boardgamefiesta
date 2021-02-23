@@ -64,7 +64,6 @@ public class PlayerState {
     @Getter
     private int branchlets;
 
-    @Getter
     private Garth automaState;
 
     PlayerState(@NonNull Player player, @NonNull Game.Options options, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildingSet) {
@@ -111,6 +110,12 @@ public class PlayerState {
         }
 
         drawUpToHandLimit(random);
+    }
+
+    void start(Game game, Random random) {
+        if (automaState != null) {
+            automaState.start(game, random);
+        }
     }
 
     JsonObject serialize(JsonBuilderFactory factory, RailroadTrack railroadTrack) {
@@ -837,5 +842,9 @@ public class PlayerState {
 
     boolean hasMaxWorkers(Worker worker) {
         return getNumberOfWorkers(worker) >= 6;
+    }
+
+    public Optional<Garth> getAutomaState() {
+        return Optional.ofNullable(automaState);
     }
 }

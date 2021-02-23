@@ -85,12 +85,12 @@ public class Game implements State {
 
         PlayerBuilding.BuildingSet buildings = PlayerBuilding.BuildingSet.from(options, random);
 
-        var playerStates = players.stream()
-                .collect(Collectors.toMap(Function.identity(), player -> new PlayerState(player, options, 0, random, buildings)));
-
         var kansasCitySupply = options.getVariant() == Options.Variant.BALANCED
                 ? KansasCitySupply.balanced(players.size(), random)
                 : KansasCitySupply.original(random);
+
+        var playerStates = players.stream()
+                .collect(Collectors.toMap(Function.identity(), player -> new PlayerState(player, options, 0, random, buildings)));
 
         var game = builder()
                 .mode(options.getMode())
@@ -117,7 +117,7 @@ public class Game implements State {
         game.placeInitialTiles();
 
         if (options.getPlayerOrder() != Options.PlayerOrder.BIDDING) {
-            game.start();
+            game.start(random);
         } else {
             game.startBidding();
         }
@@ -131,7 +131,7 @@ public class Game implements State {
         beginFirstTurn();
     }
 
-    void placeBid(Bid bid) {
+    void placeBid(Bid bid, Random random) {
         if (bid.getPosition() < 0 || bid.getPosition() >= playerOrder.size()) {
             throw new GWTException(GWTError.BID_INVALID_POSITION);
         }
@@ -152,10 +152,10 @@ public class Game implements State {
 
         playerState.placeBid(bid);
 
-        endBiddingIfCompleted();
+        endBiddingIfCompleted(random);
     }
 
-    private void endBiddingIfCompleted() {
+    private void endBiddingIfCompleted(Random random) {
         var uncontested = playerOrder.stream()
                 .map(this::playerState)
                 .map(PlayerState::getBid)
@@ -170,11 +170,11 @@ public class Game implements State {
 
             playerOrder = playerOrderFromBids();
 
-            start();
+            start(random);
         }
     }
 
-    private void start() {
+    private void start(Random random) {
         for (int i = 0; i < playerOrder.size(); i++) {
             var player = playerOrder.get(i);
             var playerState = playerStates.get(player);
@@ -185,6 +185,8 @@ public class Game implements State {
 
             playerState.gainDollars(startBalance);
             playerState.commitToObjectiveCard(startingObjectiveCards.remove(0));
+
+            playerState.getAutomaState().ifPresent(automaState -> automaState.start(this, random));
         }
 
         status = Status.STARTED; // change before determining begin turn actions
@@ -621,13 +623,13 @@ public class Game implements State {
     }
 
     @Override
-    public void leave(Player player) {
+    public void leave(Player player, Random random) {
         playerOrder.remove(player);
         // Do not remove player from "players" set since there may be buildings, railroad track etc. referring to the player still,
         // and these are deserialized back from that single set which must therefore not be modified after game has started
 
         if (status == Status.BIDDING) {
-            endBiddingIfCompleted();
+            endBiddingIfCompleted(random);
         } else if (status == Status.STARTED) {
             if (currentPlayer == player) {
                 actionStack.clear();

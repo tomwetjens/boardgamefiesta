@@ -34,7 +34,7 @@ public interface State {
         return getPlayers().stream().filter(player -> name.equals(player.getName())).findAny();
     }
 
-    void leave(Player player);
+    void leave(Player player, Random random);
 
     Stats stats(Player player);
 }

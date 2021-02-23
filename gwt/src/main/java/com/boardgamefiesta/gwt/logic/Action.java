@@ -1857,7 +1857,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(@NonNull Game game, @NonNull Random random) {
             game.fireActionEvent(this, List.of(Integer.toString(bid.getPoints()), Integer.toString(bid.getPosition() + 1)));
 
-            game.placeBid(bid);
+            game.placeBid(bid, random);
 
             return ActionResult.undoNotAllowed(ImmediateActions.none()); // cannot undo so turn is ended automatically
         }

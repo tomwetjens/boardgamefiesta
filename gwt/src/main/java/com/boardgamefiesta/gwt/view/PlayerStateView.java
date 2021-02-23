@@ -46,6 +46,8 @@ public class PlayerStateView {
     int exchangeTokens;
     int branchlets;
 
+    AutomaStateView automaState;
+
     PlayerStateView(@NonNull Game state, @NonNull PlayerState playerState, Player viewingPlayer) {
         player = new PlayerView(playerState.getPlayer());
 
@@ -132,5 +134,7 @@ public class PlayerStateView {
         exchangeTokens = playerState.getExchangeTokens();
 
         branchlets = playerState.getBranchlets();
+
+        automaState = playerState.getAutomaState().map(AutomaStateView::new).orElse(null);
     }
 }

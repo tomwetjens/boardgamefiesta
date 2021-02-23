@@ -310,7 +310,7 @@ public class PowerGrid implements State {
     }
 
     @Override
-    public void leave(Player player) {
+    public void leave(Player player, Random random) {
 
     }
 

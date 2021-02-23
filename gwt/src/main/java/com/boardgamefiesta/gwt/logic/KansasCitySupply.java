@@ -105,6 +105,10 @@ public class KansasCitySupply {
         return drawPiles.get(drawPileIndex).draw();
     }
 
+    void remove(int drawPileIndex, Worker worker) {
+        drawPiles.get(drawPileIndex).removeWorkers(worker, 1);
+    }
+
     private static ArrayList<Tile> createSet1() {
         return Stream.concat(
                 Stream.concat(

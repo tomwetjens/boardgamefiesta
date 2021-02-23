@@ -322,7 +322,7 @@ public class Table {
         if (status == Status.STARTED) {
             if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
                 // Game is still able to continue with one less player
-                runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow()));
+                runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
             } else {
                 // Game cannot be continued without player
                 abandon();

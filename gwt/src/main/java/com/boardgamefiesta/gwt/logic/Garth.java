@@ -25,6 +25,7 @@ public class Garth {
     private final List<GarthAction> discardPile;
     private final Difficulty difficulty;
 
+    @Getter
     private Worker specialization;
 
     Score adjustScore(Score score, Game game, PlayerState playerState) {
@@ -38,6 +39,42 @@ public class Garth {
                         .sum())
                 .set(ScoreCategory.CITIES, score.getCategories().getOrDefault(ScoreCategory.CITIES, 0) - game.getRailroadTrack().scoreSanFrancisco(player, playerState)
                         + game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO) * 6);
+    }
+
+    void start(Game game, Random random) {
+        var playerState = game.playerState(player);
+
+        switch (difficulty) {
+            case MEDIUM:
+                game.getKansasCitySupply().remove(1, specialization);
+                playerState.addWorker(specialization);
+                break;
+
+            case HARD:
+                var startWorker = randomWorker(random);
+                game.getKansasCitySupply().remove(1, startWorker);
+                playerState.addWorker(startWorker);
+
+                var secondStartWorker = randomDifferentWorker(random, startWorker);
+                game.getKansasCitySupply().remove(2, secondStartWorker);
+                playerState.addWorker(secondStartWorker);
+                break;
+
+            case VERY_HARD:
+                game.getKansasCitySupply().remove(1, Worker.COWBOY);
+                playerState.addWorker(Worker.COWBOY);
+
+                game.getKansasCitySupply().remove(2, Worker.CRAFTSMAN);
+                playerState.addWorker(Worker.CRAFTSMAN);
+
+                game.getKansasCitySupply().remove(1, Worker.ENGINEER);
+                playerState.addWorker(Worker.ENGINEER);
+
+                var fourthStartWorker = randomWorker(random);
+                game.getKansasCitySupply().remove(2, fourthStartWorker);
+                playerState.addWorker(fourthStartWorker);
+                break;
+        }
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -62,28 +99,8 @@ public class Garth {
         var drawStack = new LinkedList<>(deck);
 
         var specialization = randomWorker(random);
-        var garth = new Garth(playerState.getPlayer(), drawStack, new LinkedList<>(), difficulty, specialization);
 
-        switch (difficulty) {
-            case MEDIUM:
-                playerState.addWorker(specialization);
-                break;
-
-            case HARD:
-                var startWorker = randomWorker(random);
-                playerState.addWorker(startWorker);
-                playerState.addWorker(randomDifferentWorker(random, startWorker));
-                break;
-
-            case VERY_HARD:
-                playerState.addWorker(Worker.COWBOY);
-                playerState.addWorker(Worker.CRAFTSMAN);
-                playerState.addWorker(Worker.ENGINEER);
-                playerState.addWorker(randomWorker(random));
-                break;
-        }
-
-        return garth;
+        return new Garth(playerState.getPlayer(), drawStack, new LinkedList<>(), difficulty, specialization);
     }
 
     private static Worker randomDifferentWorker(Random random, Worker differentThan) {
@@ -160,7 +177,6 @@ public class Garth {
         } else if (possibleActions.contains(Action.ChooseForesight3.class)) {
             game.perform(new Action.ChooseForesight3(chooseForesight(game.getForesights().choices(2), random)), random);
         } else if (possibleActions.contains(Action.DeliverToCity.class)) {
-            var possibleDeliveries = game.possibleDeliveries(player);
             game.perform(new Action.DeliverToCity(calculateDelivery(game, player), 0), random);
         } else if (possibleActions.contains(Action.UnlockWhite.class)) {
             game.perform(new Action.UnlockWhite(randomWhiteDisc(playerState, game)), random);
@@ -234,7 +250,7 @@ public class Garth {
 
         private static int numberOfSpecializedWorkers(Game game, Player player) {
             var playerState = game.playerState(player);
-            return playerState.getNumberOfWorkers(playerState.getAutomaState().specialization);
+            return playerState.getNumberOfWorkers(playerState.getAutomaState().orElseThrow().specialization);
         }
 
         private static int highestNumberOfBuildingsAmongPlayers(Game game) {

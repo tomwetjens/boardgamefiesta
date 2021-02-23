@@ -63,7 +63,7 @@ public class GWT implements GameProvider<Game> {
 
     @Override
     public void executeAutoma(Game state, Player player, Random random) {
-        var automaState = state.playerState(player).getAutomaState();
+        var automaState = state.playerState(player).getAutomaState().orElseThrow();
         if (automaState != null) {
             automaState.execute(state, random);
         } else {

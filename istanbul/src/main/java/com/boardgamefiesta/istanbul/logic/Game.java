@@ -332,7 +332,7 @@ public class Game implements State {
     }
 
     @Override
-    public void leave(Player player) {
+    public void leave(Player player, Random random) {
         if (playerOrder.contains(player)) {
             if (currentPlayer == player) {
                 actionQueue.clear();
