@@ -1,9 +1,9 @@
 package com.boardgamefiesta.server.event.repository;
 
-import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.domain.user.User;
+import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import com.boardgamefiesta.server.event.domain.WebSocketConnection;
 import com.boardgamefiesta.server.event.domain.WebSocketConnections;
-import com.boardgamefiesta.server.repository.DynamoDbConfiguration;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;

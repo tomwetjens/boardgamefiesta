@@ -69,6 +69,14 @@
             <groupId>com.boardgamefiesta</groupId>
             <artifactId>api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>domain</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>dynamodb</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.boardgamefiesta</groupId>

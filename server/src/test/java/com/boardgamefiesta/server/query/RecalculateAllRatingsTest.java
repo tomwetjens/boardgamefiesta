@@ -1,15 +1,15 @@
 package com.boardgamefiesta.server.query;
 
-import com.boardgamefiesta.server.domain.game.Games;
-import com.boardgamefiesta.server.domain.rating.RatingAdjuster;
-import com.boardgamefiesta.server.domain.rating.Ratings;
-import com.boardgamefiesta.server.domain.table.Player;
-import com.boardgamefiesta.server.domain.table.Tables;
-import com.boardgamefiesta.server.domain.user.Users;
-import com.boardgamefiesta.server.repository.DynamoDbConfiguration;
-import com.boardgamefiesta.server.repository.RatingDynamoDbRepository;
-import com.boardgamefiesta.server.repository.TableDynamoDbRepository;
-import com.boardgamefiesta.server.repository.UserDynamoDbRepository;
+import com.boardgamefiesta.domain.game.Games;
+import com.boardgamefiesta.domain.rating.RatingAdjuster;
+import com.boardgamefiesta.domain.rating.Ratings;
+import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.table.Tables;
+import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
+import com.boardgamefiesta.dynamodb.RatingDynamoDbRepository;
+import com.boardgamefiesta.dynamodb.TableDynamoDbRepository;
+import com.boardgamefiesta.dynamodb.UserDynamoDbRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

@@ -2,9 +2,9 @@ package com.boardgamefiesta.server.rest.table.command;
 
 import com.boardgamefiesta.api.domain.Action;
 import com.boardgamefiesta.api.domain.State;
-import com.boardgamefiesta.server.domain.APIError;
-import com.boardgamefiesta.server.domain.APIException;
-import com.boardgamefiesta.server.domain.game.Game;
+import com.boardgamefiesta.domain.game.Game;
+import com.boardgamefiesta.server.rest.exception.APIError;
+import com.boardgamefiesta.server.rest.exception.APIException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 

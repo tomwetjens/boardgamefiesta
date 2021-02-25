@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.rest.game;
 
-import com.boardgamefiesta.server.domain.game.Game;
-import com.boardgamefiesta.server.domain.user.Users;
-import com.boardgamefiesta.server.domain.rating.Ratings;
+import com.boardgamefiesta.domain.game.Game;
+import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.domain.rating.Ratings;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;

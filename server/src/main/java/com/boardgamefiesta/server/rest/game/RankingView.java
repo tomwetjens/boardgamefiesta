@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.rest.game;
 
-import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 import lombok.Value;
 

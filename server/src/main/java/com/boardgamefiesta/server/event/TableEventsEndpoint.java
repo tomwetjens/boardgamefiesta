@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.event;
 
-import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.domain.table.Table;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;

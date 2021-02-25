@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.automa;
 
-import com.boardgamefiesta.server.domain.DomainService;
-import com.boardgamefiesta.server.domain.table.Player;
-import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.domain.DomainService;
+import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.table.Table;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 

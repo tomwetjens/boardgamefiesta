@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.automa;
 
-import com.boardgamefiesta.server.domain.table.Player;
-import com.boardgamefiesta.server.domain.table.Table;
-import com.boardgamefiesta.server.domain.table.Tables;
+import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.table.Table;
+import com.boardgamefiesta.domain.table.Tables;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,7 +47,7 @@ class AutomaExecutor {
                 try {
                     tables.update(table);
                     return;
-                } catch (Tables.TableConcurrentlyModifiedException e) {
+                } catch (Tables.ConcurrentModificationException e) {
                     if (retries >= 256) {
                         throw new RuntimeException("Executor failed after " + retries + " retries. Table id " + table.getId().getId() + ", version " + table.getVersion(), e);
                     }

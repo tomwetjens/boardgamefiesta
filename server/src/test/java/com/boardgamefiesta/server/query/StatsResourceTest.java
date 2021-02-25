@@ -1,9 +1,10 @@
 package com.boardgamefiesta.server.query;
 
-import com.boardgamefiesta.server.domain.game.Games;
-import com.boardgamefiesta.server.repository.DynamoDbConfiguration;
-import com.boardgamefiesta.server.repository.TableDynamoDbRepository;
-import com.boardgamefiesta.server.repository.UserDynamoDbRepository;
+import com.boardgamefiesta.domain.game.Games;
+import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
+import com.boardgamefiesta.dynamodb.TableDynamoDbRepository;
+import com.boardgamefiesta.dynamodb.UserDynamoDbRepository;
+import com.boardgamefiesta.server.rest.game.StatsResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,6 @@ import javax.ws.rs.core.StreamingOutput;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.mockito.Mockito.when;

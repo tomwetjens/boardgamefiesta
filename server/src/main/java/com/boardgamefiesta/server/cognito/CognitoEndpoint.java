@@ -1,9 +1,10 @@
 package com.boardgamefiesta.server.cognito;
 
-import com.boardgamefiesta.server.domain.APIError;
-import com.boardgamefiesta.server.domain.APIException;
-import com.boardgamefiesta.server.domain.user.User;
-import com.boardgamefiesta.server.domain.user.Users;
+import com.boardgamefiesta.domain.exception.DomainException;
+import com.boardgamefiesta.domain.user.User;
+import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.rest.exception.APIError;
+import com.boardgamefiesta.server.rest.exception.APIException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
@@ -53,9 +54,6 @@ public class CognitoEndpoint {
             var response = new PreSignUpResponse();
             log.info("Returning from Pre Sign-up trigger: {}", response);
             return response;
-        } catch (APIException e) {
-            // Do not wrap API exceptions
-            throw e;
         } catch (RuntimeException e) {
             // Any other error, hide details from client
             log.error("Error occurred in Pre Sign-up trigger: {}", e.getMessage(), e);

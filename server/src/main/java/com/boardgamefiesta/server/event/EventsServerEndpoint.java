@@ -1,10 +1,10 @@
 package com.boardgamefiesta.server.event;
 
-import com.boardgamefiesta.server.domain.table.Player;
-import com.boardgamefiesta.server.domain.table.Table;
-import com.boardgamefiesta.server.domain.table.Tables;
-import com.boardgamefiesta.server.domain.user.Friend;
-import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.table.Table;
+import com.boardgamefiesta.domain.table.Tables;
+import com.boardgamefiesta.domain.user.Friend;
+import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.server.event.domain.WebSocketConnection;
 import com.boardgamefiesta.server.event.domain.WebSocketConnections;
 import lombok.NonNull;
@@ -126,16 +126,6 @@ public class EventsServerEndpoint {
     void abandoned(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Abandoned event) {
         var table = tables.findById(event.getTableId(), false);
         notifyOtherPlayers(null, table, new Event(Event.EventType.ABANDONED, event.getTableId().getId(), null));
-    }
-
-    void proposedToLeave(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ProposedToLeave event) {
-        var table = tables.findById(event.getTableId(), false);
-        notifyOtherPlayers(null, table, new Event(Event.EventType.PROPOSED_TO_LEAVE, event.getTableId().getId(), event.getUserId().getId()));
-    }
-
-    void agreedToLeave(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.AgreedToLeave event) {
-        var table = tables.findById(event.getTableId(), false);
-        notifyOtherPlayers(null, table, new Event(Event.EventType.AGREED_TO_LEAVE, event.getTableId().getId(), event.getUserId().getId()));
     }
 
     void kicked(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {

@@ -1,11 +1,10 @@
 package com.boardgamefiesta.server.event.domain;
 
-import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.domain.user.User;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 
-import javax.websocket.Session;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 

@@ -1,9 +1,9 @@
 package com.boardgamefiesta.server.rest.user;
 
-import com.boardgamefiesta.server.domain.APIError;
-import com.boardgamefiesta.server.domain.APIException;
-import com.boardgamefiesta.server.domain.user.User;
-import com.boardgamefiesta.server.domain.user.Users;
+import com.boardgamefiesta.domain.user.User;
+import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.rest.exception.APIError;
+import com.boardgamefiesta.server.rest.exception.APIException;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
@@ -145,9 +145,9 @@ public class UserResource {
                 users.update(table);
 
                 return table;
-            } catch (Users.UserConcurrentlyModifiedException e) {
+            } catch (Users.ConcurrentModificationException e) {
                 if (retries >= 1) {
-                    throw APIException.conflict(APIError.CONCURRENT_MODIFICATION);
+                    throw e;
                 }
                 retries++;
             }

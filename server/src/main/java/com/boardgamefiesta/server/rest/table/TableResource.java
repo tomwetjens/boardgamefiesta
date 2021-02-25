@@ -1,16 +1,17 @@
 package com.boardgamefiesta.server.rest.table;
 
 import com.boardgamefiesta.api.domain.Options;
-import com.boardgamefiesta.server.domain.*;
-import com.boardgamefiesta.server.domain.game.Game;
-import com.boardgamefiesta.server.domain.game.Games;
-import com.boardgamefiesta.server.domain.rating.Rating;
-import com.boardgamefiesta.server.domain.rating.Ratings;
-import com.boardgamefiesta.server.domain.table.Player;
-import com.boardgamefiesta.server.domain.table.Table;
-import com.boardgamefiesta.server.domain.table.Tables;
-import com.boardgamefiesta.server.domain.user.User;
-import com.boardgamefiesta.server.domain.user.Users;
+import com.boardgamefiesta.domain.game.Game;
+import com.boardgamefiesta.domain.game.Games;
+import com.boardgamefiesta.domain.rating.Rating;
+import com.boardgamefiesta.domain.rating.Ratings;
+import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.table.Table;
+import com.boardgamefiesta.domain.table.Tables;
+import com.boardgamefiesta.domain.user.User;
+import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.rest.exception.APIError;
+import com.boardgamefiesta.server.rest.exception.APIException;
 import com.boardgamefiesta.server.rest.table.command.*;
 import com.boardgamefiesta.server.rest.table.view.LogEntryView;
 import com.boardgamefiesta.server.rest.table.view.TableView;
@@ -140,7 +141,7 @@ public class TableResource {
     @Path("/{id}/private")
     @Transactional
     public void makePrivate(@PathParam("id") String id) {
-        handleConcurrentModification(Table.Id.of(id), table ->{
+        handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
 
             table.makePrivate();
@@ -337,9 +338,9 @@ public class TableResource {
                 tables.update(table);
 
                 return table;
-            } catch (Tables.TableConcurrentlyModifiedException e) {
+            } catch (ConcurrentModificationException e) {
                 if (retries >= 1) {
-                    throw APIException.conflict(APIError.CONCURRENT_MODIFICATION);
+                    throw e;
                 }
                 retries++;
             }

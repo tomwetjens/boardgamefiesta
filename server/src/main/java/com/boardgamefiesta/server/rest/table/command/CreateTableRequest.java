@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.rest.table.command;
 
-import com.boardgamefiesta.server.domain.table.Table;
+import com.boardgamefiesta.domain.table.Table;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;

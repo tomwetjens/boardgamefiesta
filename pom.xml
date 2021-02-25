@@ -27,6 +27,8 @@
 
     <modules>
         <module>api</module>
+        <module>domain</module>
+        <module>dynamodb</module>
         <module>gwt</module>
         <module>istanbul</module>
         <module>powergrid</module>
@@ -38,6 +40,16 @@
             <dependency>
                 <groupId>com.boardgamefiesta</groupId>
                 <artifactId>api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>dynamodb</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

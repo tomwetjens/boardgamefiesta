@@ -1,9 +1,9 @@
 package com.boardgamefiesta.server.rest.user;
 
-import com.boardgamefiesta.server.domain.user.Friend;
-import com.boardgamefiesta.server.domain.user.Friends;
-import com.boardgamefiesta.server.domain.user.User;
-import com.boardgamefiesta.server.domain.user.Users;
+import com.boardgamefiesta.domain.user.Friend;
+import com.boardgamefiesta.domain.user.Friends;
+import com.boardgamefiesta.domain.user.User;
+import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 import lombok.Data;
 

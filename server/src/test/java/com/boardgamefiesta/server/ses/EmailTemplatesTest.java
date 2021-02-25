@@ -1,8 +1,8 @@
 package com.boardgamefiesta.server.ses;
 
-import com.boardgamefiesta.server.domain.game.Game;
-import com.boardgamefiesta.server.domain.table.Table;
-import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.domain.game.Game;
+import com.boardgamefiesta.domain.table.Table;
+import com.boardgamefiesta.domain.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

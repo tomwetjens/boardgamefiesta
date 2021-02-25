@@ -1,6 +1,6 @@
 package com.boardgamefiesta.server.event.domain;
 
-import com.boardgamefiesta.server.domain.user.User;
+import com.boardgamefiesta.domain.user.User;
 
 import java.time.Instant;
 
