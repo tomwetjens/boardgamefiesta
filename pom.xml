@@ -27,6 +27,7 @@
 
     <modules>
         <module>api</module>
+        <module>cognito</module>
         <module>domain</module>
         <module>dynamodb</module>
         <module>gwt</module>

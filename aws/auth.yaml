@@ -3,93 +3,64 @@ Description: Auth for Board Game Fiesta
 Parameters:
   Environment:
     Type: String
+  Version:
+    Type: String
+  UserPoolId:
+    Type: String
+    Default: eu-west-1_xyGFrQowZ
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
 Resources:
-  #  MigrateUserLambdaTriggerRole:
-  #    Type: AWS::IAM::Role
-  #    Properties:
-  #      AssumeRolePolicyDocument:
-  #        Version: '2012-10-17'
-  #        Statement:
-  #          - Effect: Allow
-  #            Principal:
-  #              Service:
-  #                - lambda.amazonaws.com
-  #            Action:
-  #              - sts:AssumeRole
-  #      Path: "/"
-  #      Policies:
-  #        - PolicyName: root
-  #          PolicyDocument:
-  #            Version: '2012-10-17'
-  #            Statement:
-  #              - Effect: Allow
-  #                Action:
-  #                  - logs:CreateLogGroup
-  #                  - logs:CreateLogStream
-  #                  - logs:PutLogEvents
-  #                Resource: arn:aws:logs:*:*:*
-  #              - Effect: Allow
-  #                Action:
-  #                  - cognito-idp:AdminInitiateAuth
-  #                  - cognito-idp:AdminGetUser
-  #                Resource: '*'
-  #
-  #  MigrateUserLambdaTrigger:
-  #    Type: AWS::Lambda::Function
-  #    Properties:
-  #      Handler: index.handler
-  #      MemorySize: 128
-  #      Role: !GetAtt MigrateUserLambdaTriggerRole.Arn
-  #      Runtime: nodejs12.x
-  #      Code:
-  #        ZipFile: |
-  #          exports.handler = (event, context, callback) => {
-  #
-  #              var user;
-  #
-  #              if ( event.triggerSource == "UserMigration_Authentication" ) {
-  #
-  #                  // authenticate the user with your existing user directory service
-  #                  user = authenticateUser(event.userName, event.request.password);
-  #                  if ( user ) {
-  #                      event.response.userAttributes = {
-  #                          "email": user.emailAddress,
-  #                          "email_verified": "true"
-  #                      };
-  #                      event.response.finalUserStatus = "CONFIRMED";
-  #                      event.response.messageAction = "SUPPRESS";
-  #                      context.succeed(event);
-  #                  }
-  #                  else {
-  #                      // Return error to Amazon Cognito
-  #                      callback("Bad password");
-  #                  }
-  #              }
-  #              else if ( event.triggerSource == "UserMigration_ForgotPassword" ) {
-  #
-  #                  // Lookup the user in your existing user directory service
-  #                  user = lookupUser(event.userName);
-  #                  if ( user ) {
-  #                      event.response.userAttributes = {
-  #                          "email": user.emailAddress,
-  #                          // required to enable password-reset code to be sent to user
-  #                          "email_verified": "true"
-  #                      };
-  #                      event.response.messageAction = "SUPPRESS";
-  #                      context.succeed(event);
-  #                  }
-  #                  else {
-  #                      // Return error to Amazon Cognito
-  #                      callback("Bad password");
-  #                  }
-  #              }
-  #              else {
-  #                  // Return error to Amazon Cognito
-  #                  callback("Bad triggerSource " + event.triggerSource);
-  #              }
-  #          };
+  MigrateUserTriggerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '${AWS::StackName}-MigrateUserTrigger'
+      RetentionInDays: 7
+
+  MigrateUserTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt MigrateUserTriggerLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminInitiateAuth
+                  - cognito-idp:AdminGetUser
+                Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/eu-west-1_c5qwAzc0x'
+
+  MigrateUserTriggerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 128
+      Role: !GetAtt MigrateUserTriggerRole.Arn
+      Runtime: java11
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: migrateUser
+          OLDUSERPOOLID: eu-west-1_c5qwAzc0x
+          OLDCLIENTID: 39334dh8ifidq5dpmnch2vnopr
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/cognito.zip'
 
   PreSignUpTriggerLogGroup:
     Type: AWS::Logs::LogGroup
@@ -120,59 +91,26 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !GetAtt PreSignUpTriggerLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-users'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-users/index/*'
 
-  PreSignUpTriggerFunction:
+  PreSignUpTriggerLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-PreSignUpTrigger'
-      Handler: index.handler
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       MemorySize: 128
       Role: !GetAtt PreSignUpTriggerRole.Arn
-      Runtime: nodejs12.x
+      Runtime: java11
       Environment:
         Variables:
-          URL: !Join [ '', [ 'https://api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com/cognito/presignup' ] ]
+          QUARKUS_LAMBDA_HANDLER: preSignUp
       Code:
-        ZipFile: |
-          const https = require('https');
-
-          exports.handler = (event, context, callback) => {
-              const url = process.env.URL;
-              const options = {method: 'POST', headers: {'Content-Type': 'application/json'}};
-              const requestBody = JSON.stringify(event);
-
-              console.log('Requesting ' + options.method + ' ' + url + ':', requestBody);
-              const req = https.request(url, options, res => {
-                  let body = '';
-                  console.log('Status:', res.statusCode);
-                  console.log('Headers:', JSON.stringify(res.headers));
-                  res.setEncoding('utf8');
-                  res.on('data', chunk => body += chunk);
-                  res.on('end', () => {
-                      // If we know it's JSON, parse it
-                      if (res.headers['content-type'] === 'application/json') {
-                          body = JSON.parse(body);
-                      }
-
-                      if (res.statusCode >= 400) {
-                          console.error('Error response:', res.statusCode, body);
-                          callback(body.errorCode || body || res.statusCode, event);
-                          return;
-                      }
-
-                      console.log('Success response:', res.statusCode, body);
-
-                      // Return to Amazon Cognito
-                      if (body && body !== '') {
-                          event.response = body;
-                      }
-                      callback(null, event);
-                  });
-              });
-              req.on('error', callback);
-              req.write(requestBody);
-              req.end();
-          };
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/cognito.zip'
 
   PostConfirmationTriggerLogGroup:
     Type: AWS::Logs::LogGroup
@@ -203,156 +141,39 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !GetAtt PostConfirmationTriggerLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminAddUserToGroup
+                Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:PutItem
+                Resource:
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-users'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-users/index/*'
 
-  PostConfirmationTriggerFunction:
+  PostConfirmationTriggerLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-PostConfirmationTrigger'
-      Handler: index.handler
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       MemorySize: 128
       Role: !GetAtt PostConfirmationTriggerRole.Arn
-      Runtime: nodejs12.x
+      Runtime: java11
       Environment:
         Variables:
-          URL: !Join [ '', [ 'https://api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com/cognito/postconfirmation' ] ]
+          QUARKUS_LAMBDA_HANDLER: postConfirmation
       Code:
-        ZipFile: |
-          const https = require('https');
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/cognito.zip'
 
-          exports.handler = (event, context, callback) => {
-              const url = process.env.URL;
-              const options = {method: 'POST', headers: {'Content-Type': 'application/json'}};
-              const requestBody = JSON.stringify(event);
-
-              console.log('Requesting ' + options.method + ' ' + url + ':', requestBody);
-              const req = https.request(url, options, res => {
-                  let body = '';
-                  console.log('Status:', res.statusCode);
-                  console.log('Headers:', JSON.stringify(res.headers));
-                  res.setEncoding('utf8');
-                  res.on('data', chunk => body += chunk);
-                  res.on('end', () => {
-                      // If we know it's JSON, parse it
-                      if (res.headers['content-type'] === 'application/json') {
-                          body = JSON.parse(body);
-                      }
-
-                      if (res.statusCode >= 400) {
-                          console.error('Error response:', res.statusCode, body);
-                          callback(body.errorCode || body || res.statusCode, event);
-                          return;
-                      }
-
-                      console.log('Success response:', res.statusCode, body);
-
-                      // Return to Amazon Cognito
-                      if (body && body !== '') {
-                          event.response = body;
-                      }
-                      callback(null, event);
-                  });
-              });
-              req.on('error', callback);
-              req.write(requestBody);
-              req.end();
-          };
-
-  UserPool:
-    Type: AWS::Cognito::UserPool
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+  PreTokenGenerationTriggerLogGroup:
+    Type: AWS::Logs::LogGroup
     Properties:
-      UserPoolName: !Sub 'boardgamefiesta-${Environment}'
-      UsernameAttributes:
-        - email
-      AccountRecoverySetting:
-        RecoveryMechanisms:
-          - Name: verified_email
-            Priority: 1
-      AdminCreateUserConfig:
-        AllowAdminCreateUserOnly: false
-      AutoVerifiedAttributes:
-        - email
-      EmailConfiguration:
-        EmailSendingAccount: DEVELOPER
-        From: info@boardgamefiesta.com
-        SourceArn: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/info@boardgamefiesta.com'
-      LambdaConfig:
-        PreSignUp: !GetAtt PreSignUpTriggerFunction.Arn
-        PostConfirmation: !GetAtt PostConfirmationTriggerFunction.Arn
-      Policies:
-        PasswordPolicy:
-          MinimumLength: 8
-          RequireLowercase: false
-          RequireNumbers: false
-          RequireSymbols: false
-          RequireUppercase: false
-          TemporaryPasswordValidityDays: 7
-      UsernameConfiguration:
-        CaseSensitive: true
+      LogGroupName: !Sub '${AWS::StackName}-PreTokenGenerationTrigger'
+      RetentionInDays: 7
 
-  PreSignUpTriggerPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - PreSignUpTriggerFunction
-      - UserPool
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt PreSignUpTriggerFunction.Arn
-      Principal: cognito-idp.amazonaws.com
-      SourceArn: !GetAtt UserPool.Arn
-
-  PostConfirmationTriggerPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - PostConfirmationTriggerFunction
-      - UserPool
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt PostConfirmationTriggerFunction.Arn
-      Principal: cognito-idp.amazonaws.com
-      SourceArn: !GetAtt UserPool.Arn
-
-  UserPoolDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties:
-      CustomDomainConfig:
-        CertificateArn: arn:aws:acm:us-east-1:598172618529:certificate/67df310f-1baf-437f-a48c-a062182be260
-      Domain: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
-      UserPoolId: !Ref UserPool
-
-  UserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      AccessTokenValidity: 1
-      AllowedOAuthFlows:
-        - code
-      AllowedOAuthFlowsUserPoolClient: True
-      AllowedOAuthScopes:
-        - profile
-        - email
-        - openid
-      CallbackURLs:
-        - !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
-        - !Join [ '', [ 'https://www.', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
-        # TODO Localhost URL only for dev
-        - 'http://localhost:4200'
-      LogoutURLs:
-        - !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
-        - !Join [ '', [ 'https://www.', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
-        # TODO Localhost URL only for dev
-        - 'http://localhost:4200'
-      ClientName: 'webapp'
-      DefaultRedirectURI: !Join [ '', [ 'https://', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
-      ExplicitAuthFlows:
-        - ALLOW_REFRESH_TOKEN_AUTH
-      GenerateSecret: True
-      RefreshTokenValidity: 30
-      SupportedIdentityProviders:
-        - COGNITO
-      UserPoolId: !Ref UserPool
-
-  DescribeUserPoolDomainRole:
+  PreTokenGenerationTriggerRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -372,55 +193,207 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
-              - Effect: Allow
-                Action:
-                  - cognito-idp:DescribeUserPoolDomain
-                Resource: '*'
+                Resource: !GetAtt PreTokenGenerationTriggerLogGroup.Arn
 
-  # Lambda used as custom resource to get the CloudFront distribution ID of the UserPoolDomain
-  # since that information cannot be retrieved with a !GetAtt
-  DescribeUserPoolDomain:
+  PreTokenGenerationTriggerLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Handler: index.handler
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       MemorySize: 128
-      Role: !GetAtt DescribeUserPoolDomainRole.Arn
-      Runtime: nodejs12.x
+      Role: !GetAtt PreTokenGenerationTriggerRole.Arn
+      Runtime: java11
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: preTokenGeneration
       Code:
-        ZipFile: |
-          var AWS = require('aws-sdk');
-          var cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
-          var response = require('cfn-response');
-          exports.handler = function (event, context) {
-              var params = {Domain: event.ResourceProperties.UserPoolDomain};
-              cognitoidentityserviceprovider.describeUserPoolDomain(params, function(err, data) {
-               if (err) response.send(event, context, response.FAILED);
-               else response.send(event, context, response.SUCCESS, data.DomainDescription);
-              });
-          };
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/cognito.zip'
 
-  UserPoolDomainInfo:
-    Type: Custom::DescribeUserPoolDomain
+  #  UserPool:
+  #    Type: AWS::Cognito::UserPool
+  #    DeletionPolicy: Retain
+  #    UpdateReplacePolicy: Retain
+  #    Properties:
+  #      UserPoolName: !Sub 'boardgamefiesta-${Environment}'
+  #      AccountRecoverySetting:
+  #        RecoveryMechanisms:
+  #          - Name: verified_email
+  #            Priority: 1
+  #      AdminCreateUserConfig:
+  #        AllowAdminCreateUserOnly: false
+  #      AliasAttributes:
+  #        - email
+  #        - preferred_username
+  #      AutoVerifiedAttributes:
+  #        - email
+  #      EmailConfiguration:
+  #        EmailSendingAccount: DEVELOPER
+  #        From: info@boardgamefiesta.com
+  #        SourceArn: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/info@boardgamefiesta.com'
+  #      EmailVerificationSubject: Your verification link
+  #      EmailVerificationMessage: >
+  #        Please click the link below to verify your email address. {##Verify Email##}
+  #      #      LambdaConfig:
+  ##        PreSignUp: !GetAtt PreSignUpTriggerFunction.Arn
+  ##        PostConfirmation: !GetAtt PostConfirmationTriggerFunction.Arn
+  #      Policies:
+  #        PasswordPolicy:
+  #          MinimumLength: 8
+  #          RequireLowercase: false
+  #          RequireNumbers: false
+  #          RequireSymbols: false
+  #          RequireUppercase: false
+  #          TemporaryPasswordValidityDays: 7
+  #      UsernameConfiguration:
+  #        CaseSensitive: false
+  #
+  MigrateUserTriggerPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - MigrateUserTriggerLambdaFunction
     Properties:
-      ServiceToken: !GetAtt DescribeUserPoolDomain.Arn
-      UserPoolDomain: !Ref UserPoolDomain
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt MigrateUserTriggerLambdaFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
 
-  AuthRecordSet:
-    Type: AWS::Route53::RecordSet
+  PreSignUpTriggerPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PreSignUpTriggerLambdaFunction
     Properties:
-      HostedZoneName: boardgamefiesta.com.
-      Name: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
-      Type: A
-      AliasTarget:
-        DNSName: !GetAtt UserPoolDomainInfo.CloudFrontDistribution
-        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PreSignUpTriggerLambdaFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
 
-Outputs:
-  UserPool:
-    Value: !GetAtt UserPool.Arn
-    Export:
-      Name: !Sub '${AWS::StackName}:UserPool'
+  PostConfirmationTriggerPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PostConfirmationTriggerLambdaFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PostConfirmationTriggerLambdaFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
+
+  PreTokenGenerationTriggerPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PreTokenGenerationTriggerLambdaFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PreTokenGenerationTriggerLambdaFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
+#
+#  UserPoolDomain:
+#    Type: AWS::Cognito::UserPoolDomain
+#    Properties:
+#      CustomDomainConfig:
+#        CertificateArn: arn:aws:acm:us-east-1:598172618529:certificate/67df310f-1baf-437f-a48c-a062182be260
+#      Domain: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+#      UserPoolId: !Ref UserPool
+#
+#  UserPoolClient:
+#    Type: AWS::Cognito::UserPoolClient
+#    Properties:
+#      AccessTokenValidity: 1
+#      IdTokenValidity: 1
+#      RefreshTokenValidity: 30
+#      AllowedOAuthFlows:
+#        - code
+#      AllowedOAuthFlowsUserPoolClient: True
+#      AllowedOAuthScopes:
+#        - profile
+#        - email
+#        - openid
+#      CallbackURLs:
+#        - !Join [ '', [ 'https://', !If [ IsProduction, '', !Join [ '', [ !Ref Environment, '.' ] ] ], 'boardgamefiesta.com' ] ]
+#        - !Join [ '', [ 'https://www', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+#      LogoutURLs:
+#        - !Join [ '', [ 'https://', !If [ IsProduction, '', !Join [ '', [ !Ref Environment, '.' ] ] ], '.boardgamefiesta.com' ] ]
+#        - !Join [ '', [ 'https://www', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+#      ClientName: 'webapp'
+#      DefaultRedirectURI: !Join [ '', [ 'https://', !If [ IsProduction, '', !Join [ '', [ !Ref Environment, '.' ] ] ], '.boardgamefiesta.com' ] ]
+#      ExplicitAuthFlows:
+#        - ALLOW_REFRESH_TOKEN_AUTH
+#      GenerateSecret: false
+#      SupportedIdentityProviders:
+#        - COGNITO
+#      UserPoolId: !Ref UserPool
+#
+#  DescribeUserPoolDomainRole:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      AssumeRolePolicyDocument:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Effect: Allow
+#            Principal:
+#              Service:
+#                - lambda.amazonaws.com
+#            Action:
+#              - sts:AssumeRole
+#      Path: "/"
+#      Policies:
+#        - PolicyName: root
+#          PolicyDocument:
+#            Version: '2012-10-17'
+#            Statement:
+#              - Effect: Allow
+#                Action:
+#                  - logs:CreateLogGroup
+#                  - logs:CreateLogStream
+#                  - logs:PutLogEvents
+#                Resource: arn:aws:logs:*:*:*
+#              - Effect: Allow
+#                Action:
+#                  - cognito-idp:DescribeUserPoolDomain
+#                Resource: '*'
+#
+#  # Lambda used as custom resource to get the CloudFront distribution ID of the UserPoolDomain
+#  # since that information cannot be retrieved with a !GetAtt
+#  DescribeUserPoolDomain:
+#    Type: AWS::Lambda::Function
+#    Properties:
+#      Handler: index.handler
+#      MemorySize: 128
+#      Role: !GetAtt DescribeUserPoolDomainRole.Arn
+#      Runtime: nodejs12.x
+#      Code:
+#        ZipFile: |
+#          var AWS = require('aws-sdk');
+#          var cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
+#          var response = require('cfn-response');
+#          exports.handler = function (event, context) {
+#              var params = {Domain: event.ResourceProperties.UserPoolDomain};
+#              cognitoidentityserviceprovider.describeUserPoolDomain(params, function(err, data) {
+#               if (err) response.send(event, context, response.FAILED);
+#               else response.send(event, context, response.SUCCESS, data.DomainDescription);
+#              });
+#          };
+#
+#  UserPoolDomainInfo:
+#    Type: Custom::DescribeUserPoolDomain
+#    Properties:
+#      ServiceToken: !GetAtt DescribeUserPoolDomain.Arn
+#      UserPoolDomain: !Ref UserPoolDomain
+#
+#  AuthRecordSet:
+#    Type: AWS::Route53::RecordSet
+#    Properties:
+#      HostedZoneName: boardgamefiesta.com.
+#      Name: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+#      Type: A
+#      AliasTarget:
+#        DNSName: !GetAtt UserPoolDomainInfo.CloudFrontDistribution
+#        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront
+#
+#Outputs:
+#  UserPool:
+#    Value: !GetAtt UserPool.Arn
+#    Export:
+#      Name: !Sub '${AWS::StackName}:UserPool'

@@ -13,17 +13,19 @@ STACK_NAME=boardgamefiesta-$ENV
 
 echo "${ACTION}: $STACK_NAME"
 
-aws cloudformation $ACTION --stack-name $STACK_NAME-vpc \
-  --template-body file://vpc.yaml
+#aws cloudformation $ACTION --stack-name $STACK_NAME-vpc \
+#  --template-body file://vpc.yaml
 
 #aws cloudformation $ACTION --stack-name $STACK_NAME-db \
 #  --template-body file://db.yaml \
 #  --parameters ParameterKey=Suffix,ParameterValue=$SUFFIX
 
+aws s3 cp ../cognito/target/function.zip s3://boardgamefiesta-builds/$VERSION/cognito.zip
+
 aws cloudformation $ACTION --stack-name $STACK_NAME-auth \
   --template-body file://auth.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
-  --parameters ParameterKey=Environment,ParameterValue=$ENV
+  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$VERSION
 #
 #aws cloudformation $ACTION --stack-name $STACK_NAME-api \
 #  --template-body file://api.yaml \
