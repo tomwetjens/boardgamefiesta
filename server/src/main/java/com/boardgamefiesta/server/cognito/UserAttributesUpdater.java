@@ -1,7 +1,6 @@
 package com.boardgamefiesta.server.cognito;
 
 import com.boardgamefiesta.domain.user.User;
-import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminSetUserPasswordRequest;
@@ -16,16 +15,13 @@ import javax.inject.Inject;
 @ApplicationScoped
 class UserAttributesUpdater {
 
-    private final Users users;
     private final CognitoIdentityProviderClient cognitoIdentityProviderClient;
     private final CognitoConfiguration cognitoConfiguration;
 
     @Inject
     public UserAttributesUpdater(
-            @NonNull Users users,
             @NonNull CognitoIdentityProviderClient cognitoIdentityProviderClient,
             @NonNull CognitoConfiguration cognitoConfiguration) {
-        this.users = users;
         this.cognitoIdentityProviderClient = cognitoIdentityProviderClient;
         this.cognitoConfiguration = cognitoConfiguration;
     }

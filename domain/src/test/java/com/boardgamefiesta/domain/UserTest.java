@@ -16,13 +16,13 @@ class UserTest {
 
         @Test
         void reservedUsername() {
-            assertThatThrownBy(() -> User.validateBeforeCreate("admin"))
+            assertThatThrownBy(() -> User.validateUsername("admin"))
                     .hasMessage("USERNAME_FORBIDDEN");
         }
 
         @Test
         void badWord() {
-            assertThatThrownBy(() -> User.validateBeforeCreate("shit"))
+            assertThatThrownBy(() -> User.validateUsername("shit"))
                     .hasMessage("USERNAME_FORBIDDEN");
         }
 

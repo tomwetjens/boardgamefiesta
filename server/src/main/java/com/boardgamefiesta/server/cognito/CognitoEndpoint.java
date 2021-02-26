@@ -47,7 +47,7 @@ public class CognitoEndpoint {
             var username = event.getUserName();
             var email = event.getRequest().getUserAttributes().get("email");
 
-            User.validateBeforeCreate(username);
+            User.validateUsername(username);
 
             users.validateBeforeAdd(username, email);
 

@@ -76,8 +76,6 @@ public class User implements AggregateRoot {
     private ZoneId timeZone;
 
     public static User createAutomatically(@NonNull Id id, @NonNull String username, @NonNull String email) {
-        validateBeforeCreate(username);
-
         var created = Instant.now();
 
         return User.builder()
@@ -111,10 +109,6 @@ public class User implements AggregateRoot {
                 || BAD_USERNAME_WORDS.stream().anyMatch(word -> username.toLowerCase().contains(word))) {
             throw new UsernameForbidden();
         }
-    }
-
-    public static void validateBeforeCreate(@NonNull String username) {
-        User.validateUsername(username);
     }
 
     public void changeEmail(String email) {
