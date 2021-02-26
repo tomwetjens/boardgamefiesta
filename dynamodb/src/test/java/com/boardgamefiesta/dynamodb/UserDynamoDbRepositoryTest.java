@@ -39,13 +39,13 @@ class UserDynamoDbRepositoryTest {
                 .collect(Collectors.toList());
 
         Assertions.assertThat(users).isNotEmpty();
-        Assertions.assertThat(users.get(0).getUsername()).isEqualTo("tom");
+        Assertions.assertThat(users.get(0).getCognitoUsername()).isEqualTo("tom");
     }
 
     @Test
     void findByEmail() {
         User user = userDynamoDbRepository.findByEmail("tomwetjens@gmail.com").get();
 
-        Assertions.assertThat(user.getUsername()).isEqualTo("tom");
+        Assertions.assertThat(user.getCognitoUsername()).isEqualTo("tom");
     }
 }

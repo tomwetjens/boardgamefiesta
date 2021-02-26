@@ -2,6 +2,7 @@ package com.boardgamefiesta.server.rest.user;
 
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.exception.APIError;
 import com.boardgamefiesta.server.rest.exception.APIException;
 import com.boardgamefiesta.server.rest.user.view.UserView;
@@ -33,20 +34,20 @@ public class UsersResource {
     @Inject
     Users users;
 
-    @Context
-    SecurityContext securityContext;
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     public List<UserView> searchUsers(@QueryParam("q") String q) {
         if (q != null && q.contains("@") && q.length() >= MIN_EMAIL_LENGTH) {
             return users.findByEmail(q)
-                    .map(user -> new UserView(user.getId(), user, currentUserId()))
+                    .map(user -> new UserView(user.getId(), user, currentUser.getId()))
                     .map(Collections::singletonList)
                     .orElse(Collections.emptyList());
         } else if (q != null && q.length() >= MIN_USERNAME_LENGTH) {
             return users.findByUsernameStartsWith(q)
                     .limit(MAX_SEARCH_RESULTS)
-                    .map(user -> new UserView(user.getId(), user, currentUserId()))
+                    .map(user -> new UserView(user.getId(), user, currentUser.getId()))
                     .collect(Collectors.toList());
         } else {
             throw APIException.badRequest(APIError.MUST_SPECIFY_USERNAME_OR_EMAIL);
@@ -57,7 +58,7 @@ public class UsersResource {
     @Path("/{id}")
     public UserView get(@PathParam("id") String id) {
         var user = users.findById(User.Id.of(id), false);
-        return new UserView(user.getId(), user, currentUserId());
+        return new UserView(user.getId(), user, currentUser.getId());
     }
 
     @POST
@@ -122,16 +123,9 @@ public class UsersResource {
     }
 
     private void checkCurrentUser(User.Id userId) {
-        if (!userId.equals(currentUserId())) {
+        if (!userId.equals(currentUser.getId())) {
             throw APIException.forbidden(APIError.NOT_SUPPORTED);
         }
-    }
-
-    private User.Id currentUserId() {
-        if (securityContext.getUserPrincipal() == null) {
-            throw new NotAuthorizedException("");
-        }
-        return User.Id.of(securityContext.getUserPrincipal().getName());
     }
 
     private User handleConcurrentModification(User.Id id, Consumer<User> modifier) {

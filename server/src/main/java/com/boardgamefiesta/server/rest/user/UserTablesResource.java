@@ -7,6 +7,7 @@ import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.table.view.TableView;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,9 +15,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.SecurityContext;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -43,25 +42,16 @@ public class UserTablesResource {
     @Inject
     Ratings ratings;
 
-    @Context
-    SecurityContext securityContext;
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     public List<TableView> getTables(@PathParam("userId") String userId) {
-        var currentUserId = currentUserId();
-
         var userMap = new HashMap<User.Id, User>();
         var ratingMap = new HashMap<User.Id, Rating>();
         return tables.findRecent(User.Id.of(userId), 10)
-                .map(table -> new TableView(table, getUserMap(table, userMap), getRatingMap(table, ratingMap), currentUserId))
+                .map(table -> new TableView(table, getUserMap(table, userMap), getRatingMap(table, ratingMap), currentUser.getId()))
                 .collect(Collectors.toList());
-    }
-
-    private User.Id currentUserId() {
-        if (securityContext.getUserPrincipal() == null) {
-            throw new NotAuthorizedException("");
-        }
-        return User.Id.of(securityContext.getUserPrincipal().getName());
     }
 
     private Map<User.Id, User> getUserMap(Table table, Map<User.Id, User> userMap) {

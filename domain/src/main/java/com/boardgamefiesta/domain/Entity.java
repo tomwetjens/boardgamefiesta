@@ -21,6 +21,10 @@ public interface Entity {
             super(errorCode);
         }
 
+        public InvalidCommandException(String errorCode, String message) {
+            super(errorCode, message);
+        }
+
         protected InvalidCommandException(String errorCode, Throwable cause) {
             super(errorCode, cause);
         }

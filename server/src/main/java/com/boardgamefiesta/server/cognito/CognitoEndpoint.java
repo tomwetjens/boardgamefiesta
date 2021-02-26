@@ -1,6 +1,5 @@
 package com.boardgamefiesta.server.cognito;
 
-import com.boardgamefiesta.domain.exception.DomainException;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.rest.exception.APIError;
@@ -44,12 +43,15 @@ public class CognitoEndpoint {
     public PreSignUpResponse preSignUp(@NotNull @Valid PreSignUpEvent event) {
         try {
             log.info("Pre Sign-up trigger: {}", event);
-            var username = event.getUserName();
+            var preferredUsername = event.getRequest().getUserAttributes().get("preferred_username");
+            var username = preferredUsername != null ? preferredUsername : event.getUserName();
             var email = event.getRequest().getUserAttributes().get("email");
 
-            User.validateUsername(username);
+            if (!"PreSignUp_AdminCreateUser".equals(event.getTriggerSource())) {
+                User.validateUsername(username);
 
-            users.validateBeforeAdd(username, email);
+                users.validateBeforeAdd(email);
+            }
 
             var response = new PreSignUpResponse();
             log.info("Returning from Pre Sign-up trigger: {}", response);
@@ -67,12 +69,10 @@ public class CognitoEndpoint {
         try {
             log.info("Post Confirmation trigger: {}", event);
 
-            // TODO Move claim names to configuration properties
-            var sub = event.getRequest().getUserAttributes().get("sub");
             var email = event.getRequest().getUserAttributes().get("email");
 
-            if (users.findOptionallyById(User.Id.of(sub)).isEmpty()) {
-                User user = User.createAutomatically(User.Id.of(sub), event.getUserName(), email);
+            if (users.findByCognitoUsername(event.getUserName()).isEmpty()) {
+                User user = User.createAutomatically(event.getUserName(), email);
 
                 users.add(user);
 

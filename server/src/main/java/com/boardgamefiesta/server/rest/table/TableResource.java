@@ -10,6 +10,7 @@ import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.exception.APIError;
 import com.boardgamefiesta.server.rest.exception.APIException;
 import com.boardgamefiesta.server.rest.table.command.*;
@@ -23,9 +24,7 @@ import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.SecurityContext;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
@@ -51,12 +50,12 @@ public class TableResource {
     @Inject
     Ratings ratings;
 
-    @Context
-    SecurityContext securityContext;
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     public List<TableView> getTables() {
-        var currentUserId = currentUserId();
+        var currentUserId = currentUser.getId();
 
         return tables.findActive(currentUserId)
                 .map(table -> new TableView(table, getUserMap(table), getRatingMap(table), currentUserId))
@@ -67,12 +66,10 @@ public class TableResource {
     @Path("/create")
     @Transactional
     public TableView create(@NotNull @Valid CreateTableRequest request) {
-        var currentUser = currentUser();
-
         Table table = Table.create(
                 games.get(Game.Id.of(request.getGame())),
                 request.getMode(),
-                currentUser,
+                currentUser.get(),
                 new Options(request.getOptions() != null ? request.getOptions() : Collections.emptyMap()));
 
         tables.add(table);
@@ -87,7 +84,7 @@ public class TableResource {
 
         checkViewAllowed(table);
 
-        return new TableView(table, getUserMap(table), getRatingMap(table), currentUserId());
+        return new TableView(table, getUserMap(table), getRatingMap(table), currentUser.getId());
     }
 
     @POST
@@ -99,7 +96,7 @@ public class TableResource {
 
             table.start();
         });
-        return new TableView(result, getUserMap(result), getRatingMap(result), currentUserId());
+        return new TableView(result, getUserMap(result), getRatingMap(result), currentUser.getId());
     }
 
     @POST
@@ -107,7 +104,7 @@ public class TableResource {
     @Transactional
     public void accept(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
-                table.acceptInvite(currentUserId()));
+                table.acceptInvite(currentUser.getId()));
     }
 
     @POST
@@ -115,7 +112,7 @@ public class TableResource {
     @Transactional
     public void reject(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
-                table.rejectInvite(currentUserId()));
+                table.rejectInvite(currentUser.getId()));
     }
 
     @POST
@@ -123,7 +120,7 @@ public class TableResource {
     @Transactional
     public void join(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
-                table.join(currentUserId()));
+                table.join(currentUser.getId()));
     }
 
     @POST
@@ -201,7 +198,7 @@ public class TableResource {
     @Transactional
     public void proposeToLeave(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
-                table.proposeToLeave(currentUserId()));
+                table.proposeToLeave(currentUser.getId()));
     }
 
     @POST
@@ -209,7 +206,7 @@ public class TableResource {
     @Transactional
     public void agreeToLeave(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
-                table.agreeToLeave(currentUserId()));
+                table.agreeToLeave(currentUser.getId()));
     }
 
     @POST
@@ -217,7 +214,7 @@ public class TableResource {
     @Transactional
     public void leave(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
-                table.leave(currentUserId()));
+                table.leave(currentUser.getId()));
     }
 
     @POST
@@ -348,41 +345,25 @@ public class TableResource {
     }
 
     private void checkOwner(Table table) {
-        if (!table.getOwnerId().equals(currentUserId())) {
+        if (!table.getOwnerId().equals(currentUser.getId())) {
             throw APIException.forbidden(APIError.MUST_BE_OWNER);
         }
     }
 
     private Player determinePlayer(Table table) {
-        var currentUserId = currentUserId();
+        var currentUserId = currentUser.getId();
 
         return table.getPlayerByUserId(currentUserId).orElseThrow(() -> APIException.forbidden(APIError.NOT_PLAYER_IN_GAME));
     }
 
     private Optional<Player> determineViewingPlayer(Table table) {
-        var currentUserId = currentUserId();
+        var currentUserId = currentUser.getId();
 
         return table.getPlayerByUserId(currentUserId);
     }
 
     private void checkViewAllowed(Table table) {
-//        var currentUserId = currentUserId();
-
-//        if (table.getPlayers().stream().noneMatch(player -> currentUserId.equals(player.getUserId().orElse(null)))) {
-//            throw APIException.forbidden(APIError.NOT_PLAYER_IN_GAME);
-//        }
-    }
-
-    private User.Id currentUserId() {
-        if (securityContext.getUserPrincipal() == null) {
-            throw new NotAuthorizedException("");
-        }
-        return User.Id.of(securityContext.getUserPrincipal().getName());
-    }
-
-    private User currentUser() {
-        return users.findOptionallyById(currentUserId())
-                .orElseThrow(() -> APIException.internalError(APIError.NO_SUCH_USER));
+        // Nothing
     }
 
     private void checkTurn(Table table, Player player) {

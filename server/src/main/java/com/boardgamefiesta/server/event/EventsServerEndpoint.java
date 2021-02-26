@@ -5,6 +5,7 @@ import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Friend;
 import com.boardgamefiesta.domain.user.User;
+import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.event.domain.WebSocketConnection;
 import com.boardgamefiesta.server.event.domain.WebSocketConnections;
 import lombok.NonNull;
@@ -18,10 +19,11 @@ import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
-import java.security.Principal;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
@@ -31,29 +33,51 @@ public class EventsServerEndpoint {
 
     private static final Jsonb JSONB = JsonbBuilder.create();
 
-    private static final Map<User.Id, Session> USER_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<User.Id, Set<Session>> USER_SESSIONS = new ConcurrentHashMap<>();
 
     private final WebSocketConnections webSocketConnections;
+    private final Users users;
     private final Tables tables;
 
     @Inject
     public EventsServerEndpoint(@NonNull WebSocketConnections webSocketConnections,
+                                @NonNull Users users,
                                 @NonNull Tables tables) {
         this.webSocketConnections = webSocketConnections;
+        this.users = users;
         this.tables = tables;
     }
 
     @OnOpen
     public void onOpen(Session session) {
-        currentUserId(session).ifPresent(userId -> {
-            USER_SESSIONS.put(userId, session);
+        CurrentUser.getUserId(session, users).ifPresent(userId -> {
+            USER_SESSIONS.compute(userId, (k, sessions) -> {
+                if (sessions == null) {
+                    sessions = new TreeSet<>(Comparator.comparing(Session::getId));
+                }
+
+                sessions.add(session);
+
+                return sessions;
+            });
+
             webSocketConnections.add(WebSocketConnection.create(session.getId(), userId));
         });
     }
 
     @OnClose
     public void onClose(Session session) {
-        currentUserId(session).ifPresent(USER_SESSIONS::remove);
+        CurrentUser.getUserId(session, users).ifPresent(userId ->
+                USER_SESSIONS.computeIfPresent(userId, (k, sessions) -> {
+                    sessions.remove(session);
+
+                    if (sessions.isEmpty()) {
+                        // Clean up mapping once all sessions are closed
+                        return null;
+                    }
+
+                    return sessions;
+                }));
 
         webSocketConnections.remove(session.getId());
     }
@@ -74,9 +98,7 @@ public class EventsServerEndpoint {
 
     @OnError
     public void onError(Session session, Throwable throwable) {
-        currentUserId(session).ifPresent(USER_SESSIONS::remove);
-
-        webSocketConnections.remove(session.getId());
+        onClose(session);
     }
 
     void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted event) {
@@ -156,17 +178,10 @@ public class EventsServerEndpoint {
     }
 
     private void notifyUser(User.Id userId, Event event) {
-        Session session = USER_SESSIONS.get(userId);
-        if (session != null) {
-            session.getAsyncRemote().sendObject(JSONB.toJson(event));
+        var sessions = USER_SESSIONS.get(userId);
+        if (sessions != null) {
+            sessions.forEach(session -> session.getAsyncRemote().sendObject(JSONB.toJson(event)));
         }
-    }
-
-    private Optional<User.Id> currentUserId(Session session) {
-        return Optional.ofNullable(session.getUserPrincipal())
-                .map(Principal::getName)
-                .filter(name -> !name.isBlank())
-                .map(User.Id::of);
     }
 
 }

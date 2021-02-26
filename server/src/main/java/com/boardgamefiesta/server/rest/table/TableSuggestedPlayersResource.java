@@ -4,16 +4,17 @@ import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Friends;
-import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.SecurityContext;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,14 +34,14 @@ public class TableSuggestedPlayersResource {
     @Inject
     Tables tables;
 
-    @Context
-    private SecurityContext securityContext;
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     public List<UserView> get(@PathParam("tableId") String tableId) {
         var table = tables.findById(Table.Id.of(tableId), false);
 
-        var currentUserId = currentUserId();
+        var currentUserId = currentUser.getId();
 
         var friends = this.friends.findByUserId(currentUserId, 200)
                 .map(friend -> friend.getId().getOtherUserId())
@@ -64,10 +65,4 @@ public class TableSuggestedPlayersResource {
                 .collect(Collectors.toList());
     }
 
-    private User.Id currentUserId() {
-        if (securityContext.getUserPrincipal() == null) {
-            throw new NotAuthorizedException("");
-        }
-        return User.Id.of(securityContext.getUserPrincipal().getName());
-    }
 }

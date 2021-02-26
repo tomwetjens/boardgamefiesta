@@ -2,6 +2,7 @@ package com.boardgamefiesta.server.rest.user;
 
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
@@ -20,21 +21,16 @@ import javax.ws.rs.core.SecurityContext;
 public class UserResource {
 
     @Inject
-    Users users;
+    CurrentUser currentUser;
 
-    @Context
-    SecurityContext securityContext;
+    @Inject
+    Users users;
 
     @GET
     public UserView get() {
-        var user = users.findById(currentUserId(), false);
-        return new UserView(user.getId(), user, currentUserId());
+        var user = currentUser.get();
+        return new UserView(user.getId(), user, user.getId());
     }
 
-    private User.Id currentUserId() {
-        if (securityContext.getUserPrincipal() == null) {
-            throw new NotAuthorizedException("");
-        }
-        return User.Id.of(securityContext.getUserPrincipal().getName());
-    }
+
 }

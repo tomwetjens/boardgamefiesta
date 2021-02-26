@@ -30,7 +30,7 @@ class UserAttributesUpdater {
     void changeEmail(@Observes(during = TransactionPhase.IN_PROGRESS) User.EmailChanged event) {
         cognitoIdentityProviderClient.adminUpdateUserAttributes(AdminUpdateUserAttributesRequest.builder()
                 .userPoolId(cognitoConfiguration.getUserPoolId())
-                .username(event.getUsername())
+                .username(event.getCognitoUsername())
                 .userAttributes(
                         AttributeType.builder()
                                 .name("email")
@@ -47,7 +47,7 @@ class UserAttributesUpdater {
     void changePassword(@Observes(during = TransactionPhase.IN_PROGRESS) User.PasswordChanged event) {
         cognitoIdentityProviderClient.adminSetUserPassword(AdminSetUserPasswordRequest.builder()
                 .userPoolId(cognitoConfiguration.getUserPoolId())
-                .username(event.getUsername())
+                .username(event.getCognitoUsername())
                 .password(event.getPassword())
                 .permanent(true)
                 .build());

@@ -8,6 +8,10 @@ public interface Repository extends DomainService {
         protected DuplicateException(String errorCode) {
             super(errorCode);
         }
+
+        protected DuplicateException(String errorCode, String message) {
+            super(errorCode, message);
+        }
     }
 
     final class NotFoundException extends DomainException {

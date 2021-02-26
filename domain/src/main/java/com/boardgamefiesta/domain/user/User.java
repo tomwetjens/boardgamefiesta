@@ -18,6 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Builder
@@ -49,7 +50,7 @@ public class User implements AggregateRoot {
 
     @Getter
     @NonNull
-    private String username;
+    private String cognitoUsername;
 
     @Getter
     @NonNull
@@ -75,17 +76,17 @@ public class User implements AggregateRoot {
 
     private ZoneId timeZone;
 
-    public static User createAutomatically(@NonNull Id id, @NonNull String username, @NonNull String email) {
+    public static User createAutomatically(@NonNull String cognitoUsername, @NonNull String email) {
         var created = Instant.now();
 
         return User.builder()
-                .id(id)
+                .id(User.Id.of(UUID.randomUUID().toString()))
                 .version(1)
                 .created(created)
                 .updated(created)
                 .lastSeen(created)
                 .expires(calculateExpires(created))
-                .username(username)
+                .cognitoUsername(cognitoUsername)
                 .email(email)
                 .language(DEFAULT_LANGUAGE)
                 .build();
@@ -93,21 +94,21 @@ public class User implements AggregateRoot {
 
     public static void validateUsername(@NonNull String username) {
         if (username.length() < MIN_USERNAME_LENGTH) {
-            throw new UsernameTooShort();
+            throw new UsernameTooShort("Username must be at least " + MIN_USERNAME_LENGTH + " characters");
         }
 
         if (username.length() > MAX_USER_NAME_LENGTH) {
-            throw new UsernameTooLong();
+            throw new UsernameTooLong("Username must not exceed " + MAX_USER_NAME_LENGTH + " characters");
         }
 
         if (!USERNAME_VALIDATOR.matcher(username).matches()) {
-            throw new UsernameInvalidChars();
+            throw new UsernameInvalidChars("Username contains invalid characters");
         }
 
         if (FORBIDDEN_USERNAMES.contains(username.toLowerCase())
                 || BAD_WORDS.stream().anyMatch(word -> username.toLowerCase().contains(word))
                 || BAD_USERNAME_WORDS.stream().anyMatch(word -> username.toLowerCase().contains(word))) {
-            throw new UsernameForbidden();
+            throw new UsernameForbidden("Username is reserved or contains forbidden words");
         }
     }
 
@@ -115,11 +116,11 @@ public class User implements AggregateRoot {
         this.email = email;
         this.updated = Instant.now();
 
-        new EmailChanged(username, email).fire();
+        new EmailChanged(cognitoUsername, email).fire();
     }
 
     public void changePassword(String password) {
-        new PasswordChanged(username, password).fire();
+        new PasswordChanged(cognitoUsername, password).fire();
     }
 
     public void changeLanguage(String language) {
@@ -138,12 +139,6 @@ public class User implements AggregateRoot {
 
     public URI getAvatarUrl() {
         return getGravatarUrl(email);
-    }
-
-    public void lastSeen(Instant lastSeen) {
-        this.lastSeen = lastSeen;
-        this.expires = calculateExpires(lastSeen);
-        this.updated = Instant.now();
     }
 
     public Locale getLocale() {
@@ -165,6 +160,11 @@ public class User implements AggregateRoot {
     public void changeTimeZone(@NonNull ZoneId timeZone) {
         this.timeZone = timeZone;
         this.updated = Instant.now();
+    }
+
+    public String getUsername() {
+        // TODO Replace with preferred username
+        return cognitoUsername;
     }
 
     @Value(staticConstructor = "of")
@@ -189,37 +189,37 @@ public class User implements AggregateRoot {
 
     @Value
     public static class EmailChanged implements DomainEvent {
-        String username;
+        String cognitoUsername;
         String email;
     }
 
     @Value
     public static class PasswordChanged implements DomainEvent {
-        String username;
+        String cognitoUsername;
         String password;
     }
 
     public static final class UsernameTooShort extends InvalidCommandException {
-        private UsernameTooShort() {
-            super("USERNAME_TOO_SHORT");
+        private UsernameTooShort(String message) {
+            super("USERNAME_TOO_SHORT", message);
         }
     }
 
     public static final class UsernameTooLong extends InvalidCommandException {
-        private UsernameTooLong() {
-            super("USERNAME_TOO_LONG");
+        private UsernameTooLong(String message) {
+            super("USERNAME_TOO_LONG", message);
         }
     }
 
     public static final class UsernameInvalidChars extends InvalidCommandException {
-        private UsernameInvalidChars() {
-            super("USERNAME_INVALID_CHARS");
+        private UsernameInvalidChars(String message) {
+            super("USERNAME_INVALID_CHARS", message);
         }
     }
 
     public static final class UsernameForbidden extends InvalidCommandException {
-        private UsernameForbidden() {
-            super("USERNAME_FORBIDDEN");
+        private UsernameForbidden(String message) {
+            super("USERNAME_FORBIDDEN", message);
         }
     }
 }
