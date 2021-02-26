@@ -54,6 +54,10 @@ public class User implements AggregateRoot {
 
     @Getter
     @NonNull
+    private String username;
+
+    @Getter
+    @NonNull
     private String email;
 
     private String location;
@@ -80,13 +84,14 @@ public class User implements AggregateRoot {
         var created = Instant.now();
 
         return User.builder()
-                .id(User.Id.of(UUID.randomUUID().toString()))
+                .id(Id.of(UUID.randomUUID().toString()))
                 .version(1)
                 .created(created)
                 .updated(created)
                 .lastSeen(created)
                 .expires(calculateExpires(created))
                 .cognitoUsername(cognitoUsername)
+                .username(cognitoUsername)
                 .email(email)
                 .language(DEFAULT_LANGUAGE)
                 .build();
@@ -162,9 +167,13 @@ public class User implements AggregateRoot {
         this.updated = Instant.now();
     }
 
-    public String getUsername() {
-        // TODO Replace with preferred username
-        return cognitoUsername;
+    public void changeUsername(@NonNull String username) {
+        validateUsername(username);
+
+        this.username = username;
+        this.updated = Instant.now();
+
+        new UsernameChanged(cognitoUsername, username).fire();
     }
 
     @Value(staticConstructor = "of")
@@ -197,6 +206,12 @@ public class User implements AggregateRoot {
     public static class PasswordChanged implements DomainEvent {
         String cognitoUsername;
         String password;
+    }
+
+    @Value
+    public static class UsernameChanged implements DomainEvent {
+        String cognitoUsername;
+        String username;
     }
 
     public static final class UsernameTooShort extends InvalidCommandException {

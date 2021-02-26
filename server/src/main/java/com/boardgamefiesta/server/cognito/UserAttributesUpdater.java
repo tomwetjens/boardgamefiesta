@@ -53,4 +53,17 @@ class UserAttributesUpdater {
                 .build());
     }
 
+    // Observe event during transaction, so if Cognito request fails, we fail the transaction as well
+    void changeUsername(@Observes(during = TransactionPhase.IN_PROGRESS) User.UsernameChanged event) {
+        cognitoIdentityProviderClient.adminUpdateUserAttributes(AdminUpdateUserAttributesRequest.builder()
+                .userPoolId(cognitoConfiguration.getUserPoolId())
+                .username(event.getCognitoUsername())
+                .userAttributes(
+                        AttributeType.builder()
+                                .name("preferred_username")
+                                .value(event.getUsername())
+                                .build())
+                .build());
+    }
+
 }
