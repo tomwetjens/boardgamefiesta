@@ -4,7 +4,6 @@ import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -13,6 +12,7 @@ import javax.inject.Inject;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ApplicationScoped
@@ -56,7 +56,8 @@ public class UserDynamoDbRepository implements Users {
                 .build());
 
         if (!response.hasItems() || response.count() == 0) {
-            return Optional.empty();
+            // For backwards compatibility, also search the Cognito username
+            return findByCognitoUsername(username);
         }
 
         return response
@@ -86,26 +87,30 @@ public class UserDynamoDbRepository implements Users {
 
     @Override
     public Stream<User> findByUsernameStartsWith(String username, int maxResults) {
-        var itemsByPreferredUsername = dynamoDbClient.scan(ScanRequest.builder()
+        var itemsByPreferredUsername = dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)
                 .indexName(PREFERRED_USERNAME_INDEX)
                 .filterExpression("begins_with(PreferredUsername, :PreferredUsername)")
                 .expressionAttributeValues(Collections.singletonMap(":PreferredUsername", AttributeValue.builder().s(username).build()))
-                .limit(maxResults)
                 .build())
-                .items();
+                .items()
+                .stream()
+                .limit(maxResults)
+                .collect(Collectors.toList());
 
         log.info("Found {} users (limit is {}) with preferred username that begins with '{}'", itemsByPreferredUsername.size(), maxResults, username);
 
         // For backwards compatibility, also search the Cognito username
-        var itemsByCognitoUsername = dynamoDbClient.scan(ScanRequest.builder()
+        var itemsByCognitoUsername = dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)
                 .indexName(USERNAME_INDEX)
                 .filterExpression("begins_with(Username, :Username)")
                 .expressionAttributeValues(Collections.singletonMap(":Username", AttributeValue.builder().s(username.toLowerCase()).build()))
-                .limit(maxResults)
                 .build())
-                .items();
+                .items()
+                .stream()
+                .limit(maxResults)
+                .collect(Collectors.toList());
 
         log.info("Found {} users (limit is {}) with Cognito username that begins with '{}'", itemsByCognitoUsername.size(), maxResults, username);
 
