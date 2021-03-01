@@ -49,11 +49,13 @@ public class FriendsResource {
     @DELETE
     @Path("/{otherUserId}")
     public void end(@PathParam("otherUserId") String otherUserId) {
-        var friend = friends.findById(Friend.Id.of(currentUser.getId(), User.Id.of(otherUserId)));
+        friends.findById(Friend.Id.of(currentUser.getId(), User.Id.of(otherUserId)))
+                .ifPresent(friend -> {
 
-        friend.end();
+                    friend.end();
 
-        friends.update(friend);
+                    friends.update(friend);
+                });
     }
 
     @Data

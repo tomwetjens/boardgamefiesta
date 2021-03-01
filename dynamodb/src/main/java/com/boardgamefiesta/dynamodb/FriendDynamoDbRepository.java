@@ -11,6 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @ApplicationScoped
@@ -28,7 +29,7 @@ public class FriendDynamoDbRepository implements Friends {
     }
 
     @Override
-    public Friend findById(Friend.Id id) {
+    public Optional<Friend> findById(Friend.Id id) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(tableName)
                 .key(Map.of(
@@ -37,10 +38,10 @@ public class FriendDynamoDbRepository implements Friends {
                 .build());
 
         if (!response.hasItem() || response.item() == null) {
-            throw new NotFoundException();
+            return Optional.empty();
         }
 
-        return mapItemToFriend(response.item());
+        return Optional.of(mapItemToFriend(response.item()));
     }
 
     @Override
