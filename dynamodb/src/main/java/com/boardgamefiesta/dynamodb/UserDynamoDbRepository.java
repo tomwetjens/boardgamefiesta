@@ -3,6 +3,7 @@ package com.boardgamefiesta.dynamodb;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
@@ -15,6 +16,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @ApplicationScoped
+@Slf4j
 public class UserDynamoDbRepository implements Users {
 
     private static final String TABLE_NAME = "gwt-users";
@@ -93,6 +95,8 @@ public class UserDynamoDbRepository implements Users {
                 .build())
                 .items();
 
+        log.info("Found {} users (limit is {}) with preferred username that begins with '{}'", itemsByPreferredUsername.size(), maxResults, username);
+
         // For backwards compatibility, also search the Cognito username
         var itemsByCognitoUsername = dynamoDbClient.scan(ScanRequest.builder()
                 .tableName(tableName)
@@ -102,6 +106,8 @@ public class UserDynamoDbRepository implements Users {
                 .limit(maxResults)
                 .build())
                 .items();
+
+        log.info("Found {} users (limit is {}) with Cognito username that begins with '{}'", itemsByCognitoUsername.size(), maxResults, username);
 
         // Combine, sort, then limit and return
         return Stream.concat(itemsByPreferredUsername.stream(), itemsByCognitoUsername.stream())
