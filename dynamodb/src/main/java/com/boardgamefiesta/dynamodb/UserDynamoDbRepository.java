@@ -93,24 +93,21 @@ public class UserDynamoDbRepository implements Users {
                 .build())
                 .items();
 
-        if (itemsByPreferredUsername.size() < maxResults) {
-            // For backwards compatibility, also search the Cognito username
-            var itemsByCognitoUsername = dynamoDbClient.scan(ScanRequest.builder()
-                    .tableName(tableName)
-                    .indexName(USERNAME_INDEX)
-                    .filterExpression("begins_with(Username, :Username)")
-                    .expressionAttributeValues(Collections.singletonMap(":Username", AttributeValue.builder().s(username.toLowerCase()).build()))
-                    .limit(maxResults - itemsByPreferredUsername.size())
-                    .build())
-                    .items();
-            return Stream.concat(itemsByPreferredUsername.stream(), itemsByCognitoUsername.stream())
-                    .limit(maxResults)
-                    .map(this::mapToUser);
-        } else {
-            return itemsByPreferredUsername.stream()
-                    .limit(maxResults)
-                    .map(this::mapToUser);
-        }
+        // For backwards compatibility, also search the Cognito username
+        var itemsByCognitoUsername = dynamoDbClient.scan(ScanRequest.builder()
+                .tableName(tableName)
+                .indexName(USERNAME_INDEX)
+                .filterExpression("begins_with(Username, :Username)")
+                .expressionAttributeValues(Collections.singletonMap(":Username", AttributeValue.builder().s(username.toLowerCase()).build()))
+                .limit(maxResults)
+                .build())
+                .items();
+
+        // Combine, sort, then limit and return
+        return Stream.concat(itemsByPreferredUsername.stream(), itemsByCognitoUsername.stream())
+                .limit(maxResults)
+                .map(this::mapToUser)
+                .sorted(Comparator.comparing(User::getUsername));
     }
 
     @Override
