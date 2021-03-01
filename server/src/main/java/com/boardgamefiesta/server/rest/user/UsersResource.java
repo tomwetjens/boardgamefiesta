@@ -55,9 +55,10 @@ public class UsersResource {
     }
 
     @GET
-    @Path("/{id}")
-    public UserView get(@PathParam("id") String id) {
-        var user = users.findById(User.Id.of(id), false);
+    @Path("/{idOrUsername}")
+    public UserView get(@PathParam("idOrUsername") String idOrUsername) {
+        var user = users.findByUsername(idOrUsername)
+                .orElseGet(() -> users.findById(User.Id.of(idOrUsername), false));
         return new UserView(user.getId(), user, currentUser.getId());
     }
 
