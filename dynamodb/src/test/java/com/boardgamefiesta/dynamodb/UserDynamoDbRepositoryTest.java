@@ -35,7 +35,7 @@ class UserDynamoDbRepositoryTest {
 
     @Test
     void findByUsernameStartsWith() {
-        List<User> users = userDynamoDbRepository.findByUsernameStartsWith("tom")
+        List<User> users = userDynamoDbRepository.findByUsernameStartsWith("tom", 1)
                 .collect(Collectors.toList());
 
         Assertions.assertThat(users).isNotEmpty();

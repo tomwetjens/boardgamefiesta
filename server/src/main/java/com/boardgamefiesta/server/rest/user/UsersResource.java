@@ -45,7 +45,7 @@ public class UsersResource {
                     .map(Collections::singletonList)
                     .orElse(Collections.emptyList());
         } else if (q != null && q.length() >= MIN_USERNAME_LENGTH) {
-            return users.findByUsernameStartsWith(q)
+            return users.findByUsernameStartsWith(q, MAX_SEARCH_RESULTS)
                     .limit(MAX_SEARCH_RESULTS)
                     .map(user -> new UserView(user.getId(), user, currentUser.getId()))
                     .collect(Collectors.toList());

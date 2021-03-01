@@ -3,6 +3,7 @@ package com.boardgamefiesta.dynamodb;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
+import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -10,10 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 @ApplicationScoped
@@ -85,15 +83,34 @@ public class UserDynamoDbRepository implements Users {
     }
 
     @Override
-    public Stream<User> findByUsernameStartsWith(String username) {
-        return dynamoDbClient.scanPaginator(ScanRequest.builder()
+    public Stream<User> findByUsernameStartsWith(String username, int maxResults) {
+        var itemsByPreferredUsername = dynamoDbClient.scan(ScanRequest.builder()
                 .tableName(tableName)
                 .indexName(PREFERRED_USERNAME_INDEX)
                 .filterExpression("begins_with(PreferredUsername, :PreferredUsername)")
                 .expressionAttributeValues(Collections.singletonMap(":PreferredUsername", AttributeValue.builder().s(username).build()))
+                .limit(maxResults)
                 .build())
-                .items().stream()
-                .map(this::mapToUser);
+                .items();
+
+        if (itemsByPreferredUsername.size() < maxResults) {
+            // For backwards compatibility, also search the Cognito username
+            var itemsByCognitoUsername = dynamoDbClient.scan(ScanRequest.builder()
+                    .tableName(tableName)
+                    .indexName(USERNAME_INDEX)
+                    .filterExpression("begins_with(Username, :Username)")
+                    .expressionAttributeValues(Collections.singletonMap(":Username", AttributeValue.builder().s(username.toLowerCase()).build()))
+                    .limit(maxResults - itemsByPreferredUsername.size())
+                    .build())
+                    .items();
+            return Stream.concat(itemsByPreferredUsername.stream(), itemsByCognitoUsername.stream())
+                    .limit(maxResults)
+                    .map(this::mapToUser);
+        } else {
+            return itemsByPreferredUsername.stream()
+                    .limit(maxResults)
+                    .map(this::mapToUser);
+        }
     }
 
     @Override

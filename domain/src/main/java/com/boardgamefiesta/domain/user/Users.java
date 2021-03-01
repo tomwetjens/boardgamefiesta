@@ -11,7 +11,7 @@ public interface Users extends Repository {
 
     Optional<User> findOptionallyById(User.Id id);
 
-    Stream<User> findByUsernameStartsWith(String username);
+    Stream<User> findByUsernameStartsWith(String username, int maxResults);
 
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
