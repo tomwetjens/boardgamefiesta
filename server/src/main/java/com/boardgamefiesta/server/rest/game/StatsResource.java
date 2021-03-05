@@ -53,24 +53,27 @@ public class StatsResource {
                         .filter(table -> table.getStatus() == Table.Status.ENDED)
                         .filter(table -> !table.hasComputerPlayers())
                         .forEach(table -> table.getPlayers().forEach(player -> {
-                            var stats = table.getState().stats(table.getState().getPlayerByName(player.getId().getId()).orElseThrow());
+                            table.getState().getPlayerByName(player.getId().getId()) // could be empty when player has left
+                                    .map(table.getState()::stats)
+                                    .ifPresent(stats -> {
 
-                            if (keys.isEmpty()) {
-                                keys.addAll(stats.keys());
+                                        if (keys.isEmpty()) {
+                                            keys.addAll(stats.keys());
 
-                                writeHeader(writer, keys);
-                            }
+                                            writeHeader(writer, keys);
+                                        }
 
-                            var user = userMap.computeIfAbsent(player.getUserId().get(), userId -> users.findById(userId, false));
+                                        var user = userMap.computeIfAbsent(player.getUserId().get(), userId -> users.findById(userId, false));
 
-                            writeRow(writer, keys, table, player, user, stats);
+                                        writeRow(writer, keys, table, player, user, stats);
+                                    });
                         }));
             }
         }).header("Content-Disposition", "attachment; filename=\"" + gameId + "_" + Instant.now().toString().replace(":", "") + ".csv\"").build();
     }
 
     private void writeHeader(PrintWriter writer, List<String> keys) {
-        writer.print("tableId,started,time,username,score,winner");
+        writer.print("tableId,started,ended,time,username,score,winner");
         keys.forEach(key -> {
             writer.print(',');
             writer.print(key);
@@ -82,6 +85,8 @@ public class StatsResource {
         writer.print(table.getId().getId());
         writer.print(',');
         writer.print(table.getStarted().toString());
+        writer.print(',');
+        writer.print(table.getEnded().toString());
         writer.print(',');
         writer.print(Duration.between(table.getStarted(), table.getEnded()).toMinutes());
         writer.print(',');
