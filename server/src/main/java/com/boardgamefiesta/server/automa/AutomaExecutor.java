@@ -28,7 +28,8 @@ class AutomaExecutor {
         try {
             var retries = 0;
             do {
-                var table = tables.findById(request.getTable().getId(), true);
+                var table = tables.findById(request.getTable().getId())
+                        .orElseThrow();
 
                 if (table.getStatus() != Table.Status.STARTED) {
                     return;

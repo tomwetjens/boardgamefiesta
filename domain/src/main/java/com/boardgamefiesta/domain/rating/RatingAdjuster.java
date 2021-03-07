@@ -33,13 +33,13 @@ public class RatingAdjuster {
 
     public void tableEnded(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended event) {
         try {
-            var table = tables.findById(event.getTableId(), true);
+            tables.findById(event.getTableId()).ifPresent(table -> {
+                var result = adjustRatings(table);
 
-            var result = adjustRatings(table);
-
-            if (!result.isEmpty()) {
-                ratings.addAll(result);
-            }
+                if (!result.isEmpty()) {
+                    ratings.addAll(result);
+                }
+            });
         } catch (RuntimeException e) {
             log.error("Error while adjusting rating after: {}", event, e);
         }

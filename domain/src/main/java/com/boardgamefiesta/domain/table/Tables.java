@@ -5,15 +5,16 @@ import com.boardgamefiesta.domain.Repository;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.user.User;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface Tables extends Repository {
 
-    Table findById(Table.Id id, boolean consistentRead) throws NotFoundException;
+    Optional<Table> findById(Table.Id id);
 
     void add(Table table);
 
-    void update(Table table) throws NotFoundException, ConcurrentModificationException;
+    void update(Table table) throws ConcurrentModificationException;
 
     Stream<Table> findActive(User.Id userId);
 

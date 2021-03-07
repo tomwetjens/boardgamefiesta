@@ -10,10 +10,7 @@ import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +36,8 @@ public class TableSuggestedPlayersResource {
 
     @GET
     public List<UserView> get(@PathParam("tableId") String tableId) {
-        var table = tables.findById(Table.Id.of(tableId), false);
+        var table = tables.findById(Table.Id.of(tableId))
+                .orElseThrow(NotFoundException::new);
 
         var currentUserId = currentUser.getId();
 

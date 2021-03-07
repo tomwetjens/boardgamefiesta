@@ -80,7 +80,8 @@ public class TableResource {
     @GET
     @Path("/{id}")
     public TableView get(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id), false);
+        var table = tables.findById(Table.Id.of(id))
+                .orElseThrow(NotFoundException::new);
 
         checkViewAllowed(table);
 
@@ -288,7 +289,8 @@ public class TableResource {
     @GET
     @Path("/{id}/state")
     public Object getState(@PathParam("id") String id) {
-        var table = tables.findById(Table.Id.of(id), false);
+        var table = tables.findById(Table.Id.of(id))
+                .orElseThrow(NotFoundException::new);
 
         checkViewAllowed(table);
 
@@ -310,7 +312,8 @@ public class TableResource {
     @GET
     @Path("/{id}/log")
     public List<LogEntryView> getLog(@PathParam("id") String id, @QueryParam("since") String since) {
-        var table = tables.findById(Table.Id.of(id), false);
+        var table = tables.findById(Table.Id.of(id))
+                .orElseThrow(NotFoundException::new);
 
         checkViewAllowed(table);
 
@@ -327,7 +330,8 @@ public class TableResource {
     private Table handleConcurrentModification(Table.Id id, Consumer<Table> modifier) {
         int retries = 0;
         do {
-            var table = tables.findById(id, true);
+            var table = tables.findById(id)
+                    .orElseThrow(NotFoundException::new);
 
             modifier.accept(table);
 

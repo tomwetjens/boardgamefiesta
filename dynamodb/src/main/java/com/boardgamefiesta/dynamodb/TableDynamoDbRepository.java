@@ -57,8 +57,8 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Table findById(Table.Id id, boolean consistentRead) {
-        return getItem(id, consistentRead).orElseThrow(NotFoundException::new);
+    public Optional<Table> findById(Table.Id id) {
+        return getItem(id, false);
     }
 
     @Override
@@ -147,7 +147,7 @@ public class TableDynamoDbRepository implements Tables {
                 .items().stream()
                 .map(item -> new TableSummary(Table.Id.of(item.get("Id").s()), Instant.ofEpochMilli(Long.parseLong(item.get("Ended").n()))))
                 .sorted(Comparator.comparing(TableSummary::getEnded))
-                .map(tableSummary -> findById(tableSummary.getId(), false));
+                .flatMap(tableSummary -> findById(tableSummary.getId()).stream());
     }
 
     @Override
