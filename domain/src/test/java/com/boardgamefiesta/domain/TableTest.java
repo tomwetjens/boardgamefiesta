@@ -120,7 +120,7 @@ class TableTest {
                     .ownerId(userId1)
                     .status(Table.Status.STARTED)
                     .log(new Log())
-                    .currentState(Optional.of(Table.CurrentState.of(Lazy.of(currentState), T, Optional.of(currentMinus1HistoricState), false)))
+                    .currentState(Optional.of(Table.CurrentState.of(Lazy.of(currentState), T, Optional.of(Lazy.of(currentMinus1HistoricState)), false)))
                     .build();
 
             table.undo(playerA);
