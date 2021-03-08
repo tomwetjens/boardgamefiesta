@@ -5,6 +5,7 @@ import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.domain.game.Game;
+import com.boardgamefiesta.domain.table.Lazy;
 import com.boardgamefiesta.domain.table.Log;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TableTest {
 
-    public static final Instant T = LocalDateTime.of(2020, 1,1 ,12,0,0).toInstant(ZoneOffset.UTC);
+    public static final Instant T = LocalDateTime.of(2020, 1, 1, 12, 0, 0).toInstant(ZoneOffset.UTC);
     public static final Instant T_MINUS_1 = T.minusMillis(1);
     public static final Instant T_MINUS_2 = T_MINUS_1.minusMillis(1);
 
@@ -103,6 +104,9 @@ class TableTest {
             when(currentMinus2.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
             when(currentMinus2.getPlayerByName("playerB")).thenReturn(Optional.empty());
 
+            var currentMinus2HistoricState = Table.HistoricState.of(Lazy.of(currentMinus2), T_MINUS_2, Optional.empty());
+            var currentMinus1HistoricState = Table.HistoricState.of(Lazy.of(currentMinus1), T_MINUS_1, Optional.of(Lazy.of(currentMinus2HistoricState)));
+
             var table = Table.builder()
                     .id(Table.Id.of("tableId"))
                     .type(Table.Type.REALTIME)
@@ -116,11 +120,7 @@ class TableTest {
                     .ownerId(userId1)
                     .status(Table.Status.STARTED)
                     .log(new Log())
-                    .currentState(Optional.of(Table.CurrentState.of(currentState, T, Optional.of(T_MINUS_1))))
-                    .historicStates(Table.HistoricStates.of(
-                            Table.HistoricState.of(T, Optional.of(T_MINUS_1), currentState),
-                            Table.HistoricState.of(T_MINUS_1, Optional.of(T_MINUS_2), currentMinus1),
-                            Table.HistoricState.of(T_MINUS_2, Optional.empty(), currentMinus2)))
+                    .currentState(Optional.of(Table.CurrentState.of(Lazy.of(currentState), T, Optional.of(currentMinus1HistoricState), false)))
                     .build();
 
             table.undo(playerA);

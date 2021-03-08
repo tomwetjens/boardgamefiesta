@@ -17,8 +17,6 @@ public abstract class Lazy<T> {
         return new Deferred<>(supplier);
     }
 
-    public abstract boolean isResolved();
-
     private static final class Just<T> extends Lazy<T> {
         private final T value;
 
@@ -31,10 +29,6 @@ public abstract class Lazy<T> {
             return value;
         }
 
-        @Override
-        public boolean isResolved() {
-            return true;
-        }
     }
 
     private static final class Deferred<T> extends Lazy<T> {
@@ -55,10 +49,6 @@ public abstract class Lazy<T> {
             return value;
         }
 
-        @Override
-        public boolean isResolved() {
-            return resolved;
-        }
     }
 
 }

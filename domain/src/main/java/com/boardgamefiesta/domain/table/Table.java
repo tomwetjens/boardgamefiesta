@@ -92,9 +92,6 @@ public class Table implements AggregateRoot {
     private Optional<CurrentState> currentState;
 
     @Getter
-    private HistoricStates historicStates;
-
-    @Getter
     private Instant updated;
 
     @Getter
@@ -160,9 +157,7 @@ public class Table implements AggregateRoot {
                                     : com.boardgamefiesta.api.domain.Player.Type.HUMAN))
                     .collect(Collectors.toSet()), options, RANDOM);
 
-            CurrentState initialState = CurrentState.initial(state);
-            currentState = Optional.of(initialState);
-            historicStates = HistoricStates.initial(initialState);
+            currentState = Optional.of(CurrentState.initial(state));
 
             afterStateChange();
 
@@ -221,8 +216,8 @@ public class Table implements AggregateRoot {
     }
 
     private void runStateChange(Consumer<State> change) {
-        var beginState = this.currentState.orElseThrow(NotStarted::new);
-        var state = beginState.getState();
+        var currentState = this.currentState.orElseThrow(NotStarted::new);
+        var state = currentState.getState();
 
         var currentPlayers = getCurrentPlayers();
 
@@ -234,10 +229,7 @@ public class Table implements AggregateRoot {
             state.removeEventListener(eventListener);
         }
 
-        CurrentState newState = beginState.next(state);
-
-        currentState = Optional.of(newState);
-        historicStates.add(HistoricState.from(newState));
+        currentState.next(state);
 
         // TODO Move this into afterStateChange to also support undoing after turn ends
         var newCurrentPlayers = getCurrentPlayers();
@@ -629,13 +621,13 @@ public class Table implements AggregateRoot {
             throw new UndoNotAllowed();
         }
 
-        var historicState = currentState.getPrevious()
-                .flatMap(historicStates::get)
-                .orElseThrow(HistoryNotAvailable::new);
+        var previous = currentState.getPrevious()
+                .orElseThrow(HistoryNotAvailable::new)
+                .get();
 
         log.add(new LogEntry(player, LogEntry.Type.UNDO));
 
-        this.currentState = Optional.of(currentState.revertTo(historicState));
+        currentState.revertTo(previous);
 
         afterStateChange();
     }
@@ -692,6 +684,12 @@ public class Table implements AggregateRoot {
                 && getPlayerByUserId(userId)
                 .map(Player::isPlaying)
                 .orElse(false);
+    }
+
+    public boolean canAnyoneJoin() {
+        return status == Status.NEW
+                && visibility == Visibility.PUBLIC
+                && players.size() < game.getMaxNumberOfPlayers();
     }
 
     public enum Status {
@@ -831,34 +829,43 @@ public class Table implements AggregateRoot {
         @NonNull Instant started;
     }
 
-    @Value(staticConstructor = "of")
+
+    @AllArgsConstructor(staticName = "of")
+    @Getter
     public static class CurrentState {
-        State state;
+        Lazy<State> state;
         Instant timestamp;
-        Optional<Instant> previous;
+        Optional<Lazy<HistoricState>> previous;
+        boolean changed;
 
         public static CurrentState initial(State state) {
-            return new CurrentState(state, Instant.now(), Optional.empty());
+            return new CurrentState(Lazy.of(state), Instant.now(), Optional.empty(), false);
         }
 
-        public CurrentState next(State state) {
-            return new CurrentState(state, Instant.now(), Optional.of(timestamp));
+        public HistoricState next(State state) {
+            var previous = HistoricState.from(this);
+
+            this.state = Lazy.of(state);
+            this.timestamp = Instant.now();
+            this.previous = Optional.of(Lazy.of(previous));
+            this.changed = true;
+
+            return previous;
         }
 
-        public CurrentState revertTo(HistoricState historicState) {
-            return new CurrentState(historicState.getState(), historicState.getTimestamp(), historicState.getPrevious());
+        public void revertTo(HistoricState historicState) {
+            this.state = historicState.getState();
+            this.timestamp = historicState.getTimestamp();
+            this.previous = historicState.getPrevious();
         }
 
         public boolean canUndo() {
-            return previous.isPresent() && state.canUndo();
+            return previous.isPresent() && getState().canUndo();
         }
-    }
 
-    @Value(staticConstructor = "of")
-    public static class HistoricState {
-        Instant timestamp;
-        Optional<Instant> previous;
-        State state;
+        public boolean isChanged() {
+            return changed;
+        }
 
         public Instant getExpires() {
             return calculateExpires(timestamp);
@@ -868,66 +875,21 @@ public class Table implements AggregateRoot {
             return timestamp.plus(RETENTION_HISTORIC_STATE);
         }
 
-        public static HistoricState from(CurrentState currentState) {
-            return new HistoricState(currentState.getTimestamp(), currentState.getPrevious(), currentState.getState());
+        public State getState() {
+            return state.get();
         }
     }
 
-    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class HistoricStates {
+    @AllArgsConstructor(staticName = "of")
+    @Getter
+    public static class HistoricState {
+        Lazy<State> state;
+        Instant timestamp;
+        Optional<Lazy<HistoricState>> previous;
 
-        private final Set<HistoricState> pending = new HashSet<>();
-
-        private final NavigableMap<Instant, HistoricState> states;
-
-        /**
-         * Supplies Historic States that occurred before the given timestamp, most recent first.
-         */
-        private final Function<Instant, Optional<HistoricState>> supplier;
-
-        public static HistoricStates initial(CurrentState currentState) {
-            HistoricStates historicStates = new HistoricStates(new TreeMap<>(), timestamp -> Optional.empty());
-            historicStates.add(HistoricState.from(currentState));
-            return historicStates;
+        public static HistoricState from(CurrentState currentState) {
+            return new HistoricState(currentState.state, currentState.timestamp, currentState.previous);
         }
-
-        public static HistoricStates of(HistoricState... historicStates) {
-            return new HistoricStates(new TreeMap<>(Arrays.stream(historicStates)
-                    .collect(Collectors.toMap(HistoricState::getTimestamp, Function.identity()))), timestamp -> Optional.empty());
-        }
-
-        public static HistoricStates defer(Function<Instant, Optional<HistoricState>> supplier) {
-            return new HistoricStates(new TreeMap<>(), supplier);
-        }
-
-        public void add(HistoricState historicState) {
-            states.put(historicState.getTimestamp(), historicState);
-            pending.add(historicState);
-        }
-
-        public Set<HistoricState> getPending() {
-            return Collections.unmodifiableSet(pending);
-        }
-
-        public void commit() {
-            pending.clear();
-        }
-
-        public boolean hasPending() {
-            return !pending.isEmpty();
-        }
-
-        public Optional<HistoricState> get(Instant timestamp) {
-            var historicState = states.get(timestamp);
-            if (historicState == null && supplier != null) {
-                historicState = supplier.apply(timestamp).orElse(null);
-                if (historicState != null) {
-                    states.put(historicState.getTimestamp(), historicState);
-                }
-            }
-            return Optional.ofNullable(historicState);
-        }
-
     }
 
     public static final class InGameError extends InvalidCommandException {
