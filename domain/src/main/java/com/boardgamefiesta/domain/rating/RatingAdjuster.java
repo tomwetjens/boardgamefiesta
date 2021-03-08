@@ -33,7 +33,7 @@ public class RatingAdjuster {
 
     public void tableEnded(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended event) {
         try {
-            tables.findById(event.getTableId()).ifPresent(table -> {
+            tables.findById(event.getTableId(), false).ifPresent(table -> {
                 var result = adjustRatings(table);
 
                 if (!result.isEmpty()) {

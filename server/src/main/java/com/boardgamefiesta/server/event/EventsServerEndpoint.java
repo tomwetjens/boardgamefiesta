@@ -102,69 +102,69 @@ public class EventsServerEndpoint {
     }
 
     void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.ACCEPTED, event.getTableId().getId(), event.getUserId().getId())));
     }
 
     void rejected(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Rejected event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.REJECTED, event.getTableId().getId(), event.getUserId().getId())));
     }
 
     void started(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Started event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(null, table, new Event(Event.EventType.STARTED, event.getTableId().getId(), null)));
     }
 
     void ended(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(null, table, new Event(Event.EventType.ENDED, event.getTableId().getId(), null)));
     }
 
     void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.StateChanged event) {
         // TODO Only notify other players who did not trigger the change
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(null, table, new Event(Event.EventType.STATE_CHANGED, event.getTableId().getId(), null)));
     }
 
     void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited event) {
-        tables.findById(event.getTableId()).ifPresent(table -> {
+        tables.findById(event.getTableId(), false).ifPresent(table -> {
             notifyUser(event.getUserId(), new Event(Event.EventType.INVITED, event.getTableId().getId(), event.getUserId().getId()));
             notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.INVITED, table.getId().getId(), event.getUserId().getId()));
         });
     }
 
     void uninvited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
-        tables.findById(event.getTableId()).ifPresent(table -> {
+        tables.findById(event.getTableId(), false).ifPresent(table -> {
             notifyUser(event.getUserId(), new Event(Event.EventType.UNINVITED, event.getTableId().getId(), event.getUserId().getId()));
             notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.UNINVITED, table.getId().getId(), event.getUserId().getId()));
         });
     }
 
     void left(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Left event) {
-        tables.findById(event.getTableId()).ifPresent(table -> {
+        tables.findById(event.getTableId(), false).ifPresent(table -> {
             notifyUser(event.getUserId(), new Event(Event.EventType.LEFT, event.getTableId().getId(), event.getUserId().getId()));
             notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.LEFT, event.getTableId().getId(), event.getUserId().getId()));
         });
     }
 
     void abandoned(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Abandoned event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(null, table, new Event(Event.EventType.ABANDONED, event.getTableId().getId(), null)));
     }
 
     void kicked(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(null, table, new Event(Event.EventType.KICKED, event.getTableId().getId(), event.getUserId().getId())));
     }
 
     void optionsChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.OptionsChanged event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(null, table, new Event(Event.EventType.OPTIONS_CHANGED, event.getTableId().getId(), null)));
     }
 
     void computerAdded(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ComputerAdded event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
+        tables.findById(event.getTableId(), false).ifPresent(table ->
                 notifyOtherPlayers(null, table, new Event(Event.EventType.COMPUTER_ADDED, event.getTableId().getId(), null)));
     }
 

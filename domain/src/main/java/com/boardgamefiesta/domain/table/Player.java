@@ -148,6 +148,10 @@ public class Player implements Entity {
         return status == Status.ACCEPTED || status == Status.PROPOSED_TO_LEAVE || status == Status.AGREED_TO_LEAVE;
     }
 
+    public boolean isUser() {
+        return type == Type.USER;
+    }
+
     /**
      * Is this player still considered "active" in this table?
      * I.e. must the player see this table in their active tables overview.

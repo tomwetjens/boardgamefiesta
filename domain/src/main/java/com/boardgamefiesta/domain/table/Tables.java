@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 
 public interface Tables extends Repository {
 
-    Optional<Table> findById(Table.Id id);
+    Optional<Table> findById(Table.Id id, boolean eagerFetchState);
 
     void add(Table table);
 
