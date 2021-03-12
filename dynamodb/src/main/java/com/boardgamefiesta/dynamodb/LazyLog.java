@@ -15,6 +15,8 @@ import java.util.stream.Stream;
  */
 class LazyLog extends Log {
 
+    public static final Instant MIN = Instant.ofEpochMilli(0);
+
     private final Function<Instant, Stream<LogEntry>> loader;
     private final List<LogEntry> pending = new ArrayList<>();
     private Instant oldestLoaded;
@@ -34,7 +36,7 @@ class LazyLog extends Log {
 
     @Override
     public Stream<LogEntry> stream() {
-        return super.since(Instant.MIN);
+        return since(MIN);
     }
 
     @Override
