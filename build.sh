@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Fail on first error
+set -e
+
 mvn package
 
 pushd server
