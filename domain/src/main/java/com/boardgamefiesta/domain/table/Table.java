@@ -692,6 +692,13 @@ public class Table implements AggregateRoot {
                 && players.size() < game.getMaxNumberOfPlayers();
     }
 
+    public Optional<Stats> stats(Player player) {
+        var state = getState();
+
+        return state.getPlayerByName(player.getId().getId()) // could be empty when player has left
+                .map(state::stats);
+    }
+
     public enum Status {
         NEW,
         STARTED,
