@@ -66,6 +66,9 @@ public class PlayerState {
 
     private Garth automaState;
 
+    @Getter
+    private int turns;
+
     PlayerState(@NonNull Player player, @NonNull Game.Options options, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildingSet) {
         this.player = player;
         this.balance = player.getType() == Player.Type.COMPUTER ? 999 : balance;
@@ -144,6 +147,7 @@ public class PlayerState {
                 .add("exchangeTokens", exchangeTokens)
                 .add("branchlets", branchlets)
                 .add("automaState", automaState != null ? automaState.serialize(factory) : null)
+                .add("turns", turns)
                 .build();
     }
 
@@ -185,7 +189,8 @@ public class PlayerState {
                 jsonObject.getInt("exchangeTokens", 0),
                 jsonObject.getInt("branchlets", 0),
                 jsonObject.get("automaState") != null && jsonObject.get("automaState") != JsonValue.NULL
-                        ? Garth.deserialize(player, jsonObject.getJsonObject("automaState")) : null);
+                        ? Garth.deserialize(player, jsonObject.getJsonObject("automaState")) : null,
+                jsonObject.getInt("turns", 0));
     }
 
     void placeBid(Bid bid) {
@@ -756,6 +761,8 @@ public class PlayerState {
     void beginTurn() {
         numberOfCowboysUsedInTurn = 0;
         locationsActivatedInTurn.clear();
+
+        turns++;
     }
 
     void useCowboys(int amount) {
