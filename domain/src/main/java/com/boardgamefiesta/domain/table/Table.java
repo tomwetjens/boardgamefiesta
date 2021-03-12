@@ -843,16 +843,14 @@ public class Table implements AggregateRoot {
         @NonNull Instant started;
     }
 
-
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @Builder
     @Getter
-    public static class CurrentState extends HistoricState {
+    public static class CurrentState {
+        private State state;
+        private Instant timestamp;
+        private Optional<Lazy<HistoricState>> previous;
         private boolean changed;
-
-        @Builder(builderMethodName = "currentStateBuilder")
-        private CurrentState(State state, Instant timestamp, Optional<Lazy<HistoricState>> previous, boolean changed) {
-            super(state, timestamp, previous);
-            this.changed = changed;
-        }
 
         public static CurrentState initial(State state) {
             return new CurrentState(state, Instant.now(), Optional.empty(), true);

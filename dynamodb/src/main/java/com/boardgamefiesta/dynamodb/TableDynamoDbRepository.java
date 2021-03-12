@@ -504,7 +504,7 @@ public class TableDynamoDbRepository implements Tables {
 
         var currentState = Optional.ofNullable(item.get("State"))
                 .map(attributeValue -> mapToState(game, attributeValue))
-                .map(state -> Table.CurrentState.currentStateBuilder()
+                .map(state -> Table.CurrentState.builder()
                         .state(state)
                         .timestamp(Optional.ofNullable(item.get("StateTimestamp"))
                                 .map(AttributeValue::n)

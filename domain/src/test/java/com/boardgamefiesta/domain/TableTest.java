@@ -128,7 +128,7 @@ class TableTest {
                     .ownerId(userId1)
                     .status(Table.Status.STARTED)
                     .log(new Log())
-                    .currentState(Lazy.of(Optional.of(Table.CurrentState.currentStateBuilder()
+                    .currentState(Lazy.of(Optional.of(Table.CurrentState.builder()
                             .state(currentState)
                             .timestamp(T)
                             .previous(Optional.of(Lazy.of(currentMinus1HistoricState)))
