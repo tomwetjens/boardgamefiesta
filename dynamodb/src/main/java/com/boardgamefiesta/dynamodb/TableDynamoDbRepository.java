@@ -143,7 +143,7 @@ public class TableDynamoDbRepository implements Tables {
                 .items().stream()
                 .map(item -> new TableSummary(Table.Id.of(item.get("Id").s()), Instant.ofEpochMilli(Long.parseLong(item.get("Ended").n()))))
                 .sorted(Comparator.comparing(TableSummary::getEnded))
-                .flatMap(tableSummary -> findById(tableSummary.getId(), false).stream());
+                .flatMap(tableSummary -> findById(tableSummary.getId()).stream());
     }
 
     @Override
