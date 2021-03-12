@@ -126,27 +126,6 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findAllEndedSortedByEndedAscending() {
-        return dynamoDbClient.scanPaginator(ScanRequest.builder()
-                .tableName(tableName)
-                // Filter out the adjacency list items
-                .filterExpression("begins_with(UserId, :UserIdBeginsWith) and #Status = :Ended")
-                .expressionAttributeNames(Map.of(
-                        "#Status", "Status"
-                ))
-                .expressionAttributeValues(Map.of(
-                        ":UserIdBeginsWith", AttributeValue.builder().s("Table-").build(),
-                        ":Ended", AttributeValue.builder().s(Table.Status.ENDED.name()).build()
-                ))
-                .projectionExpression("Id, Ended")
-                .build())
-                .items().stream()
-                .map(item -> new TableSummary(Table.Id.of(item.get("Id").s()), Instant.ofEpochMilli(Long.parseLong(item.get("Ended").n()))))
-                .sorted(Comparator.comparing(TableSummary::getEnded))
-                .flatMap(tableSummary -> findById(tableSummary.getId()).stream());
-    }
-
-    @Override
     public Stream<Table> findAll(Game.Id gameId, int maxResults) {
         return dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)
