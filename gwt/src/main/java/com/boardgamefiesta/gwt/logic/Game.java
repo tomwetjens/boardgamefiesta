@@ -198,6 +198,8 @@ public class Game implements State {
         currentPlayer = playerOrder.get(0);
         actionStack.addActions(determineBeginTurnActions());
 
+        currentPlayerState().beginTurn();
+
         fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
     }
 
