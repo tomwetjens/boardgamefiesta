@@ -603,10 +603,13 @@ public class TableDynamoDbRepository implements Tables {
         return Table.HistoricState.of(Lazy.of(state), timestamp, previous);
     }
 
-    private Player mapToPlayer(AttributeValue attributeValue) {
-        Map<String, AttributeValue> map = attributeValue.m();
+    private Player mapToPlayer(AttributeValue attributeValue, Optional<State> state) {
+        var map = attributeValue.m();
+
+        var id = Player.Id.of(map.get("Id").s());
+
         return Player.builder()
-                .id(Player.Id.of(map.get("Id").s()))
+                .id(id)
                 .type(map.containsKey("Type") ? Player.Type.valueOf(map.get("Type").s()) : Player.Type.USER)
                 .userId(map.containsKey("UserId") ? User.Id.of(map.get("UserId").s()) : null)
                 .status(Player.Status.valueOf(map.get("Status").s()))
@@ -615,6 +618,7 @@ public class TableDynamoDbRepository implements Tables {
                 .winner(map.containsKey("Winner") ? map.get("Winner").bool() : null)
                 .created(Instant.ofEpochSecond(Long.parseLong(map.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(map.get("Updated").n())))
+                .turn(map.containsKey("Turn") ? map.get("Turn").bool() : state.flatMap(s -> s.getPlayerByName(id.getId()).map(s.getCurrentPlayers()::contains)).orElse(false))
                 .turnLimit(map.containsKey("TurnLimit") ? Instant.ofEpochSecond(Long.parseLong(map.get("TurnLimit").n())) : null)
                 .build();
     }

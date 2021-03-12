@@ -210,8 +210,8 @@ public class Table implements AggregateRoot {
     }
 
     private void checkTurn(Player player) {
-        if (!isCurrentPlayer(player)) {
-            throw new NotCurrentPlayer();
+        if (!players.contains(player) || !player.isTurn()) {
+            throw new NotPlayerTurn();
         }
     }
 
@@ -472,15 +472,7 @@ public class Table implements AggregateRoot {
     }
 
     public Set<Player> getCurrentPlayers() {
-        var state = this.currentState.map(CurrentState::getState)
-                .orElseThrow(NotStarted::new);
-
-        return state.getCurrentPlayers().stream()
-                .map(com.boardgamefiesta.api.domain.Player::getName)
-                .map(Player.Id::of)
-                .map(this::getPlayerById)
-                .flatMap(Optional::stream)
-                .collect(Collectors.toSet());
+        return players.stream().filter(Player::isTurn).collect(Collectors.toSet());
     }
 
     public State getState() {
@@ -630,11 +622,6 @@ public class Table implements AggregateRoot {
         currentState.revertTo(previous);
 
         afterStateChange();
-    }
-
-    private boolean isCurrentPlayer(Player player) {
-        var state = currentState.orElseThrow(NotStarted::new).getState();
-        return state.getCurrentPlayers().contains(getPlayer(player));
     }
 
     private com.boardgamefiesta.api.domain.Player getPlayer(Player player) {
@@ -947,8 +934,8 @@ public class Table implements AggregateRoot {
         }
     }
 
-    public static final class NotCurrentPlayer extends NotAllowedException {
-        private NotCurrentPlayer() {
+    public static final class NotPlayerTurn extends NotAllowedException {
+        private NotPlayerTurn() {
             super("NOT_YOUR_TURN");
         }
     }

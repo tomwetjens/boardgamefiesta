@@ -4,10 +4,7 @@ import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.Entity;
 import com.boardgamefiesta.domain.user.User;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -42,6 +39,9 @@ public class Player implements Entity {
     @Getter
     private PlayerColor color;
 
+    @Getter
+    @Setter(AccessLevel.PACKAGE)
+    private boolean turn;
     private Instant turnLimit;
 
     private Integer score;
@@ -169,11 +169,13 @@ public class Player implements Entity {
     }
 
     public void beginTurn(Duration timeLimit) {
+        this.turn = true;
         this.turnLimit = Instant.now().plus(timeLimit);
         this.updated = Instant.now();
     }
 
     public void endTurn() {
+        this.turn = false;
         this.turnLimit = null;
         this.updated = Instant.now();
     }
