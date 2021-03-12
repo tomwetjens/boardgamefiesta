@@ -24,10 +24,9 @@ public interface Tables extends Repository {
 
     Stream<Table> findAll();
 
-    Stream<Table> findAll(Game.Id gameId);
+    Stream<Table> findAll(Game.Id gameId, int maxResults);
 
     Stream<Table> findAllEndedSortedByEndedAscending();
-
 
     final class ExceedsMaxRealtimeGames extends AggregateRoot.InvalidCommandException {
         public ExceedsMaxRealtimeGames() {

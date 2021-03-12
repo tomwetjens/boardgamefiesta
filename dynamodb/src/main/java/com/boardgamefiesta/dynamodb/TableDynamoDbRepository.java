@@ -147,7 +147,7 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findAll(Game.Id gameId) {
+    public Stream<Table> findAll(Game.Id gameId, int maxResults) {
         return dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)
                 // Filter out the adjacency list items
@@ -155,6 +155,7 @@ public class TableDynamoDbRepository implements Tables {
                 .expressionAttributeValues(Map.of(
                         ":GameId", AttributeValue.builder().s(gameId.getId()).build(),
                         ":UserIdBeginsWith", AttributeValue.builder().s("Table-").build()))
+                .limit(maxResults)
                 .build())
                 .items().stream()
                 .map(this::mapToTable);
