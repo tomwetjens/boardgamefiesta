@@ -34,8 +34,9 @@ public class CanaryTest {
         var count = tableDynamodbRepository.findAll()
                 .filter(table -> table.getStatus() == Table.Status.STARTED || table.getStatus() == Table.Status.ENDED)
                 .peek(table -> {
+                    System.out.println(table.getId().getId());
                     try {
-                        table.getCurrentPlayers();
+                        table.getState();
                     } catch (Exception e) {
                         throw new AssertionError("Failed: " + table.getId(), e);
                     }

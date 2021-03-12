@@ -72,6 +72,7 @@ class TableTest {
                 .type(Player.Type.USER)
                 .userId(userId1)
                 .color(PlayerColor.RED)
+                .turn(true)
                 .build();
 
         Player playerB = Player.builder()
@@ -93,7 +94,6 @@ class TableTest {
 
             when(currentState.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentState.canUndo()).thenReturn(true);
-            when(currentState.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
 
             when(currentMinus1.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentMinus1.canUndo()).thenReturn(true);
@@ -104,8 +104,8 @@ class TableTest {
             when(currentMinus2.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
             when(currentMinus2.getPlayerByName("playerB")).thenReturn(Optional.empty());
 
-            var currentMinus2HistoricState = Table.HistoricState.of(Lazy.of(currentMinus2), T_MINUS_2, Optional.empty());
-            var currentMinus1HistoricState = Table.HistoricState.of(Lazy.of(currentMinus1), T_MINUS_1, Optional.of(Lazy.of(currentMinus2HistoricState)));
+            var currentMinus2HistoricState = Table.HistoricState.of(currentMinus2, T_MINUS_2, Optional.empty());
+            var currentMinus1HistoricState = Table.HistoricState.of(currentMinus1, T_MINUS_1, Optional.of(Lazy.of(currentMinus2HistoricState)));
 
             var table = Table.builder()
                     .id(Table.Id.of("tableId"))
@@ -120,24 +120,24 @@ class TableTest {
                     .ownerId(userId1)
                     .status(Table.Status.STARTED)
                     .log(new Log())
-                    .currentState(Optional.of(Table.CurrentState.of(Lazy.of(currentState), T, Optional.of(Lazy.of(currentMinus1HistoricState)), false)))
+                    .currentState(Lazy.of(Optional.of(Table.CurrentState.of(currentState, T, Optional.of(Lazy.of(currentMinus1HistoricState)), false))))
                     .build();
 
             table.undo(playerA);
 
             assertThat(table.getState()).isSameAs(currentMinus1);
-            assertThat(table.getCurrentState().get().getTimestamp()).isSameAs(T_MINUS_1);
+            assertThat(table.getCurrentState().get().get().getTimestamp()).isSameAs(T_MINUS_1);
 
             table.undo(playerA);
 
             assertThat(table.getState()).isSameAs(currentMinus2);
-            assertThat(table.getCurrentState().get().getTimestamp()).isSameAs(T_MINUS_2);
+            assertThat(table.getCurrentState().get().get().getTimestamp()).isSameAs(T_MINUS_2);
 
             var beforePerform = Instant.now();
             table.perform(playerA, action);
 
             assertThat(table.getState()).isSameAs(currentMinus2);
-            assertThat(table.getCurrentState().get().getTimestamp()).isAfterOrEqualTo(beforePerform);
+            assertThat(table.getCurrentState().get().get().getTimestamp()).isAfterOrEqualTo(beforePerform);
         }
     }
 }

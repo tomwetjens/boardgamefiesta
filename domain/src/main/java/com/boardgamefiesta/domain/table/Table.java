@@ -15,7 +15,6 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -89,7 +88,7 @@ public class Table implements AggregateRoot {
     private User.Id ownerId;
 
     @Getter
-    private Optional<CurrentState> currentState;
+    private Lazy<Optional<CurrentState>> currentState;
 
     @Getter
     private Instant updated;
@@ -121,7 +120,7 @@ public class Table implements AggregateRoot {
                 .ownerId(owner.getId())
                 .players(new HashSet<>(Collections.singleton(player)))
                 .log(new Log())
-                .currentState(Optional.empty())
+                .currentState(Lazy.of(Optional.empty()))
                 .build();
 
         table.log.add(new LogEntry(player, LogEntry.Type.CREATE));
@@ -157,7 +156,7 @@ public class Table implements AggregateRoot {
                                     : com.boardgamefiesta.api.domain.Player.Type.HUMAN))
                     .collect(Collectors.toSet()), options, RANDOM);
 
-            currentState = Optional.of(CurrentState.initial(state));
+            currentState = Lazy.of(Optional.of(CurrentState.initial(state)));
 
             afterStateChange();
 
@@ -227,7 +226,7 @@ public class Table implements AggregateRoot {
     }
 
     private void runStateChange(Consumer<State> change) {
-        var currentState = this.currentState.orElseThrow(NotStarted::new);
+        var currentState = this.currentState.get().orElseThrow(NotStarted::new);
         var state = currentState.getState();
 
         var currentPlayers = state.getCurrentPlayers().stream()
@@ -400,8 +399,7 @@ public class Table implements AggregateRoot {
 
         new StateChanged(id).fire();
 
-        var currentState = this.currentState.orElseThrow();
-        var state = currentState.getState();
+        var state = getState();
 
         if (state.isEnded()) {
             status = Status.ENDED;
@@ -497,7 +495,7 @@ public class Table implements AggregateRoot {
     }
 
     public State getState() {
-        return currentState.orElseThrow(NotStarted::new).getState();
+        return currentState.get().orElseThrow(NotStarted::new).getState();
     }
 
     public Optional<Player> getPlayerById(Player.Id playerId) {
@@ -625,7 +623,7 @@ public class Table implements AggregateRoot {
     public void undo(Player player) {
         checkStarted();
 
-        var currentState = this.currentState
+        var currentState = this.currentState.get()
                 .orElseThrow(NotStarted::new);
 
         checkTurn(player);
@@ -646,13 +644,13 @@ public class Table implements AggregateRoot {
     }
 
     private com.boardgamefiesta.api.domain.Player getPlayer(Player player) {
-        var state = currentState.orElseThrow(NotStarted::new).getState();
+        var state = currentState.get().orElseThrow(NotStarted::new).getState();
         return state.getPlayerByName(player.getId().getId())
                 .orElseThrow(NotPlayer::new);
     }
 
     public boolean canUndo() {
-        return currentState.map(CurrentState::getState)
+        return currentState.get().map(CurrentState::getState)
                 .map(state -> state.canUndo() && state.getCurrentPlayers().size() == 1)
                 .orElse(false);
     }
@@ -848,19 +846,19 @@ public class Table implements AggregateRoot {
     @AllArgsConstructor(staticName = "of")
     @Getter
     public static class CurrentState {
-        Lazy<State> state;
+        State state;
         Instant timestamp;
         Optional<Lazy<HistoricState>> previous;
         boolean changed;
 
         public static CurrentState initial(State state) {
-            return new CurrentState(Lazy.of(state), Instant.now(), Optional.empty(), false);
+            return new CurrentState(state, Instant.now(), Optional.empty(), true);
         }
 
         public HistoricState next(State state) {
             var previous = HistoricState.from(this);
 
-            this.state = Lazy.of(state);
+            this.state = state;
             this.timestamp = Instant.now();
             this.previous = Optional.of(Lazy.of(previous));
             this.changed = true;
@@ -872,6 +870,7 @@ public class Table implements AggregateRoot {
             this.state = historicState.getState();
             this.timestamp = historicState.getTimestamp();
             this.previous = historicState.getPrevious();
+            this.changed = true;
         }
 
         public boolean canUndo() {
@@ -890,15 +889,12 @@ public class Table implements AggregateRoot {
             return timestamp.plus(RETENTION_HISTORIC_STATE);
         }
 
-        public State getState() {
-            return state.get();
-        }
     }
 
     @AllArgsConstructor(staticName = "of")
     @Getter
     public static class HistoricState {
-        Lazy<State> state;
+        State state;
         Instant timestamp;
         Optional<Lazy<HistoricState>> previous;
 

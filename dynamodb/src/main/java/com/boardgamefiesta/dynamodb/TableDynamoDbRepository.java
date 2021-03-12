@@ -216,8 +216,6 @@ public class TableDynamoDbRepository implements Tables {
             throw new ExceedsMaxActiveGames();
         }
 
-        var serializeCache = Collections.<State, AttributeValue>emptyMap();
-
         var item = new HashMap<>(key(table.getId()));
         item.put("Version", AttributeValue.builder().n(Integer.toString(table.getVersion())).build());
         item.put("GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build());
@@ -234,14 +232,13 @@ public class TableDynamoDbRepository implements Tables {
         item.put("OwnerId", AttributeValue.builder().s(table.getOwnerId().getId()).build());
         item.put("Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
 
-        table.getCurrentState().ifPresent(currentState -> {
-            var serialized = addState(table, currentState);
-            // TODO Add historic state recursively
-
-            item.put("State", serialized);
+        table.getCurrentState().get().ifPresent(currentState -> {
+            item.put("State", addState(table, currentState));
             item.put("StateTimestamp", AttributeValue.builder().n(Long.toString(currentState.getTimestamp().toEpochMilli())).build());
-            currentState.getPrevious().ifPresent(previous ->
-                    item.put("PreviousStateTimestamp", AttributeValue.builder().n(Long.toString(previous.get().getTimestamp().toEpochMilli())).build()));
+            currentState.getPrevious().map(Lazy::get).ifPresent(previous ->
+                    item.put("PreviousStateTimestamp", AttributeValue.builder().n(Long.toString(previous.getTimestamp().toEpochMilli())).build()));
+
+            // TODO Add historic state recursively
         });
 
         dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
@@ -352,28 +349,27 @@ public class TableDynamoDbRepository implements Tables {
             expressionAttributeValues.put(":Ended", AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build());
         }
 
-        if (table.getCurrentState().isPresent()) {
-            var currentState = table.getCurrentState().get();
+        if (table.getCurrentState().isResolved() && table.getCurrentState().get().isPresent()) {
+            var currentState = table.getCurrentState().get().get();
 
-            AttributeValue serialized;
             if (currentState.isChanged()) {
-                serialized = addState(table, currentState);
-            } else{
-                serialized = mapFromState(table.getGame(), currentState.getState());
-            }
-            updateExpression += ",#State=:State";
-            expressionAttributeNames.put("#State", "State");
+                updateExpression += ",#State=:State";
+                expressionAttributeNames.put("#State", "State");
 
-            expressionAttributeValues.put(":State", serialized);
-            // TODO Add historic states recursively if needed
+                expressionAttributeValues.put(":State", addState(table, currentState));
 
-            updateExpression += ",StateTimestamp=:StateTimestamp";
-            expressionAttributeValues.put(":StateTimestamp", AttributeValue.builder().n(Long.toString(currentState.getTimestamp().toEpochMilli())).build());
+                updateExpression += ",StateTimestamp=:StateTimestamp";
+                expressionAttributeValues.put(":StateTimestamp", AttributeValue.builder().n(Long.toString(currentState.getTimestamp().toEpochMilli())).build());
 
-            if (currentState.getPrevious().isPresent()) {
-                var previous = currentState.getPrevious().get();
-                updateExpression += ",PreviousStateTimestamp=:PreviousStateTimestamp";
-                expressionAttributeValues.put(":PreviousStateTimestamp", AttributeValue.builder().n(Long.toString(previous.get().getTimestamp().toEpochMilli())).build());
+                if (currentState.getPrevious().isPresent()) {
+                    var previous = currentState.getPrevious().get();
+                    if (previous.isResolved()) {
+                        updateExpression += ",PreviousStateTimestamp=:PreviousStateTimestamp";
+                        expressionAttributeValues.put(":PreviousStateTimestamp", AttributeValue.builder().n(Long.toString(previous.get().getTimestamp().toEpochMilli())).build());
+                    }
+                }
+
+                // TODO Add historic states recursively if needed
             }
         }
 
@@ -526,6 +522,21 @@ public class TableDynamoDbRepository implements Tables {
         var game = games.get(gameId);
 
         Instant updated = Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n()));
+
+        var currentState = Optional.ofNullable(item.get("State"))
+                .map(attributeValue -> mapToState(game, attributeValue))
+                .map(state -> Table.CurrentState.of(state,
+                        Optional.ofNullable(item.get("StateTimestamp"))
+                                .map(AttributeValue::n)
+                                .map(Long::parseLong)
+                                .map(Instant::ofEpochMilli)
+                                .orElse(updated),
+                        Optional.ofNullable(item.get("PreviousStateTimestamp"))
+                                .map(AttributeValue::n)
+                                .map(Long::parseLong)
+                                .map(Instant::ofEpochMilli)
+                                .map(previousTimestamp -> Lazy.defer(() -> getHistoricState(game, id, previousTimestamp))), false));
+
         return Table.builder()
                 .id(id)
                 // TODO Version can become required after backwards compatibility period
@@ -551,21 +562,9 @@ public class TableDynamoDbRepository implements Tables {
                 .ended(item.get("Ended") != null ? Instant.ofEpochSecond(Long.parseLong(item.get("Ended").n())) : null)
                 .ownerId(User.Id.of(item.get("OwnerId").s()))
                 .players(item.get("Players").l().stream()
-                        .map(this::mapToPlayer)
+                        .map(av -> mapToPlayer(av, currentState.map(Table.CurrentState::getState)))
                         .collect(Collectors.toCollection(TrackingSet::new)))
-                .currentState(Optional.ofNullable(item.get("State"))
-                        .map(attributeValue -> mapToState(game, attributeValue))
-                        .map(state -> Table.CurrentState.of(Lazy.of(state),
-                                Optional.ofNullable(item.get("StateTimestamp"))
-                                        .map(AttributeValue::n)
-                                        .map(Long::parseLong)
-                                        .map(Instant::ofEpochMilli)
-                                        .orElse(updated),
-                                Optional.ofNullable(item.get("PreviousStateTimestamp"))
-                                        .map(AttributeValue::n)
-                                        .map(Long::parseLong)
-                                        .map(Instant::ofEpochMilli)
-                                        .map(previousTimestamp -> Lazy.defer(() -> getHistoricState(game, id, previousTimestamp))), false)))
+                .currentState(Lazy.of(currentState))
                 .log(new LazyLog(since -> findLogEntries(id, since)))
                 .build();
     }
@@ -600,7 +599,7 @@ public class TableDynamoDbRepository implements Tables {
                 .map(Instant::ofEpochMilli)
                 .map(previousTimestamp -> Lazy.defer(() -> getHistoricState(game, tableId, previousTimestamp)));
         var state = mapToState(game, item.get("State"));
-        return Table.HistoricState.of(Lazy.of(state), timestamp, previous);
+        return Table.HistoricState.of(state, timestamp, previous);
     }
 
     private Player mapToPlayer(AttributeValue attributeValue, Optional<State> state) {
