@@ -104,8 +104,16 @@ class TableTest {
             when(currentMinus2.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
             when(currentMinus2.getPlayerByName("playerB")).thenReturn(Optional.empty());
 
-            var currentMinus2HistoricState = Table.HistoricState.of(currentMinus2, T_MINUS_2, Optional.empty());
-            var currentMinus1HistoricState = Table.HistoricState.of(currentMinus1, T_MINUS_1, Optional.of(Lazy.of(currentMinus2HistoricState)));
+            var currentMinus2HistoricState = Table.HistoricState.builder()
+                    .state(currentMinus2)
+                    .timestamp(T_MINUS_2)
+                    .previous(Optional.empty())
+                    .build();
+            var currentMinus1HistoricState = Table.HistoricState.builder()
+                    .state(currentMinus1)
+                    .timestamp(T_MINUS_1)
+                    .previous(Optional.of(Lazy.of(currentMinus2HistoricState)))
+                    .build();
 
             var table = Table.builder()
                     .id(Table.Id.of("tableId"))
@@ -120,7 +128,12 @@ class TableTest {
                     .ownerId(userId1)
                     .status(Table.Status.STARTED)
                     .log(new Log())
-                    .currentState(Lazy.of(Optional.of(Table.CurrentState.of(currentState, T, Optional.of(Lazy.of(currentMinus1HistoricState)), false))))
+                    .currentState(Lazy.of(Optional.of(Table.CurrentState.currentStateBuilder()
+                            .state(currentState)
+                            .timestamp(T)
+                            .previous(Optional.of(Lazy.of(currentMinus1HistoricState)))
+                            .changed(false)
+                            .build())))
                     .build();
 
             table.undo(playerA);

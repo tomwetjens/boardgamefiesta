@@ -504,17 +504,20 @@ public class TableDynamoDbRepository implements Tables {
 
         var currentState = Optional.ofNullable(item.get("State"))
                 .map(attributeValue -> mapToState(game, attributeValue))
-                .map(state -> Table.CurrentState.of(state,
-                        Optional.ofNullable(item.get("StateTimestamp"))
+                .map(state -> Table.CurrentState.currentStateBuilder()
+                        .state(state)
+                        .timestamp(Optional.ofNullable(item.get("StateTimestamp"))
                                 .map(AttributeValue::n)
                                 .map(Long::parseLong)
                                 .map(Instant::ofEpochMilli)
-                                .orElse(updated),
-                        Optional.ofNullable(item.get("PreviousStateTimestamp"))
+                                .orElse(updated))
+                        .previous(Optional.ofNullable(item.get("PreviousStateTimestamp"))
                                 .map(AttributeValue::n)
                                 .map(Long::parseLong)
                                 .map(Instant::ofEpochMilli)
-                                .map(previousTimestamp -> Lazy.defer(() -> getHistoricState(game, id, previousTimestamp))), false));
+                                .map(previousTimestamp -> Lazy.defer(() -> getHistoricState(game, id, previousTimestamp))))
+                        .changed(false)
+                        .build());
 
         return Table.builder()
                 .id(id)
@@ -571,14 +574,15 @@ public class TableDynamoDbRepository implements Tables {
 
     private Table.HistoricState mapToHistoricState(Map<String, AttributeValue> item, Game game) {
         var tableId = Table.Id.of(item.get("TableId").s());
-        var timestamp = Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n()));
-        var previous = Optional.ofNullable(item.get("Previous"))
-                .map(AttributeValue::n)
-                .map(Long::parseLong)
-                .map(Instant::ofEpochMilli)
-                .map(previousTimestamp -> Lazy.defer(() -> getHistoricState(game, tableId, previousTimestamp)));
-        var state = mapToState(game, item.get("State"));
-        return Table.HistoricState.of(state, timestamp, previous);
+        return Table.HistoricState.builder()
+                .state(mapToState(game, item.get("State")))
+                .timestamp(Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n())))
+                .previous(Optional.ofNullable(item.get("Previous"))
+                        .map(AttributeValue::n)
+                        .map(Long::parseLong)
+                        .map(Instant::ofEpochMilli)
+                        .map(previousTimestamp -> Lazy.defer(() -> getHistoricState(game, tableId, previousTimestamp))))
+                .build();
     }
 
     private Player mapToPlayer(AttributeValue attributeValue, Optional<State> state) {

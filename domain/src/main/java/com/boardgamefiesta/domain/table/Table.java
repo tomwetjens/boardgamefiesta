@@ -2,7 +2,8 @@ package com.boardgamefiesta.domain.table;
 
 import com.boardgamefiesta.api.domain.EventListener;
 import com.boardgamefiesta.api.domain.*;
-import com.boardgamefiesta.domain.*;
+import com.boardgamefiesta.domain.AggregateRoot;
+import com.boardgamefiesta.domain.DomainEvent;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.user.User;
 import lombok.*;
@@ -843,13 +844,15 @@ public class Table implements AggregateRoot {
     }
 
 
-    @AllArgsConstructor(staticName = "of")
     @Getter
-    public static class CurrentState {
-        State state;
-        Instant timestamp;
-        Optional<Lazy<HistoricState>> previous;
-        boolean changed;
+    public static class CurrentState extends HistoricState {
+        private boolean changed;
+
+        @Builder(builderMethodName = "currentStateBuilder")
+        private CurrentState(State state, Instant timestamp, Optional<Lazy<HistoricState>> previous, boolean changed) {
+            super(state, timestamp, previous);
+            this.changed = changed;
+        }
 
         public static CurrentState initial(State state) {
             return new CurrentState(state, Instant.now(), Optional.empty(), true);
@@ -891,12 +894,13 @@ public class Table implements AggregateRoot {
 
     }
 
-    @AllArgsConstructor(staticName = "of")
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @Builder
     @Getter
     public static class HistoricState {
-        State state;
-        Instant timestamp;
-        Optional<Lazy<HistoricState>> previous;
+        protected State state;
+        protected Instant timestamp;
+        protected Optional<Lazy<HistoricState>> previous;
 
         public static HistoricState from(CurrentState currentState) {
             return new HistoricState(currentState.state, currentState.timestamp, currentState.previous);
