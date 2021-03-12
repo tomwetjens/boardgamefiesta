@@ -28,22 +28,25 @@ class AutomaExecutor {
         try {
             var retries = 0;
             do {
-                var table = tables.findById(request.getTable().getId())
+                var table = tables.findById(request.getTableId())
                         .orElseThrow();
 
                 if (table.getStatus() != Table.Status.STARTED) {
                     return;
                 }
 
-                if (request.getPlayer().getType() != Player.Type.COMPUTER) {
+                var player = table.getPlayerById(request.getPlayerId())
+                        .orElseThrow();
+
+                if (player.getType() != Player.Type.COMPUTER) {
                     return;
                 }
 
-                if (table.getCurrentPlayers().stream().noneMatch(player -> player.getId().equals(request.getPlayer().getId()))) {
+                if (!table.getCurrentPlayers().contains(player)) {
                     return;
                 }
 
-                table.executeAutoma(request.getPlayer());
+                table.executeAutoma(player);
 
                 try {
                     tables.update(table);

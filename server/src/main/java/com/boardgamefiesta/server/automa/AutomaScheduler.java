@@ -25,7 +25,7 @@ class AutomaScheduler implements DomainService {
         // Submit to executor, so CDI event is processed async
         executorService.schedule(() -> {
             try {
-                CDI.current().getBeanManager().fireEvent(new Request(table, player));
+                CDI.current().getBeanManager().fireEvent(new Request(table.getId(), player.getId()));
             } catch (RuntimeException e) {
                 log.error("Error executing request ", e);
             }
@@ -34,8 +34,8 @@ class AutomaScheduler implements DomainService {
 
     @Value
     static class Request {
-        Table table;
-        Player player;
+        Table.Id tableId;
+        Player.Id playerId;
     }
 
 }
