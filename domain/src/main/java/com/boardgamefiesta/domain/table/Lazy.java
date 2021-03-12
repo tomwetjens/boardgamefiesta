@@ -1,5 +1,7 @@
 package com.boardgamefiesta.domain.table;
 
+import lombok.Getter;
+
 import java.util.function.Supplier;
 
 public abstract class Lazy<T> {
@@ -8,6 +10,8 @@ public abstract class Lazy<T> {
     }
 
     public abstract T get();
+
+    public abstract boolean isResolved();
 
     public static <T> Lazy<T> of(T value) {
         return new Just<>(value);
@@ -29,11 +33,16 @@ public abstract class Lazy<T> {
             return value;
         }
 
+        @Override
+        public boolean isResolved() {
+            return true;
+        }
     }
 
     private static final class Deferred<T> extends Lazy<T> {
         private final Supplier<T> supplier;
         private T value;
+        @Getter
         private boolean resolved;
 
         public Deferred(Supplier<T> supplier) {
