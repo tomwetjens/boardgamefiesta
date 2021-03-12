@@ -368,7 +368,9 @@ public class Game implements State {
         if (!currentPlayerState().hasJobMarketToken()) {
             actionStack.addActions(determineBeginTurnActions());
 
-            currentPlayerState().beginTurn();
+            if (status != Status.BIDDING) {
+                currentPlayerState().beginTurn();
+            }
 
             fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
         } else {
@@ -489,7 +491,8 @@ public class Game implements State {
                 .value("handLimit", playerState.getHandLimit())
                 .value("permCerts", playerState.permanentCertificates())
                 .value("tempCerts", playerState.getTempCertificates())
-                .value("tempCertLimit", playerState.getTempCertificateLimit());
+                .value("tempCertLimit", playerState.getTempCertificateLimit())
+                .value("turns", playerState.getTurns());
 
         scoreDetails(player).ifPresent(score ->
                 score.getCategories().forEach((category, value) ->
