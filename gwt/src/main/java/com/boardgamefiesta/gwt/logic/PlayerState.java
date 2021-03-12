@@ -68,6 +68,7 @@ public class PlayerState {
 
     @Getter
     private int turns;
+
     @Getter
     private Map<Location, Integer> stops = new HashMap<>();
 
@@ -115,12 +116,6 @@ public class PlayerState {
         }
 
         drawUpToHandLimit(random);
-    }
-
-    void start(Game game, Random random) {
-        if (automaState != null) {
-            automaState.start(game, random);
-        }
     }
 
     JsonObject serialize(JsonBuilderFactory factory, RailroadTrack railroadTrack) {

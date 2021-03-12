@@ -219,6 +219,10 @@ public class Trail {
         return Collections.unmodifiableList(hazardLocations.get(hazardType));
     }
 
+    public Stream<Location.HazardLocation> getHazardLocations() {
+        return hazardLocations.values().stream().flatMap(List::stream);
+    }
+
     public Collection<Location.TeepeeLocation> getTeepeeLocations() {
         return Collections.unmodifiableCollection(teepeeLocations.values());
     }

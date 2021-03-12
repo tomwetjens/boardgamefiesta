@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-@Builder
+@Builder(toBuilder = true)
 public class Stats {
 
     @Singular

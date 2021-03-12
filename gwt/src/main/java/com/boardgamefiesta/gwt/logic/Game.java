@@ -507,10 +507,16 @@ public class Game implements State {
         }
 
         for (String name : List.of("A", "B", "C", "D", "E", "F", "G")) {
-            stats.value("building." + name, trail.getBuildingLocations().stream()
+            var buildingLocation = trail.getBuildingLocations().stream()
                     .filter(location -> name.equals(location.getBuilding().map(Building::getName).orElse(null)))
-                    .findAny()
+                    .findAny();
+
+            stats.value("building." + name, buildingLocation
                     .map(Location::getName)
+                    .orElse(""));
+            stats.value("stops." + name, buildingLocation
+                    .map(location -> playerState.getStops().getOrDefault(location, 0))
+                    .map(i -> Integer.toString(i))
                     .orElse(""));
         }
 
@@ -518,17 +524,31 @@ public class Game implements State {
             for (var side : Arrays.stream(PlayerBuilding.Side.values()).sorted().collect(Collectors.toList())) {
                 var name = PlayerBuilding.Name.of(number, side).toString();
 
-                stats.value("building." + name, trail.getBuildingLocations().stream()
-                        .filter(location -> location.getBuilding()
+                var buildingLocation = trail.getBuildingLocations().stream()
+                        .filter(l -> l.getBuilding()
                                 .filter(building -> building.getName().equals(name))
                                 .filter(building -> building instanceof PlayerBuilding)
                                 .filter(building -> ((PlayerBuilding) building).getPlayer() == player)
                                 .isPresent())
-                        .findAny()
+                        .findAny();
+
+                stats.value("building." + name, buildingLocation
                         .map(Location::getName)
+                        .orElse(""));
+                stats.value("stops." + name, buildingLocation
+                        .map(location -> playerState.getStops().getOrDefault(location, 0))
+                        .map(i -> Integer.toString(i))
                         .orElse(""));
             }
         }
+
+        stats.value("stops.hazard", trail.getHazardLocations()
+                .mapToInt(location -> playerState.getStops().getOrDefault(location, 0))
+                .sum());
+
+        stats.value("stops.teepee", trail.getTeepeeLocations().stream()
+                .mapToInt(location -> playerState.getStops().getOrDefault(location, 0))
+                .sum());
 
         return stats.build();
     }
