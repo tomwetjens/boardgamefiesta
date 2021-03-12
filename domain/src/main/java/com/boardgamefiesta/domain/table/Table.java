@@ -165,7 +165,18 @@ public class Table implements AggregateRoot {
 
             new Started(id).fire();
 
-            getCurrentPlayers().forEach(player -> player.beginTurn(game.getTimeLimit(options)));
+            state.getCurrentPlayers().stream()
+                    .map(com.boardgamefiesta.api.domain.Player::getName)
+                    .map(Player.Id::of)
+                    .map(this::getPlayerById)
+                    .flatMap(Optional::stream)
+                    .forEach(player -> {
+                        player.beginTurn(game.getTimeLimit(options));
+
+                        new BeginTurn(game.getId(), id, type, player.getUserId(),
+                                player.getTurnLimit().orElse(null),
+                                started).fire();
+                    });
         } catch (InGameException e) {
             throw new InGameError(game.getId(), e);
         }
@@ -219,7 +230,12 @@ public class Table implements AggregateRoot {
         var currentState = this.currentState.orElseThrow(NotStarted::new);
         var state = currentState.getState();
 
-        var currentPlayers = getCurrentPlayers();
+        var currentPlayers = state.getCurrentPlayers().stream()
+                .map(com.boardgamefiesta.api.domain.Player::getName)
+                .map(Player.Id::of)
+                .map(this::getPlayerById)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
 
         EventListener eventListener = event -> log.add(new LogEntry(this, event));
         state.addEventListener(eventListener);
@@ -232,7 +248,12 @@ public class Table implements AggregateRoot {
         currentState.next(state);
 
         // TODO Move this into afterStateChange to also support undoing after turn ends
-        var newCurrentPlayers = getCurrentPlayers();
+        var newCurrentPlayers = state.getCurrentPlayers().stream()
+                .map(com.boardgamefiesta.api.domain.Player::getName)
+                .map(Player.Id::of)
+                .map(this::getPlayerById)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
 
         currentPlayers.stream()
                 .filter(player -> state.isEnded() || !newCurrentPlayers.contains(player))
