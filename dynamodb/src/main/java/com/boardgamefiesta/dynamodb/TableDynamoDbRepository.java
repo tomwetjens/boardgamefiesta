@@ -639,6 +639,7 @@ public class TableDynamoDbRepository implements Tables {
         map.put("Winner", player.getWinner().map(winner -> AttributeValue.builder().bool(winner).build()).orElse(null));
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
         map.put("Updated", AttributeValue.builder().n(Long.toString(player.getUpdated().getEpochSecond())).build());
+        map.put("Turn", AttributeValue.builder().bool(player.isTurn()).build());
         map.put("TurnLimit", player.getTurnLimit().map(turnLimit -> AttributeValue.builder().n(Long.toString(turnLimit.getEpochSecond())).build()).orElse(null));
         return AttributeValue.builder().m(map).build();
     }
