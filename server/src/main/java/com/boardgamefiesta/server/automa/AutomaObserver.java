@@ -26,7 +26,7 @@ class AutomaObserver {
     }
 
     void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.StateChanged event) {
-        var table = tables.findById(event.getTableId(), false)
+        var table = tables.findById(event.getTableId())
                 .orElseThrow();
 
         if (table.getStatus() == Table.Status.STARTED) {

@@ -36,7 +36,7 @@ public class TableSuggestedPlayersResource {
 
     @GET
     public List<UserView> get(@PathParam("tableId") String tableId) {
-        var table = tables.findById(Table.Id.of(tableId), false)
+        var table = tables.findById(Table.Id.of(tableId))
                 .orElseThrow(NotFoundException::new);
 
         var currentUserId = currentUser.getId();

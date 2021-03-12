@@ -53,20 +53,17 @@ public class StatsResource {
                         .filter(table -> table.getStatus() == Table.Status.ENDED)
                         .filter(table -> !table.hasComputerPlayers())
                         .forEach(table -> table.getPlayers().forEach(player -> {
-                            table.getState().getPlayerByName(player.getId().getId()) // could be empty when player has left
-                                    .map(table.getState()::stats)
-                                    .ifPresent(stats -> {
+                            table.stats(player).ifPresent(stats -> {
+                                if (keys.isEmpty()) {
+                                    keys.addAll(stats.keys());
 
-                                        if (keys.isEmpty()) {
-                                            keys.addAll(stats.keys());
+                                    writeHeader(writer, keys);
+                                }
 
-                                            writeHeader(writer, keys);
-                                        }
+                                var user = userMap.computeIfAbsent(player.getUserId().get(), userId -> users.findById(userId, false));
 
-                                        var user = userMap.computeIfAbsent(player.getUserId().get(), userId -> users.findById(userId, false));
-
-                                        writeRow(writer, keys, table, player, user, stats);
-                                    });
+                                writeRow(writer, keys, table, player, user, stats);
+                            });
                         }));
             }
         }).header("Content-Disposition", "attachment; filename=\"" + gameId + "_" + Instant.now().toString().replace(":", "") + ".csv\"").build();
