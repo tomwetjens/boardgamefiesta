@@ -69,7 +69,7 @@ public class PlayerState {
     @Getter
     private int turns;
     @Getter
-    private Map<Location, Integer> stops;
+    private Map<Location, Integer> stops = new HashMap<>();
 
     PlayerState(@NonNull Player player, @NonNull Game.Options options, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildingSet) {
         this.player = player;
