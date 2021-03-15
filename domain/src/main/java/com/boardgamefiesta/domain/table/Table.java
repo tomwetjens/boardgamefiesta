@@ -869,8 +869,8 @@ public class Table implements AggregateRoot {
 
         public void revertTo(HistoricState historicState) {
             this.state = historicState.getState();
-            this.timestamp = historicState.getTimestamp();
             this.previous = historicState.getPrevious();
+            this.timestamp = Instant.now();
             this.changed = true;
         }
 

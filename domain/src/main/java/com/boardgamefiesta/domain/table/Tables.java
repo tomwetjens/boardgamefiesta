@@ -10,6 +10,9 @@ import java.util.stream.Stream;
 
 public interface Tables extends Repository {
 
+    int MAX_ACTIVE_GAMES = 10;
+    int MAX_ACTIVE_REALTIME_GAMES = MAX_ACTIVE_GAMES;
+
     Optional<Table> findById(Table.Id id);
 
     void add(Table table);
@@ -21,8 +24,6 @@ public interface Tables extends Repository {
     Stream<Table> findRecent(User.Id userId, int maxResults);
 
     Stream<Table> findRecent(User.Id userId, Game.Id gameId, int maxResults);
-
-    Stream<Table> findAll();
 
     Stream<Table> findAll(Game.Id gameId, int maxResults);
 
