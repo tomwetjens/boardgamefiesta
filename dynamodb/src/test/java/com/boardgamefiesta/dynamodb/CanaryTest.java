@@ -1,7 +1,9 @@
 package com.boardgamefiesta.dynamodb;
 
+import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.table.Table;
+import com.boardgamefiesta.gwt.GWT;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +33,7 @@ public class CanaryTest {
 
         tableDynamodbRepository = new TableDynamoDbRepository(games, DynamoDbClient.create(), config);
 
-        var count = tableDynamodbRepository.findAll()
+        var count = tableDynamodbRepository.findAll(Game.Id.of(GWT.ID), 999)
                 .filter(table -> table.getStatus() == Table.Status.STARTED || table.getStatus() == Table.Status.ENDED)
                 .peek(table -> {
                     System.out.println(table.getId().getId());
@@ -46,4 +48,5 @@ public class CanaryTest {
 
         System.out.println("Checked " + count + " tables");
     }
+
 }

@@ -32,9 +32,6 @@ public class TableDynamoDbRepository implements Tables {
 
     private static final int FIRST_VERSION = 1;
 
-    private static final int MAX_ACTIVE_GAMES = 10;
-    private static final int MAX_ACTIVE_REALTIME_GAMES = MAX_ACTIVE_GAMES;
-
     private final Games games;
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
@@ -103,20 +100,6 @@ public class TableDynamoDbRepository implements Tables {
                 .limit(maxResults)
                 .map(item -> Table.Id.of(item.get("Id").s()))
                 .flatMap(tableId -> findOptionallyById(tableId).stream());
-    }
-
-    @Override
-    public Stream<Table> findAll() {
-        return dynamoDbClient.scanPaginator(ScanRequest.builder()
-                .tableName(tableName)
-                // Filter out the adjacency list items
-                .filterExpression("begins_with(UserId, :UserIdBeginsWith)")
-                .expressionAttributeValues(Map.of(
-                        ":UserIdBeginsWith", AttributeValue.builder().s("Table-").build()
-                ))
-                .build())
-                .items().stream()
-                .map(this::mapToTable);
     }
 
     @Value
@@ -377,20 +360,6 @@ public class TableDynamoDbRepository implements Tables {
         addLogEntries(table);
 
         updateAdjacencyList(table);
-    }
-
-    void migrateAdjacencyLists() {
-        findAll().forEach(table -> {
-            System.out.println("Migrating table " + table.getId().getId());
-            table.getPlayers().stream()
-                    .filter(player -> player.getType() == Player.Type.USER)
-                    .forEach(player -> {
-                        dynamoDbClient.putItem(PutItemRequest.builder()
-                                .tableName(tableName)
-                                .item(mapToAdjacencyListItem(table, player))
-                                .build());
-                    });
-        });
     }
 
     private void updateAdjacencyList(Table table) {
