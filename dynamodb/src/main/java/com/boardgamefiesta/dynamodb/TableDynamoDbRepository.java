@@ -9,7 +9,6 @@ import com.boardgamefiesta.domain.table.*;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.dynamodb.json.DynamoDbJson;
 import lombok.NonNull;
-import lombok.Value;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -100,12 +99,6 @@ public class TableDynamoDbRepository implements Tables {
                 .limit(maxResults)
                 .map(item -> Table.Id.of(item.get("Id").s()))
                 .flatMap(tableId -> findOptionallyById(tableId).stream());
-    }
-
-    @Value
-    class TableSummary {
-        Table.Id id;
-        Instant ended;
     }
 
     @Override
