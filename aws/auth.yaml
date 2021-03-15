@@ -7,7 +7,7 @@ Parameters:
     Type: String
   UserPoolId:
     Type: String
-    Default: eu-west-1_xyGFrQowZ
+    Default: eu-west-1_4FuZdxo27
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
 Resources:
@@ -50,9 +50,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 128
+      MemorySize: 512
       Role: !GetAtt MigrateUserTriggerRole.Arn
       Runtime: java11
+      Timeout: 60
       Environment:
         Variables:
           QUARKUS_LAMBDA_HANDLER: migrateUser
@@ -102,9 +103,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 128
+      MemorySize: 512
       Role: !GetAtt PreSignUpTriggerRole.Arn
       Runtime: java11
+      Timeout: 60
       Environment:
         Variables:
           QUARKUS_LAMBDA_HANDLER: preSignUp
@@ -157,9 +159,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 128
+      MemorySize: 512
       Role: !GetAtt PostConfirmationTriggerRole.Arn
       Runtime: java11
+      Timeout: 60
       Environment:
         Variables:
           QUARKUS_LAMBDA_HANDLER: postConfirmation
@@ -201,9 +204,10 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 128
+      MemorySize: 512
       Role: !GetAtt PreTokenGenerationTriggerRole.Arn
       Runtime: java11
+      Timeout: 30
       Environment:
         Variables:
           QUARKUS_LAMBDA_HANDLER: preTokenGeneration
