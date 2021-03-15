@@ -136,21 +136,26 @@ class TableTest {
                             .build())))
                     .build();
 
+            var beforeUndo = Instant.now();
             table.undo(playerA);
 
             assertThat(table.getState()).isSameAs(currentMinus1);
-            assertThat(table.getCurrentState().get().get().getTimestamp()).isSameAs(T_MINUS_1);
+            assertThat(table.getCurrentState().get().get().getTimestamp()).isAfterOrEqualTo(beforeUndo);
+            assertThat(table.getCurrentState().get().get().isChanged()).isTrue();
 
+            beforeUndo = Instant.now();
             table.undo(playerA);
 
             assertThat(table.getState()).isSameAs(currentMinus2);
-            assertThat(table.getCurrentState().get().get().getTimestamp()).isSameAs(T_MINUS_2);
+            assertThat(table.getCurrentState().get().get().getTimestamp()).isAfterOrEqualTo(beforeUndo);
+            assertThat(table.getCurrentState().get().get().isChanged()).isTrue();
 
             var beforePerform = Instant.now();
             table.perform(playerA, action);
 
             assertThat(table.getState()).isSameAs(currentMinus2);
             assertThat(table.getCurrentState().get().get().getTimestamp()).isAfterOrEqualTo(beforePerform);
+            assertThat(table.getCurrentState().get().get().isChanged()).isTrue();
         }
     }
 }
