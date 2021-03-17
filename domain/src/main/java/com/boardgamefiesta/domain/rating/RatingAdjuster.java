@@ -56,6 +56,11 @@ public class RatingAdjuster {
             return Collections.emptySet();
         }
 
+        if (table.hasComputerPlayers()) {
+            // Games with computer players are not eligible for rating
+            return Collections.emptySet();
+        }
+
         var playerRatings = table.getPlayers().stream()
                 .filter(Player::isPlaying)
                 // Only users can have ratings
