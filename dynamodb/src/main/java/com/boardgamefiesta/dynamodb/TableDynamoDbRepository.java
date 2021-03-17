@@ -9,17 +9,17 @@ import com.boardgamefiesta.domain.table.*;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.dynamodb.json.DynamoDbJson;
 import lombok.NonNull;
+import lombok.Value;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@ApplicationScoped
+//@ApplicationScoped
 public class TableDynamoDbRepository implements Tables {
 
     private static final String TABLE_NAME = "gwt-games";
@@ -99,6 +99,32 @@ public class TableDynamoDbRepository implements Tables {
                 .limit(maxResults)
                 .map(item -> Table.Id.of(item.get("Id").s()))
                 .flatMap(tableId -> findOptionallyById(tableId).stream());
+    }
+
+    @Value
+    private class TableSummary {
+        Table.Id id;
+        Instant ended;
+    }
+
+    public Stream<Table> findAllEndedSortedByEndedAscending() {
+        return dynamoDbClient.scanPaginator(ScanRequest.builder()
+                .tableName(tableName)
+                // Filter out the adjacency list items
+                .filterExpression("begins_with(UserId, :UserIdBeginsWith) and #Status = :Ended")
+                .expressionAttributeNames(Map.of(
+                        "#Status", "Status"
+                ))
+                .expressionAttributeValues(Map.of(
+                        ":UserIdBeginsWith", AttributeValue.builder().s("Table-").build(),
+                        ":Ended", AttributeValue.builder().s(Table.Status.ENDED.name()).build()
+                ))
+                .projectionExpression("Id, Ended")
+                .build())
+                .items().stream()
+                .map(item -> new TableSummary(Table.Id.of(item.get("Id").s()), Instant.ofEpochSecond(Long.parseLong(item.get("Ended").n()))))
+                .sorted(Comparator.comparing(TableSummary::getEnded))
+                .flatMap(tableSummary -> findById(tableSummary.getId()).stream());
     }
 
     @Override
@@ -456,7 +482,7 @@ public class TableDynamoDbRepository implements Tables {
                 .build();
     }
 
-    private Table mapToTable(Map<String, AttributeValue> item) {
+    public Table mapToTable(Map<String, AttributeValue> item) {
         var id = Table.Id.of(item.get("Id").s());
 
         var gameId = Game.Id.of(item.get("GameId").s());
@@ -534,7 +560,7 @@ public class TableDynamoDbRepository implements Tables {
                 .orElseThrow();
     }
 
-    private Table.HistoricState mapToHistoricState(Map<String, AttributeValue> item, Game game) {
+    public Table.HistoricState mapToHistoricState(Map<String, AttributeValue> item, Game game) {
         var tableId = Table.Id.of(item.get("TableId").s());
         return Table.HistoricState.builder()
                 .state(mapToState(game, item.get("State")))
