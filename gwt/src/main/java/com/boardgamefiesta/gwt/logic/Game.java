@@ -494,6 +494,7 @@ public class Game implements State {
                 .value("permCerts", playerState.permanentCertificates())
                 .value("tempCerts", playerState.getTempCertificates())
                 .value("tempCertLimit", playerState.getTempCertificateLimit())
+                .value("bid", playerState.getBid().map(Bid::getPoints).map(Object::toString).orElse(""))
                 .value("turns", playerState.getTurns());
 
         scoreDetails(player).ifPresent(score ->
