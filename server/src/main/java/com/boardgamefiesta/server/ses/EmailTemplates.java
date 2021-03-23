@@ -1,5 +1,6 @@
 package com.boardgamefiesta.server.ses;
 
+import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import lombok.NonNull;
@@ -12,6 +13,7 @@ import javax.enterprise.context.ApplicationScoped;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Map;
 
 @ApplicationScoped
 public class EmailTemplates {
@@ -54,7 +56,6 @@ public class EmailTemplates {
 
     Message createInvitedMessage(Table.Invited event, User user, User host) {
         var locale = user.getLocale();
-        var timeZone = user.getTimeZone();
 
         var game = translations.getTranslation("game." + event.getGameId().getId() + ".name", locale);
         var link = url + "/" + event.getGameId().getId() + "/" + event.getTableId().getId();
@@ -73,4 +74,33 @@ public class EmailTemplates {
                         .build())
                 .build();
     }
+
+    public Message createEndedMessage(Table table, Player player, Map<User.Id, User> userMap) {
+        var user = userMap.get(player.getUserId().get());
+        var locale = user.getLocale();
+        var timeZone = user.getTimeZone();
+
+        var dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+                .withLocale(locale)
+                .withZone(timeZone);
+
+        var game = translations.getTranslation("game." + table.getGame().getId().getId() + ".name", locale);
+        var ended = dateTimeFormatter.format(table.getEnded());
+        var link = url + "/" + table.getGame().getId().getId() + "/" + table.getId().getId();
+
+        return Message.builder()
+                .subject(Content.builder()
+                        .charset(StandardCharsets.UTF_8.name())
+                        .data(translations.getTranslation("email.ended.subject", locale, game, ended))
+                        .build())
+                .body(Body.builder()
+                        .html(Content.builder()
+                                .charset(StandardCharsets.UTF_8.name())
+                                .data(translations.getTranslation("email.ended.body", locale, game, ended, link) +
+                                        "Board Game Fiesta<br/><a href=\"" + url + "\">" + url + "</a>")
+                                .build())
+                        .build())
+                .build();
+    }
+
 }
