@@ -67,8 +67,10 @@ public class PlayerState {
     private Garth automaState;
 
     @Getter
+    @Setter
     private int turns;
 
+    @Setter
     @Getter
     private Map<Location, Integer> stops = new HashMap<>();
 

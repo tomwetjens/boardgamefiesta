@@ -107,12 +107,12 @@ class TableTest {
             var currentMinus2HistoricState = Table.HistoricState.builder()
                     .state(currentMinus2)
                     .timestamp(T_MINUS_2)
-                    .previous(Optional.empty())
+                    .previous(Lazy.of(Optional.empty()))
                     .build();
             var currentMinus1HistoricState = Table.HistoricState.builder()
                     .state(currentMinus1)
                     .timestamp(T_MINUS_1)
-                    .previous(Optional.of(Lazy.of(currentMinus2HistoricState)))
+                    .previous(Lazy.of(Optional.of(currentMinus2HistoricState)))
                     .build();
 
             var table = Table.builder()
@@ -131,7 +131,7 @@ class TableTest {
                     .currentState(Lazy.of(Optional.of(Table.CurrentState.builder()
                             .state(currentState)
                             .timestamp(T)
-                            .previous(Optional.of(Lazy.of(currentMinus1HistoricState)))
+                            .previous(Lazy.of(Optional.of(currentMinus1HistoricState)))
                             .changed(false)
                             .build())))
                     .build();

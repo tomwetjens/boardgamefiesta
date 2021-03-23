@@ -634,8 +634,8 @@ public class Table implements AggregateRoot {
         }
 
         var previous = currentState.getPrevious()
-                .orElseThrow(HistoryNotAvailable::new)
-                .get();
+                .get()
+                .orElseThrow(HistoryNotAvailable::new);
 
         log.add(new LogEntry(player, LogEntry.Type.UNDO));
 
@@ -849,11 +849,11 @@ public class Table implements AggregateRoot {
     public static class CurrentState {
         private State state;
         private Instant timestamp;
-        private Optional<Lazy<HistoricState>> previous;
+        private Lazy<Optional<HistoricState>> previous;
         private boolean changed;
 
         public static CurrentState initial(State state) {
-            return new CurrentState(state, Instant.now(), Optional.empty(), true);
+            return new CurrentState(state, Instant.now(), Lazy.of(Optional.empty()), true);
         }
 
         public HistoricState next(State state) {
@@ -861,7 +861,7 @@ public class Table implements AggregateRoot {
 
             this.state = state;
             this.timestamp = Instant.now();
-            this.previous = Optional.of(Lazy.of(previous));
+            this.previous = Lazy.of(Optional.of(previous));
             this.changed = true;
 
             return previous;
@@ -875,7 +875,7 @@ public class Table implements AggregateRoot {
         }
 
         public boolean canUndo() {
-            return previous.isPresent() && getState().canUndo();
+            return state.canUndo() && previous.get().isPresent();
         }
 
         public boolean isChanged() {
@@ -898,7 +898,7 @@ public class Table implements AggregateRoot {
     public static class HistoricState {
         protected State state;
         protected Instant timestamp;
-        protected Optional<Lazy<HistoricState>> previous;
+        protected Lazy<Optional<HistoricState>> previous;
 
         public static HistoricState from(CurrentState currentState) {
             return new HistoricState(currentState.state, currentState.timestamp, currentState.previous);

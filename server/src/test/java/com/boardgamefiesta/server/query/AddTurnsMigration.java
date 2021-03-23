@@ -4,6 +4,7 @@ import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.RatingAdjuster;
 import com.boardgamefiesta.domain.rating.Ratings;
 import com.boardgamefiesta.domain.table.LogEntry;
+import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
@@ -53,6 +54,7 @@ public class AddTurnsMigration {
     @Test
     void run() {
         tables.findAll(com.boardgamefiesta.domain.game.Game.Id.of(GWT.ID), 9999999)
+//        tables.findById(Table.Id.of("5ed2c957-4905-4d5f-b5d6-cc5776bcda10")).stream()
                 .filter(table -> table.getGame().getId().getId().equals(GWT.ID))
 //                .limit(100)
                 .forEach(table -> {
@@ -84,7 +86,7 @@ public class AddTurnsMigration {
                                         }
                                     }
 
-//                                    playerState.setTurns(turns);
+                                    playerState.setTurns(turns);
 
                                     var moves = logEntries.stream()
                                             .filter(logEntry -> logEntry.getParameters().get(0).equals("ACTION"))
@@ -97,7 +99,9 @@ public class AddTurnsMigration {
                                             .collect(Collectors.groupingBy(logEntry -> state.getTrail().getLocation(logEntry.getParameters().get(2)),
                                                     Collectors.summingInt(e -> 1)));
 
-//                                    playerState.setStops(stops);
+                                    playerState.setStops(stops);
+
+//                                    System.out.println("table " + table.getId().getId() + " player " + playerId.getId() + " turns " + turns);
                                 });
                     });
 
