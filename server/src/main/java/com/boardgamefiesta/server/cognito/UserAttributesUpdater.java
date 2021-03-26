@@ -1,11 +1,14 @@
 package com.boardgamefiesta.server.cognito;
 
 import com.boardgamefiesta.domain.user.User;
+import com.boardgamefiesta.server.rest.exception.APIError;
+import com.boardgamefiesta.server.rest.exception.APIException;
 import lombok.NonNull;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminSetUserPasswordRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminUpdateUserAttributesRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AliasExistsException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -57,15 +60,19 @@ class UserAttributesUpdater {
 
     // Observe event during transaction, so if Cognito request fails, we fail the transaction as well
     void changeUsername(@Observes(during = TransactionPhase.IN_PROGRESS) User.UsernameChanged event) {
-        cognitoIdentityProviderClient.adminUpdateUserAttributes(AdminUpdateUserAttributesRequest.builder()
-                .userPoolId(getUserPoolId())
-                .username(event.getCognitoUsername())
-                .userAttributes(
-                        AttributeType.builder()
-                                .name("preferred_username")
-                                .value(event.getUsername())
-                                .build())
-                .build());
+        try {
+            cognitoIdentityProviderClient.adminUpdateUserAttributes(AdminUpdateUserAttributesRequest.builder()
+                    .userPoolId(getUserPoolId())
+                    .username(event.getCognitoUsername())
+                    .userAttributes(
+                            AttributeType.builder()
+                                    .name("preferred_username")
+                                    .value(event.getUsername())
+                                    .build())
+                    .build());
+        } catch (AliasExistsException e) {
+            throw APIException.badRequest(APIError.USERNAME_ALREADY_IN_USE);
+        }
     }
 
     String getUserPoolId() {
