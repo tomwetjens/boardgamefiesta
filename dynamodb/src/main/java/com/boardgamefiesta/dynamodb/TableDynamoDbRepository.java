@@ -13,13 +13,14 @@ import lombok.Value;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-//@ApplicationScoped
+@ApplicationScoped
 public class TableDynamoDbRepository implements Tables {
 
     private static final String TABLE_NAME = "gwt-games";
