@@ -65,7 +65,7 @@ class ActionTest {
         lenient().when(game.currentPlayerState()).thenReturn(currentPlayerState);
         lenient().when(game.getRailroadTrack()).thenReturn(railroadTrack);
         lenient().when(game.getTrail()).thenReturn(trail);
-        lenient().when(game.getPlayers()).thenReturn(List.of(currentPlayer, otherPlayer));
+        lenient().when(game.getPlayers()).thenReturn(Set.of(currentPlayer, otherPlayer));
         lenient().when(game.getPlayerOrder()).thenReturn(List.of(currentPlayer, otherPlayer));
         lenient().when(game.playerState(currentPlayer)).thenReturn(currentPlayerState);
         lenient().when(game.playerState(otherPlayer)).thenReturn(otherPlayerState);

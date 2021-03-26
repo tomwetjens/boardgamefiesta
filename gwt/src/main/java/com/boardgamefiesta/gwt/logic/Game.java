@@ -417,13 +417,14 @@ public class Game implements State {
         return playerStates.get(player);
     }
 
-    List<Player> getPlayerOrder() {
+    @Override
+    public List<Player> getPlayerOrder() {
         return Collections.unmodifiableList(playerOrder);
     }
 
     @Override
-    public List<Player> getPlayers() {
-        return Collections.unmodifiableList(playerOrder);
+    public Set<Player> getPlayers() {
+        return Collections.unmodifiableSet(players);
     }
 
     public Set<Class<? extends Action>> possibleActions() {
@@ -459,7 +460,7 @@ public class Game implements State {
     }
 
     public Set<PossibleMove> possibleMoves(@NonNull Player player, int atMost) {
-        return trail.possibleMoves(player, playerState(player).getBalance(), atMost, playerOrder.size());
+        return trail.possibleMoves(player, playerState(player).getBalance(), atMost, players.size());
     }
 
     public Optional<Score> scoreDetails(Player player) {
@@ -489,7 +490,7 @@ public class Game implements State {
                 .value("cowboys", playerState.getNumberOfCowboys())
                 .value("craftsmen", playerState.getNumberOfCraftsmen())
                 .value("engineers", playerState.getNumberOfEngineers())
-                .value("stepLimit", playerState.getStepLimit(playerOrder.size()))
+                .value("stepLimit", playerState.getStepLimit(players.size()))
                 .value("handLimit", playerState.getHandLimit())
                 .value("permCerts", playerState.permanentCertificates())
                 .value("tempCerts", playerState.getTempCertificates())

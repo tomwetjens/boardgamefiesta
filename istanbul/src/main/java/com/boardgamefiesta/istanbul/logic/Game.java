@@ -26,6 +26,7 @@ public class Game implements State {
     public static final Set<PlayerColor> SUPPORTED_COLORS = Set.of(PlayerColor.WHITE, PlayerColor.YELLOW, PlayerColor.RED, PlayerColor.GREEN, PlayerColor.BLUE);
 
     @NonNull
+    @Getter
     private final Set<Player> players;
 
     @NonNull
@@ -513,7 +514,7 @@ public class Game implements State {
     }
 
     @Override
-    public List<Player> getPlayers() {
+    public List<Player> getPlayerOrder() {
         return Collections.unmodifiableList(playerOrder);
     }
 

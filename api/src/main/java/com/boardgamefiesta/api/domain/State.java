@@ -18,7 +18,17 @@ public interface State {
 
     void endTurn(Player player, Random random);
 
-    List<Player> getPlayers();
+    /**
+     *
+     * @return players in order (that are still playing, not including players that left)
+     */
+    List<Player> getPlayerOrder();
+
+    /**
+     *
+     * @return including players that left during the game
+     */
+    Set<Player> getPlayers();
 
     Optional<Integer> score(Player player);
 

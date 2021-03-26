@@ -280,8 +280,8 @@ public class PowerGrid implements State {
     }
 
     @Override
-    public List<Player> getPlayers() {
-        return Collections.unmodifiableList(playerOrder);
+    public Set<Player> getPlayers() {
+        return playerStates.keySet();
     }
 
     @Override
