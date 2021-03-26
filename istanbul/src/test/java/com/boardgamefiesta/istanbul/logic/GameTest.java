@@ -336,7 +336,7 @@ class GameTest {
         void lastRoundTriggeredByNonStartOrLastPlayer() {
             // Given
             var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
-            assertThat(game.getPlayers()).containsExactly(playerBlue, playerGreen, playerRed);
+            assertThat(game.getPlayerOrder()).containsExactly(playerBlue, playerGreen, playerRed);
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerBlue);
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
@@ -362,7 +362,7 @@ class GameTest {
         void lastRoundTriggeredByNonStartOrLastPlayerAndPlayBonusCards() {
             // Given
             var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
-            assertThat(game.getPlayers()).containsExactly(playerBlue, playerGreen, playerRed);
+            assertThat(game.getPlayerOrder()).containsExactly(playerBlue, playerGreen, playerRed);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.TAKE_5_LIRA);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.GAIN_1_GOOD);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.RETURN_1_ASSISTANT);
