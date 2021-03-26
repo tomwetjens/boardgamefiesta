@@ -3,6 +3,7 @@ package com.boardgamefiesta.server.query;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.RatingAdjuster;
 import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import com.boardgamefiesta.dynamodb.RatingDynamoDbRepository;
 import com.boardgamefiesta.dynamodb.TableDynamoDbRepository;
@@ -53,32 +54,56 @@ class RecalculateAllRatingsTest {
 //                .filter(table -> !table.hasComputerPlayers())
 //                .filter(table -> !table.getEnded().isBefore(Instant.now().minus(1, ChronoUnit.DAYS)))
 //                .limit(1)
-                .forEach(table -> {
-                    var oldRatings = table.getPlayers().stream()
-                            .map(Player::getUserId)
-                            .flatMap(Optional::stream)
-                            .flatMap(userId -> ratings.findByTable(userId, table.getId()).stream())
-                            .sorted(Comparator.comparing(rating -> rating.getUserId().getId()))
-                            .collect(Collectors.toList());
+                .forEach(this::recalculate);
+    }
 
-                    System.out.println(table.getId() + " " + table.getEnded());
+    @Test
+    void singleTable() {
+        tables.findById(Table.Id.of("bad22dd0-ae66-4041-b138-201c28bc6fd8"))
+                .ifPresent(this::recalculate);
 
-                    if (!table.hasComputerPlayers()) {
-                        var newRatings = ratingAdjuster.adjustRatings(table).stream()
-                                .sorted(Comparator.comparing(rating -> rating.getUserId().getId()))
-                                .collect(Collectors.toList());
+        //
+        // eldzik 743cd118-b031-430c-a7e4-ef4ea8193122
+        // friar_ken db3bb947-c0de-498f-aae3-d4ba1ce037b7
+        // elmermad 10a80fdc-4e56-4ea4-8c8e-4cdae137e2e1
+        // moritz 07205dca-2c60-47d5-b818-06629c7c96a1
 
-                        ratings.addAll(newRatings);
+        // Table.Id(id=bad22dd0-ae66-4041-b138-201c28bc6fd8) 2021-03-26T18:30:18Z
+        // eldzik -> 1065
+        // friar_ken -> 1243
+        // moritz -> 1229
+        // elmermad -> 1052
+    }
 
-                        var oldRatingsToDelete = oldRatings.stream()
-                                .filter(oldRating -> newRatings.stream()
-                                        .noneMatch(newRating -> newRating.getTimestamp().toEpochMilli()
-                                                == oldRating.getTimestamp().toEpochMilli()))
-                                .collect(Collectors.toList());
-                        oldRatingsToDelete.forEach(ratings::delete);
-                    } else {
-                        oldRatings.forEach(ratings::delete);
-                    }
-                });
+    private void recalculate(Table table) {
+        var oldRatings = table.getPlayers().stream()
+                .map(Player::getUserId)
+                .flatMap(Optional::stream)
+                .flatMap(userId -> ratings.findByTable(userId, table.getId()).stream())
+                .sorted(Comparator.comparing(rating -> rating.getUserId().getId()))
+                .collect(Collectors.toList());
+
+        System.out.println(table.getId() + " " + table.getEnded());
+
+        if (!table.hasComputerPlayers()) {
+            var newRatings = ratingAdjuster.adjustRatings(table).stream()
+                    .sorted(Comparator.comparing(rating -> rating.getUserId().getId()))
+                    .collect(Collectors.toList());
+
+            newRatings.forEach(rating -> {
+                System.out.println(rating.getUserId().getId() + " -> " + rating.getRating());
+            });
+
+            ratings.addAll(newRatings);
+
+            var oldRatingsToDelete = oldRatings.stream()
+                    .filter(oldRating -> newRatings.stream()
+                            .noneMatch(newRating -> newRating.getTimestamp().toEpochMilli()
+                                    == oldRating.getTimestamp().toEpochMilli()))
+                    .collect(Collectors.toList());
+            oldRatingsToDelete.forEach(ratings::delete);
+        } else {
+            oldRatings.forEach(ratings::delete);
+        }
     }
 }

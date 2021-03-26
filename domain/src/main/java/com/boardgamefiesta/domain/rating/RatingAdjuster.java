@@ -62,7 +62,6 @@ public class RatingAdjuster {
         }
 
         var playerRatings = table.getPlayers().stream()
-                .filter(Player::isPlaying)
                 // Only users can have ratings
                 .flatMap(player -> player.getUserId().stream())
                 .collect(Collectors.toMap(Function.identity(), userId -> ratings.findLatest(userId, table.getGame().getId(), table.getEnded())));
