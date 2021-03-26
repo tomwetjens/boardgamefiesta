@@ -682,7 +682,7 @@ public class Table implements AggregateRoot {
                 .filter(player -> player.getType() == Player.Type.USER)
                 .collect(Collectors.toMap(
                         player -> player.getUserId().orElseThrow(),
-                        player -> player.isPlaying() ? player.getScore().orElse(0) : 0));
+                        player -> player.getScore().orElseThrow()));
     }
 
     public boolean canLeave(User.Id userId) {

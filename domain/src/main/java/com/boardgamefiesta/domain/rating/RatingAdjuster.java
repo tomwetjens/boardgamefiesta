@@ -64,7 +64,7 @@ public class RatingAdjuster {
         var playerRatings = table.getPlayers().stream()
                 // Only users can have ratings
                 .flatMap(player -> player.getUserId().stream())
-                .collect(Collectors.toMap(Function.identity(), userId -> ratings.findLatest(userId, table.getGame().getId(), table.getStarted())));
+                .collect(Collectors.toMap(Function.identity(), userId -> ratings.findLatest(userId, table.getGame().getId(), table.getEnded())));
 
         return playerRatings.values().stream()
                 .map(rating -> rating.adjust(playerRatings, table))
