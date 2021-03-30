@@ -311,20 +311,32 @@ public class TableResource {
 
     @GET
     @Path("/{id}/log")
-    public List<LogEntryView> getLog(@PathParam("id") String id, @QueryParam("since") String since) {
+    public List<LogEntryView> getLog(@PathParam("id") String id,
+                                     @QueryParam("since") String since,
+                                     @QueryParam("before") String before,
+                                     @QueryParam("limit") Integer requestedLimit) {
         var table = tables.findById(Table.Id.of(id))
                 .orElseThrow(NotFoundException::new);
 
         checkViewAllowed(table);
 
         var userMap = new HashMap<User.Id, User>();
-        var ratingMap = getRatingMap(table);
 
-        return table.getLog().since(Instant.parse(since))
-                .map(logEntry -> new LogEntryView(table, logEntry,
-                        userId -> userMap.computeIfAbsent(userId, k -> this.users.findOptionallyById(userId).orElse(null)),
-                        ratingMap))
-                .collect(Collectors.toList());
+        var limit = requestedLimit != null ? requestedLimit : 2000;
+
+        if (since != null) {
+            return table.getLog().since(Instant.parse(since), limit)
+                    .map(logEntry -> new LogEntryView(table, logEntry,
+                            userId -> userMap.computeIfAbsent(userId, k -> this.users.findOptionallyById(userId).orElse(null))))
+                    .collect(Collectors.toList());
+        } else if (before != null) {
+            return table.getLog().before(Instant.parse(before), limit)
+                    .map(logEntry -> new LogEntryView(table, logEntry,
+                            userId -> userMap.computeIfAbsent(userId, k -> this.users.findOptionallyById(userId).orElse(null))))
+                    .collect(Collectors.toList());
+        } else {
+            throw new BadRequestException();
+        }
     }
 
     private Table handleConcurrentModification(Table.Id id, Consumer<Table> modifier) {

@@ -537,7 +537,7 @@ public class TableDynamoDbRepository implements Tables {
                         .map(av -> mapToPlayer(av, currentState.map(Table.CurrentState::getState)))
                         .collect(Collectors.toCollection(TrackingSet::new)))
                 .currentState(Lazy.of(currentState))
-                .log(new LazyLog(since -> findLogEntries(id, since)))
+                .log(new LazyLog((from, to, limit) -> findLogEntries(id, from, to, limit)))
                 .build();
     }
 
@@ -653,20 +653,25 @@ public class TableDynamoDbRepository implements Tables {
                 .build();
     }
 
-    private Stream<LogEntry> findLogEntries(Table.Id gameId, Instant since) {
+    private Stream<LogEntry> findLogEntries(Table.Id gameId, Instant from, Instant to, int limit) {
         var expressionAttributeValues = new HashMap<String, AttributeValue>();
         expressionAttributeValues.put(":GameId", AttributeValue.builder().s(gameId.getId()).build());
-        expressionAttributeValues.put(":Since", AttributeValue.builder().n(Long.toString(since.toEpochMilli())).build());
+        expressionAttributeValues.put(":From", AttributeValue.builder().n(Long.toString(from.toEpochMilli())).build());
+        expressionAttributeValues.put(":To", AttributeValue.builder().n(Long.toString(to.toEpochMilli())).build());
 
         return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(logTableName)
-                .keyConditionExpression("GameId = :GameId AND #Timestamp > :Since")
+                .keyConditionExpression("GameId = :GameId AND #Timestamp BETWEEN :From AND :To")
                 .expressionAttributeNames(Collections.singletonMap("#Timestamp", "Timestamp"))
                 .expressionAttributeValues(expressionAttributeValues)
                 .scanIndexForward(false)
+                .limit(limit + 2) // Because 'BETWEEN' is inclusive on both ends
                 .build())
                 .items().stream()
-                .map(this::mapToLogEntry);
+                .map(this::mapToLogEntry)
+                // Make from and to exclusive, because 'BETWEEN' is inclusive for both
+                .filter(logEntry -> logEntry.getTimestamp().isAfter(from) && logEntry.getTimestamp().isBefore(to))
+                .limit(limit);
     }
 
 }

@@ -6,7 +6,6 @@ import com.boardgamefiesta.domain.table.LogEntry;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -15,28 +14,36 @@ import java.util.stream.Stream;
  */
 class LazyLog extends Log {
 
-    public static final Instant MIN = Instant.ofEpochMilli(0);
+    public static final Instant MIN = Instant.ofEpochSecond(0);
+    public static final Instant MAX = Instant.ofEpochSecond(253402297199L);
 
-    private final Function<Instant, Stream<LogEntry>> loader;
+    private final Loader loader;
     private final List<LogEntry> pending = new ArrayList<>();
-    private Instant oldestLoaded;
 
-    LazyLog(Function<Instant, Stream<LogEntry>> loader) {
+    LazyLog(Loader loader) {
         this.loader = loader;
     }
 
     @Override
-    public Stream<LogEntry> since(Instant since) {
-        if (oldestLoaded == null || oldestLoaded.isAfter(since)) {
-            loader.apply(since).forEach(super::add);
-            oldestLoaded = since;
-        }
-        return super.since(since);
+    public Stream<LogEntry> since(Instant since, int limit) {
+        load(since, MAX, limit);
+        return super.since(since, limit);
+    }
+
+    private void load(Instant from, Instant to, int limit) {
+        loader.load(from, to, limit).forEach(super::add);
+    }
+
+    @Override
+    public Stream<LogEntry> before(Instant before, int limit) {
+        load(MIN, before, limit);
+        return super.before(before, limit);
     }
 
     @Override
     public Stream<LogEntry> stream() {
-        return since(MIN);
+        load(MIN, MAX, Integer.MAX_VALUE);
+        return super.stream();
     }
 
     @Override
@@ -51,4 +58,15 @@ class LazyLog extends Log {
         return pending.stream().onClose(pending::clear);
     }
 
+    @FunctionalInterface
+    public interface Loader {
+        /**
+         *
+         * @param from exclusive
+         * @param to exclusive
+         * @param limit
+         * @return
+         */
+        Stream<LogEntry> load(Instant from, Instant to, int limit);
+    }
 }

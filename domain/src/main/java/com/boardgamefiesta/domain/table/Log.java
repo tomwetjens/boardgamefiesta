@@ -10,8 +10,12 @@ public class Log {
 
     private final NavigableMap<Instant, LogEntry> map = new TreeMap<>(Comparator.reverseOrder());
 
-    public Stream<LogEntry> since(Instant since) {
-        return map.headMap(since).values().stream();
+    public Stream<LogEntry> since(Instant since, int limit) {
+        return map.headMap(since).values().stream().limit(limit);
+    }
+
+    public Stream<LogEntry> before(Instant before, int limit) {
+        return map.tailMap(before).values().stream().limit(limit);
     }
 
     protected void add(LogEntry logEntry) {
@@ -21,4 +25,5 @@ public class Log {
     public Stream<LogEntry> stream() {
         return map.values().stream();
     }
+
 }
