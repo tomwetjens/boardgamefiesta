@@ -119,7 +119,6 @@ public class RatingDynamoDbRepository implements Ratings {
                 .build());
     }
 
-    @Override
     public void delete(Rating rating) {
         dynamoDbClient.deleteItem(DeleteItemRequest.builder()
                 .tableName(tableName)

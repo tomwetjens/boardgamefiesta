@@ -22,5 +22,4 @@ public interface Ratings extends Repository {
 
     Stream<Ranking> findRanking(Game.Id gameId, int maxResults);
 
-    void delete(Rating rating);
 }
