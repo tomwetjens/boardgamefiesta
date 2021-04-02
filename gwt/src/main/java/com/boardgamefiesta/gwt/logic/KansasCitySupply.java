@@ -30,56 +30,56 @@ public class KansasCitySupply {
                 drawPile3));
     }
 
+    /**
+     * Variant to approximate 4P ratios, courtesy of Fernando Moritz.
+     * Alternative:           https://boardgamegeek.com/thread/1665842/less-tiles-when-playing-2-or-3-players
+     * <p>
+     * With 4 players, just use the normal rules.
+     * - set 1: 9 green teepees, 8 blue teepees, 18 hazards
+     * - set 2: 33 workers
+     * - set 3: 21 workers, 2 green teepees, 3 blue teepees
+     * <p>
+     * With 3 players, remove X tiles from the game (before the setup):
+     * - set 1: -1 green teepee, -2 of each hazard tile (2b, 4g, -6)
+     * - set 2: -3 of each worker (-9)
+     * - set 3: -1 green teepee, -2 blue teepee, -1 of each worker (-3)
+     * <p>
+     * With 2 players, remove X tiles from the game (before the setup):
+     * - set 1: -3 green teepees, 2 blue teepees, -3 of each hazard tile (2,3,4VP)
+     * - set 2: -5 of each worker (-15)
+     * - set 3: -1 blue teepee, -4 of each worker (-12)
+     * <p>
+     * This variant should roughly preserve the ratios between the different tile types and the ratio between
+     * the tiles that will be used during the game and the ones remaining at the end.
+     */
     static KansasCitySupply balanced(int playerCount, Random random) {
         var kansasCitySupply = original(random);
-
-        /*
-          https://boardgamegeek.com/thread/1665842/less-tiles-when-playing-2-or-3-players
-
-          Variant:
-
-          With 4 players, just use the normal rules.
-          - set 1: 9 green teepees, 8 blue teepees, 18 hazards
-          - set 2: 33 workers
-          - set 3: 21 workers, 2 green teepees, 3 blue teepees
-
-          With 3 players, remove 16 tiles from the game (before the setup):
-          - set 1: -2 green teepees, -1 blue teepee, -1 of each hazard tile (-3)
-          - set 2: -2 of each worker (-6)
-          - set 3: -1 blue teepee, -1 of each worker (-3)
-
-          With 2 players, remove 32 tiles from the game (before the setup):
-          - set 1: -3 green teepees, -3 blue teepee, -2 of each hazard tile (-6)
-          - set 2: -4 of each worker (-12)
-          - set 3: -1 green teepee, -1 blue teepee, -2 of each worker (-6)
-
-          This variant should roughly preserve the ratios between the different tile types and the ratio between
-          the tiles that will be used during the game and the ones remaining at the end.
-         */
 
         var drawPile1 = kansasCitySupply.drawPiles.get(0);
         var drawPile2 = kansasCitySupply.drawPiles.get(1);
         var drawPile3 = kansasCitySupply.drawPiles.get(2);
 
         if (playerCount == 3) {
-            drawPile1.removeTeepees(Teepee.GREEN, 2);
-            drawPile1.removeTeepees(Teepee.BLUE, 1);
-            drawPile1.removeHazardsOfEachType(1);
+            drawPile1.removeTeepees(Teepee.GREEN, 1);
+            drawPile1.removeHazardsOfEachTypeWithPointsAndHand(2, 2, Hand.BLACK);
+            drawPile1.removeHazardsOfEachTypeWithPointsAndHand(2, 4, Hand.GREEN);
 
-            drawPile2.removeWorkersOfEachType(2);
+            drawPile2.removeWorkersOfEachType(3);
 
-            drawPile3.removeTeepees(Teepee.BLUE, 1);
+            drawPile3.removeTeepees(Teepee.BLUE, 2);
+            drawPile3.removeTeepees(Teepee.GREEN, 1);
             drawPile3.removeWorkersOfEachType(1);
         } else if (playerCount == 2) {
             drawPile1.removeTeepees(Teepee.GREEN, 3);
-            drawPile1.removeTeepees(Teepee.BLUE, 3);
-            drawPile1.removeHazardsOfEachType(2);
+            drawPile1.removeTeepees(Teepee.BLUE, 2);
+            drawPile1.removeHazardOfEachTypeWithPoints(2);
+            drawPile1.removeHazardOfEachTypeWithPoints(3);
+            drawPile1.removeHazardOfEachTypeWithPoints(4);
 
-            drawPile2.removeWorkersOfEachType(4);
+            drawPile2.removeWorkersOfEachType(5);
 
             drawPile3.removeTeepees(Teepee.BLUE, 1);
-            drawPile3.removeTeepees(Teepee.GREEN, 1);
-            drawPile3.removeWorkersOfEachType(2);
+            drawPile3.removeWorkersOfEachType(4);
         }
 
         return kansasCitySupply;
@@ -245,6 +245,27 @@ public class KansasCitySupply {
         private void removeWorkersOfEachType(int amount) {
             for (var worker : Worker.values()) {
                 removeWorkers(worker, amount);
+            }
+        }
+
+        public void removeHazardsOfEachTypeWithPointsAndHand(int amount, int points, Hand hand) {
+            for (var hazardType : HazardType.values()) {
+                tiles.removeAll(tiles.stream()
+                        .filter(tile -> tile.getHazard() != null && tile.getHazard().getType() == hazardType
+                                && tile.getHazard().getPoints() == points
+                                && tile.getHazard().getHand() == hand)
+                        .limit(amount)
+                        .collect(Collectors.toList()));
+            }
+        }
+
+        public void removeHazardOfEachTypeWithPoints(int points) {
+            for (var hazardType : HazardType.values()) {
+                tiles.removeAll(tiles.stream()
+                        .filter(tile -> tile.getHazard() != null && tile.getHazard().getType() == hazardType
+                                && tile.getHazard().getPoints() == points)
+                        .limit(1)
+                        .collect(Collectors.toList()));
             }
         }
     }

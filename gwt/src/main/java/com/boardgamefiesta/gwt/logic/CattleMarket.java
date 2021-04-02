@@ -177,21 +177,28 @@ public class CattleMarket {
     private static List<Card.CattleCard> createSet(int playerCount) {
         List<Card.CattleCard> cards = new ArrayList<>(36);
 
-        // 2/3p variant: https://boardgamegeek.com/image/3336021/proezas
+        // 2/3p variant to approximate ratios of 4P game, courtesy of Fernando Moritz
+        // Alternative: https://boardgamegeek.com/image/3336021/proezas
 
+        // 2P: remove 3 of each
+        // 3P: remove 2 of each
         var a = playerCount == 4 ? 7 : playerCount == 3 ? 5 : 4;
         IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.HOLSTEIN, 1)).forEach(cards::add);
         IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.BROWN_SWISS, 2)).forEach(cards::add);
         IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.AYRSHIRE, 3)).forEach(cards::add);
 
+        // 2P: remove 3+3+5+5
+        // 3P: remove 3+5
         var b = playerCount == 4 ? 3 : playerCount == 3 ? 2 : 1;
         IntStream.range(0, b).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 3)).forEach(cards::add);
         IntStream.range(0, 3).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 4)).forEach(cards::add);
         IntStream.range(0, b).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 5)).forEach(cards::add);
 
-        IntStream.range(0, playerCount > 2 ? 2 : 1).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 5)).forEach(cards::add);
-        IntStream.range(0, 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 6)).forEach(cards::add);
-        IntStream.range(0, playerCount == 4 ? 2 : 1).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 7)).forEach(cards::add);
+        // 2P: remove 5+7
+        // 3P: remove 6
+        IntStream.range(0, playerCount == 2 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 5)).forEach(cards::add);
+        IntStream.range(0, playerCount == 3 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 6)).forEach(cards::add);
+        IntStream.range(0, playerCount == 2 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 7)).forEach(cards::add);
 
         return cards;
     }
