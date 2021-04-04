@@ -1,4 +1,4 @@
-package com.boardgamefiesta.server.event.domain;
+package com.boardgamefiesta.domain.event;
 
 import com.boardgamefiesta.domain.user.User;
 import lombok.Builder;
