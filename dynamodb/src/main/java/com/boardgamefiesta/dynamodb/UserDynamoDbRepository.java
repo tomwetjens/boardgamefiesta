@@ -23,7 +23,6 @@ public class UserDynamoDbRepository implements Users {
     private static final String USERNAME_INDEX = "Username-index";
     private static final String PREFERRED_USERNAME_INDEX = "PreferredUsername-index";
     private static final String EMAIL_INDEX = "Email-index";
-    private static final int FIRST_VERSION = 1;
 
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
@@ -141,14 +140,12 @@ public class UserDynamoDbRepository implements Users {
         validateBeforeAdd(user.getEmail());
 
         var item = new HashMap<>(key(user.getId()));
-        item.put("Version", AttributeValue.builder().n(user.getVersion().toString()).build());
+        item.put("Version", AttributeValue.builder().n(Integer.toString(user.getVersion())).build());
         item.put("Username", AttributeValue.builder().s(user.getCognitoUsername().toLowerCase()).build());
         item.put("PreferredUsername", AttributeValue.builder().s(user.getUsername()).build());
         item.put("Email", AttributeValue.builder().s(user.getEmail()).build());
         item.put("Created", AttributeValue.builder().n(Long.toString(user.getCreated().getEpochSecond())).build());
         item.put("Updated", AttributeValue.builder().n(Long.toString(user.getUpdated().getEpochSecond())).build());
-        item.put("LastSeen", AttributeValue.builder().n(Long.toString(user.getLastSeen().getEpochSecond())).build());
-        item.put("Expires", AttributeValue.builder().n(Long.toString(user.getExpires().getEpochSecond())).build());
         item.put("Language", AttributeValue.builder().s(user.getLanguage()).build());
         item.put("Location", user.getLocation().map(location -> AttributeValue.builder().s(location).build()).orElse(null));
         item.put("TimeZone", AttributeValue.builder().s(user.getTimeZone().getId()).build());
@@ -168,30 +165,24 @@ public class UserDynamoDbRepository implements Users {
                 });
 
         var expressionAttributeValues = new HashMap<String, AttributeValue>();
-        expressionAttributeValues.put(":Version", AttributeValue.builder().n(Integer.toString(user.getVersion() != null ? user.getVersion() + 1 : FIRST_VERSION)).build());
+        expressionAttributeValues.put(":Version", AttributeValue.builder().n(Integer.toString(user.getVersion() + 1)).build());
         expressionAttributeValues.put(":Username", AttributeValue.builder().s(user.getCognitoUsername().toLowerCase()).build());
         expressionAttributeValues.put(":PreferredUsername", AttributeValue.builder().s(user.getUsername()).build());
         expressionAttributeValues.put(":Email", AttributeValue.builder().s(user.getEmail().toLowerCase()).build());
         expressionAttributeValues.put(":Created", AttributeValue.builder().n(Long.toString(user.getCreated().getEpochSecond())).build());
         expressionAttributeValues.put(":Updated", AttributeValue.builder().n(Long.toString(user.getUpdated().getEpochSecond())).build());
-        expressionAttributeValues.put(":LastSeen", AttributeValue.builder().n(Long.toString(user.getLastSeen().getEpochSecond())).build());
-        expressionAttributeValues.put(":Expires", AttributeValue.builder().n(Long.toString(user.getExpires().getEpochSecond())).build());
         expressionAttributeValues.put(":Language", AttributeValue.builder().s(user.getLanguage()).build());
         expressionAttributeValues.put(":Location", user.getLocation()
                 .map(location -> AttributeValue.builder().s(location).build())
                 .orElse(AttributeValue.builder().nul(true).build()));
         expressionAttributeValues.put(":TimeZone", AttributeValue.builder().s(user.getTimeZone().getId()).build());
 
-        var builder = UpdateItemRequest.builder()
+        expressionAttributeValues.put(":ExpectedVersion", AttributeValue.builder().n(Integer.toString(user.getVersion())).build());
+
+        var request = UpdateItemRequest.builder()
                 .tableName(tableName)
-                .key(key(user.getId()));
-
-        if (user.getVersion() != null) {
-            builder = builder.conditionExpression("Version=:ExpectedVersion");
-            expressionAttributeValues.put(":ExpectedVersion", AttributeValue.builder().n(user.getVersion().toString()).build());
-        }
-
-        var request = builder
+                .key(key(user.getId()))
+                .conditionExpression("Version=:ExpectedVersion")
                 .updateExpression("SET Version=:Version" +
                         ",Username=:Username" +
                         ",PreferredUsername=:PreferredUsername" +
@@ -239,11 +230,9 @@ public class UserDynamoDbRepository implements Users {
     private User mapToUser(Map<String, AttributeValue> item) {
         return User.builder()
                 .id(User.Id.of(item.get("Id").s()))
-                .version(item.get("Version") != null ? Integer.valueOf(item.get("Version").n()) : null)
+                .version(Integer.parseInt(item.get("Version").n()))
                 .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
-                .lastSeen(Instant.ofEpochSecond(Long.parseLong(item.get("LastSeen").n())))
-                .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
                 .cognitoUsername(item.get("Username").s())
                 .username(item.get("PreferredUsername") != null ? item.get("PreferredUsername").s() : item.get("Username").s())
                 .email(item.get("Email").s())

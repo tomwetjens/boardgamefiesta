@@ -25,8 +25,6 @@ import java.util.regex.Pattern;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User implements AggregateRoot {
 
-    private static final Duration RETENTION_AFTER_LAST_SEEN = Duration.of(1095, ChronoUnit.DAYS);
-
     public static final String DEFAULT_LANGUAGE = "en";
 
     private static final List<String> BAD_WORDS = ResourceLoader.readLines(User.class.getResourceAsStream("/bad_words.txt"));
@@ -42,11 +40,13 @@ public class User implements AggregateRoot {
     private final Id id;
 
     @Getter
-    private final Integer version;
+    @Builder.Default
+    private final int version = 1;
 
     @Getter
     @NonNull
-    private final Instant created;
+    @Builder.Default
+    private final Instant created = Instant.now();
 
     @Getter
     @NonNull
@@ -64,15 +64,8 @@ public class User implements AggregateRoot {
 
     @Getter
     @NonNull
-    private Instant updated;
-
-    @Getter
-    @NonNull
-    private Instant lastSeen;
-
-    @Getter
-    @NonNull
-    private Instant expires;
+    @Builder.Default
+    private Instant updated = Instant.now();
 
     @Getter
     @NonNull
@@ -88,8 +81,6 @@ public class User implements AggregateRoot {
                 .version(1)
                 .created(created)
                 .updated(created)
-                .lastSeen(created)
-                .expires(calculateExpires(created))
                 .cognitoUsername(cognitoUsername)
                 .username(cognitoUsername)
                 .email(email)
@@ -156,10 +147,6 @@ public class User implements AggregateRoot {
         } catch (DateTimeException e) {
             return ZoneId.systemDefault();
         }
-    }
-
-    private static Instant calculateExpires(Instant lastSeen) {
-        return lastSeen.plus(RETENTION_AFTER_LAST_SEEN);
     }
 
     public void changeTimeZone(@NonNull ZoneId timeZone) {
