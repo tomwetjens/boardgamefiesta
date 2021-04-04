@@ -21,12 +21,12 @@ public class Friend implements AggregateRoot {
     @Getter
     private Instant ended;
 
-    public static Friend start(User user, User otherUser) {
-        if (user.getId().equals(otherUser.getId())) {
+    public static Friend start(User.Id userId, User.Id otherUserId) {
+        if (userId.equals(otherUserId)) {
             throw new IllegalArgumentException("User ids must be different");
         }
 
-        var friend = new Friend(Id.of(user.getId(), otherUser.getId()), Instant.now(), null);
+        var friend = new Friend(Id.of(userId, otherUserId), Instant.now(), null);
 
         new Started(friend.getId()).fire();
 

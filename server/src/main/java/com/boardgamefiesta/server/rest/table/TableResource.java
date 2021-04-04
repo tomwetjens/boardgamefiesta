@@ -69,7 +69,7 @@ public class TableResource {
         Table table = Table.create(
                 games.get(Game.Id.of(request.getGame())),
                 request.getMode(),
-                currentUser.get(),
+                currentUser.getId(),
                 new Options(request.getOptions() != null ? request.getOptions() : Collections.emptyMap()));
 
         tables.add(table);
@@ -236,7 +236,7 @@ public class TableResource {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
 
-            table.invite(users.findOptionallyById(User.Id.of(request.getUserId()))
+            table.invite(users.findById(User.Id.of(request.getUserId()))
                     .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER)));
         });
     }
@@ -327,12 +327,12 @@ public class TableResource {
         if (since != null) {
             return table.getLog().since(Instant.parse(since), limit)
                     .map(logEntry -> new LogEntryView(table, logEntry,
-                            userId -> userMap.computeIfAbsent(userId, k -> this.users.findOptionallyById(userId).orElse(null))))
+                            userId -> userMap.computeIfAbsent(userId, k -> this.users.findById(userId).orElse(null))))
                     .collect(Collectors.toList());
         } else if (before != null) {
             return table.getLog().before(Instant.parse(before), limit)
                     .map(logEntry -> new LogEntryView(table, logEntry,
-                            userId -> userMap.computeIfAbsent(userId, k -> this.users.findOptionallyById(userId).orElse(null))))
+                            userId -> userMap.computeIfAbsent(userId, k -> this.users.findById(userId).orElse(null))))
                     .collect(Collectors.toList());
         } else {
             throw new BadRequestException();
@@ -392,7 +392,7 @@ public class TableResource {
 
     private Map<User.Id, User> getUserMap(Table table) {
         return table.getPlayers().stream()
-                .flatMap(player -> player.getUserId().flatMap(users::findOptionallyById).stream())
+                .flatMap(player -> player.getUserId().flatMap(users::findById).stream())
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 

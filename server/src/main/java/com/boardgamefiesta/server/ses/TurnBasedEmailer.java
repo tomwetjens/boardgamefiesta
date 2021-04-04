@@ -46,7 +46,7 @@ public class TurnBasedEmailer {
 
         event.getUserId()
                 .filter(this::isInactive)
-                .flatMap(users::findOptionallyById)
+                .flatMap(users::findById)
                 .ifPresent(user -> sendEmail(event, user));
     }
 
@@ -62,12 +62,12 @@ public class TurnBasedEmailer {
                     if (humanPlayers.size() > 1) {
                         var userMap = humanPlayers.stream()
                                 .flatMap(player -> player.getUserId().stream())
-                                .flatMap(userId -> users.findOptionallyById(userId).stream())
+                                .flatMap(userId -> users.findById(userId).stream())
                                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
                         humanPlayers.stream()
                                 .filter(player -> isInactive(player.getUserId().get()))
-                                .forEach(player -> users.findOptionallyById(player.getUserId().get())
+                                .forEach(player -> users.findById(player.getUserId().get())
                                         .ifPresent(user -> sendEmail(table, player, userMap)));
                     }
                 });

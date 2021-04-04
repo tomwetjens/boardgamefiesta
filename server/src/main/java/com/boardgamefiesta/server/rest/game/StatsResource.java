@@ -62,7 +62,7 @@ public class StatsResource {
                                     writeHeader(writer, keys);
                                 }
 
-                                var user = userMap.computeIfAbsent(player.getUserId().get(), userId -> users.findById(userId, false));
+                                 var user = userMap.computeIfAbsent(player.getUserId().get(), userId -> users.findById(userId).orElse(null));
 
                                 writeRow(writer, keys, table, player, user, stats);
                             });

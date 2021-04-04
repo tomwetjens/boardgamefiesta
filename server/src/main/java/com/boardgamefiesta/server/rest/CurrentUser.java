@@ -3,7 +3,6 @@ package com.boardgamefiesta.server.rest;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 
-import javax.annotation.Resource;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -18,18 +17,23 @@ public class CurrentUser {
     @Inject
     HttpServletRequest request;
 
+    private User.Id id;
     private User user;
 
     public User.Id getId() {
-        return get().getId();
+        if (id == null) {
+            var principalName = currentPrincipalName();
+
+            id = users.findByCognitoUsername(principalName)
+                    .orElseThrow(() -> new NotAuthorizedException("User not found"));
+        }
+        return id;
     }
 
     public User get() {
         if (user == null) {
-            var principalName = currentPrincipalName();
-
-            user = users.findByCognitoUsername(principalName)
-                    .orElseThrow(() -> new RuntimeException("User '" + principalName + "' not found"));
+            user = users.findById(getId())
+                    .orElseThrow(() -> new NotAuthorizedException("User not found"));
         }
         return user;
     }

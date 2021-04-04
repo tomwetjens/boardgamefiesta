@@ -33,17 +33,18 @@ public class FriendsResource {
     @GET
     public List<UserView> get() {
         return friends.findByUserId(currentUser.getId(), 200)
-                .flatMap(friend -> users.findOptionallyById(friend.getId().getOtherUserId()).stream())
+                .flatMap(friend -> users.findById(friend.getId().getOtherUserId()).stream())
                 .map(UserView::new)
                 .collect(Collectors.toList());
     }
 
     @POST
     public void add(AddFriendRequest request) {
-        var user = currentUser.get();
-        var otherUser = users.findById(User.Id.of(request.getUserId()), false);
+        var otherUserId = User.Id.of(request.getUserId());
+        // Check it exists
+        users.findById(otherUserId).orElseThrow(BadRequestException::new);
 
-        friends.add(Friend.start(user, otherUser));
+        friends.add(Friend.start(currentUser.getId(), otherUserId));
     }
 
     @DELETE

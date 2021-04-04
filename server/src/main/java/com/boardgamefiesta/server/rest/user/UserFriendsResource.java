@@ -29,7 +29,7 @@ public class UserFriendsResource {
     @GET
     public List<UserView> get(@PathParam("userId") String userId) {
         return friends.findByUserId(User.Id.of(userId), 200)
-                .flatMap(friend -> users.findOptionallyById(friend.getId().getOtherUserId()).stream())
+                .flatMap(friend -> users.findById(friend.getId().getOtherUserId()).stream())
                 .map(UserView::new)
                 .collect(Collectors.toList());
     }

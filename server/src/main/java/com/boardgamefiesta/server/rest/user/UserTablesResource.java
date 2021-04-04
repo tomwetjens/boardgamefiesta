@@ -56,7 +56,7 @@ public class UserTablesResource {
 
     private Map<User.Id, User> getUserMap(Table table, Map<User.Id, User> userMap) {
         table.getPlayers().forEach(player -> player.getUserId().ifPresent(userId ->
-                userMap.computeIfAbsent(userId, k -> users.findOptionallyById(userId).orElse(null))));
+                userMap.computeIfAbsent(userId, k -> users.findById(userId).orElse(null))));
         return userMap;
     }
 

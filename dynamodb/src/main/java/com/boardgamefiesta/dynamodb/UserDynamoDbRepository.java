@@ -41,11 +41,6 @@ public class UserDynamoDbRepository implements Users {
     }
 
     @Override
-    public User findById(User.Id id, boolean consistentRead) {
-        return getItem(key(id), consistentRead).orElseThrow(NotFoundException::new);
-    }
-
-    @Override
     public Optional<User> findByUsername(String username) {
         var response = dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
@@ -56,7 +51,7 @@ public class UserDynamoDbRepository implements Users {
 
         if (!response.hasItems() || response.count() == 0) {
             // For backwards compatibility, also search the Cognito username
-            return findByCognitoUsername(username);
+            return findFullByCognitoUsername(username);
         }
 
         return response
@@ -65,8 +60,7 @@ public class UserDynamoDbRepository implements Users {
                 .map(this::mapToUser);
     }
 
-    @Override
-    public Optional<User> findByCognitoUsername(String cognitoUsername) {
+    private Optional<User> findFullByCognitoUsername(String cognitoUsername) {
         var response = dynamoDbClient.query(QueryRequest.builder()
                 .tableName(tableName)
                 .indexName(USERNAME_INDEX)
@@ -82,6 +76,11 @@ public class UserDynamoDbRepository implements Users {
                 .items().stream()
                 .findAny()
                 .map(this::mapToUser);
+    }
+
+    @Override
+    public Optional<User.Id> findByCognitoUsername(String cognitoUsername) {
+        return findFullByCognitoUsername(cognitoUsername).map(User::getId);
     }
 
     @Override
@@ -210,15 +209,10 @@ public class UserDynamoDbRepository implements Users {
     }
 
     @Override
-    public Optional<User> findOptionallyById(User.Id id) {
-        return getItem(key(id), false);
-    }
-
-    private Optional<User> getItem(Map<String, AttributeValue> key, boolean consistentRead) {
+    public Optional<User> findById(User.Id id) {
         var response = dynamoDbClient.getItem(GetItemRequest.builder()
                 .tableName(tableName)
-                .key(key)
-                .consistentRead(consistentRead)
+                .key(key(id))
                 .build());
 
         if (!response.hasItem()) {

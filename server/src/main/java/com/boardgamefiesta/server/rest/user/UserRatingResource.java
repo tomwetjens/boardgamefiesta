@@ -36,7 +36,7 @@ public class UserRatingResource {
             return ratings.findByTable(User.Id.of(userId), Table.Id.of(tableId))
                     .map(rating -> {
                         var userMap = rating.getDeltas().keySet().stream()
-                                .flatMap(deltaUserId -> users.findOptionallyById(deltaUserId).stream())
+                                .flatMap(deltaUserId -> users.findById(deltaUserId).stream())
                                 .collect(Collectors.toMap(User::getId, Function.identity()));
                         return new RatingView(rating, userMap);
                     })

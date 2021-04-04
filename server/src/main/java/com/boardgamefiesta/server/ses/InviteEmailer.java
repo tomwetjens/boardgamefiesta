@@ -33,8 +33,8 @@ public class InviteEmailer {
 
     void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited event) {
         if (!webSocketConnections.wasActiveAfter(event.getUserId(), Instant.now().minusSeconds(60))) {
-            users.findOptionallyById(event.getUserId()).ifPresent(user ->
-                    users.findOptionallyById(event.getHostId()).ifPresent(host ->
+            users.findById(event.getUserId()).ifPresent(user ->
+                    users.findById(event.getHostId()).ifPresent(host ->
                             sendEmail(event, user, host)));
         }
     }

@@ -102,9 +102,9 @@ public class Table implements AggregateRoot {
 
     public static Table create(@NonNull Game game,
                                @NonNull Mode mode,
-                               @NonNull User owner,
+                               @NonNull User.Id ownerId,
                                @NonNull Options options) {
-        var player = Player.accepted(owner.getId());
+        var player = Player.accepted(ownerId);
 
         var created = Instant.now();
         Table table = Table.builder()
@@ -118,7 +118,7 @@ public class Table implements AggregateRoot {
                 .options(options)
                 .created(created)
                 .updated(created)
-                .ownerId(owner.getId())
+                .ownerId(ownerId)
                 .players(new HashSet<>(Collections.singleton(player)))
                 .log(new Log())
                 .currentState(Lazy.of(Optional.empty()))

@@ -11,9 +11,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.SecurityContext;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.Collections;
@@ -57,8 +55,14 @@ public class UsersResource {
     @GET
     @Path("/{idOrUsername}")
     public UserView get(@PathParam("idOrUsername") String idOrUsername) {
-        var user = users.findByUsername(idOrUsername)
-                .orElseGet(() -> users.findById(User.Id.of(idOrUsername), false));
+        User user;
+        if (User.Id.check(idOrUsername)) {
+            user = users.findById(User.Id.of(idOrUsername))
+                    .orElseThrow(NotFoundException::new);
+        } else {
+            user = users.findByUsername(idOrUsername)
+                    .orElseThrow(NotFoundException::new);
+        }
         return new UserView(user.getId(), user, currentUser.getId());
     }
 
@@ -132,7 +136,7 @@ public class UsersResource {
     private User handleConcurrentModification(User.Id id, Consumer<User> modifier) {
         int retries = 0;
         do {
-            var table = users.findById(id, true);
+            var table = users.findById(id).orElseThrow(NotFoundException::new);
 
             modifier.accept(table);
 

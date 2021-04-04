@@ -57,7 +57,7 @@ public class TableSuggestedPlayersResource {
 
         return Stream.concat(recentlyPlayedWith.stream(), friends.stream().filter(friend -> !recentlyPlayedWith.contains(friend)))
                 .filter(userId -> table.getPlayerByUserId(userId).isEmpty())
-                .flatMap(userId -> users.findOptionallyById(userId).stream())
+                .flatMap(userId -> users.findById(userId).stream())
                 .map(UserView::new)
                 .limit(5)
                 .collect(Collectors.toList());

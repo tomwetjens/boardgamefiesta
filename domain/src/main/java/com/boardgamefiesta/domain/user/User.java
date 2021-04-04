@@ -69,7 +69,8 @@ public class User implements AggregateRoot {
 
     @Getter
     @NonNull
-    private String language;
+    @Builder.Default
+    private String language = DEFAULT_LANGUAGE;
 
     private ZoneId timeZone;
 
@@ -77,7 +78,7 @@ public class User implements AggregateRoot {
         var created = Instant.now();
 
         return User.builder()
-                .id(Id.of(UUID.randomUUID().toString()))
+                .id(Id.generate())
                 .version(1)
                 .created(created)
                 .updated(created)
@@ -165,7 +166,17 @@ public class User implements AggregateRoot {
 
     @Value(staticConstructor = "of")
     public static class Id {
+        private static final Pattern UUID_PATTERN = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
+
         String id;
+
+        public static boolean check(String str) {
+            return UUID_PATTERN.matcher(str).matches();
+        }
+
+        public static Id generate() {
+            return of(UUID.randomUUID().toString());
+        }
     }
 
     private static URI getGravatarUrl(String email) {

@@ -10,10 +10,6 @@ import java.util.Optional;
 class CurrentUser {
 
     static Optional<User.Id> getUserId(Session session, Users users) {
-        return getUser(session, users).map(User::getId);
-    }
-
-    private static Optional<User> getUser(Session session, Users users) {
         return currentUserPrincipalName(session)
                 .flatMap(users::findByCognitoUsername);
     }

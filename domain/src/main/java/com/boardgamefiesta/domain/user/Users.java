@@ -7,15 +7,13 @@ import java.util.stream.Stream;
 
 public interface Users extends Repository {
 
-    User findById(User.Id id, boolean consistentRead) throws NotFoundException;
-
-    Optional<User> findOptionallyById(User.Id id);
+    Optional<User> findById(User.Id id);
 
     Stream<User> findByUsernameStartsWith(String username, int maxResults);
 
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
-    Optional<User> findByCognitoUsername(String cognitoUsername);
+    Optional<User.Id> findByCognitoUsername(String cognitoUsername);
 
     void add(User user);
 
