@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.Map;
 
 @ApplicationScoped
-public class WebSocketConnectionRepository implements WebSocketConnections {
+public class WebSocketConnectionDynamoDbRepository implements WebSocketConnections {
 
     private static final String TABLE_NAME = "gwt-ws-connections";
     private static final String USER_ID_INDEX = "UserId-index";
@@ -22,8 +22,8 @@ public class WebSocketConnectionRepository implements WebSocketConnections {
     private final String tableName;
 
     @Inject
-    public WebSocketConnectionRepository(@NonNull DynamoDbClient dynamoDbClient,
-                                         @NonNull DynamoDbConfiguration config) {
+    public WebSocketConnectionDynamoDbRepository(@NonNull DynamoDbClient dynamoDbClient,
+                                                 @NonNull DynamoDbConfiguration config) {
         this.dynamoDbClient = dynamoDbClient;
         this.tableName = TABLE_NAME + config.getTableSuffix().orElse("");
     }
