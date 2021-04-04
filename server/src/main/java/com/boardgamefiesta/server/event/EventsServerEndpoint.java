@@ -6,8 +6,8 @@ import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Friend;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
-import com.boardgamefiesta.server.event.domain.WebSocketConnection;
-import com.boardgamefiesta.server.event.domain.WebSocketConnections;
+import com.boardgamefiesta.domain.event.WebSocketConnection;
+import com.boardgamefiesta.domain.event.WebSocketConnections;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

@@ -3,7 +3,7 @@ package com.boardgamefiesta.server.ses;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
-import com.boardgamefiesta.server.event.domain.WebSocketConnections;
+import com.boardgamefiesta.domain.event.WebSocketConnections;
 import lombok.NonNull;
 
 import javax.enterprise.context.ApplicationScoped;
