@@ -630,7 +630,6 @@ public class TableDynamoDbRepository implements Tables {
         item.put("Timestamp", AttributeValue.builder().n(Long.toString(logEntry.getTimestamp().toEpochMilli())).build());
         item.put("UserId", logEntry.getUserId().map(userId -> AttributeValue.builder().s(userId.getId()).build()).orElse(null));
         item.put("PlayerId", AttributeValue.builder().s(logEntry.getPlayerId().getId()).build());
-        item.put("Expires", AttributeValue.builder().n(Long.toString(logEntry.getExpires().getEpochSecond())).build());
         item.put("Type", AttributeValue.builder().s(logEntry.getType().name()).build());
         item.put("Parameters", AttributeValue.builder().l(logEntry.getParameters().stream()
                 .map(param -> AttributeValue.builder().s(param).build())
@@ -640,10 +639,9 @@ public class TableDynamoDbRepository implements Tables {
         return item;
     }
 
-    private LogEntry mapToLogEntry(Map<String, AttributeValue> item) {
+    public LogEntry mapToLogEntry(Map<String, AttributeValue> item) {
         return LogEntry.builder()
                 .timestamp(Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n())))
-                .expires(Instant.ofEpochSecond(Long.parseLong(item.get("Expires").n())))
                 .playerId(item.containsKey("PlayerId") ? Player.Id.of(item.get("PlayerId").s()) : null)
                 .userId(item.containsKey("UserId") ? User.Id.of(item.get("UserId").s()) : null)
                 .type(LogEntry.Type.valueOf(item.get("Type").s()))
@@ -665,7 +663,7 @@ public class TableDynamoDbRepository implements Tables {
                 .expressionAttributeNames(Collections.singletonMap("#Timestamp", "Timestamp"))
                 .expressionAttributeValues(expressionAttributeValues)
                 .scanIndexForward(false)
-                .limit(limit + 2) // Because 'BETWEEN' is inclusive on both ends
+                .limit(Math.min(9999, limit) + 2) // Because 'BETWEEN' is inclusive on both ends
                 .build())
                 .items().stream()
                 .map(this::mapToLogEntry)

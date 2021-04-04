@@ -31,9 +31,6 @@ public class LogEntry {
     Instant timestamp;
 
     @NonNull
-    Instant expires;
-
-    @NonNull
     Type type;
 
     @NonNull
@@ -43,7 +40,6 @@ public class LogEntry {
         this.playerId = Player.Id.of(event.getPlayer().getName());
         this.userId = table.getPlayerById(this.playerId).flatMap(Player::getUserId).orElse(null);
         this.timestamp = generateTimestamp();
-        this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = Type.IN_GAME_EVENT;
         this.parameters = Stream.concat(Stream.of(event.getType()), event.getParameters().stream())
                 .collect(Collectors.toList());
@@ -58,7 +54,6 @@ public class LogEntry {
         this.playerId = player.getId();
         this.userId = player.getUserId().orElse(null);
         this.timestamp = generateTimestamp();
-        this.expires = this.timestamp.plus(DEFAULT_RETENTION);
         this.type = type;
         this.parameters = parameters.stream().map(Object::toString).collect(Collectors.toList());
     }
