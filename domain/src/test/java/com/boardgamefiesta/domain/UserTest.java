@@ -31,4 +31,16 @@ class UserTest {
         }
 
     }
+
+    @Nested
+    class IdTest {
+        @Test
+        void check() {
+            assertThat(User.Id.check(User.Id.generate().getId())).isTrue();
+        }
+        @Test
+        void check2() {
+            assertThat(User.Id.check("abc-def")).isFalse();
+        }
+    }
 }
