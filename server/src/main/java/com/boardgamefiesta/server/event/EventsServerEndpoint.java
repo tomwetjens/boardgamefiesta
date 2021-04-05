@@ -20,10 +20,7 @@ import javax.json.bind.JsonbBuilder;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
@@ -88,10 +85,12 @@ public class EventsServerEndpoint {
 
         switch (clientEvent.getType()) {
             case ACTIVE:
-                webSocketConnections.updateStatus(session.getId(), Instant.now(), WebSocketConnection.Status.ACTIVE);
+                CurrentUser.getUserId(session, users).ifPresent(userId ->
+                        webSocketConnections.updateStatus(session.getId(), userId, Instant.now(), WebSocketConnection.Status.ACTIVE));
                 break;
             case INACTIVE:
-                webSocketConnections.updateStatus(session.getId(), Instant.now(), WebSocketConnection.Status.INACTIVE);
+                CurrentUser.getUserId(session, users).ifPresent(userId ->
+                        webSocketConnections.updateStatus(session.getId(), userId, Instant.now(), WebSocketConnection.Status.INACTIVE));
                 break;
         }
     }

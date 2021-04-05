@@ -4,6 +4,7 @@ import com.boardgamefiesta.domain.event.WebSocketConnection;
 import com.boardgamefiesta.domain.event.WebSocketConnections;
 import com.boardgamefiesta.domain.user.User;
 import lombok.NonNull;
+import org.w3c.dom.Attr;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -43,6 +44,16 @@ public class WebSocketConnectionDynamoDbRepository implements WebSocketConnectio
                 .build());
     }
 
+    public WebSocketConnection mapFromItem(Map<String, AttributeValue> item) {
+        return WebSocketConnection.builder()
+                .id(item.get("Id").s())
+                .userId(User.Id.of(item.containsKey("UserId") ? item.get("UserId").s() : null))
+                .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
+                .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
+                .status(WebSocketConnection.Status.valueOf(item.get("Status").s()))
+                .build();
+    }
+
     @Override
     public void remove(String id) {
         dynamoDbClient.deleteItem(DeleteItemRequest.builder()
@@ -52,7 +63,7 @@ public class WebSocketConnectionDynamoDbRepository implements WebSocketConnectio
     }
 
     @Override
-    public void updateStatus(String id, Instant updated, WebSocketConnection.Status status) {
+    public void updateStatus(String id, User.Id userId, Instant updated, WebSocketConnection.Status status) {
         dynamoDbClient.updateItem(UpdateItemRequest.builder()
                 .tableName(tableName)
                 .key(Map.of("Id", AttributeValue.builder().s(id).build()))
