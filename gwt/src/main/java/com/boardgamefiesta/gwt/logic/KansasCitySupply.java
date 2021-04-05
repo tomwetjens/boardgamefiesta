@@ -40,14 +40,14 @@ public class KansasCitySupply {
      * - set 3: 21 workers, 2 green teepees, 3 blue teepees
      * <p>
      * With 3 players, remove X tiles from the game (before the setup):
-     * - set 1: -1 green teepee, -2 of each hazard tile (2b, 4g, -6)
+     * - set 1: -2 green teepees, -1 blue teepee, -1 of each hazard tile (3g)
      * - set 2: -3 of each worker (-9)
-     * - set 3: -1 green teepee, -2 blue teepee, -1 of each worker (-3)
+     * - set 3: -1 blue teepee, -1 of each worker (-3)
      * <p>
      * With 2 players, remove X tiles from the game (before the setup):
-     * - set 1: -3 green teepees, 2 blue teepees, -3 of each hazard tile (2,3,4VP)
+     * - set 1: -3 green teepees, -3 blue teepees, -2 of each hazard tile (2,4VP)
      * - set 2: -5 of each worker (-15)
-     * - set 3: -1 blue teepee, -4 of each worker (-12)
+     * - set 3: -1 blue teepee, -1 green teepee, -3 of each worker (-9)
      * <p>
      * This variant should roughly preserve the ratios between the different tile types and the ratio between
      * the tiles that will be used during the game and the ones remaining at the end.
@@ -60,26 +60,25 @@ public class KansasCitySupply {
         var drawPile3 = kansasCitySupply.drawPiles.get(2);
 
         if (playerCount == 3) {
-            drawPile1.removeTeepees(Teepee.GREEN, 1);
-            drawPile1.removeHazardsOfEachTypeWithPointsAndHand(2, 2, Hand.BLACK);
-            drawPile1.removeHazardsOfEachTypeWithPointsAndHand(2, 4, Hand.GREEN);
+            drawPile1.removeTeepees(Teepee.BLUE, 1);
+            drawPile1.removeTeepees(Teepee.GREEN, 2);
+            drawPile1.removeHazardsOfEachTypeWithPointsAndHand(1, 3, Hand.GREEN);
 
             drawPile2.removeWorkersOfEachType(3);
 
-            drawPile3.removeTeepees(Teepee.BLUE, 2);
-            drawPile3.removeTeepees(Teepee.GREEN, 1);
+            drawPile3.removeTeepees(Teepee.BLUE, 1);
             drawPile3.removeWorkersOfEachType(1);
         } else if (playerCount == 2) {
             drawPile1.removeTeepees(Teepee.GREEN, 3);
-            drawPile1.removeTeepees(Teepee.BLUE, 2);
-            drawPile1.removeHazardOfEachTypeWithPoints(2);
-            drawPile1.removeHazardOfEachTypeWithPoints(3);
-            drawPile1.removeHazardOfEachTypeWithPoints(4);
+            drawPile1.removeTeepees(Teepee.BLUE, 3);
+            drawPile1.removeHazardOfEachTypeWithPoints(2, 2);
+            drawPile1.removeHazardOfEachTypeWithPoints(2, 4);
 
             drawPile2.removeWorkersOfEachType(5);
 
             drawPile3.removeTeepees(Teepee.BLUE, 1);
-            drawPile3.removeWorkersOfEachType(4);
+            drawPile3.removeTeepees(Teepee.GREEN, 1);
+            drawPile3.removeWorkersOfEachType(3);
         }
 
         return kansasCitySupply;
@@ -259,12 +258,12 @@ public class KansasCitySupply {
             }
         }
 
-        public void removeHazardOfEachTypeWithPoints(int points) {
+        public void removeHazardOfEachTypeWithPoints(int amount, int points) {
             for (var hazardType : HazardType.values()) {
                 tiles.removeAll(tiles.stream()
                         .filter(tile -> tile.getHazard() != null && tile.getHazard().getType() == hazardType
                                 && tile.getHazard().getPoints() == points)
-                        .limit(1)
+                        .limit(amount)
                         .collect(Collectors.toList()));
             }
         }
