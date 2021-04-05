@@ -459,8 +459,8 @@ public class Game implements State {
                 || actionStack.isEmpty()); // after phase B
     }
 
-    public Set<PossibleMove> possibleMoves(@NonNull Player player, int atMost) {
-        return trail.possibleMoves(player, playerState(player).getBalance(), atMost, players.size());
+    public Set<PossibleMove> possibleMoves(@NonNull Player player, int atMost, boolean payFees) {
+        return trail.possibleMoves(player, payFees ? playerState(player).getBalance() : 0, atMost, players.size());
     }
 
     public Optional<Score> scoreDetails(Player player) {
@@ -700,18 +700,19 @@ public class Game implements State {
 
     public Set<PossibleMove> possibleMoves(Player player) {
         if (actionStack.canPerform(Action.Move.class)) {
-            return possibleMoves(player, playerState(player).getStepLimit(players.size()));
+            return possibleMoves(player, playerState(player).getStepLimit(players.size()), true);
         } else if (actionStack.canPerform(Action.Move1Forward.class)) {
-            return possibleMoves(player, 1);
+            return possibleMoves(player, 1, true);
         } else if (actionStack.canPerform(Action.Move2Forward.class)) {
-            return possibleMoves(player, 2);
-        } else if (actionStack.canPerform(Action.Move3Forward.class)
-                || actionStack.canPerform(Action.Move3ForwardWithoutFees.class)) {
-            return possibleMoves(player, 3);
+            return possibleMoves(player, 2, true);
+        } else if (actionStack.canPerform(Action.Move3Forward.class)) {
+            return possibleMoves(player, 3, true);
+        } else if (actionStack.canPerform(Action.Move3ForwardWithoutFees.class)) {
+            return possibleMoves(player, 3, false);
         } else if (actionStack.canPerform(Action.Move4Forward.class)) {
-            return possibleMoves(player, 4);
+            return possibleMoves(player, 4, true);
         } else if (actionStack.canPerform(Action.Move5Forward.class)) {
-            return possibleMoves(player, 5);
+            return possibleMoves(player, 5, true);
         } else {
             return Collections.emptySet();
         }

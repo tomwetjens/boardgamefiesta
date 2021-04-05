@@ -831,7 +831,7 @@ public class Garth {
             // Start of trail
             return List.of(game.getTrail().getLocation("A"));
         }
-        return game.possibleMoves(player, steps).stream()
+        return game.possibleMoves(player, steps, true).stream()
                 .min(Comparator.comparingInt(PossibleMove::getNumberOfSteps).reversed()
                         .thenComparingInt(PossibleMove::getCost))
                 .map(PossibleMove::getSteps)
