@@ -30,7 +30,6 @@
         <module>cognito</module>
         <module>domain</module>
         <module>dynamodb</module>
-        <module>dynamodb-triggers</module>
         <module>gwt</module>
         <module>istanbul</module>
         <module>powergrid</module>
