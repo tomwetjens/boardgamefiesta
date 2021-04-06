@@ -30,14 +30,18 @@ public class Foresights {
         for (int columnIndex = 0; columnIndex < NUM_COLUMNS; columnIndex++) {
             for (int rowIndex = 0; rowIndex < NUM_ROWS; rowIndex++) {
                 if (spaces[columnIndex][rowIndex] == null) {
-                    var tile = kansasCitySupply.draw(columnIndex);
-
-                    if (tile != null && (tile.getWorker() == null || workers)) {
-                        spaces[columnIndex][rowIndex] = tile;
-                    }
+                    draw(workers, columnIndex, rowIndex);
                 }
             }
         }
+    }
+
+    private void draw(boolean workers, int columnIndex, int rowIndex) {
+        kansasCitySupply.draw(columnIndex).ifPresent(tile -> {
+            if (tile.getWorker() == null || workers) {
+                spaces[columnIndex][rowIndex] = tile;
+            }
+        });
     }
 
     JsonObject serialize(JsonBuilderFactory factory) {

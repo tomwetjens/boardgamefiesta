@@ -71,8 +71,8 @@ public class KansasCitySupply {
         } else if (playerCount == 2) {
             drawPile1.removeTeepees(Teepee.GREEN, 3);
             drawPile1.removeTeepees(Teepee.BLUE, 3);
-            drawPile1.removeHazardOfEachTypeWithPoints(2, 2);
-            drawPile1.removeHazardOfEachTypeWithPoints(2, 4);
+            drawPile1.removeHazardOfEachTypeWithPoints(1, 2);
+            drawPile1.removeHazardOfEachTypeWithPoints(1, 4);
 
             drawPile2.removeWorkersOfEachType(5);
 
@@ -100,7 +100,7 @@ public class KansasCitySupply {
                 .build();
     }
 
-    Tile draw(int drawPileIndex) {
+    Optional<Tile> draw(int drawPileIndex) {
         return drawPiles.get(drawPileIndex).draw();
     }
 
@@ -210,8 +210,8 @@ public class KansasCitySupply {
             return JsonSerializer.forFactory(jsonBuilderFactory).fromCollection(tiles, Tile::serialize);
         }
 
-        private Tile draw() {
-            return tiles.poll();
+        private Optional<Tile> draw() {
+            return Optional.ofNullable(tiles.poll());
         }
 
         private void removeTeepees(Teepee teepee, int amount) {
@@ -247,7 +247,7 @@ public class KansasCitySupply {
             }
         }
 
-        public void removeHazardsOfEachTypeWithPointsAndHand(int amount, int points, Hand hand) {
+        private void removeHazardsOfEachTypeWithPointsAndHand(int amount, int points, Hand hand) {
             for (var hazardType : HazardType.values()) {
                 tiles.removeAll(tiles.stream()
                         .filter(tile -> tile.getHazard() != null && tile.getHazard().getType() == hazardType
@@ -258,7 +258,7 @@ public class KansasCitySupply {
             }
         }
 
-        public void removeHazardOfEachTypeWithPoints(int amount, int points) {
+        private void removeHazardOfEachTypeWithPoints(int amount, int points) {
             for (var hazardType : HazardType.values()) {
                 tiles.removeAll(tiles.stream()
                         .filter(tile -> tile.getHazard() != null && tile.getHazard().getType() == hazardType

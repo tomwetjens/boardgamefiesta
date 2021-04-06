@@ -206,10 +206,12 @@ public class Game implements State {
     private void placeInitialTiles() {
         IntStream.range(0, 7)
                 .mapToObj(i -> kansasCitySupply.draw(0))
+                .flatMap(Optional::stream)
                 .forEach(this::placeInitialTile);
 
         IntStream.range(0, playerOrder.size() == 2 ? 3 : jobMarket.getRowLimit() * 2 - 1)
                 .mapToObj(i -> kansasCitySupply.draw(1))
+                .flatMap(Optional::stream)
                 .map(KansasCitySupply.Tile::getWorker)
                 .forEach(this.jobMarket::addWorker);
     }
