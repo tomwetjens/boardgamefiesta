@@ -59,10 +59,7 @@ public class CognitoTenantResolver implements TenantResolver {
             return null;
         }
 
-        var tenantId = resolveTenantByAuthServerURL(issuer.toString());
-        log.debug("Resolved tenant '{}' from issuer '{}'", tenantId, issuer);
-
-        return tenantId;
+        return resolveTenantByAuthServerURL(issuer);
     }
 
     private boolean isCognito(URI issuer) {
