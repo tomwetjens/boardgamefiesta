@@ -46,33 +46,31 @@ public class Garth {
 
         switch (difficulty) {
             case MEDIUM:
-                game.getKansasCitySupply().remove(1, specialization);
                 playerState.addWorker(specialization);
                 break;
 
             case HARD:
                 var startWorker = randomWorker(random);
-                game.getKansasCitySupply().remove(1, startWorker);
                 playerState.addWorker(startWorker);
 
                 var secondStartWorker = randomDifferentWorker(random, startWorker);
-                game.getKansasCitySupply().remove(2, secondStartWorker);
                 playerState.addWorker(secondStartWorker);
+
+                // Do not remove all these workers from the supply
+                // because there will be too little to trigger the end of the game
                 break;
 
             case VERY_HARD:
-                game.getKansasCitySupply().remove(1, Worker.COWBOY);
                 playerState.addWorker(Worker.COWBOY);
-
-                game.getKansasCitySupply().remove(2, Worker.CRAFTSMAN);
                 playerState.addWorker(Worker.CRAFTSMAN);
-
-                game.getKansasCitySupply().remove(1, Worker.ENGINEER);
                 playerState.addWorker(Worker.ENGINEER);
 
                 var fourthStartWorker = randomWorker(random);
-                game.getKansasCitySupply().remove(2, fourthStartWorker);
                 playerState.addWorker(fourthStartWorker);
+
+                // Do not remove all these workers from the supply
+                // because there will be too little to trigger the end of the game
+
                 break;
         }
     }

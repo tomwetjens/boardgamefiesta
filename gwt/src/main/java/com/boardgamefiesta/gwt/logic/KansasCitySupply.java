@@ -12,6 +12,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * Original:
+ * <p>
+ * '2-tiles':
+ * 33 workers
+ * <p>
+ * '3-tiles':
+ * 21 workers
+ */
 @ToString
 @Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -104,10 +113,6 @@ public class KansasCitySupply {
         return drawPiles.get(drawPileIndex).draw();
     }
 
-    void remove(int drawPileIndex, Worker worker) {
-        drawPiles.get(drawPileIndex).removeWorkers(worker, 1);
-    }
-
     private static ArrayList<Tile> createSet1() {
         return Stream.concat(
                 Stream.concat(
@@ -127,14 +132,15 @@ public class KansasCitySupply {
 
     private static ArrayList<Tile> createSet2() {
         return Arrays.stream(Worker.values())
-                .flatMap(type -> IntStream.range(0, 11).mapToObj(i -> new Tile(type)))
+                .flatMap(worker -> IntStream.range(0, 11).mapToObj(i -> new Tile(worker)))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private static ArrayList<Tile> createSet3() {
         return Stream.concat(
                 Stream.concat(
-                        Arrays.stream(Worker.values()).flatMap(type -> IntStream.range(0, 7).mapToObj(i -> new Tile(type))),
+                        Arrays.stream(Worker.values())
+                                .flatMap(worker -> IntStream.range(0, 7).mapToObj(i -> new Tile(worker))),
                         IntStream.range(0, 2).mapToObj(i -> new Tile(Teepee.GREEN))),
                 IntStream.range(0, 3).mapToObj(i -> new Tile(Teepee.BLUE)))
                 .collect(Collectors.toCollection(ArrayList::new));
