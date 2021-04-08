@@ -398,7 +398,7 @@ public class Table implements AggregateRoot {
     private void afterStateChange() {
         updated = Instant.now();
 
-        new StateChanged(id).fire();
+        new StateChanged(id, Optional.of(this)).fire();
 
         var state = getState();
 
@@ -781,6 +781,7 @@ public class Table implements AggregateRoot {
     @Value
     public static class StateChanged implements DomainEvent {
         Table.Id tableId;
+        Optional<Table> table;
     }
 
     @Value
