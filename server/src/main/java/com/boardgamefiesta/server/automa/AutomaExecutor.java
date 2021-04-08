@@ -26,42 +26,46 @@ class AutomaExecutor {
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     void execute(@Observes AutomaScheduler.Request request) {
         try {
+            var tableId = request.getTableId();
+
             var retries = 0;
+            var done = false;
             do {
-                var table = tables.findById(request.getTableId())
-                        .orElseThrow();
+                var table = tables.findById(tableId)
+                        .orElseThrow(() -> new IllegalStateException("Table '" + request.getTableId().getId() + "' not found"));
 
                 if (table.getStatus() != Table.Status.STARTED) {
-                    return;
+                    throw new IllegalStateException("Table '" + table.getId().getId() + "' not started");
                 }
 
                 var player = table.getPlayerById(request.getPlayerId())
-                        .orElseThrow();
+                        .orElseThrow(() -> new IllegalStateException("Player '" + request.getPlayerId().getId() + "' not in table '" + tableId.getId() + "'"));
 
                 if (player.getType() != Player.Type.COMPUTER) {
-                    return;
+                    throw new IllegalStateException("Player '" + player.getId().getId() + "' in table '" + table.getId().getId() + "' not a computer");
                 }
-
-                if (!table.getCurrentPlayers().contains(player)) {
-                    return;
-                }
-
-                table.executeAutoma(player);
 
                 try {
+                    if (!table.getCurrentPlayers().contains(player)) {
+                        throw new IllegalStateException("Player '" + player.getId().getId() + "' in table '" + table.getId().getId() + "' not current player");
+                    }
+
+                    table.executeAutoma(player);
+
                     tables.update(table);
-                    return;
-                } catch (Tables.ConcurrentModificationException e) {
-                    if (retries >= 256) {
+                    done = true;
+                } catch (IllegalStateException | Tables.ConcurrentModificationException e) {
+                    if (retries >= 20) {
                         throw new RuntimeException("Executor failed after " + retries + " retries. Table id " + table.getId().getId() + ", version " + table.getVersion(), e);
                     }
 
                     retries++;
+
+                    Thread.sleep(200);
                 }
-            } while (true);
-        } catch (RuntimeException e) {
+            } while (!done);
+        } catch (RuntimeException | InterruptedException e) {
             log.error("Error executing request", e);
-            throw e;
         }
     }
 

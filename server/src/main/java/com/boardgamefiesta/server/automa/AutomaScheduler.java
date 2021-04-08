@@ -3,6 +3,7 @@ package com.boardgamefiesta.server.automa;
 import com.boardgamefiesta.domain.DomainService;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
+import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,13 +20,13 @@ class AutomaScheduler implements DomainService {
     // TODO Make thread pool configurable
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(10);
 
-    void schedule(Table table, Player player) {
+    void schedule(@NonNull Table.Id tableId, @NonNull Player.Id playerId) {
         // TODO Send to external queue so it is persisted and can be picked by any worker
 
         // Submit to executor, so CDI event is processed async
         executorService.schedule(() -> {
             try {
-                CDI.current().getBeanManager().fireEvent(new Request(table.getId(), player.getId()));
+                CDI.current().getBeanManager().fireEvent(new Request(tableId, playerId));
             } catch (RuntimeException e) {
                 log.error("Error executing request ", e);
             }
