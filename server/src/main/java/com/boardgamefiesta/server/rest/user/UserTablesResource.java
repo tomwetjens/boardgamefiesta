@@ -7,6 +7,7 @@ import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.table.view.TableView;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 @Path("/users/{userId}/tables")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed(Roles.USER)
 @Slf4j
 @Transactional
 public class UserTablesResource {

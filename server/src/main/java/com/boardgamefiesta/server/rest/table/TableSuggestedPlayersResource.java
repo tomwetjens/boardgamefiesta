@@ -5,6 +5,7 @@ import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Friends;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 
@@ -19,7 +20,7 @@ import java.util.stream.Stream;
 
 @Path("/tables/{tableId}/suggested-players")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed(Roles.USER)
 public class TableSuggestedPlayersResource {
 
     @Inject

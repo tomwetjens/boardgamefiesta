@@ -3,6 +3,7 @@ package com.boardgamefiesta.server.rest.game;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.domain.rating.Ratings;
+import com.boardgamefiesta.server.auth.Roles;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Path("/games/{gameId}/ranking")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed(Roles.USER)
 @Slf4j
 public class GameRankingResource {
 

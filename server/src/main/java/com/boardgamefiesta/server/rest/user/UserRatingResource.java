@@ -5,6 +5,7 @@ import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.domain.rating.Ratings;
+import com.boardgamefiesta.server.auth.Roles;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 
 @Path("/users/{userId}/ratings")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed(Roles.USER)
 public class UserRatingResource {
 
     @Inject

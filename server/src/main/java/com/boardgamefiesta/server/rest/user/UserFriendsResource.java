@@ -3,6 +3,7 @@ package com.boardgamefiesta.server.rest.user;
 import com.boardgamefiesta.domain.user.Friends;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Path("/users/{userId}/friends")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed(Roles.USER)
 public class UserFriendsResource {
 
     @Inject

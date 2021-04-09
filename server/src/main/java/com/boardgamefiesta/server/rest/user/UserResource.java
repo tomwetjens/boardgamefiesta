@@ -1,6 +1,7 @@
 package com.boardgamefiesta.server.rest.user;
 
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 
@@ -12,7 +13,7 @@ import javax.ws.rs.core.MediaType;
 @Path("/user")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed(Roles.USER)
 public class UserResource {
 
     @Inject

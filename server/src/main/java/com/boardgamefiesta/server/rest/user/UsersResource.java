@@ -2,6 +2,7 @@ package com.boardgamefiesta.server.rest.user;
 
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.exception.APIError;
 import com.boardgamefiesta.server.rest.exception.APIException;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 @Path("/users")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed(Roles.USER)
 public class UsersResource {
 
     private static final int MIN_USERNAME_LENGTH = 3;
