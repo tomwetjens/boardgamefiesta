@@ -188,8 +188,6 @@ public class UserDynamoDbRepository implements Users {
                         ",Email=:Email" +
                         ",Created=:Created" +
                         ",Updated=:Updated" +
-                        ",LastSeen=:LastSeen" +
-                        ",Expires=:Expires" +
                         ",#Language=:Language" +
                         ",#Location=:Location" +
                         ",#TimeZone=:TimeZone")
@@ -221,7 +219,7 @@ public class UserDynamoDbRepository implements Users {
         return Optional.of(mapToUser(response.item()));
     }
 
-    private User mapToUser(Map<String, AttributeValue> item) {
+    public User mapToUser(Map<String, AttributeValue> item) {
         return User.builder()
                 .id(User.Id.of(item.get("Id").s()))
                 .version(Integer.parseInt(item.get("Version").n()))
