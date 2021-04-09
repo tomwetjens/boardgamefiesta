@@ -170,51 +170,6 @@ Resources:
         S3Bucket: boardgamefiesta-builds
         S3Key: !Sub '${Version}/cognito.zip'
 
-  PreTokenGenerationTriggerLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '${AWS::StackName}-PreTokenGenerationTrigger'
-      RetentionInDays: 7
-
-  PreTokenGenerationTriggerRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !GetAtt PreTokenGenerationTriggerLogGroup.Arn
-
-  PreTokenGenerationTriggerLambdaFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 512
-      Role: !GetAtt PreTokenGenerationTriggerRole.Arn
-      Runtime: java11
-      Timeout: 30
-      Environment:
-        Variables:
-          QUARKUS_LAMBDA_HANDLER: preTokenGeneration
-      Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/cognito.zip'
-
   #  UserPool:
   #    Type: AWS::Cognito::UserPool
   #    DeletionPolicy: Retain
@@ -283,15 +238,6 @@ Resources:
       Principal: cognito-idp.amazonaws.com
       SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
 
-  PreTokenGenerationTriggerPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - PreTokenGenerationTriggerLambdaFunction
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt PreTokenGenerationTriggerLambdaFunction.Arn
-      Principal: cognito-idp.amazonaws.com
-      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
 #
 #  UserPoolDomain:
 #    Type: AWS::Cognito::UserPoolDomain
