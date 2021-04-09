@@ -222,7 +222,7 @@ public class UserDynamoDbRepository implements Users {
     public User mapToUser(Map<String, AttributeValue> item) {
         return User.builder()
                 .id(User.Id.of(item.get("Id").s()))
-                .version(Integer.parseInt(item.get("Version").n()))
+                .version(item.containsKey("Version") ? Integer.parseInt(item.get("Version").n()) : 1)
                 .created(Instant.ofEpochSecond(Long.parseLong(item.get("Created").n())))
                 .updated(Instant.ofEpochSecond(Long.parseLong(item.get("Updated").n())))
                 .cognitoUsername(item.get("Username").s())
