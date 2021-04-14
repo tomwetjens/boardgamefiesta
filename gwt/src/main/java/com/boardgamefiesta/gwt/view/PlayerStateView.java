@@ -120,9 +120,12 @@ public class PlayerStateView {
         teepees = playerState.getTeepees();
 
         var objectivesScores = playerState.scoreObjectives(state);
-        objectives = Stream.concat(playerState.getCommittedObjectives().stream(), playerState.getOptionalObjectives())
+        objectives = (state.isEnded() || state.getMode() == Game.Options.Mode.STRATEGIC
+                ? Stream.concat(playerState.getCommittedObjectives().stream(), playerState.getOptionalObjectives())
+                : playerState.getCommittedObjectives().stream())
                 .map(objectiveCard -> new ObjectiveView(new ObjectiveCardView(objectiveCard), objectivesScores.getScore(objectiveCard),
-                        objectivesScores.getCommitted().contains(objectiveCard)))
+                        state.isEnded() ? objectivesScores.getCommitted().contains(objectiveCard)
+                                : playerState.getCommittedObjectives().contains(objectiveCard)))
                 .sorted()
                 .collect(Collectors.toList());
 
