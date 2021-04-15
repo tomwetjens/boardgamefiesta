@@ -117,6 +117,10 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-amazon-sqs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-oidc</artifactId>
         </dependency>
         <dependency>
@@ -190,7 +194,8 @@
             </build>
             <properties>
                 <quarkus.package.type>native</quarkus.package.type>
-                <quarkus.native.additional-build-args>-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
+                <quarkus.native.additional-build-args>-H:ResourceConfigurationFiles=resources-config.json
+                </quarkus.native.additional-build-args>
             </properties>
         </profile>
     </profiles>

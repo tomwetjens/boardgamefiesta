@@ -4,39 +4,49 @@ import com.boardgamefiesta.domain.DomainService;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import lombok.NonNull;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.spi.CDI;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
+import javax.json.Json;
+import javax.json.JsonObject;
+import java.io.StringWriter;
 
 @ApplicationScoped
 @Slf4j
 class AutomaScheduler implements DomainService {
 
-    // TODO Make thread pool configurable
-    private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(10);
+    private final SqsClient sqsClient;
+    private final String queueUrl;
 
-    void schedule(@NonNull Table.Id tableId, @NonNull Player.Id playerId) {
-        // TODO Send to external queue so it is persisted and can be picked by any worker
-
-        // Submit to executor, so CDI event is processed async
-        executorService.schedule(() -> {
-            try {
-                CDI.current().getBeanManager().fireEvent(new Request(tableId, playerId));
-            } catch (RuntimeException e) {
-                log.error("Error executing request ", e);
-            }
-        }, 2, TimeUnit.SECONDS); // simulate computer thinking
+    @Inject
+    public AutomaScheduler(@NonNull SqsClient sqsClient,
+                           @ConfigProperty(name = "bgf.sqs.queue-url") String queueUrl) {
+        this.sqsClient = sqsClient;
+        this.queueUrl = queueUrl;
     }
 
-    @Value
-    static class Request {
-        Table.Id tableId;
-        Player.Id playerId;
+    void schedule(Table. Id tableId, Player.Id playerId) {
+        // Send to external queue so it is persisted and can be picked by any worker
+        var message = Json.createObjectBuilder()
+                .add("tableId", tableId.getId())
+                .add("playerId", playerId.getId())
+                .build();
+
+        sqsClient.sendMessage(SendMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .messageBody(toJsonString(message))
+                .delaySeconds(2) // simulate computer thinking
+                .build());
+    }
+
+    private String toJsonString(JsonObject jsonObject) {
+        var writer = new StringWriter();
+        Json.createWriter(writer).writeObject(jsonObject);
+        return writer.toString();
     }
 
 }
