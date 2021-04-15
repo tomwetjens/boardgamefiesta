@@ -66,6 +66,8 @@ class SqsListener {
             }
         } catch (InterruptedException e) {
             log.warn("Receive messages loop interrupted");
+        } catch (Exception e) {
+            log.error("Exception in receive messages loop", e);
         } finally {
             log.debug("Exited receive messages loop");
         }
