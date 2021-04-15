@@ -31,7 +31,11 @@ class SqsListener {
         this.sqsClient = sqsClient;
         this.queueUrl = queueUrl;
         this.handler = handler;
-        this.managedExecutor = ManagedExecutor.builder().build();
+        this.managedExecutor = ManagedExecutor.builder()
+                .maxQueued(-1)
+                .maxAsync(1)
+                .maxAsync(MAX_NUM_MESSAGES + 1) // including listener loop itself
+                .build();
     }
 
     private void listen() {
