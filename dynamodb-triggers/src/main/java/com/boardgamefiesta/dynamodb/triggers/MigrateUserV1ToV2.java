@@ -1,0 +1,61 @@
+package com.boardgamefiesta.dynamodb.triggers;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
+import com.boardgamefiesta.domain.game.Games;
+import com.boardgamefiesta.domain.table.Table;
+import com.boardgamefiesta.dynamodb.*;
+import lombok.NonNull;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.util.Map;
+
+@Named("migrateUserV1ToV2")
+public class MigrateUserV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
+
+    private final UserDynamoDbRepository userDynamoDbRepository;
+    private final UserDynamoDbRepositoryV2 userDynamoDbRepositoryV2;
+
+    @Inject
+    public MigrateUserV1ToV2(@NonNull DynamoDbClient client,
+                             @NonNull DynamoDbConfiguration config) {
+        this.userDynamoDbRepository = new UserDynamoDbRepository(client, config);
+        this.userDynamoDbRepositoryV2 = new UserDynamoDbRepositoryV2(client, config);
+    }
+
+    @Override
+    public Void handleRequest(DynamodbEvent event, Context context) {
+        event.getRecords().forEach(record -> {
+            switch (OperationType.fromValue(record.getEventName())) {
+                case INSERT:
+                    handleInsert(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
+                    break;
+                case MODIFY:
+                    handleModify(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
+                    break;
+                case REMOVE:
+                    handleRemove(AttributeValues.toClientModel(record.getDynamodb().getOldImage()));
+                    break;
+            }
+        });
+        return null;
+    }
+
+    void handleInsert(Map<String, AttributeValue> item) {
+        var user = userDynamoDbRepository.mapToUser(item);
+        userDynamoDbRepositoryV2.add(user);
+    }
+
+    void handleModify(Map<String, AttributeValue> item) {
+        handleInsert(item);
+    }
+
+    void handleRemove(Map<String, AttributeValue> item) {
+        // Not implemented
+    }
+}
