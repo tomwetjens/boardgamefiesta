@@ -85,7 +85,7 @@ public class FriendDynamoDbRepository implements Friends {
                 "Started", AttributeValue.builder().s(friend.getStarted().toString()).build());
     }
 
-    private Friend mapItemToFriend(Map<String, AttributeValue> item) {
+    public Friend mapItemToFriend(Map<String, AttributeValue> item) {
         return Friend.builder()
                 .id(Friend.Id.of(
                         User.Id.of(item.get("UserId").s()),

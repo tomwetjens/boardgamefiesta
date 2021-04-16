@@ -10,6 +10,11 @@ import java.util.Optional;
 @Data
 public class DynamoDbConfiguration {
 
-    private Optional<String> tableSuffix;
+    private Optional<String> tableSuffix = Optional.empty();
+
+    private String tableName = "boardgamefiesta";
+
+    private int writeGameIdShards = 2;
+    private int readGameIdShards = 2;
 
 }

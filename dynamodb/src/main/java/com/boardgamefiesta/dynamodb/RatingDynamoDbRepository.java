@@ -156,7 +156,7 @@ public class RatingDynamoDbRepository implements Ratings {
         return userId.getId() + " " + gameId.getId();
     }
 
-    private Rating mapToRating(Map<String, AttributeValue> attributeValues) {
+    public Rating mapToRating(Map<String, AttributeValue> attributeValues) {
         return Rating.builder()
                 .userId(User.Id.of(attributeValues.get("UserId").s()))
                 .gameId(Game.Id.of(attributeValues.get("GameId").s()))
