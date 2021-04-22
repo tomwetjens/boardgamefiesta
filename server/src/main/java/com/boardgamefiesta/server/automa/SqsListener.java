@@ -16,7 +16,7 @@ class SqsListener {
 
     public static final int VISIBILITY_TIMEOUT = 5;
     public static final int WAIT_TIME_SECONDS = 20;
-    public static final int MAX_NUM_MESSAGES = 20;
+    public static final int MAX_NUM_MESSAGES = 10; // max 10
 
     private final SqsClient sqsClient;
     private final String queueUrl;
