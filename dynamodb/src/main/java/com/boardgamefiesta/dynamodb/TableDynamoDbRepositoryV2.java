@@ -534,6 +534,13 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         var serialized = DynamoDbJson.toJson(jsonBuilderFactory ->
                 stateSerializer.serialize(state, jsonBuilderFactory));
 
+        return mapItemFromState(tableId, timestamp, previousTimestamp, serialized);
+    }
+
+    public static Map<String, AttributeValue> mapItemFromState(Table.Id tableId,
+                                                               Instant timestamp,
+                                                               Optional<Instant> previousTimestamp,
+                                                               AttributeValue state) {
         var item = new HashMap<String, AttributeValue>();
         item.put(PK, Item.s(TABLE_PREFIX + tableId.getId()));
         item.put(SK, Item.s(STATE_PREFIX + timestamp.toString()));
@@ -541,8 +548,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
         previousTimestamp.map(Item::s).ifPresent(p -> item.put("Previous", p));
 
-        item.put("State", serialized);
-
+        item.put("State", state);
         return item;
     }
 

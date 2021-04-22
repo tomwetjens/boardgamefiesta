@@ -1,20 +1,17 @@
 package com.boardgamefiesta.dynamodb.triggers;
 
-import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
-@Disabled
-class MigrateLogEntryV1ToV2Test {
+class TriggerUserV1ToV2Test {
 
     DynamoDbConfiguration config = new DynamoDbConfiguration();
     DynamoDbClient client;
 
-    MigrateLogEntryV1ToV2 migrateLogEntryV1ToV2;
+    TriggerUserV1ToV2 triggerUserV1ToV2;
 
     @BeforeEach
     void setUp() {
@@ -22,16 +19,16 @@ class MigrateLogEntryV1ToV2Test {
 
         client = DynamoDbClient.create();
 
-        migrateLogEntryV1ToV2 = new MigrateLogEntryV1ToV2(new Games(), client, config);
+        triggerUserV1ToV2 = new TriggerUserV1ToV2(client, config);
     }
 
     @Test
     void migrate() {
         client.scanPaginator(ScanRequest.builder()
-                .tableName("gwt-log" + config.getTableSuffix().orElse(""))
+                .tableName("gwt-users" + config.getTableSuffix().orElse(""))
                 .build())
                 .items().stream()
                 .limit(10)
-                .forEach(item -> migrateLogEntryV1ToV2.handleInsert(item));
+                .forEach(item -> triggerUserV1ToV2.handleInsert(item));
     }
 }

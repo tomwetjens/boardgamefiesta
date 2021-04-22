@@ -4,9 +4,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
-import com.boardgamefiesta.domain.game.Games;
-import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.dynamodb.*;
+import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
+import com.boardgamefiesta.dynamodb.WebSocketConnectionDynamoDbRepository;
+import com.boardgamefiesta.dynamodb.WebSocketConnectionDynamoDbRepositoryV2;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -15,17 +15,17 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Map;
 
-@Named("migrateUserV1ToV2")
-public class MigrateUserV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
+@Named("triggerWebSocketConnectionV1ToV2")
+public class TriggerWebSocketConnectionV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
 
-    private final UserDynamoDbRepository userDynamoDbRepository;
-    private final UserDynamoDbRepositoryV2 userDynamoDbRepositoryV2;
+    private final WebSocketConnectionDynamoDbRepository webSocketConnectionDynamoDbRepository;
+    private final WebSocketConnectionDynamoDbRepositoryV2 webSocketConnectionDynamoDbRepositoryV2;
 
     @Inject
-    public MigrateUserV1ToV2(@NonNull DynamoDbClient client,
-                             @NonNull DynamoDbConfiguration config) {
-        this.userDynamoDbRepository = new UserDynamoDbRepository(client, config);
-        this.userDynamoDbRepositoryV2 = new UserDynamoDbRepositoryV2(client, config);
+    public TriggerWebSocketConnectionV1ToV2(@NonNull DynamoDbClient client,
+                                            @NonNull DynamoDbConfiguration config) {
+        this.webSocketConnectionDynamoDbRepository = new WebSocketConnectionDynamoDbRepository(client, config);
+        this.webSocketConnectionDynamoDbRepositoryV2 = new WebSocketConnectionDynamoDbRepositoryV2(client, config);
     }
 
     @Override
@@ -47,8 +47,8 @@ public class MigrateUserV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
     }
 
     void handleInsert(Map<String, AttributeValue> item) {
-        var user = userDynamoDbRepository.mapToUser(item);
-        userDynamoDbRepositoryV2.add(user);
+        var webSocketConnection = webSocketConnectionDynamoDbRepository.mapFromItem(item);
+        webSocketConnectionDynamoDbRepositoryV2.add(webSocketConnection);
     }
 
     void handleModify(Map<String, AttributeValue> item) {
@@ -56,6 +56,6 @@ public class MigrateUserV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
     }
 
     void handleRemove(Map<String, AttributeValue> item) {
-        // Not implemented
+        webSocketConnectionDynamoDbRepositoryV2.remove(item.get("Id").s());
     }
 }

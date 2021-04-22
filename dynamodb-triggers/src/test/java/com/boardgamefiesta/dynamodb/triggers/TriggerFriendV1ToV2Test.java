@@ -6,12 +6,12 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
-class MigrateUserV1ToV2Test {
+class TriggerFriendV1ToV2Test {
 
     DynamoDbConfiguration config = new DynamoDbConfiguration();
     DynamoDbClient client;
 
-    MigrateUserV1ToV2 migrateUserV1ToV2;
+    TriggerFriendV1ToV2 triggerFriendV1ToV2;
 
     @BeforeEach
     void setUp() {
@@ -19,16 +19,16 @@ class MigrateUserV1ToV2Test {
 
         client = DynamoDbClient.create();
 
-        migrateUserV1ToV2 = new MigrateUserV1ToV2(client, config);
+        triggerFriendV1ToV2 = new TriggerFriendV1ToV2(client, config);
     }
 
     @Test
     void migrate() {
         client.scanPaginator(ScanRequest.builder()
-                .tableName("gwt-users" + config.getTableSuffix().orElse(""))
+                .tableName("gwt-friends" + config.getTableSuffix().orElse(""))
                 .build())
                 .items().stream()
                 .limit(10)
-                .forEach(item -> migrateUserV1ToV2.handleInsert(item));
+                .forEach(item -> triggerFriendV1ToV2.handleInsert(item));
     }
 }

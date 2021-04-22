@@ -6,34 +6,26 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
-import com.boardgamefiesta.dynamodb.TableDynamoDbRepository;
-import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
+import com.boardgamefiesta.dynamodb.*;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Map;
 
-@Named("migrateLogEntryV1ToV2")
-public class MigrateLogEntryV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
+@Named("triggerUserV1ToV2")
+public class TriggerUserV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
 
-    private final DynamoDbClient client;
-    private final DynamoDbConfiguration config;
-    private final TableDynamoDbRepository tableDynamoDbRepository;
-    private final TableDynamoDbRepositoryV2 tableDynamoDbRepositoryV2;
+    private final UserDynamoDbRepository userDynamoDbRepository;
+    private final UserDynamoDbRepositoryV2 userDynamoDbRepositoryV2;
 
     @Inject
-    public MigrateLogEntryV1ToV2(@NonNull Games games,
-                                 @NonNull DynamoDbClient client,
-                                 @NonNull DynamoDbConfiguration config) {
-        this.client = client;
-        this.config = config;
-        this.tableDynamoDbRepository = new TableDynamoDbRepository(games, client, config);
-        this.tableDynamoDbRepositoryV2 = new TableDynamoDbRepositoryV2(games, client, config);
+    public TriggerUserV1ToV2(@NonNull DynamoDbClient client,
+                             @NonNull DynamoDbConfiguration config) {
+        this.userDynamoDbRepository = new UserDynamoDbRepository(client, config);
+        this.userDynamoDbRepositoryV2 = new UserDynamoDbRepositoryV2(client, config);
     }
 
     @Override
@@ -55,12 +47,8 @@ public class MigrateLogEntryV1ToV2 implements RequestHandler<DynamodbEvent, Void
     }
 
     void handleInsert(Map<String, AttributeValue> item) {
-        var logEntry = tableDynamoDbRepository.mapToLogEntry(item);
-        var tableId = Table.Id.of(item.get("GameId").s());
-        client.putItem(PutItemRequest.builder()
-                .tableName(config.getTableName())
-                .item(tableDynamoDbRepositoryV2.mapItemFromLogEntry(logEntry, tableId).asMap())
-                .build());
+        var user = userDynamoDbRepository.mapToUser(item);
+        userDynamoDbRepositoryV2.add(user);
     }
 
     void handleModify(Map<String, AttributeValue> item) {

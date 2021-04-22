@@ -425,7 +425,7 @@ public class Game implements State {
     }
 
     @Override
-    public Set<Player> getPlayers() {
+    public Collection<Player> getPlayers() {
         return Collections.unmodifiableSet(players);
     }
 

@@ -4,31 +4,31 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
-import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
-import com.boardgamefiesta.dynamodb.TableDynamoDbRepository;
 import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
-@Named("migrateTableV1ToV2")
-public class MigrateTableV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
+@Named("triggerStateV1ToV2")
+public class TriggerStateV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
 
-    private final TableDynamoDbRepository tableDynamoDbRepository;
-    private final TableDynamoDbRepositoryV2 tableDynamoDbRepositoryV2;
+    private final DynamoDbClient client;
+    private final DynamoDbConfiguration config;
 
     @Inject
-    public MigrateTableV1ToV2(@NonNull Games games,
-                              @NonNull DynamoDbClient client,
+    public TriggerStateV1ToV2(@NonNull DynamoDbClient client,
                               @NonNull DynamoDbConfiguration config) {
-        this.tableDynamoDbRepository = new TableDynamoDbRepository(games, client, config);
-        this.tableDynamoDbRepositoryV2 = new TableDynamoDbRepositoryV2(games, client, config);
+        this.client = client;
+        this.config = config;
     }
 
     @Override
@@ -50,10 +50,23 @@ public class MigrateTableV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
     }
 
     void handleInsert(Map<String, AttributeValue> item) {
-        if (item.get("UserId").s().startsWith("Table-")) { // Ignore adjacency list items
-            var table = tableDynamoDbRepository.mapToTable(item);
-            tableDynamoDbRepositoryV2.add(table);
-        }
+        var tableId = Table.Id.of(item.get("TableId").s());
+        var timestamp = Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n()));
+
+        var previousTimestamp = Optional.ofNullable(item.get("Previous"))
+                .filter(attributeValue -> !Boolean.TRUE.equals(attributeValue.nul()))
+                .map(AttributeValue::n)
+                .map(Long::parseLong)
+                .map(Instant::ofEpochMilli);
+
+        var state = item.get("State");
+
+        var newItem = TableDynamoDbRepositoryV2.mapItemFromState(tableId, timestamp, previousTimestamp, state);
+
+        client.putItem(PutItemRequest.builder()
+                .tableName(config.getTableName())
+                .item(newItem)
+                .build());
     }
 
     void handleModify(Map<String, AttributeValue> item) {
@@ -61,8 +74,6 @@ public class MigrateTableV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
     }
 
     void handleRemove(Map<String, AttributeValue> item) {
-        if (item.get("UserId").s().startsWith("Table-")) { // Ignore adjacency list items
-            tableDynamoDbRepositoryV2.delete(Table.Id.of(item.get("Id").s()));
-        }
+        // Not implemented
     }
 }

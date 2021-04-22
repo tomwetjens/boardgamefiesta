@@ -1,17 +1,20 @@
 package com.boardgamefiesta.dynamodb.triggers;
 
+import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
-class MigrateWebSocketConnectionV1ToV2Test {
+@Disabled
+class TriggerLogEntryV1ToV2Test {
 
     DynamoDbConfiguration config = new DynamoDbConfiguration();
     DynamoDbClient client;
 
-    MigrateWebSocketConnectionV1ToV2 migrateWebSocketConnectionV1ToV2;
+    TriggerLogEntryV1ToV2 triggerLogEntryV1ToV2;
 
     @BeforeEach
     void setUp() {
@@ -19,16 +22,16 @@ class MigrateWebSocketConnectionV1ToV2Test {
 
         client = DynamoDbClient.create();
 
-        migrateWebSocketConnectionV1ToV2 = new MigrateWebSocketConnectionV1ToV2(client, config);
+        triggerLogEntryV1ToV2 = new TriggerLogEntryV1ToV2(new Games(), client, config);
     }
 
     @Test
     void migrate() {
         client.scanPaginator(ScanRequest.builder()
-                .tableName("gwt-ws-connections" + config.getTableSuffix().orElse(""))
+                .tableName("gwt-log" + config.getTableSuffix().orElse(""))
                 .build())
                 .items().stream()
                 .limit(10)
-                .forEach(item -> migrateWebSocketConnectionV1ToV2.handleInsert(item));
+                .forEach(item -> triggerLogEntryV1ToV2.handleInsert(item));
     }
 }

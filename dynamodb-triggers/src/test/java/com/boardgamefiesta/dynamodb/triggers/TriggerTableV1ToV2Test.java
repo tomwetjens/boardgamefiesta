@@ -12,12 +12,12 @@ import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import java.util.Map;
 
 @Disabled
-class MigrateTableV1ToV2Test {
+class TriggerTableV1ToV2Test {
 
     DynamoDbConfiguration config = new DynamoDbConfiguration();
     DynamoDbClient client;
 
-    MigrateTableV1ToV2 migrateTableV1ToV2;
+    TriggerTableV1ToV2 triggerTableV1ToV2;
 
     @BeforeEach
     void setUp() {
@@ -25,7 +25,7 @@ class MigrateTableV1ToV2Test {
 
         client = DynamoDbClient.create();
 
-        migrateTableV1ToV2 = new MigrateTableV1ToV2(new Games(), client, config);
+        triggerTableV1ToV2 = new TriggerTableV1ToV2(new Games(), client, config);
     }
 
     @Test
@@ -39,6 +39,6 @@ class MigrateTableV1ToV2Test {
                 .build())
                 .items().stream()
                 .limit(10)
-                .forEach(item -> migrateTableV1ToV2.handleInsert(item));
+                .forEach(item -> triggerTableV1ToV2.handleInsert(item));
     }
 }

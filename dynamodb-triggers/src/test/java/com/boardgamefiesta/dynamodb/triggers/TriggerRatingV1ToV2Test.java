@@ -8,12 +8,12 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
-class MigrateRatingV1ToV2Test {
+class TriggerRatingV1ToV2Test {
 
     DynamoDbConfiguration config = new DynamoDbConfiguration();
     DynamoDbClient client;
 
-    MigrateRatingV1ToV2 migrateRatingV1ToV2;
+    TriggerRatingV1ToV2 triggerRatingV1ToV2;
 
     @BeforeEach
     void setUp() {
@@ -21,7 +21,7 @@ class MigrateRatingV1ToV2Test {
 
         client = DynamoDbClient.create();
 
-        migrateRatingV1ToV2 = new MigrateRatingV1ToV2(client, config);
+        triggerRatingV1ToV2 = new TriggerRatingV1ToV2(client, config);
     }
 
     @Test
@@ -45,6 +45,6 @@ class MigrateRatingV1ToV2Test {
                 .build())
                 .items().stream()
                 .limit(10)
-                .forEach(item -> migrateRatingV1ToV2.handleInsert(item));
+                .forEach(item -> triggerRatingV1ToV2.handleInsert(item));
     }
 }
