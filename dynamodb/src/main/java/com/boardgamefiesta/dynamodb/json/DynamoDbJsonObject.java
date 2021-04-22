@@ -20,13 +20,27 @@ class DynamoDbJsonObject extends DynamoDbJsonValue implements JsonObject {
 
     @Override
     public JsonArray getJsonArray(String key) {
-        return DynamoDbJsonValue.of(attributeValue.m().get(key)).asJsonArray();
+        var value = attributeValue.m().get(key);
+        if (value == null || Boolean.TRUE.equals(value.nul())) {
+            return null;
+        }
+        if (!value.hasL()) {
+            // This can happen when an empty "L" is converted by DynamodbAttributeValueTransformer.toAttributeValueMapV2
+            return EMPTY_JSON_ARRAY;
+        }
+        return new DynamoDbJsonArray(value);
     }
 
     @Override
     public JsonObject getJsonObject(String key) {
         var value = attributeValue.m().get(key);
-        return DynamoDbJsonValue.of(value).asJsonObject();
+        if (value == null || Boolean.TRUE.equals(value.nul())) {
+            return null;
+        }
+        if (!value.hasM()) {
+            return EMPTY_JSON_OBJECT;
+        }
+        return new DynamoDbJsonObject(value);
     }
 
     @Override

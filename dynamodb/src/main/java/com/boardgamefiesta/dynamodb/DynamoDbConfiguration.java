@@ -12,7 +12,7 @@ public class DynamoDbConfiguration {
 
     private Optional<String> tableSuffix = Optional.empty();
 
-    private String tableName = "boardgamefiesta";
+    private String tableName = "boardgamefiesta-prod";
 
     private int writeGameIdShards = 2;
     private int readGameIdShards = 2;

@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: DynamoDB Triggers for Board Game Fiesta
+Parameters:
+  Environment:
+    Type: String
+  Version:
+    Type: String
+Conditions:
+  IsProduction: !Equals [ !Ref Environment, 'prod' ]
+Resources:
+  DynamoDBTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-*'
+
+  UserDynamoDBTriggerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 512
+      Role: !GetAtt DynamoDBTriggerRole.Arn
+      Runtime: java11
+      Timeout: 60
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: triggerUserV1ToV2
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/dynamodb-triggers.zip'
+
+  TableDynamoDBTriggerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 512
+      Role: !GetAtt DynamoDBTriggerRole.Arn
+      Runtime: java11
+      Timeout: 60
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: triggerTableV1ToV2
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/dynamodb-triggers.zip'
+
+  WebSocketConnectionDynamoDBTriggerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 512
+      Role: !GetAtt DynamoDBTriggerRole.Arn
+      Runtime: java11
+      Timeout: 60
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: triggerWebSocketConnectionV1ToV2
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/dynamodb-triggers.zip'
+
+  StateDynamoDBTriggerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 512
+      Role: !GetAtt DynamoDBTriggerRole.Arn
+      Runtime: java11
+      Timeout: 60
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: triggerStateV1ToV2
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/dynamodb-triggers.zip'
+
+  RatingDynamoDBTriggerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 512
+      Role: !GetAtt DynamoDBTriggerRole.Arn
+      Runtime: java11
+      Timeout: 60
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: triggerRatingV1ToV2
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/dynamodb-triggers.zip'
+
+  LogEntryDynamoDBTriggerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 512
+      Role: !GetAtt DynamoDBTriggerRole.Arn
+      Runtime: java11
+      Timeout: 60
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: triggerLogEntryV1ToV2
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/dynamodb-triggers.zip'
+
+  FriendDynamoDBTriggerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 512
+      Role: !GetAtt DynamoDBTriggerRole.Arn
+      Runtime: java11
+      Timeout: 60
+      Environment:
+        Variables:
+          QUARKUS_LAMBDA_HANDLER: triggerFriendV1ToV2
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/dynamodb-triggers.zip'

@@ -15,12 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -94,6 +92,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     private static final String VERSION = "Version";
     private static final String TTL = "TTL";
 
+    private static final int MAX_BATCH_WRITE_SIZE = 25;
+
     private final Games games;
     private final DynamoDbClient client;
     private final DynamoDbConfiguration config;
@@ -134,6 +134,10 @@ public class TableDynamoDbRepositoryV2 implements Tables {
             throw new ExceedsMaxActiveGames();
         }
 
+        put(table);
+    }
+
+    public void put(Table table) {
         Stream.of(
                 Stream.of(WriteRequest.builder()
                         .putRequest(PutRequest.builder()
@@ -168,28 +172,11 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                                 .build())
         )
                 .flatMap(Function.identity())
-                .collect(chunked(25))
+                .collect(Chunked.chunked(MAX_BATCH_WRITE_SIZE))
                 .forEach(chunk ->
                         client.batchWriteItem(BatchWriteItemRequest.builder()
                                 .requestItems(Map.of(config.getTableName(), chunk))
                                 .build()));
-
-    }
-
-    private <T> Collector<T, List<List<T>>, List<List<T>>> chunked(int chunkSize) {
-        return Collector.of(ArrayList::new, (chunks, elem) -> {
-            List<T> chunk;
-            if (chunks.isEmpty() || chunks.get(chunks.size() - 1).size() >= chunkSize) {
-                chunk = new ArrayList<>(chunkSize);
-                chunks.add(chunk);
-            } else {
-                chunk = chunks.get(chunks.size() - 1);
-            }
-
-            chunk.add(elem);
-        }, (a1, a2) -> {
-            throw new UnsupportedOperationException();
-        });
     }
 
     public Item mapItemFromLogEntry(LogEntry logEntry, Table.Id tableId) {
@@ -223,7 +210,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .setEnum("Visibility", table.getVisibility())
                 .setEnum("Status", table.getStatus())
                 .setInstant("Updated", table.getUpdated())
-                .setTTL(TTL, table.getExpires())
+                .setTTL(TTL, table.getExpires().orElse(null))
                 .setString("OwnerId", table.getOwnerId().getId())
                 .set("Players", AttributeValue.builder().l(table.getPlayers().stream()
                         .map(this::mapFromPlayer)
@@ -442,7 +429,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     private void updatePlayerItem(Player player, Table table) {
         var updateItem = new UpdateItem();
 
-        updateItem.setTTL(TTL, table.getExpires());
+        updateItem.setTTL(TTL, table.getExpires().orElse(null));
 
         player.getUserId().ifPresentOrElse(userId -> {
             updateItem.setString(GSI1SK, GSI1SortKey.fromTable(table));
@@ -495,7 +482,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         if (table.getEnded() != null) {
             item.setInstant("Ended", table.getEnded());
         }
-        item.setTTL(TTL, table.getExpires())
+        item.setTTL(TTL, table.getExpires().orElse(null))
                 .setString("OwnerId", table.getOwnerId().getId())
                 .set("Players", AttributeValue.builder()
                         .l(table.getPlayers().stream()
@@ -507,24 +494,24 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     private Map<String, AttributeValue> mapItemFromPlayer(Player player, Table table) {
-        var item = new HashMap<String, AttributeValue>();
+        var item = new Item();
 
-        item.put(PK, Item.s(TABLE_PREFIX + table.getId().getId()));
-        item.put(SK, Item.s(PLAYER_PREFIX + player.getId().getId()));
+        item.setString(PK, TABLE_PREFIX + table.getId().getId());
+        item.setString(SK, PLAYER_PREFIX + player.getId().getId());
 
         player.getUserId().ifPresent(userId -> {
-            item.put(GSI1PK, Item.s(USER_PREFIX + userId.getId()));
-            item.put(GSI1SK, Item.s(GSI1SortKey.fromTable(table)));
+            item.setString(GSI1PK, USER_PREFIX + userId.getId());
+            item.setString(GSI1SK, GSI1SortKey.fromTable(table));
 
             if (table.isActive()) {
-                item.put(GSI2PK, Item.s(USER_PREFIX + userId.getId()));
-                item.put(GSI2SK, Item.s(GSI2SortKey.fromTable(table)));
+                item.setString(GSI2PK, USER_PREFIX + userId.getId());
+                item.setString(GSI2SK, GSI2SortKey.fromTable(table));
             }
         });
 
-        item.put(TTL, AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+        item.setTTL(TTL, table.getExpires().orElse(null));
 
-        return item;
+        return item.asMap();
     }
 
     private Map<String, AttributeValue> mapItemFromState(Table.Id tableId,
@@ -742,22 +729,24 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     public void delete(Table.Id id) {
-        client.batchWriteItem(BatchWriteItemRequest.builder()
-                .requestItems(Map.of(config.getTableName(),
-                        client.queryPaginator(QueryRequest.builder()
-                                .keyConditionExpression("PK=:PK")
-                                .expressionAttributeValues(Map.of(":PK", Item.s(id.getId())))
-                                .projectionExpression("PK,SK")
+        client.queryPaginator(QueryRequest.builder()
+                .tableName(config.getTableName())
+                .keyConditionExpression("PK=:PK")
+                .expressionAttributeValues(Map.of(":PK", Item.s(id.getId())))
+                .projectionExpression("PK,SK")
+                .build())
+                .items()
+                .stream()
+                .map(key -> WriteRequest.builder()
+                        .deleteRequest(DeleteRequest.builder()
+                                .key(key)
                                 .build())
-                                .items()
-                                .stream()
-                                .map(key -> WriteRequest.builder()
-                                        .deleteRequest(DeleteRequest.builder()
-                                                .key(key)
-                                                .build())
-                                        .build())
-                                .collect(Collectors.toList())))
-                .build());
+                        .build())
+                .collect(Chunked.chunked(MAX_BATCH_WRITE_SIZE))
+                .forEach(chunk ->
+                        client.batchWriteItem(BatchWriteItemRequest.builder()
+                                .requestItems(Map.of(config.getTableName(), chunk))
+                                .build()));
     }
 
     @Value

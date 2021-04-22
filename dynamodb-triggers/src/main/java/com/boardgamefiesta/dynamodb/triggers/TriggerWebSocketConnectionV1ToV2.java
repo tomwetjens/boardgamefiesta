@@ -1,9 +1,5 @@
 package com.boardgamefiesta.dynamodb.triggers;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import com.boardgamefiesta.dynamodb.WebSocketConnectionDynamoDbRepository;
 import com.boardgamefiesta.dynamodb.WebSocketConnectionDynamoDbRepositoryV2;
@@ -16,7 +12,7 @@ import javax.inject.Named;
 import java.util.Map;
 
 @Named("triggerWebSocketConnectionV1ToV2")
-public class TriggerWebSocketConnectionV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
+public class TriggerWebSocketConnectionV1ToV2 extends DynamoDbTrigger {
 
     private final WebSocketConnectionDynamoDbRepository webSocketConnectionDynamoDbRepository;
     private final WebSocketConnectionDynamoDbRepositoryV2 webSocketConnectionDynamoDbRepositoryV2;
@@ -29,32 +25,17 @@ public class TriggerWebSocketConnectionV1ToV2 implements RequestHandler<Dynamodb
     }
 
     @Override
-    public Void handleRequest(DynamodbEvent event, Context context) {
-        event.getRecords().forEach(record -> {
-            switch (OperationType.fromValue(record.getEventName())) {
-                case INSERT:
-                    handleInsert(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
-                    break;
-                case MODIFY:
-                    handleModify(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
-                    break;
-                case REMOVE:
-                    handleRemove(AttributeValues.toClientModel(record.getDynamodb().getOldImage()));
-                    break;
-            }
-        });
-        return null;
-    }
-
     void handleInsert(Map<String, AttributeValue> item) {
         var webSocketConnection = webSocketConnectionDynamoDbRepository.mapFromItem(item);
         webSocketConnectionDynamoDbRepositoryV2.add(webSocketConnection);
     }
 
+    @Override
     void handleModify(Map<String, AttributeValue> item) {
         handleInsert(item);
     }
 
+    @Override
     void handleRemove(Map<String, AttributeValue> item) {
         webSocketConnectionDynamoDbRepositoryV2.remove(item.get("Id").s());
     }

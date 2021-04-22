@@ -1,10 +1,5 @@
 package com.boardgamefiesta.dynamodb.triggers;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
-import com.boardgamefiesta.domain.user.Friend;
 import com.boardgamefiesta.dynamodb.*;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -15,7 +10,7 @@ import javax.inject.Named;
 import java.util.Map;
 
 @Named("triggerFriendV1ToV2")
-public class TriggerFriendV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
+public class TriggerFriendV1ToV2 extends DynamoDbTrigger {
 
     private final FriendDynamoDbRepository friendDynamoDbRepository;
     private final FriendDynamoDbRepositoryV2 friendDynamoDbRepositoryV2;
@@ -28,32 +23,17 @@ public class TriggerFriendV1ToV2 implements RequestHandler<DynamodbEvent, Void> 
     }
 
     @Override
-    public Void handleRequest(DynamodbEvent event, Context context) {
-        event.getRecords().forEach(record -> {
-            switch (OperationType.fromValue(record.getEventName())) {
-                case INSERT:
-                    handleInsert(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
-                    break;
-                case MODIFY:
-                    handleModify(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
-                    break;
-                case REMOVE:
-                    handleRemove(AttributeValues.toClientModel(record.getDynamodb().getOldImage()));
-                    break;
-            }
-        });
-        return null;
-    }
-
     void handleInsert(Map<String, AttributeValue> item) {
         var friend = friendDynamoDbRepository.mapItemToFriend(item);
         friendDynamoDbRepositoryV2.add(friend);
     }
 
+    @Override
     void handleModify(Map<String, AttributeValue> item) {
         handleInsert(item);
     }
 
+    @Override
     void handleRemove(Map<String, AttributeValue> item) {
         var friend = friendDynamoDbRepository.mapItemToFriend(item);
         friendDynamoDbRepositoryV2.delete(friend.getId());

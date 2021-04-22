@@ -10,7 +10,6 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.ZoneId;
 import java.util.Map;
@@ -27,11 +26,11 @@ import java.util.stream.Stream;
  * <p>
  * GSI2: search by e-mail address (exact)
  * GSI2PK=User#<email_lowercase>
- * GSI2SK=User#<email_lowercase>
+ * GSI2SK=User#<username>
  * <p>
  * GSI3: by Cognito username
  * GSI3PK=User#<cognito:username>
- * GSI3SK=User#<cognito:username>
+ * GSI3SK=User#<username>
  */
 //@ApplicationScoped
 @Slf4j
@@ -177,6 +176,12 @@ public class UserDynamoDbRepositoryV2 implements Users {
 
     @Override
     public void add(User user) {
+        validateBeforeAdd(user.getEmail());
+
+        put(user);
+    }
+
+    public void put(User user) {
         client.putItem(PutItemRequest.builder()
                 .tableName(config.getTableName())
                 .item(new Item()
@@ -194,15 +199,21 @@ public class UserDynamoDbRepositoryV2 implements Users {
                         .setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
                         .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
                         .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
-                        .setString(GSI2SK, USER_PREFIX + user.getEmail().toLowerCase())
+                        .setString(GSI2SK, USER_PREFIX + user.getUsername().toLowerCase())
                         .setString(GSI3PK, USER_PREFIX + user.getCognitoUsername())
-                        .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername())
+                        .setString(GSI3SK, USER_PREFIX + user.getUsername().toLowerCase())
                         .asMap())
                 .build());
     }
 
     @Override
     public void update(User user) throws ConcurrentModificationException {
+        findByEmail(user.getEmail())
+                .filter(existingUser -> !existingUser.getId().equals(user.getId()))
+                .ifPresent(existingUser -> {
+                    throw new EmailAlreadyInUse();
+                });
+
         var updateItem = new UpdateItem()
                 .setInt(VERSION, user.getVersion() + 1)
                 .setString("Username", user.getUsername())
@@ -215,9 +226,9 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
                 .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
                 .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
-                .setString(GSI2SK, USER_PREFIX + user.getEmail().toLowerCase())
+                .setString(GSI2SK, USER_PREFIX + user.getUsername().toLowerCase())
                 .setString(GSI3PK, USER_PREFIX + user.getCognitoUsername())
-                .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername());
+                .setString(GSI3SK, USER_PREFIX + user.getUsername().toLowerCase());
 
         updateItem.expressionAttributeValue(":ExpectedVersion", Item.n(user.getVersion()));
 

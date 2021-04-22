@@ -1,13 +1,10 @@
 package com.boardgamefiesta.dynamodb.triggers;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
-import com.boardgamefiesta.domain.game.Games;
-import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.dynamodb.*;
+import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
+import com.boardgamefiesta.dynamodb.UserDynamoDbRepository;
+import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -16,7 +13,8 @@ import javax.inject.Named;
 import java.util.Map;
 
 @Named("triggerUserV1ToV2")
-public class TriggerUserV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
+@Slf4j
+public class TriggerUserV1ToV2 extends DynamoDbTrigger {
 
     private final UserDynamoDbRepository userDynamoDbRepository;
     private final UserDynamoDbRepositoryV2 userDynamoDbRepositoryV2;
@@ -29,32 +27,17 @@ public class TriggerUserV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
     }
 
     @Override
-    public Void handleRequest(DynamodbEvent event, Context context) {
-        event.getRecords().forEach(record -> {
-            switch (OperationType.fromValue(record.getEventName())) {
-                case INSERT:
-                    handleInsert(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
-                    break;
-                case MODIFY:
-                    handleModify(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
-                    break;
-                case REMOVE:
-                    handleRemove(AttributeValues.toClientModel(record.getDynamodb().getOldImage()));
-                    break;
-            }
-        });
-        return null;
-    }
-
     void handleInsert(Map<String, AttributeValue> item) {
         var user = userDynamoDbRepository.mapToUser(item);
-        userDynamoDbRepositoryV2.add(user);
+        userDynamoDbRepositoryV2.put(user);
     }
 
+    @Override
     void handleModify(Map<String, AttributeValue> item) {
         handleInsert(item);
     }
 
+    @Override
     void handleRemove(Map<String, AttributeValue> item) {
         // Not implemented
     }

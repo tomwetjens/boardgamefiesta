@@ -25,10 +25,8 @@ import java.util.stream.Stream;
 public class Table implements AggregateRoot {
 
     private static final Duration RETENTION_NEW = Duration.of(2, ChronoUnit.DAYS);
-    private static final Duration RETENTION_AFTER_ACTION = Duration.of(14, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(365 * 5, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.DAYS);
-    private static final TemporalAmount RETENTION_HISTORIC_STATE = RETENTION_AFTER_ACTION;
 
     private static final SecureRandom RANDOM;
 
@@ -182,16 +180,16 @@ public class Table implements AggregateRoot {
         }
     }
 
-    public Instant getExpires() {
+    public Optional<Instant> getExpires() {
         switch (status) {
             case NEW:
-                return created.plus(RETENTION_NEW);
+                return Optional.of(created.plus(RETENTION_NEW));
             case ENDED:
-                return ended.plus(RETENTION_AFTER_ENDED);
+                return Optional.of(ended.plus(RETENTION_AFTER_ENDED));
             case ABANDONED:
-                return updated.plus(RETENTION_AFTER_ABANDONED);
+                return Optional.of(updated.plus(RETENTION_AFTER_ABANDONED));
             default:
-                return updated.plus(RETENTION_AFTER_ACTION);
+                return Optional.empty();
         }
     }
 
@@ -880,14 +878,6 @@ public class Table implements AggregateRoot {
 
         public boolean isChanged() {
             return changed;
-        }
-
-        public Instant getExpires() {
-            return calculateExpires(timestamp);
-        }
-
-        public static Instant calculateExpires(Instant timestamp) {
-            return timestamp.plus(RETENTION_HISTORIC_STATE);
         }
 
     }

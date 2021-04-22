@@ -1,9 +1,5 @@
 package com.boardgamefiesta.dynamodb.triggers;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
@@ -19,7 +15,7 @@ import javax.inject.Named;
 import java.util.Map;
 
 @Named("triggerLogEntryV1ToV2")
-public class TriggerLogEntryV1ToV2 implements RequestHandler<DynamodbEvent, Void> {
+public class TriggerLogEntryV1ToV2 extends DynamoDbTrigger{
 
     private final DynamoDbClient client;
     private final DynamoDbConfiguration config;
@@ -37,23 +33,6 @@ public class TriggerLogEntryV1ToV2 implements RequestHandler<DynamodbEvent, Void
     }
 
     @Override
-    public Void handleRequest(DynamodbEvent event, Context context) {
-        event.getRecords().forEach(record -> {
-            switch (OperationType.fromValue(record.getEventName())) {
-                case INSERT:
-                    handleInsert(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
-                    break;
-                case MODIFY:
-                    handleModify(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
-                    break;
-                case REMOVE:
-                    handleRemove(AttributeValues.toClientModel(record.getDynamodb().getOldImage()));
-                    break;
-            }
-        });
-        return null;
-    }
-
     void handleInsert(Map<String, AttributeValue> item) {
         var logEntry = tableDynamoDbRepository.mapToLogEntry(item);
         var tableId = Table.Id.of(item.get("GameId").s());
@@ -63,10 +42,12 @@ public class TriggerLogEntryV1ToV2 implements RequestHandler<DynamodbEvent, Void
                 .build());
     }
 
+    @Override
     void handleModify(Map<String, AttributeValue> item) {
         handleInsert(item);
     }
 
+    @Override
     void handleRemove(Map<String, AttributeValue> item) {
         // Not implemented
     }

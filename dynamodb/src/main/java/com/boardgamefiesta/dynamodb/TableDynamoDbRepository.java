@@ -210,7 +210,8 @@ public class TableDynamoDbRepository implements Tables {
         item.put("Updated", AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build());
         item.put("Started", table.getStarted() != null ? AttributeValue.builder().n(Long.toString(table.getStarted().getEpochSecond())).build() : null);
         item.put("Ended", table.getEnded() != null ? AttributeValue.builder().n(Long.toString(table.getEnded().getEpochSecond())).build() : null);
-        item.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+        item.put("Expires", table.getExpires().map(expires -> AttributeValue.builder().n(Long.toString(expires.getEpochSecond())).build())
+                .orElse(AttributeValue.builder().nul(true).build()));
         item.put("OwnerId", AttributeValue.builder().s(table.getOwnerId().getId()).build());
         item.put("Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
 
@@ -257,7 +258,6 @@ public class TableDynamoDbRepository implements Tables {
                                 .map(previous -> AttributeValue.builder().n(Long.toString(previous.getTimestamp().toEpochMilli())).build())
                                 .orElse(AttributeValue.builder().nul(true).build()),
                         "GameId", AttributeValue.builder().s(table.getGame().getId().getId()).build(),
-                        "Expires", AttributeValue.builder().n(Long.toString(currentState.getExpires().getEpochSecond())).build(),
                         "State", serialized))
                 .build());
         // TODO Mark CurrentState as persisted
@@ -316,7 +316,7 @@ public class TableDynamoDbRepository implements Tables {
         expressionAttributeValues.put(":Visibility", AttributeValue.builder().s(table.getVisibility().name()).build());
         expressionAttributeValues.put(":Status", AttributeValue.builder().s(table.getStatus().name()).build());
         expressionAttributeValues.put(":Updated", AttributeValue.builder().n(Long.toString(table.getUpdated().getEpochSecond())).build());
-        expressionAttributeValues.put(":Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+        expressionAttributeValues.put(":Expires", table.getExpires().map(expires -> AttributeValue.builder().n(Long.toString(expires.getEpochSecond())).build()).orElse(AttributeValue.builder().nul(true).build()));
         expressionAttributeValues.put(":OwnerId", AttributeValue.builder().s(table.getOwnerId().getId()).build());
         expressionAttributeValues.put(":Players", AttributeValue.builder().l(table.getPlayers().stream().map(this::mapFromPlayer).collect(Collectors.toList())).build());
         expressionAttributeValues.put(":Options", mapFromOptions(table.getOptions()));
@@ -448,7 +448,8 @@ public class TableDynamoDbRepository implements Tables {
         item.put("UserId", AttributeValue.builder().s("User-" + player.getUserId().orElseThrow().getId()).build());
 
         // Expire adjacency list whenever table expires, since it doesn't make any sense to keep it after
-        item.put("Expires", AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build());
+        item.put("Expires", table.getExpires().map(expires -> AttributeValue.builder().n(Long.toString(expires.getEpochSecond())).build())
+                .orElse(AttributeValue.builder().nul(true).build()));
 
         // Having some table attributes redundantly in the adjacency list is important
         // for efficiently querying the active tables a user is in
@@ -462,9 +463,17 @@ public class TableDynamoDbRepository implements Tables {
 
     private Map<String, AttributeValueUpdate> mapToAdjacencyListItemUpdates(Table table, Player player) {
         var map = new HashMap<String, AttributeValueUpdate>();
-        map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Long.toString(table.getExpires().getEpochSecond())).build()).build());
-        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().s(table.getStatus().name()).build()).build());
-        map.put("Active", AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().bool(table.isActive() && player.isActive()).build()).build());
+        map.put("Expires", AttributeValueUpdate.builder().action(AttributeAction.PUT)
+                .value(table.getExpires()
+                        .map(expires -> AttributeValue.builder().n(Long.toString(expires.getEpochSecond())).build())
+                        .orElse(AttributeValue.builder().nul(true).build()))
+                .build());
+        map.put("Status", AttributeValueUpdate.builder().action(AttributeAction.PUT)
+                .value(AttributeValue.builder().s(table.getStatus().name()).build())
+                .build());
+        map.put("Active", AttributeValueUpdate.builder().action(AttributeAction.PUT)
+                .value(AttributeValue.builder().bool(table.isActive() && player.isActive()).build())
+                .build());
 
         return map;
     }
