@@ -32,6 +32,8 @@ public class PowerGrid implements State {
     @Getter
     private final Set<Area> areas;
     @Getter
+    private final List<Player> players;
+    @Getter
     private final List<Player> playerOrder;
     @Getter
     private final ResourceMarket resourceMarket;
@@ -76,16 +78,20 @@ public class PowerGrid implements State {
 
         var auctioningPlayers = new ArrayList<>(playerOrder);
 
-        return new PowerGrid(map, areas, playerOrder, ResourceMarket.create(),
+        return new PowerGrid(map, areas,
+                new ArrayList<>(playerOrder),
+                playerOrder,
+                ResourceMarket.create(),
                 PowerPlantMarket.create(players.size(), random),
                 new HashMap<>(),
-                players.stream()
-                        .collect(Collectors.toMap(Function.identity(), PlayerState::create)),
+                players.stream().collect(Collectors.toMap(Function.identity(), PlayerState::create)),
                 1,
                 1,
                 Phase.AUCTION,
                 auctioningPlayers.get(0),
-                auctioningPlayers, null, null);
+                auctioningPlayers,
+                null,
+                null);
     }
 
     public static PowerGrid deserialize(JsonValue jsonValue) {
@@ -99,12 +105,18 @@ public class PowerGrid implements State {
                 .map(map::getArea)
                 .collect(Collectors.toSet());
 
-        var playerOrder = jsonObject.getJsonArray("playerOrder").stream()
+        var players = jsonObject.getJsonArray("players").stream()
                 .map(JsonValue::asJsonObject)
                 .map(Player::deserialize)
                 .collect(Collectors.toList());
 
-        var playerMap = playerOrder.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
+        var playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
+
+        var playerOrder = jsonObject.getJsonArray("playerOrder").stream()
+                .map(JsonString.class::cast)
+                .map(JsonString::getString)
+                .map(playerMap::get)
+                .collect(Collectors.toList());
 
         var resourceMarket = ResourceMarket.deserialize(jsonObject.getJsonObject("resourceMarket"));
         var powerPlantMarket = PowerPlantMarket.deserialize(jsonObject.getJsonObject("powerPlantMarket"));
@@ -146,6 +158,7 @@ public class PowerGrid implements State {
         return new PowerGrid(
                 map,
                 areas,
+                players,
                 playerOrder,
                 resourceMarket,
                 powerPlantMarket,
@@ -167,7 +180,8 @@ public class PowerGrid implements State {
         var jsonObjectBuilder = jsonBuilderFactory.createObjectBuilder()
                 .add("map", map.getName())
                 .add("areas", jsonSerializer.fromStrings(areas, Area::getName))
-                .add("playerOrder", jsonSerializer.fromCollection(playerOrder, Player::serialize))
+                .add("players", jsonSerializer.fromCollection(players, Player::serialize))
+                .add("playerOrder", jsonSerializer.fromStrings(playerOrder, Player::getName))
                 .add("resourceMarket", resourceMarket.serialize(jsonBuilderFactory))
                 .add("powerPlantMarket", powerPlantMarket.serialize(jsonBuilderFactory))
                 .add("cities", jsonSerializer.fromMap(cities, City::getName, players -> jsonSerializer.fromStrings(players, Player::getName)))
@@ -212,7 +226,11 @@ public class PowerGrid implements State {
         }
 
         auction = Auction.start(powerPlant, auctioningPlayers);
-        nextBiddingPlayer();
+        if (auctioningPlayers.size() > 1) {
+            nextBiddingPlayer();
+        } else {
+            passPlaceBid();
+        }
     }
 
     private boolean isAuctionInProgress() {
@@ -231,7 +249,23 @@ public class PowerGrid implements State {
     }
 
     private void nextAuctioningPlayer() {
-        currentPlayer = auctioningPlayers.get((auctioningPlayers.indexOf(currentPlayer) + 1) % auctioningPlayers.size());
+        do {
+            currentPlayer = auctioningPlayers.get((auctioningPlayers.indexOf(currentPlayer) + 1) % auctioningPlayers.size());
+
+            if (!canStartAuction(currentPlayer)) {
+                auctioningPlayers.remove(currentPlayer);
+            }
+        } while (!canStartAuction(currentPlayer) && !auctioningPlayers.isEmpty());
+
+        if (auctioningPlayers.isEmpty()) {
+            phase = Phase.RESOURCES;
+            currentPlayer = playerOrder.get(playerOrder.size() - 1);
+        }
+    }
+
+    private boolean canStartAuction(Player player) {
+        return powerPlantMarket.getActual().stream().anyMatch(powerPlant ->
+                powerPlant.getCost() <= playerStates.get(player).getBalance());
     }
 
     public void placeBid(int bid) {
@@ -277,11 +311,6 @@ public class PowerGrid implements State {
     @Override
     public void endTurn(Player player, @NonNull Random random) {
 
-    }
-
-    @Override
-    public Set<Player> getPlayers() {
-        return playerStates.keySet();
     }
 
     @Override
@@ -362,27 +391,37 @@ public class PowerGrid implements State {
             auctioningPlayers.remove(currentPlayer);
 
             auction = null;
+
+            nextAuctioningPlayer();
         }
     }
 
-    public Set<Class<? extends Action>> getActions() {
+    public Set<Class<? extends Action>> getActions(Player player) {
         switch (phase) {
             case AUCTION:
-                if (!isAuctionInProgress()) {
-                    if (auctioningPlayers.contains(currentPlayer)) {
-                        return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.StartAuction.class);
+                if (currentPlayer == player) {
+                    if (!isAuctionInProgress()) {
+                        if (auctioningPlayers.contains(currentPlayer)) {
+                            return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.StartAuction.class);
+                        } else {
+                            return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.RemovePowerPlant.class);
+                        }
                     } else {
-                        return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.RemovePowerPlant.class);
+                        return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.PlaceBid.class);
                     }
-                } else {
-                    return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.PlaceBid.class);
                 }
             case RESOURCES:
-                return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.BuyResource.class);
+                if (currentPlayer == player) {
+                    return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.BuyResource.class);
+                }
             case BUILD:
-                return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.ConnectCity.class);
+                if (currentPlayer == player) {
+                    return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.ConnectCity.class);
+                }
             case BUREAUCRACY:
-                return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.ProducePower.class);
+                if (producingPlayers.contains(player)) {
+                    return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.ProducePower.class);
+                }
         }
 
         return Collections.emptySet();

@@ -3,14 +3,12 @@ package com.boardgamefiesta.powergrid.logic;
 import com.boardgamefiesta.api.domain.Player;
 
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Automa {
     public void execute(PowerGrid state, Player player, Random random) {
-        var actions = state.getActions();
+        var actions = state.getActions(player);
 
         var playerState = state.getPlayerStates().get(player);
         if (actions.contains(Action.StartAuction.class)) {
@@ -56,11 +54,11 @@ public class Automa {
                     .filter(p -> p.getRequires() > playerState.getResources(p).size())
                     .collect(Collectors.toSet());
 
-
+            throw new IllegalStateException("Not implemented action: " + actions);
         } else if (actions.contains(Action.ConnectCity.class)) {
-
+            throw new IllegalStateException("Not implemented action: " + actions);
         } else if (actions.contains(Action.ProducePower.class)) {
-
+            throw new IllegalStateException("Not implemented action: " + actions);
         } else {
             throw new IllegalStateException("Unsupported action: " + actions);
         }

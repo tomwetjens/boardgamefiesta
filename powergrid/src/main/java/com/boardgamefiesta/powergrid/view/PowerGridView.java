@@ -38,7 +38,7 @@ public class PowerGridView {
         phase = powerGrid.getPhase();
         cities = powerGrid.getCities().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream().map(Player::getName).collect(Collectors.toList())));
-        actions = powerGrid.getActions().stream().map(ActionType::from).collect(Collectors.toSet());
+        actions = powerGrid.getActions(player).stream().map(ActionType::from).collect(Collectors.toSet());
         playerStates = powerGrid.getPlayerStates().entrySet().stream()
                 .collect(Collectors.toMap(entry -> entry.getKey().getName(), entry -> new PlayerStateView(entry.getValue())));
         powerPlantMarket = new PowerPlantMarketView(powerGrid.getPowerPlantMarket());
