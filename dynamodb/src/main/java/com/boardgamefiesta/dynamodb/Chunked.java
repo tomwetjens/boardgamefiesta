@@ -1,8 +1,9 @@
 package com.boardgamefiesta.dynamodb;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 final class Chunked {
 
@@ -34,6 +35,68 @@ final class Chunked {
         }, (a1, a2) -> {
             throw new UnsupportedOperationException();
         });
+    }
+
+    static <T> Stream<Stream<T>> stream(Stream<T> source, int chunkSize) {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+                new ChunkingIterator<T>(source.iterator(), chunkSize), Spliterator.ORDERED), false);
+    }
+
+    private static final class ChunkingIterator<T> implements Iterator<Stream<T>> {
+
+        private final Iterator<T> source;
+        private final int chunkSize;
+
+        private int chunksCount;
+        private int count;
+
+        ChunkingIterator(Iterator<T> source, int chunkSize) {
+            this.source = source;
+            this.chunkSize = chunkSize;
+        }
+
+        @Override
+        public boolean hasNext() {
+            skipToNextChunk();
+            return source.hasNext();
+        }
+
+        @Override
+        public Stream<T> next() {
+            skipToNextChunk();
+
+            if (!source.hasNext()) {
+                return Stream.empty();
+            }
+
+            count = 0;
+            chunksCount++;
+
+            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<>() {
+                @Override
+                public boolean hasNext() {
+                    return count < chunkSize && source.hasNext();
+                }
+
+                @Override
+                public T next() {
+                    var value = source.next();
+                    count++;
+                    return value;
+                }
+            }, Spliterator.ORDERED), false);
+        }
+
+        private void skipToNextChunk() {
+            // Skip any that were not consumed in the nested iterator
+            if (chunksCount > 0) {
+                while (count < chunkSize && source.hasNext()) {
+                    source.next();
+                    count++;
+                }
+            }
+        }
+
     }
 
 }
