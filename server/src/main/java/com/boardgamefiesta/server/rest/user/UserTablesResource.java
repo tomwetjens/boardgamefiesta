@@ -50,7 +50,7 @@ public class UserTablesResource {
     public List<TableView> getTables(@PathParam("userId") String userId) {
         var userMap = new HashMap<User.Id, User>();
         var ratingMap = new HashMap<User.Id, Rating>();
-        return tables.findRecent(User.Id.of(userId), 10)
+        return tables.findAll(User.Id.of(userId), 10)
                 .map(table -> new TableView(table, getUserMap(table, userMap), getRatingMap(table, ratingMap), currentUser.getId()))
                 .collect(Collectors.toList());
     }

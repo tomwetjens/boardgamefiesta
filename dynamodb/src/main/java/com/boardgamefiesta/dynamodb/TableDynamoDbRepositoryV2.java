@@ -20,53 +20,11 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Item Collection (Single table design) per Table:
- * <p>
- * GSI1 index is always filled and is used to query all tables by game or user.
- * Examples:
- * GSI1PK=Game#ID#Shard
- * GSI1PK=User#ID
- * <p>
- * GSI1SK is chosen so that, when querying with ScanIndexForward=false, the order is:
- * by ended date, then by started date, then by created date
- * Examples:
- * GSI1SK=Table#2021-03-04T12:23:00#ID
- * GSI1SK=Table#2021-03-05T19:45:00#ID
- * <p>
- * GSI2 is a sparse index only filled if the table is active (i.e. not ended or abandoned) and is used to query only active tables by game or user.
- * GSI2SK is chosen so that, when querying with ScanIndexForward=false, the order is:
- * * joinable tables (i.e. open and seats available) by Created descending
- * * then not started non-joinable new tables sorted by Created descending
- * * then started tables sorted by Started descending
- * * then ended tables sorted by Ended descending
- * * Examples:
- * * GSI1SK=Table#2021-03-04T12:23:00#ID
- * * GSI1SK=Table#2021-03-05T19:45:00#ID
- * * GSI1SK=Table#ASTARTED#2021-03-05T18:20:00#ID
- * * GSI1SK=Table#STARTED#2021-03-05T19:45:00#ID
- * * GSI1SK=Table#NEW#2021-03-05T18:20:00#ID
- * * GSI1SK=Table#NEW#2021-03-05T19:45:00#ID
- * * GSI1SK=Table#OPEN#2021-03-05T18:20:00#ID
- * * GSI1SK=Table#OPEN#2021-03-05T19:45:00#ID
- * <p>
- * GSI1PK and GSI2PK with Game ID is write sharded, because there can be MANY tables per Game ID which will make GSI1 have hot partitions.
- * <p>
- * Log Entry:      PK=Table#ID SK=LogEntry#2021-03-05T19:45:00
- * Player:         PK=Table#ID SK=Player#ID GSI1PK=User#ID       GSI1SK=2021-03-05T19:45:00#Table#ID GSI2PK=User#ID GSI2SK=Table#2021-03-05T19:45:00#ID
- * Historic State: PK=Table#ID SK=State#2021-03-05T19:45:00
- * Current State:  PK=Table#ID SK=State#2021-03-05T19:51:00
- * Table:          PK=Table#ID SK=Table     GSI1PK=Game#ID#Shard GSI1SK=2021-03-05T19:45:00#Table#ID GSI2PK=Game#ID#Shard GSI2SK=Table#2021-03-05T19:45:00#ID
- * <p>
- * SK has been chosen so Table and Players can be retrieved in one shot.
- * <p>
- * When a table is abandoned:
- * - If not started, then it is Expired immediately so it will no longer be in views
- * - If already started, then it is Expired after some time
- * <p>
- * Find "my tables" (active)
+ *
  */
 //@ApplicationScoped
 @Slf4j
@@ -81,6 +39,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     private static final String GSI2 = "GSI2";
     private static final String GSI2PK = "GSI2PK";
     private static final String GSI2SK = "GSI2SK";
+    private static final String GSI3 = "GSI3";
+    private static final String GSI3PK = "GSI3PK";
+    private static final String GSI3SK = "GSI3SK";
 
     private static final String TABLE_PREFIX = "Table#";
     private static final String USER_PREFIX = "User#";
@@ -93,6 +54,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     private static final String TTL = "TTL";
 
     private static final int MAX_BATCH_WRITE_SIZE = 25;
+    public static final int MAX_BATCH_GET_ITEM_SIZE = 100;
 
     private final Games games;
     private final DynamoDbClient client;
@@ -107,22 +69,29 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         this.config = config;
     }
 
-    private String gameIdSharded(Game.Id gameId, Table.Id tableId) {
+    private String shardedGameGSIPK(Game.Id gameId, Table.Id tableId) {
         return GAME_PREFIX + gameId.getId() + "#" + Math.abs(tableId.hashCode()) % config.getWriteGameIdShards();
     }
 
     @Override
     public Optional<Table> findById(Table.Id id) {
-        var response = client.getItem(GetItemRequest.builder()
+        log.debug("findById: {}", id);
+
+        var response = client.query(QueryRequest.builder()
                 .tableName(config.getTableName())
-                .key(Map.of(
-                        PK, Item.s(TABLE_PREFIX + id.getId()),
-                        SK, Item.s(TABLE_PREFIX + id.getId())
+                .keyConditionExpression(PK + "=:PK AND " + SK + ">:SK")
+                .expressionAttributeValues(Map.of(
+                        ":PK", Item.s(TABLE_PREFIX + id.getId()),
+                        ":SK", Item.s(STATE_PREFIX)
                 ))
+                .scanIndexForward(false)
+                .limit(2)
                 .build());
 
-        if (response.hasItem()) {
-            return Optional.of(mapToTable(List.of(Item.of(response.item()))));
+        if (response.hasItems()) {
+            return Optional.of(mapToTable(response.count() >= 2
+                    ? List.of(Item.of(response.items().get(0)), Item.of(response.items().get(1)))
+                    : List.of(Item.of(response.items().get(0)))));
         }
 
         return Optional.empty();
@@ -226,16 +195,25 @@ public class TableDynamoDbRepositoryV2 implements Tables {
             updateItem.setInstant("Ended", table.getEnded());
         }
 
-        if (table.getStatus() != Table.Status.ABANDONED) {
-            updateItem.setString(GSI1SK, GSI1SortKey.fromTable(table));
-
-            if (table.isActive()) {
-                updateItem.setString(GSI2SK, GSI2SortKey.fromTable(table));
-            } else {
-                updateItem.remove(GSI2PK, GSI2SK);
-            }
+        if (table.getStatus() == Table.Status.ENDED) {
+            updateItem.setString(GSI1PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+            updateItem.setString(GSI1SK, GSISK.fromTable(table));
         } else {
-            updateItem.remove(GSI1PK, GSI1SK, GSI2PK, GSI2SK);
+            updateItem.remove(GSI1PK, GSI1SK);
+        }
+
+        if (table.getStatus() == Table.Status.STARTED) {
+            updateItem.setString(GSI2PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+            updateItem.setString(GSI2SK, GSISK.fromTable(table));
+        } else {
+            updateItem.remove(GSI2PK, GSI2SK);
+        }
+
+        if (table.getStatus() == Table.Status.NEW && table.canJoin()) {
+            updateItem.setString(GSI3PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+            updateItem.setString(GSI3SK, GSISK.fromTable(table));
+        } else {
+            updateItem.remove(GSI3PK, GSI3SK);
         }
 
         updateItem.expressionAttributeValue(":ExpectedVersion", Item.n(table.getVersion()));
@@ -311,81 +289,168 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     @Override
     public Stream<Table> findActive(User.Id userId) {
-        return client.queryPaginator(QueryRequest.builder()
+        return findByIds(client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .indexName(GSI2)
                 .scanIndexForward(false)
-                .keyConditionExpression("GSI2PK=:GSI2PK AND begins_with(GSI2SK, :GSI2SK)")
+                .keyConditionExpression(GSI2PK + "=:GSI2PK AND begins_with(" + GSI2SK + ",:GSI2SK)")
                 .expressionAttributeValues(Map.of(
                         ":GSI2PK", Item.s(USER_PREFIX + userId.getId()),
                         ":GSI2SK", Item.s(TABLE_PREFIX)
                 ))
                 .build())
                 .items().stream()
-                .map(item -> GSI2SortKey.toTableId(item.get(GSI2SK).s()))
-                .map(this::findById)
-                .flatMap(Optional::stream);
+                .map(item -> GSISK.parse(item.get(GSI2SK).s()))
+                .map(GSISK::getTableId));
     }
 
     @Override
-    public Stream<Table> findRecent(User.Id userId, int maxResults) {
-        return client.queryPaginator(QueryRequest.builder()
+    public Stream<Table> findAll(User.Id userId, int maxResults) {
+        return findAll(userId, maxResults, null).stream();
+    }
+
+    public Page<Table> findAll(User.Id userId, int maxResults, String continuationToken) {
+        var tables = findByIds(client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .indexName(GSI1)
                 .scanIndexForward(false)
-                .keyConditionExpression("GSI1PK=:GSI1PK AND begins_with(GSI1SK, :GSI1SK)")
+                .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
+                .expressionAttributeValues(Map.of(
+                        ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
+                        ":GSI1SK", Item.s(TABLE_PREFIX)
+                ))
+                .exclusiveStartKey(continuationToken != null ? ContinuationToken.parse(continuationToken) : null)
+                .limit(maxResults)
+                .build())
+                .stream()
+                .filter(QueryResponse::hasItems)
+                .flatMap(response -> response.items().stream())
+                .map(item -> Table.Id.of(item.get(PK).s().replace(TABLE_PREFIX, "")))
+                .limit(maxResults))
+                .collect(Collectors.toList());
+
+
+        if (!tables.isEmpty()) {
+            var lastTable = tables.get(tables.size() - 1);
+            var playerId = lastTable.getPlayerByUserId(userId)
+                    .map(Player::getId)
+                    .map(Player.Id::getId);
+
+            return new DynamoDbPage<>(tables, ContinuationToken.from(Map.of(
+                    PK, TABLE_PREFIX + lastTable.getId().getId(),
+                    SK, PLAYER_PREFIX + playerId.orElse(""),
+                    GSI1PK, USER_PREFIX + userId.getId(),
+                    GSI1SK, GSISK.fromTable(lastTable)
+            )));
+        }
+        return new DynamoDbPage<>(Collections.emptyList(), null);
+    }
+
+    @Override
+    public Stream<Table> findAll(User.Id userId, Game.Id gameId, int maxResults) {
+        return findByIds(client.queryPaginator(QueryRequest.builder()
+                .tableName(config.getTableName())
+                .indexName(GSI1)
+                .scanIndexForward(false)
+                .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
                 .expressionAttributeValues(Map.of(
                         ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
                         ":GSI1SK", Item.s(TABLE_PREFIX)
                 ))
                 .build())
                 .items().stream()
-                .limit(maxResults)
-                .map(item -> GSI1SortKey.parse(item.get(GSI1SK).s()))
-                .map(GSI1SortKey::getTableId)
-                .map(this::findById)
-                .flatMap(Optional::stream);
+                .map(item -> GSISK.parse(item.get(GSI1SK).s()))
+                .filter(sk -> gameId.equals(sk.getGameId()))
+                .map(GSISK::getTableId)
+                .limit(maxResults));
     }
 
     @Override
-    public Stream<Table> findRecent(User.Id userId, Game.Id gameId, int maxResults) {
-        return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
-                .indexName(GSI1)
-                .scanIndexForward(false)
-                .keyConditionExpression("GSI1PK=:GSI1PK AND begins_with(GSI1SK, :GSI1SK)")
-                .expressionAttributeValues(Map.of(
-                        ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
-                        ":GSI1SK", Item.s(TABLE_PREFIX)
-                ))
-                .build())
-                .items().stream()
-                .map(item -> GSI1SortKey.parse(item.get(GSI1SK).s()))
-                .filter(sk -> sk.getGameId().equals(gameId))
-                .limit(maxResults)
-                .map(GSI1SortKey::getTableId)
-                .map(this::findById)
-                .flatMap(Optional::stream);
+    public Stream<Table> findEnded(Game.Id gameId, int maxResults) {
+        return findEnded(gameId, maxResults, null).stream();
     }
 
-    @Override
-    public Stream<Table> findAll(Game.Id gameId, int maxResults) {
-        return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
-                .indexName(GSI1)
-                .scanIndexForward(false)
-                .keyConditionExpression("GSI1PK=:GSI1PK AND begins_with(GSI1SK, :GSI1SK)")
-                .expressionAttributeValues(Map.of(
-                        ":GSI1PK", Item.s(GAME_PREFIX + gameId.getId()),
-                        ":GSI1SK", Item.s(TABLE_PREFIX)
-                ))
-                .build())
-                .items().stream()
-                .limit(maxResults)
-                .map(item -> GSI1SortKey.parse(item.get(GSI1SK).s()))
-                .map(GSI1SortKey::getTableId)
-                .map(this::findById)
-                .flatMap(Optional::stream);
+    public Page<Table> findEnded(Game.Id gameId, int maxResults, String continuationToken) {
+        var exclusiveStartKey = continuationToken != null ? ContinuationToken.parse(continuationToken) : null;
+        var tables = findByIds(IntStream.range(0, config.getReadGameIdShards())
+                // Scatter
+                .parallel()
+                .mapToObj(shard -> {
+                    var gsi1pk = Item.s(GAME_PREFIX + gameId.getId() + "#" + shard);
+                    var request = QueryRequest.builder()
+                            .tableName(config.getTableName())
+                            .indexName(GSI1)
+                            .scanIndexForward(false)
+                            .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
+                            .expressionAttributeValues(Map.of(
+                                    ":GSI1PK", gsi1pk,
+                                    ":GSI1SK", Item.s(TABLE_PREFIX)
+                            ))
+                            .exclusiveStartKey(exclusiveStartKey != null ?
+                                    Map.of(
+                                            PK, exclusiveStartKey.get(PK),
+                                            SK, exclusiveStartKey.get(SK),
+                                            GSI1PK, gsi1pk,
+                                            GSI1SK, exclusiveStartKey.get(GSI1SK)
+                                    ) : null)
+                            .limit(maxResults)
+                            .build();
+                    return client.queryPaginator(request)
+                            .stream()
+                            .filter(QueryResponse::hasItems)
+                            .flatMap(response -> response.items().stream());
+                })
+                // Gather
+                .flatMap(Function.identity())
+                .sorted(Comparator.<Map<String, AttributeValue>, String>comparing(item -> item.get(GSI1SK).s()).reversed())
+                .map(item -> Table.Id.of(item.get(PK).s().replace(TABLE_PREFIX, "")))
+                .limit(maxResults))
+                .collect(Collectors.toList());
+
+        if (!tables.isEmpty()) {
+            var lastTable = tables.get(tables.size() - 1);
+            return new DynamoDbPage<>(tables, ContinuationToken.from(Map.of(
+                    PK, TABLE_PREFIX + lastTable.getId().getId(),
+                    SK, TABLE_PREFIX + lastTable.getId().getId(),
+                    // GSI1PK omitted, because it can be derived from shard
+                    GSI1SK, GSISK.fromTable(lastTable)
+            )));
+        }
+        return new DynamoDbPage<>(Collections.emptyList(), null);
+    }
+
+    /**
+     * @return guarantees same order as input
+     */
+    private Stream<Table> findByIds(Stream<Table.Id> ids) {
+        return Chunked.stream(ids, MAX_BATCH_GET_ITEM_SIZE)
+                .map(chunk -> chunk
+                        .map(id -> Map.of(
+                                PK, Item.s(TABLE_PREFIX + id.getId()),
+                                SK, Item.s(TABLE_PREFIX + id.getId())))
+                        .collect(Collectors.toList()))
+                .flatMap(keys -> {
+                    log.debug("findByIds: {}", keys);
+
+                    var response = client.batchGetItem(BatchGetItemRequest.builder()
+                            .requestItems(Map.of(config.getTableName(),
+                                    KeysAndAttributes.builder()
+                                            .keys(keys)
+                                            .build()))
+                            .build());
+
+                    if (response.hasResponses()) {
+                        var items = response.responses().get(config.getTableName()).stream()
+                                .collect(Collectors.toMap(item -> item.get(PK).s(), Function.identity()));
+                        return keys.stream()
+                                .map(key -> key.get(PK).s())
+                                .map(items::get)
+                                .map(Item::of)
+                                .map(Collections::singletonList)
+                                .map(this::mapToTable);
+                    }
+                    return Stream.empty();
+                });
     }
 
     private void updatePlayerItems(Table table) {
@@ -432,10 +497,10 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         updateItem.setTTL(TTL, table.getExpires().orElse(null));
 
         player.getUserId().ifPresentOrElse(userId -> {
-            updateItem.setString(GSI1SK, GSI1SortKey.fromTable(table));
+            updateItem.setString(GSI1SK, GSISK.fromTable(table));
 
             if (table.isActive()) {
-                updateItem.setString(GSI2SK, GSI2SortKey.fromTable(table));
+                updateItem.setString(GSI2SK, GSISK.fromTable(table));
             } else {
                 updateItem.remove(GSI2PK, GSI2SK);
             }
@@ -458,14 +523,19 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .setString(SK, TABLE_PREFIX + table.getId().getId())
                 .setInt(VERSION, table.getVersion());
 
-        if (table.getStatus() != Table.Status.ABANDONED) {
-            item.setString(GSI1PK, gameIdSharded(table.getGame().getId(), table.getId()))
-                    .setString(GSI1SK, GSI1SortKey.fromTable(table));
+        if (table.getStatus() == Table.Status.ENDED) {
+            item.setString(GSI1PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+            item.setString(GSI1SK, GSISK.fromTable(table));
         }
 
-        if (table.isActive()) {
-            item.setString(GSI2PK, gameIdSharded(table.getGame().getId(), table.getId()));
-            item.setString(GSI2SK, GSI2SortKey.fromTable(table));
+        if (table.getStatus() == Table.Status.STARTED) {
+            item.setString(GSI2PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+            item.setString(GSI2SK, GSISK.fromTable(table));
+        }
+
+        if (table.getStatus() == Table.Status.NEW && table.canJoin()) {
+            item.setString(GSI3PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+            item.setString(GSI3SK, GSISK.fromTable(table));
         }
 
         item.setString("GameId", table.getGame().getId().getId())
@@ -501,11 +571,11 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
         player.getUserId().ifPresent(userId -> {
             item.setString(GSI1PK, USER_PREFIX + userId.getId());
-            item.setString(GSI1SK, GSI1SortKey.fromTable(table));
+            item.setString(GSI1SK, GSISK.fromTable(table));
 
             if (table.isActive()) {
                 item.setString(GSI2PK, USER_PREFIX + userId.getId());
-                item.setString(GSI2SK, GSI2SortKey.fromTable(table));
+                item.setString(GSI2SK, GSISK.fromTable(table));
             }
         });
 
@@ -616,6 +686,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     private Optional<Table.CurrentState> getCurrentState(Table.Id tableId, Game game) {
+        log.debug("getCurrentState: {}", tableId);
+
         var response = client.query(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .keyConditionExpression("PK=:PK AND begins_with(SK,:SK)")
@@ -634,6 +706,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     private Optional<Table.HistoricState> getHistoricState(Table.Id tableId, Instant timestamp, Game game) {
+        log.debug("getHistoricState: {} {}", tableId, timestamp);
+
         var response = client.getItem(GetItemRequest.builder()
                 .tableName(config.getTableName())
                 .key(Map.of(
@@ -660,6 +734,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     private Stream<LogEntry> getLogEntries(Table.Id tableId, Instant since, Instant before, int limit) {
+        log.debug("getLogEntries: {} >={} <{} limit {}", tableId, since, before, limit);
+
         return client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())
                 // Needs to put an upper limit on SK because else it will also return other items like "Player#..." and "State#..."
@@ -750,55 +826,50 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     @Value
-    private static class GSI1SortKey {
+    private static class GSISK {
 
         Table.Id tableId;
         Game.Id gameId;
 
         static String fromTable(Table table) {
-            if (table.getEnded() != null) {
-                return TABLE_PREFIX + table.getEnded().toString() + "#" + table.getGame().getId().getId() + "#" + table.getId().getId();
-            } else if (table.getStarted() != null) {
-                return TABLE_PREFIX + table.getStarted().toString() + "#" + table.getGame().getId().getId() + "#" + table.getId().getId();
-            } else {
-                return TABLE_PREFIX + table.getCreated().toString() + "#" + table.getGame().getId().getId() + "#" + table.getId().getId();
+            // Ascending: ENDED -> ABANDONED -> STARTED -> NEW
+            switch (table.getStatus()) {
+                case ENDED:
+                    return TABLE_PREFIX + "10"
+                            + "#" + table.getEnded().toString()
+                            + "#" + table.getId().getId()
+                            + "#" + table.getGame().getId().getId();
+                case ABANDONED:
+                    return TABLE_PREFIX + "20"
+                            + "#" + (table.getStarted() != null ? table.getStarted().toString() : table.getCreated().toString())
+                            + "#" + table.getId().getId()
+                            + "#" + table.getGame().getId().getId();
+                case STARTED:
+                    return TABLE_PREFIX + "30"
+                            + "#" + table.getStarted().toString()
+                            + "#" + table.getId().getId()
+                            + "#" + table.getGame().getId().getId();
+                case NEW:
+                    return TABLE_PREFIX + "40"
+                            + "#" + table.getCreated().toString()
+                            + "#" + table.getId().getId()
+                            + "#" + table.getGame().getId().getId();
+                default:
+                    throw new IllegalStateException(String.format("Table '%s' not valid status for " + GSI1SK + ": %s", table.getId().getId(), table.getStatus()));
             }
         }
 
-        public static GSI1SortKey parse(String sk) {
+        public static GSISK parse(String sk) {
             if (!sk.startsWith(TABLE_PREFIX)) {
-                throw new IllegalArgumentException("GSI1SK does not contain table ID: " + sk);
+                throw new IllegalArgumentException("Sort key does not start with " + TABLE_PREFIX + ": " + sk);
             }
-            var parts = sk.split("#");
-            return new GSI1SortKey(Table.Id.of(parts[3]), Game.Id.of(parts[2]));
+            var parts = sk.split("#", 5);
+            if (parts.length != 5) {
+                throw new IllegalArgumentException("Sort key not recognized: " + sk);
+            }
+            return new GSISK(Table.Id.of(parts[3]), Game.Id.of(parts[4]));
         }
 
     }
 
-    private static class GSI2SortKey {
-        static String fromTable(Table table) {
-            if (table.canAnyoneJoin()) {
-                return TABLE_PREFIX + "OPEN#" + table.getStarted().toString() + "#" + table.getId().getId();
-            } else {
-                switch (table.getStatus()) {
-                    case NEW:
-                        return TABLE_PREFIX + "NEW#" + table.getCreated().toString() + "#" + table.getId().getId();
-                    case STARTED:
-                        return TABLE_PREFIX + "ASTARTED#" + table.getStarted().toString() + "#" + table.getId().getId();
-                    case ENDED:
-                        return TABLE_PREFIX + table.getEnded().toString() + "#" + table.getId().getId();
-                    default:
-                        throw new IllegalStateException(String.format("Table '%s' not in valid state for GSI2SK: %s" + table.getId().getId(), table.getStatus()));
-                }
-            }
-        }
-
-        static Table.Id toTableId(String sk) {
-            if (!sk.startsWith(TABLE_PREFIX)) {
-                throw new IllegalArgumentException("GSI2SK does not contain table ID: " + sk);
-            }
-            var parts = sk.split("#");
-            return Table.Id.of(parts[parts.length - 1]);
-        }
-    }
 }

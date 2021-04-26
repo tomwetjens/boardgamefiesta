@@ -33,7 +33,7 @@ public class CanaryTest {
 
         tableDynamodbRepository = new TableDynamoDbRepository(games, DynamoDbClient.create(), config);
 
-        var count = tableDynamodbRepository.findAll(Game.Id.of(GWT.ID), 999)
+        var count = tableDynamodbRepository.findEnded(Game.Id.of(GWT.ID), 999)
                 .filter(table -> table.getStatus() == Table.Status.STARTED || table.getStatus() == Table.Status.ENDED)
                 .peek(table -> {
                     System.out.println(table.getId().getId());

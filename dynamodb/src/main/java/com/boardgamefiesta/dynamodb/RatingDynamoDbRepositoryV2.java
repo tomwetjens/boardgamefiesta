@@ -127,11 +127,11 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     public Rating findLatest(User.Id userId, Game.Id gameId, Instant before) {
         return client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())
-                .keyConditionExpression(PK + "=:PK AND begins_with(" + SK + ",:SK) AND " + SK + "<:Before")
+                .keyConditionExpression(PK + "=:PK AND " + SK + " BETWEEN :From AND :To")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(USER_PREFIX + userId.getId()),
-                        ":SK", Item.s(RATING_PREFIX),
-                        ":Before", Item.s(RATING_PREFIX + gameId.getId() + "#" + before)
+                        ":From", Item.s(RATING_PREFIX + gameId.getId() + "#"),
+                        ":To", Item.s(RATING_PREFIX + gameId.getId() + "#" + before)
                 ))
                 .scanIndexForward(false)
                 .limit(1)

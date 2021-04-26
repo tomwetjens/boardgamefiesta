@@ -60,7 +60,7 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findRecent(User.Id userId, int maxResults) {
+    public Stream<Table> findAll(User.Id userId, int maxResults) {
         return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(tableName)
                 .indexName(USER_ID_CREATED_INDEX)
@@ -81,7 +81,7 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findRecent(User.Id userId, Game.Id gameId, int maxResults) {
+    public Stream<Table> findAll(User.Id userId, Game.Id gameId, int maxResults) {
         return dynamoDbClient.queryPaginator(QueryRequest.builder()
                 .tableName(tableName)
                 .indexName(USER_ID_CREATED_INDEX)
@@ -129,7 +129,7 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findAll(Game.Id gameId, int maxResults) {
+    public Stream<Table> findEnded(Game.Id gameId, int maxResults) {
         return dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(tableName)
                 // Filter out the adjacency list items

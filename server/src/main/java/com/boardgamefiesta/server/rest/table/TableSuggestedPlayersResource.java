@@ -46,7 +46,7 @@ public class TableSuggestedPlayersResource {
                 .map(friend -> friend.getId().getOtherUserId())
                 .collect(Collectors.toSet());
 
-        var recentlyPlayedWith = tables.findRecent(currentUserId, table.getGame().getId(), 10)
+        var recentlyPlayedWith = tables.findAll(currentUserId, table.getGame().getId(), 10)
                 .map(Table::getPlayers).flatMap(Collection::stream)
                 .filter(Player::isPlaying)
                 .flatMap(player -> player.getUserId().stream())

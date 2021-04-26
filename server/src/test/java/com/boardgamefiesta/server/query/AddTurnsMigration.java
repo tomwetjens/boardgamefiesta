@@ -4,7 +4,6 @@ import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.RatingAdjuster;
 import com.boardgamefiesta.domain.rating.Ratings;
 import com.boardgamefiesta.domain.table.LogEntry;
-import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
@@ -53,7 +52,7 @@ public class AddTurnsMigration {
 
     @Test
     void run() {
-        tables.findAll(com.boardgamefiesta.domain.game.Game.Id.of(GWT.ID), 9999999)
+        tables.findEnded(com.boardgamefiesta.domain.game.Game.Id.of(GWT.ID), 9999999)
 //        tables.findById(Table.Id.of("5ed2c957-4905-4d5f-b5d6-cc5776bcda10")).stream()
                 .filter(table -> table.getGame().getId().getId().equals(GWT.ID))
 //                .limit(100)

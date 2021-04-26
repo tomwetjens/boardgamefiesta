@@ -2,9 +2,6 @@ package com.boardgamefiesta.dynamodb;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.testcontainers.dynamodb.DynaliteContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -12,6 +9,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.net.URI;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.lenient;
 
@@ -29,6 +28,8 @@ abstract class BaseDynamoDbRepositoryTest {
     @BeforeAll
     static void beforeAll() {
         config.setTableName(TABLE_NAME);
+        config.setReadGameIdShards(2);
+        config.setWriteGameIdShards(2);
 
         dynamoDbClient = DynamoDbClient.create();
         dynamoDbClient = DynamoDbClient.builder()
@@ -40,9 +41,24 @@ abstract class BaseDynamoDbRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(config.getTableName()).thenReturn(TABLE_NAME);
-        lenient().when(config.getReadGameIdShards()).thenReturn(2);
-        lenient().when(config.getWriteGameIdShards()).thenReturn(2);
+        deleteAll();
+    }
+
+    private static void deleteAll() {
+        Chunked.stream(dynamoDbClient.scanPaginator(ScanRequest.builder()
+                .tableName(TABLE_NAME)
+                .build())
+                .items().stream()
+                .map(item -> Map.of("PK", item.get("PK"), "SK", item.get("SK")))
+                .map(key -> WriteRequest.builder()
+                        .deleteRequest(DeleteRequest.builder()
+                                .key(key)
+                                .build())
+                        .build()), 25)
+                .map(writeRequests -> BatchWriteItemRequest.builder()
+                        .requestItems(Map.of(TABLE_NAME, writeRequests.collect(Collectors.toList())))
+                        .build())
+                .forEach(dynamoDbClient::batchWriteItem);
     }
 
     private static void createTable() {

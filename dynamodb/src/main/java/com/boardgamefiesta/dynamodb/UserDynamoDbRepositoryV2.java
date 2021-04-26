@@ -26,11 +26,11 @@ import java.util.stream.Stream;
  * <p>
  * GSI2: search by e-mail address (exact)
  * GSI2PK=User#<email_lowercase>
- * GSI2SK=User#<username>
+ * GSI2SK=User#<email_lowercase>
  * <p>
- * GSI3: by Cognito username
+ * GSI3: by Cognito username (exact)
  * GSI3PK=User#<cognito:username>
- * GSI3SK=User#<username>
+ * GSI3SK=User#<cognito:username>
  */
 //@ApplicationScoped
 @Slf4j

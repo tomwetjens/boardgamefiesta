@@ -38,7 +38,7 @@ public class Item {
     }
 
     public static AttributeValue ttl(Instant value) {
-        return n(value.getEpochSecond());
+        return value != null ? n(value.getEpochSecond()) : NUL;
     }
 
     public static AttributeValue n(long value) {
