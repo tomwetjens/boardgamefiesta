@@ -2,10 +2,7 @@ package com.boardgamefiesta.api.domain;
 
 import lombok.NonNull;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 public interface State {
     void perform(Player player, Action action, Random random);
@@ -19,16 +16,14 @@ public interface State {
     void endTurn(Player player, Random random);
 
     /**
-     *
      * @return players in order (that are still playing, not including players that left)
      */
     List<Player> getPlayerOrder();
 
     /**
-     *
-     * @return including players that left during the game
+     * @return all original players (at start of the game, including that left during the game), in original order
      */
-    Set<Player> getPlayers();
+    Collection<Player> getPlayers();
 
     Optional<Integer> score(Player player);
 
