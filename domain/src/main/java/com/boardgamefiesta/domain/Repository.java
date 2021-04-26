@@ -2,7 +2,15 @@ package com.boardgamefiesta.domain;
 
 import com.boardgamefiesta.domain.exception.DomainException;
 
+import java.util.stream.Stream;
+
 public interface Repository extends DomainService {
+
+    interface Page<T> {
+        Stream<T> stream();
+
+        String getContinuationToken();
+    }
 
     abstract class DuplicateException extends AggregateRoot.InvalidCommandException {
         protected DuplicateException(String errorCode) {

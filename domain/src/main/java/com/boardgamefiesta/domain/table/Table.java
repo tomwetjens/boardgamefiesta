@@ -690,7 +690,7 @@ public class Table implements AggregateRoot {
                 .orElse(false);
     }
 
-    public boolean canAnyoneJoin() {
+    public boolean canJoin() {
         return status == Status.NEW
                 && visibility == Visibility.PUBLIC
                 && players.size() < game.getMaxNumberOfPlayers();

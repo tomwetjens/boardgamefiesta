@@ -21,11 +21,30 @@ public interface Tables extends Repository {
 
     Stream<Table> findActive(User.Id userId);
 
-    Stream<Table> findRecent(User.Id userId, int maxResults);
+    /**
+     *
+     * @param userId
+     * @param maxResults min 1, max 100
+     * @return
+     */
+    Stream<Table> findAll(User.Id userId, int maxResults);
 
-    Stream<Table> findRecent(User.Id userId, Game.Id gameId, int maxResults);
+    /**
+     *
+     * @param userId
+     * @param gameId
+     * @param maxResults min 1, max 100
+     * @return
+     */
+    Stream<Table> findAll(User.Id userId, Game.Id gameId, int maxResults);
 
-    Stream<Table> findAll(Game.Id gameId, int maxResults);
+    /**
+     *
+     * @param gameId
+     * @param maxResults min 1, max 100
+     * @return
+     */
+    Stream<Table> findEnded(Game.Id gameId, int maxResults);
 
     final class ExceedsMaxRealtimeGames extends AggregateRoot.InvalidCommandException {
         public ExceedsMaxRealtimeGames() {
