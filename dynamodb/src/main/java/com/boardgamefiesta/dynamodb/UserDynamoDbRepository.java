@@ -79,7 +79,7 @@ public class UserDynamoDbRepository implements Users {
     }
 
     @Override
-    public Optional<User.Id> findByCognitoUsername(String cognitoUsername) {
+    public Optional<User.Id> findIdByCognitoUsername(String cognitoUsername) {
         return findFullByCognitoUsername(cognitoUsername).map(User::getId);
     }
 

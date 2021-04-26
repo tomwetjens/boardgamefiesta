@@ -13,7 +13,7 @@ public interface Users extends Repository {
 
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
-    Optional<User.Id> findByCognitoUsername(String cognitoUsername);
+    Optional<User.Id> findIdByCognitoUsername(String cognitoUsername);
 
     void add(User user);
 

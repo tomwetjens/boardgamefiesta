@@ -11,7 +11,7 @@ class CurrentUser {
 
     static Optional<User.Id> getUserId(Session session, Users users) {
         return currentUserPrincipalName(session)
-                .flatMap(users::findByCognitoUsername);
+                .flatMap(users::findIdByCognitoUsername);
     }
 
     private static Optional<String> currentUserPrincipalName(Session session) {

@@ -155,7 +155,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
     }
 
     @Override
-    public Optional<User.Id> findByCognitoUsername(String cognitoUsername) {
+    public Optional<User.Id> findIdByCognitoUsername(String cognitoUsername) {
         var response = client.query(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .indexName(GSI3)
@@ -199,9 +199,9 @@ public class UserDynamoDbRepositoryV2 implements Users {
                         .setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
                         .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
                         .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
-                        .setString(GSI2SK, USER_PREFIX + user.getUsername().toLowerCase())
+                        .setString(GSI2SK, USER_PREFIX + user.getEmail().toLowerCase())
                         .setString(GSI3PK, USER_PREFIX + user.getCognitoUsername())
-                        .setString(GSI3SK, USER_PREFIX + user.getUsername().toLowerCase())
+                        .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername())
                         .asMap())
                 .build());
     }
@@ -226,9 +226,9 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
                 .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
                 .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
-                .setString(GSI2SK, USER_PREFIX + user.getUsername().toLowerCase())
+                .setString(GSI2SK, USER_PREFIX + user.getEmail().toLowerCase())
                 .setString(GSI3PK, USER_PREFIX + user.getCognitoUsername())
-                .setString(GSI3SK, USER_PREFIX + user.getUsername().toLowerCase());
+                .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername());
 
         updateItem.expressionAttributeValue(":ExpectedVersion", Item.n(user.getVersion()));
 

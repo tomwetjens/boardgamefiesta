@@ -36,7 +36,7 @@ public class PostConfirmationHandler implements RequestHandler<PostConfirmationE
 
             var email = event.getRequest().getUserAttributes().get("email");
 
-            if (users.findByCognitoUsername(event.getUserName()).isEmpty()) {
+            if (users.findIdByCognitoUsername(event.getUserName()).isEmpty()) {
                 User user = User.createAutomatically(event.getUserName(), email);
 
                 users.add(user);

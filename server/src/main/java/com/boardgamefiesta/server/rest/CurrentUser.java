@@ -24,7 +24,7 @@ public class CurrentUser {
         if (id == null) {
             var principalName = currentPrincipalName();
 
-            id = users.findByCognitoUsername(principalName)
+            id = users.findIdByCognitoUsername(principalName)
                     .orElseThrow(() -> new NotAuthorizedException("User not found"));
         }
         return id;
