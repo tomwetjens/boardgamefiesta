@@ -21,6 +21,8 @@ class UserDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        super.setUp();
+
         repository = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
     }
 
