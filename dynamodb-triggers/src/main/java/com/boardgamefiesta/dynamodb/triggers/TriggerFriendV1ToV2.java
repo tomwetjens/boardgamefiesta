@@ -34,8 +34,8 @@ public class TriggerFriendV1ToV2 extends DynamoDbTrigger {
     }
 
     @Override
-    void handleRemove(Map<String, AttributeValue> item) {
-        var friend = friendDynamoDbRepository.mapItemToFriend(item);
+    void handleRemove(Map<String, AttributeValue> key) {
+        var friend = friendDynamoDbRepository.mapItemToFriend(key);
         friendDynamoDbRepositoryV2.delete(friend.getId());
     }
 }

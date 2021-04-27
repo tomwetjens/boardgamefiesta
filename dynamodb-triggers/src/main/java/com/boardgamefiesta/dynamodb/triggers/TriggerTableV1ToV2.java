@@ -43,9 +43,9 @@ public class TriggerTableV1ToV2 extends DynamoDbTrigger {
     }
 
     @Override
-    void handleRemove(Map<String, AttributeValue> item) {
-        if (isTable(item)) { // Ignore adjacency list items
-            tableDynamoDbRepositoryV2.delete(Table.Id.of(item.get("Id").s()));
+    void handleRemove(Map<String, AttributeValue> key) {
+        if (isTable(key)) { // Ignore adjacency list items
+            tableDynamoDbRepositoryV2.delete(Table.Id.of(key.get("Id").s()));
         }
     }
 

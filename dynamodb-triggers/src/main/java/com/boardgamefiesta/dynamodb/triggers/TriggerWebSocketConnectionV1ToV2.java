@@ -36,7 +36,7 @@ public class TriggerWebSocketConnectionV1ToV2 extends DynamoDbTrigger {
     }
 
     @Override
-    void handleRemove(Map<String, AttributeValue> item) {
-        webSocketConnectionDynamoDbRepositoryV2.remove(item.get("Id").s());
+    void handleRemove(Map<String, AttributeValue> key) {
+        webSocketConnectionDynamoDbRepositoryV2.remove(key.get("Id").s());
     }
 }

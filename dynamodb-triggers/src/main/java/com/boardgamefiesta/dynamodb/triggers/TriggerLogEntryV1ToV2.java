@@ -48,7 +48,7 @@ public class TriggerLogEntryV1ToV2 extends DynamoDbTrigger{
     }
 
     @Override
-    void handleRemove(Map<String, AttributeValue> item) {
+    void handleRemove(Map<String, AttributeValue> key) {
         // Not implemented
     }
 }

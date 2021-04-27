@@ -42,8 +42,8 @@ abstract class DynamoDbTrigger implements RequestStreamHandler {
                     handleModify(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
                     break;
                 case REMOVE:
-                    log.info("REMOVE: {}", record.getDynamodb().getNewImage());
-                    handleRemove(AttributeValues.toClientModel(record.getDynamodb().getNewImage()));
+                    log.info("REMOVE: {}", record.getDynamodb().getKeys());
+                    handleRemove(AttributeValues.toClientModel(record.getDynamodb().getKeys()));
                     break;
             }
         });
@@ -53,5 +53,5 @@ abstract class DynamoDbTrigger implements RequestStreamHandler {
 
     abstract void handleModify(Map<String, AttributeValue> item);
 
-    abstract void handleRemove(Map<String, AttributeValue> item);
+    abstract void handleRemove(Map<String, AttributeValue> key);
 }
