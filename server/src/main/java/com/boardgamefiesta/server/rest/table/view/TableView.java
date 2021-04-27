@@ -110,7 +110,11 @@ public class TableView {
             this.currentPlayer = !currentPlayers.isEmpty() ? currentPlayers.iterator().next().getId().getId() : null;
 
             this.currentPlayers = table.getCurrentPlayers().stream().map(Player::getId).map(Player.Id::getId).collect(Collectors.toSet());
-            this.canUndo = table.canUndo();
+
+
+            this.canUndo = true;
+            // TODO Replace with something more efficient, as Table#canUndo now has to load the entire state
+//            this.canUndo = table.canUndo();
         } else {
             this.turn = null;
             this.currentPlayer = null;
