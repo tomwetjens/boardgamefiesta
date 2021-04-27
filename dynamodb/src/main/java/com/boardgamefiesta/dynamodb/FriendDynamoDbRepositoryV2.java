@@ -70,8 +70,10 @@ public class FriendDynamoDbRepositoryV2 implements Friends {
     public Stream<Friend> findByUserId(User.Id userId, int maxResults) {
         return client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())
-                .keyConditionExpression(PK + "=:PK")
-                .expressionAttributeValues(Map.of(":PK", Item.s(USER_PREFIX + userId.getId())))
+                .keyConditionExpression(PK + "=:PK AND begins_with(" + SK + ",:SK)")
+                .expressionAttributeValues(Map.of(
+                        ":PK", Item.s(USER_PREFIX + userId.getId()),
+                        ":SK", Item.s(FRIEND_PREFIX)))
                 .limit(maxResults)
                 .build())
                 .items().stream()

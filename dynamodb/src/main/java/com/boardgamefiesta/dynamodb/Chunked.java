@@ -5,7 +5,7 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-final class Chunked {
+public final class Chunked {
 
     /**
      * Collector for Java Stream API that divides the stream into chunks.
@@ -37,7 +37,7 @@ final class Chunked {
         });
     }
 
-    static <T> Stream<Stream<T>> stream(Stream<T> source, int chunkSize) {
+    public static <T> Stream<Stream<T>> stream(Stream<T> source, int chunkSize) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
                 new ChunkingIterator<T>(source.iterator(), chunkSize), Spliterator.ORDERED), false);
     }

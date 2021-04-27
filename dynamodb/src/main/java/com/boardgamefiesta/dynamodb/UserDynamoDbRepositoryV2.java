@@ -121,7 +121,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .indexName(GSI1)
                 .keyConditionExpression(GSI1PK + "=:PK AND " + GSI1SK + "=:SK")
                 .expressionAttributeValues(Map.of(
-                        ":PK", Item.s(USER_PREFIX + username.substring(0, 3)),
+                        ":PK", Item.s(USER_PREFIX + username.substring(0, 3).toLowerCase()),
                         ":SK", Item.s(USER_PREFIX + username.toLowerCase())
                 ))
                 .build());

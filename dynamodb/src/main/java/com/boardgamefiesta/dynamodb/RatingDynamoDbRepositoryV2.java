@@ -53,6 +53,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     private static final String USER_PREFIX = "User#";
     private static final String TABLE_PREFIX = "Table#";
     private static final String RATING_PREFIX = "Rating#";
+    private static final String RANKING_PREFIX = "Ranking#";
 
     private final DynamoDbClient client;
     private final DynamoDbConfiguration config;
@@ -70,10 +71,11 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
                 .tableName(config.getTableName())
                 .keyConditionExpression(PK + "=:PK AND " + SK + " BETWEEN :From AND :To")
                 .expressionAttributeValues(Map.of(
-                        ":PK", Item.s(USER_PREFIX + "#" + userId.getId()),
+                        ":PK", Item.s(USER_PREFIX + userId.getId()),
                         ":From", Item.s(RATING_PREFIX + gameId.getId() + "#" + from),
-                        ":To", Item.s(RATING_PREFIX + gameId.getId() + "#" + from)
+                        ":To", Item.s(RATING_PREFIX + gameId.getId() + "#" + to)
                 ))
+                .scanIndexForward(false)
                 .build())
                 .items().stream()
                 .map(Item::of)
@@ -86,7 +88,10 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
         return Rating.builder()
                 .userId(User.Id.of(pk[1]))
                 .gameId(Game.Id.of(sk[1]))
-                .timestamp(item.getInstant(sk[2]))
+                .tableId(item.getOptionalString(GSI1PK)
+                        .map(gsi1pk -> Table.Id.of(gsi1pk.replace(TABLE_PREFIX, "")))
+                        .orElse(null))
+                .timestamp(Instant.parse(sk[2]))
                 .rating(item.getInt("Rating"))
                 .deltas(mapToDeltas(item.getMap("Deltas")))
                 .build();
@@ -118,7 +123,12 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
                 .build());
 
         if (response.hasItems() && !response.items().isEmpty()) {
-            return Optional.of(mapToRating(Item.of(response.items().get(0))));
+            var item = response.items().get(0);
+            return Optional.of(mapToRating(Item.of(client.getItem(GetItemRequest.builder()
+                    .tableName(config.getTableName())
+                    .key(Map.of(PK, item.get(PK), SK, item.get(SK)))
+                    .build())
+                    .item())));
         }
         return Optional.empty();
     }
@@ -163,7 +173,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
                                                                 // 1. By rating, with leading zeros (because of lexicographical sorting)
                                                                 // 2. Then by timestamp, in case 2 users have the same rating
                                                                 // 3. Then by user id, to make it guaranteed unique, in case 2 users have the same rating at the same time
-                                                                .setString(GSI1SK, String.format(Locale.ENGLISH, "%05d#%s#%s",
+                                                                .setString(GSI1SK, RANKING_PREFIX + String.format(Locale.ENGLISH, "%05d#%s#%s",
                                                                         rating.getRating(),
                                                                         rating.getTimestamp().toString(),
                                                                         rating.getUserId().getId()))
@@ -193,23 +203,28 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     @Override
     public Stream<Ranking> findRanking(Game.Id gameId, int maxResults) {
         // Scatter-gather across shards
-        return IntStream.rangeClosed(0, config.getReadGameIdShards())
+        return IntStream.range(0, config.getReadGameIdShards())
                 .parallel()
                 .mapToObj(shard -> client.queryPaginator(QueryRequest.builder()
                         .tableName(config.getTableName())
                         .indexName(GSI1)
-                        .keyConditionExpression(GSI1PK + "=:PK")
+                        .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
                         .expressionAttributeValues(Map.of(
-                                ":PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard)
+                                ":GSI1PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                ":GSI1SK", Item.s(RANKING_PREFIX)
                         ))
                         .scanIndexForward(false)
                         .limit(maxResults)
                         .build())
-                        .items().stream()
-                        .map(Item::of))
+                        .stream()
+                        .filter(QueryResponse::hasItems)
+                        .flatMap(response -> response.items().stream())
+                        .map(Item::of)
+                        .limit(maxResults))
                 .flatMap(Function.identity())
                 .sorted(Comparator.<Item, String>comparing(item -> item.getString(GSI1SK)).reversed())
-                .map(this::mapToRanking);
+                .map(this::mapToRanking)
+                .limit(maxResults);
     }
 
     private Ranking mapToRanking(Item item) {
@@ -217,8 +232,8 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
         var sk = item.getString(GSI1SK).split("#");
         return Ranking.builder()
                 .gameId(Game.Id.of(pk[1]))
-                .userId(User.Id.of(sk[2]))
-                .rating(Integer.parseInt(sk[0]))
+                .rating(Integer.parseInt(sk[1]))
+                .userId(User.Id.of(sk[3]))
                 .build();
     }
 }
