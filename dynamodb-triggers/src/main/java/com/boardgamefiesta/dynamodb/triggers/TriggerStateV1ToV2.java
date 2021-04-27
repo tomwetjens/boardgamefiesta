@@ -29,6 +29,15 @@ public class TriggerStateV1ToV2 extends DynamoDbTrigger {
 
     @Override
     void handleInsert(Map<String, AttributeValue> item) {
+        Map<String, AttributeValue> newItem = migrate(item);
+
+        client.putItem(PutItemRequest.builder()
+                .tableName(config.getTableName())
+                .item(newItem)
+                .build());
+    }
+
+    Map<String, AttributeValue> migrate(Map<String, AttributeValue> item) {
         var tableId = Table.Id.of(item.get("TableId").s());
         var timestamp = Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n()));
 
@@ -41,11 +50,7 @@ public class TriggerStateV1ToV2 extends DynamoDbTrigger {
         var state = item.get("State");
 
         var newItem = TableDynamoDbRepositoryV2.mapItemFromState(tableId, timestamp, previousTimestamp, state);
-
-        client.putItem(PutItemRequest.builder()
-                .tableName(config.getTableName())
-                .item(newItem)
-                .build());
+        return newItem;
     }
 
     @Override
