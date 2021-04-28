@@ -2,7 +2,6 @@ package com.boardgamefiesta.cognito;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.boardgamefiesta.domain.exception.DomainException;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
@@ -50,7 +49,8 @@ public class PostConfirmationHandler implements RequestHandler<PostConfirmationE
             }
 
             return event;
-        } catch (DomainException e) {
+        } catch (Users.EmailAlreadyInUse e) {
+            // Do not hide useful exception
             throw e;
         } catch (RuntimeException e) {
             // Any other error, hide details from client

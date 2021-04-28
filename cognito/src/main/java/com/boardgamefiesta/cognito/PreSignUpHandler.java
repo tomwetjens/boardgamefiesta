@@ -42,7 +42,8 @@ public class PreSignUpHandler implements RequestHandler<PreSignUpEvent, PreSignU
             event.setResponse(response);
 
             return event;
-        } catch (DomainException e) {
+        } catch (Users.EmailAlreadyInUse | User.UsernameTooShort | User.UsernameTooLong | User.UsernameForbidden | User.UsernameInvalidChars e) {
+            // Do not hide useful exceptions
             throw e;
         } catch (RuntimeException e) {
             // Any other error, hide details from client
