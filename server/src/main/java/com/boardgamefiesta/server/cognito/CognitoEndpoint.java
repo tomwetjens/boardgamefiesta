@@ -56,6 +56,9 @@ public class CognitoEndpoint {
             var response = new PreSignUpResponse();
             log.info("Returning from Pre Sign-up trigger: {}", response);
             return response;
+        } catch (Users.EmailAlreadyInUse | User.UsernameTooShort | User.UsernameTooLong | User.UsernameForbidden | User.UsernameInvalidChars e) {
+            // Do not hide useful exceptions
+            throw e;
         } catch (RuntimeException e) {
             // Any other error, hide details from client
             log.error("Error occurred in Pre Sign-up trigger: {}", e.getMessage(), e);
@@ -83,8 +86,8 @@ public class CognitoEndpoint {
                         .groupName(DEFAULT_GROUP)
                         .build());
             }
-        } catch (APIException e) {
-            // Do not wrap API exceptions
+        } catch (Users.EmailAlreadyInUse e) {
+            // Do not hide useful exceptions
             throw e;
         } catch (RuntimeException e) {
             // Any other error, hide details from client

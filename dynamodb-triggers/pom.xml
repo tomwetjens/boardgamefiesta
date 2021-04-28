@@ -131,6 +131,10 @@
             <artifactId>quarkus-test-amazon-lambda</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
