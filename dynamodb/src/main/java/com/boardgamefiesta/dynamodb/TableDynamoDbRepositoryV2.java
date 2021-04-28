@@ -367,10 +367,19 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     @Override
     public Stream<Table> findEnded(Game.Id gameId, int maxResults) {
-        return findEnded(gameId, maxResults, null).stream();
+        return findEnded(gameId, Instant.ofEpochSecond(0L), maxResults, null).stream();
     }
 
-    public Page<Table> findEnded(Game.Id gameId, int maxResults, String continuationToken) {
+    @Override
+    public Stream<Table> findRecentlyEnded(Game.Id gameId, Instant from, int maxResults) {
+        return findEnded(gameId, from, maxResults, null).stream();
+    }
+
+    public Page<Table> findEnded(Game.Id gameId,  int maxResults, String continuationToken) {
+        return findEnded(gameId, Instant.ofEpochSecond(0L), maxResults, null);
+    }
+
+    public Page<Table> findEnded(Game.Id gameId, Instant from, int maxResults, String continuationToken) {
         var exclusiveStartKey = continuationToken != null ? ContinuationToken.parse(continuationToken) : null;
         var tables = findByIds(IntStream.range(0, config.getReadGameIdShards())
                 // Scatter
@@ -381,10 +390,10 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                             .tableName(config.getTableName())
                             .indexName(GSI1)
                             .scanIndexForward(false)
-                            .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
+                            .keyConditionExpression(GSI1PK + "=:GSI1PK AND " + GSI1SK + ">=:GSI1SK")
                             .expressionAttributeValues(Map.of(
                                     ":GSI1PK", gsi1pk,
-                                    ":GSI1SK", Item.s(TABLE_PREFIX)
+                                    ":GSI1SK", Item.s(GSISK.partial(Table.Status.ENDED, from))
                             ))
                             .exclusiveStartKey(exclusiveStartKey != null ?
                                     Map.of(
@@ -395,6 +404,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                                     ) : null)
                             .limit(maxResults)
                             .build();
+                    System.out.println(request);
                     return client.queryPaginator(request)
                             .stream()
                             .filter(QueryResponse::hasItems)
@@ -832,30 +842,44 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         Game.Id gameId;
 
         static String fromTable(Table table) {
-            // Ascending: ENDED -> ABANDONED -> STARTED -> NEW
             switch (table.getStatus()) {
                 case ENDED:
-                    return TABLE_PREFIX + "10"
-                            + "#" + table.getEnded().toString()
-                            + "#" + table.getId().getId()
-                            + "#" + table.getGame().getId().getId();
+                    return from(table.getId(), table.getStatus(), table.getEnded(), table.getGame().getId());
                 case ABANDONED:
-                    return TABLE_PREFIX + "20"
-                            + "#" + (table.getStarted() != null ? table.getStarted().toString() : table.getCreated().toString())
-                            + "#" + table.getId().getId()
-                            + "#" + table.getGame().getId().getId();
+                    return from(table.getId(), table.getStatus(), table.getStarted() != null ? table.getStarted() : table.getCreated(), table.getGame().getId());
                 case STARTED:
-                    return TABLE_PREFIX + "30"
-                            + "#" + table.getStarted().toString()
-                            + "#" + table.getId().getId()
-                            + "#" + table.getGame().getId().getId();
+                    return from(table.getId(), table.getStatus(), table.getStarted(), table.getGame().getId());
                 case NEW:
-                    return TABLE_PREFIX + "40"
-                            + "#" + table.getCreated().toString()
-                            + "#" + table.getId().getId()
-                            + "#" + table.getGame().getId().getId();
+                    return from(table.getId(), table.getStatus(), table.getCreated(), table.getGame().getId());
                 default:
-                    throw new IllegalStateException(String.format("Table '%s' not valid status for " + GSI1SK + ": %s", table.getId().getId(), table.getStatus()));
+                    throw new IllegalStateException(String.format("Table '%s' not in valid status for " + GSI1SK + ": %s", table.getId().getId(), table.getStatus()));
+            }
+        }
+
+        public static String from(Table.Id tableId, Table.Status status, Instant timestamp, Game.Id gameId) {
+            return partial(status, timestamp)
+                    + "#" + tableId.getId()
+                    + "#" + gameId.getId();
+        }
+
+        public static String partial(Table.Status status, Instant timestamp) {
+            return TABLE_PREFIX + orderFromStatus(status)
+                    + "#" + timestamp.toString();
+        }
+
+        private static String orderFromStatus(Table.Status status) {
+            // Ascending: ENDED -> ABANDONED -> STARTED -> NEW
+            switch (status) {
+                case ENDED:
+                    return "10";
+                case ABANDONED:
+                    return "20";
+                case STARTED:
+                    return "30";
+                case NEW:
+                    return "40";
+                default:
+                    throw new IllegalStateException(String.format("Not valid status for " + GSI1SK + ": %s", status));
             }
         }
 

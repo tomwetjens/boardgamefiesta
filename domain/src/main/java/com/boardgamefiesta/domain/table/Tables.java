@@ -5,6 +5,7 @@ import com.boardgamefiesta.domain.Repository;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.user.User;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -45,6 +46,14 @@ public interface Tables extends Repository {
      * @return
      */
     Stream<Table> findEnded(Game.Id gameId, int maxResults);
+
+    /**
+     *
+     * @param gameId
+     * @param maxResults min 1, max 100
+     * @return
+     */
+    Stream<Table> findRecentlyEnded(Game.Id gameId, Instant from, int maxResults);
 
     final class ExceedsMaxRealtimeGames extends AggregateRoot.InvalidCommandException {
         public ExceedsMaxRealtimeGames() {

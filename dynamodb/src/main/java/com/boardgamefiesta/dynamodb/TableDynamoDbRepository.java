@@ -143,6 +143,11 @@ public class TableDynamoDbRepository implements Tables {
                 .map(this::mapToTable);
     }
 
+    @Override
+    public Stream<Table> findRecentlyEnded(Game.Id gameId, Instant from, int maxResults) {
+        throw new UnsupportedOperationException();
+    }
+
     private Stream<Map<String, AttributeValue>> getTables(Set<Table.Id> ids) {
         if (ids.isEmpty()) {
             return Stream.empty();

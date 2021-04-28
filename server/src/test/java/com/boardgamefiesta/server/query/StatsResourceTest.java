@@ -1,15 +1,12 @@
 package com.boardgamefiesta.server.query;
 
 import com.boardgamefiesta.domain.game.Games;
-import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
-import com.boardgamefiesta.dynamodb.TableDynamoDbRepository;
-import com.boardgamefiesta.dynamodb.UserDynamoDbRepository;
+import com.boardgamefiesta.dynamodb.*;
 import com.boardgamefiesta.server.rest.game.StatsResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
@@ -17,10 +14,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Optional;
+import java.time.Instant;
 import java.util.regex.Pattern;
-
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @Disabled
@@ -28,8 +23,7 @@ class StatsResourceTest {
 
     static final Pattern FILE_NAME_PATTERN = Pattern.compile("filename=\"([^\"]+)\"");
 
-    @Mock
-    DynamoDbConfiguration config;
+    DynamoDbConfiguration config = new DynamoDbConfiguration();
 
     Games games = new Games();
 
@@ -37,18 +31,22 @@ class StatsResourceTest {
 
     @BeforeEach
     void setUp() {
-        when(config.getTableSuffix()).thenReturn(Optional.of(""));
+        config.setTableName("boardgamefiesta-prod");
+        config.setReadGameIdShards(2);
+        config.setWriteGameIdShards(2);
 
         var dynamoDbClient = DynamoDbClient.create();
-        var tables = new TableDynamoDbRepository(games, dynamoDbClient, config);
-        var users = new UserDynamoDbRepository(dynamoDbClient, config);
+        var tables = new TableDynamoDbRepositoryV2(games, dynamoDbClient, config);
+        var users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
+        var ratings = new RatingDynamoDbRepositoryV2(dynamoDbClient, config);
 
-        statsResource = new StatsResource(tables, users);
+        statsResource = new StatsResource(tables, users, ratings);
     }
 
     @Test
-    void gwt() throws Exception{
-        var response = statsResource.get("gwt");
+    void gwt() throws Exception {
+        var from = Instant.parse("2021-04-21T00:00:00.000Z");
+        var response = statsResource.get("gwt", from);
         var streamingOutput = (StreamingOutput) response.getEntity();
 
         var fileName = extractFileName(response);
