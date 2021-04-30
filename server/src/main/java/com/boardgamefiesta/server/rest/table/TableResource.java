@@ -5,6 +5,7 @@ import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.Rating;
 import com.boardgamefiesta.domain.rating.Ratings;
+import com.boardgamefiesta.domain.table.Lazy;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
@@ -83,8 +84,6 @@ public class TableResource {
     public TableView get(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id))
                 .orElseThrow(NotFoundException::new);
-
-        checkViewAllowed(table);
 
         return new TableView(table, getUserMap(table), getRatingMap(table), currentUser.getId());
     }
@@ -293,8 +292,6 @@ public class TableResource {
         var table = tables.findById(Table.Id.of(id))
                 .orElseThrow(NotFoundException::new);
 
-        checkViewAllowed(table);
-
         var state = table.getState();
 
         if (state == null) {
@@ -316,28 +313,24 @@ public class TableResource {
                                      @QueryParam("since") String since,
                                      @QueryParam("before") String before,
                                      @QueryParam("limit") Integer requestedLimit) {
-        var table = tables.findById(Table.Id.of(id))
-                .orElseThrow(NotFoundException::new);
-
-        checkViewAllowed(table);
+        var tableId = Table.Id.of(id);
+        // Only retrieve table if log entry does not contain enough information (mostly older log entries)
+        var table = Lazy.defer(() -> tables.findById(tableId).orElseThrow(NotFoundException::new));
 
         var userMap = new HashMap<User.Id, User>();
 
         var limit = requestedLimit != null ? requestedLimit : 2000;
 
-        if (since != null) {
-            return table.getLog().since(Instant.parse(since), limit)
-                    .map(logEntry -> new LogEntryView(table, logEntry,
-                            userId -> userMap.computeIfAbsent(userId, k -> this.users.findById(userId).orElse(null))))
-                    .collect(Collectors.toList());
-        } else if (before != null) {
-            return table.getLog().before(Instant.parse(before), limit)
-                    .map(logEntry -> new LogEntryView(table, logEntry,
-                            userId -> userMap.computeIfAbsent(userId, k -> this.users.findById(userId).orElse(null))))
-                    .collect(Collectors.toList());
-        } else {
+        if (since == null && before == null) {
             throw new BadRequestException();
         }
+
+        return tables.findLogEntries(tableId,
+                since != null ? Instant.parse(since) : Instant.ofEpochSecond(0),
+                before != null ? Instant.parse(before) : Instant.now(), limit)
+                .map(logEntry -> new LogEntryView(table::get, logEntry,
+                        userId -> userMap.computeIfAbsent(userId, k -> this.users.findById(userId).orElse(null))))
+                .collect(Collectors.toList());
     }
 
     private Table handleConcurrentModification(Table.Id id, Consumer<Table> modifier) {
@@ -377,10 +370,6 @@ public class TableResource {
         var currentUserId = currentUser.getId();
 
         return table.getPlayerByUserId(currentUserId);
-    }
-
-    private void checkViewAllowed(Table table) {
-        // Nothing
     }
 
     private void checkTurn(Table table, Player player) {
