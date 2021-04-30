@@ -7,6 +7,7 @@ import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.gwt.GWT;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+@Disabled // Disabled because 'too many requests' pulling Docker image on AWS CodeBuild
 @ExtendWith(MockitoExtension.class)
 class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 

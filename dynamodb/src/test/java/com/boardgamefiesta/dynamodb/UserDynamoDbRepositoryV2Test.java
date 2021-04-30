@@ -3,6 +3,7 @@ package com.boardgamefiesta.dynamodb;
 import com.boardgamefiesta.domain.Repository;
 import com.boardgamefiesta.domain.user.User;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Disabled // Disabled because 'too many requests' pulling Docker image on AWS CodeBuild
 class UserDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
     static final User.Id USER_ID_A = User.Id.of(UUID.randomUUID().toString());
