@@ -37,15 +37,15 @@ class StatsResourceTest {
 
         var dynamoDbClient = DynamoDbClient.create();
         var tables = new TableDynamoDbRepositoryV2(games, dynamoDbClient, config);
-        var users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
-        var ratings = new RatingDynamoDbRepositoryV2(dynamoDbClient, config);
+        var users = new UserDynamoDbRepository(dynamoDbClient, config);
+        var ratings = new RatingDynamoDbRepository(dynamoDbClient, config);
 
         statsResource = new StatsResource(tables, users, ratings);
     }
 
     @Test
     void gwt() throws Exception {
-        var from = Instant.parse("2021-04-21T00:00:00.000Z");
+        var from = Instant.parse("2021-04-28T00:00:00.000Z");
         var response = statsResource.get("gwt", from);
         var streamingOutput = (StreamingOutput) response.getEntity();
 

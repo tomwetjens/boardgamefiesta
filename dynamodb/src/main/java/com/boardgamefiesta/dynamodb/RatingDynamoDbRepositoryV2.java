@@ -14,6 +14,8 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -54,6 +56,11 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     private static final String TABLE_PREFIX = "Table#";
     private static final String RATING_PREFIX = "Rating#";
     private static final String RANKING_PREFIX = "Ranking#";
+
+    private static final DateTimeFormatter TIMESTAMP_SECS_FORMATTER = new DateTimeFormatterBuilder()
+            .parseStrict()
+            .appendInstant(0) // No fractional second
+            .toFormatter();
 
     private final DynamoDbClient client;
     private final DynamoDbConfiguration config;
@@ -175,7 +182,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
                                                                 // 3. Then by user id, to make it guaranteed unique, in case 2 users have the same rating at the same time
                                                                 .setString(GSI1SK, RANKING_PREFIX + String.format(Locale.ENGLISH, "%05d#%s#%s",
                                                                         rating.getRating(),
-                                                                        rating.getTimestamp().toString(),
+                                                                        TIMESTAMP_SECS_FORMATTER.format(rating.getTimestamp()),
                                                                         rating.getUserId().getId()))
                                                                 .asMap())
                                                         .build())
@@ -188,7 +195,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     private Item mapFromRating(Rating rating) {
         var item = new Item()
                 .setString(PK, USER_PREFIX + rating.getUserId().getId())
-                .setString(SK, RATING_PREFIX + rating.getGameId().getId() + "#" + rating.getTimestamp())
+                .setString(SK, RATING_PREFIX + rating.getGameId().getId() + "#" + TIMESTAMP_SECS_FORMATTER.format(rating.getTimestamp()))
                 .setInt("Rating", rating.getRating())
                 .set("Deltas", mapFromDeltas(rating.getDeltas()));
 

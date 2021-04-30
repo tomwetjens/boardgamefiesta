@@ -208,7 +208,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             IntStream.range(0, 50).forEach(i ->
                     repository.put(table().status(Table.Status.ENDED).ended(Instant.now()).build()));
 
-            var tables = repository.findEnded(GAME_ID, 999).collect(Collectors.toList());
+            var tables = repository.findEnded(GAME_ID, 100).collect(Collectors.toList());
 
             assertThat(tables).hasSize(50);
         }
@@ -216,21 +216,39 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
         @Test
         void pagination() {
             IntStream.range(0, 45).forEach(i ->
-                    repository.put(table().status(Table.Status.ENDED).ended(Instant.now()).build()));
+                    repository.put(table()
+                            .status(Table.Status.ENDED)
+                            .ended(Instant.ofEpochSecond(i))
+                            .build()));
 
-            var page1 = repository.findEnded(GAME_ID, 20, null);
-            var tables1 = page1.stream().map(Table::getId).collect(Collectors.toList());
+            var tables1 = repository.findEnded(GAME_ID, 20).collect(Collectors.toList());
             assertThat(tables1).hasSize(20);
+            var firstTable1 = tables1.get(0);
+            assertThat(firstTable1.getEnded()).isEqualTo(Instant.ofEpochSecond(44));
+            var lastTable1 = tables1.get(tables1.size() - 1);
+            assertThat(lastTable1.getEnded()).isEqualTo(Instant.ofEpochSecond(25));
 
-            var page2 = repository.findEnded(GAME_ID, 20, page1.getContinuationToken());
-            var tables2 = page2.stream().map(Table::getId).collect(Collectors.toList());
+            var tableIds1 = tables1.stream().map(Table::getId).collect(Collectors.toList());
+
+            var tables2 = repository.findEnded(GAME_ID, 20, Instant.ofEpochSecond(0), lastTable1.getEnded(), lastTable1.getId()).collect(Collectors.toList());
             assertThat(tables2).hasSize(20);
-            assertThat(tables2).doesNotContainAnyElementsOf(tables1);
+            var firstTable2 = tables2.get(0);
+            assertThat(firstTable2.getEnded()).isEqualTo(Instant.ofEpochSecond(24));
+            var lastTable2 = tables2.get(tables2.size() - 1);
+            assertThat(lastTable2.getEnded()).isEqualTo(Instant.ofEpochSecond(5));
 
-            var page3 = repository.findEnded(GAME_ID, 20, page2.getContinuationToken());
-            var tables3 = page3.stream().map(Table::getId).collect(Collectors.toList());
+            var tableIds2 = tables2.stream().map(Table::getId).collect(Collectors.toList());
+            assertThat(tableIds2).doesNotContainAnyElementsOf(tableIds1);
+
+            var tables3 = repository.findEnded(GAME_ID, 20, Instant.ofEpochSecond(0), lastTable2.getEnded(), lastTable2.getId()).collect(Collectors.toList());
             assertThat(tables3).hasSize(5);
-            assertThat(tables3).doesNotContainAnyElementsOf(tables1).doesNotContainAnyElementsOf(tables2);
+            var firstTable3 = tables3.get(0);
+            assertThat(firstTable3.getEnded()).isEqualTo(Instant.ofEpochSecond(4));
+            var lastTable3 = tables3.get(tables3.size() - 1);
+            assertThat(lastTable3.getEnded()).isEqualTo(Instant.ofEpochSecond(0));
+
+            var tableIds3 = tables3.stream().map(Table::getId).collect(Collectors.toList());
+            assertThat(tableIds3).doesNotContainAnyElementsOf(tableIds1).doesNotContainAnyElementsOf(tableIds2);
         }
     }
 

@@ -56,12 +56,11 @@ public class StatsResource {
             try (PrintWriter writer = new PrintWriter(outputStream)) {
                 List<String> keys = new ArrayList<>();
 
-                tables.findRecentlyEnded(Game.Id.of(gameId), from, 999999)
+                tables.findEnded(Game.Id.of(gameId), 999999, from)
                         .filter(table -> table.getStatus() == Table.Status.ENDED)
                         .filter(table -> !table.hasComputerPlayers())
                         .forEach(table -> table.getPlayers().forEach(player -> {
                             table.stats(player).ifPresent(stats -> {
-                                System.out.println(table.getEnded());
                                 if (keys.isEmpty()) {
                                     keys.addAll(stats.keys());
                                     Collections.sort(keys);

@@ -23,7 +23,6 @@ public interface Tables extends Repository {
     Stream<Table> findActive(User.Id userId);
 
     /**
-     *
      * @param userId
      * @param maxResults min 1, max 100
      * @return
@@ -31,7 +30,6 @@ public interface Tables extends Repository {
     Stream<Table> findAll(User.Id userId, int maxResults);
 
     /**
-     *
      * @param userId
      * @param gameId
      * @param maxResults min 1, max 100
@@ -40,7 +38,6 @@ public interface Tables extends Repository {
     Stream<Table> findAll(User.Id userId, Game.Id gameId, int maxResults);
 
     /**
-     *
      * @param gameId
      * @param maxResults min 1, max 100
      * @return
@@ -48,12 +45,12 @@ public interface Tables extends Repository {
     Stream<Table> findEnded(Game.Id gameId, int maxResults);
 
     /**
-     *
      * @param gameId
      * @param maxResults min 1, max 100
+     * @param from       table must have an ended timestamp greater than or equal to this value
      * @return
      */
-    Stream<Table> findRecentlyEnded(Game.Id gameId, Instant from, int maxResults);
+    Stream<Table> findEnded(Game.Id gameId, int maxResults, Instant from);
 
     final class ExceedsMaxRealtimeGames extends AggregateRoot.InvalidCommandException {
         public ExceedsMaxRealtimeGames() {

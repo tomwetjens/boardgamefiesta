@@ -17,6 +17,8 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 
 import javax.inject.Inject;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -54,7 +56,18 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     private static final String TTL = "TTL";
 
     private static final int MAX_BATCH_WRITE_SIZE = 25;
-    public static final int MAX_BATCH_GET_ITEM_SIZE = 100;
+    private static final int MAX_BATCH_GET_ITEM_SIZE = 100;
+    private static final Instant MIN_TIMESTAMP = Instant.ofEpochSecond(0);
+    private static final Instant MAX_TIMESTAMP = Instant.parse("9999-12-31T23:59:59.999Z");
+    private static final Table.Id MAX_TABLE_ID = Table.Id.of("ffffffff-ffff-ffff-ffff-ffffffffffff");
+    private static final DateTimeFormatter TIMESTAMP_SECS_FORMATTER = new DateTimeFormatterBuilder()
+            .parseStrict()
+            .appendInstant(0) // No fractional second
+            .toFormatter();
+    private static final DateTimeFormatter TIMESTAMP_MILLIS_FORMATTER = new DateTimeFormatterBuilder()
+            .parseStrict()
+            .appendInstant(3) // 3 digits fractional second
+            .toFormatter();
 
     private final Games games;
     private final DynamoDbClient client;
@@ -77,6 +90,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     public Optional<Table> findById(Table.Id id) {
         log.debug("findById: {}", id);
 
+        // Query both the Table#<Id> + latest State#<timestamp> in one go,
+        // because it is always needed by caller
         var response = client.query(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .keyConditionExpression(PK + "=:PK AND " + SK + ">:SK")
@@ -90,7 +105,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
         if (response.hasItems()) {
             return Optional.of(mapToTable(response.count() >= 2
+                    // Latest State# found
                     ? List.of(Item.of(response.items().get(0)), Item.of(response.items().get(1)))
+                    // No State# found
                     : List.of(Item.of(response.items().get(0)))));
         }
 
@@ -151,7 +168,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     public Item mapItemFromLogEntry(LogEntry logEntry, Table.Id tableId) {
         return new Item()
                 .setString(PK, TABLE_PREFIX + tableId.getId())
-                .setString(SK, LOG_PREFIX + logEntry.getTimestamp().toString())
+                .setString(SK, LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(logEntry.getTimestamp()))
                 .setString("UserId", logEntry.getUserId().map(User.Id::getId).orElse(null))
                 .setString("PlayerId", logEntry.getPlayerId().getId())
                 .setEnum("Type", logEntry.getType())
@@ -366,67 +383,60 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     @Override
-    public Stream<Table> findEnded(Game.Id gameId, int maxResults) {
-        return findEnded(gameId, Instant.ofEpochSecond(0L), maxResults, null).stream();
+    public Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults) {
+        return findEnded(gameId, maxResults, MIN_TIMESTAMP, MAX_TIMESTAMP, MAX_TABLE_ID);
     }
 
     @Override
-    public Stream<Table> findRecentlyEnded(Game.Id gameId, Instant from, int maxResults) {
-        return findEnded(gameId, from, maxResults, null).stream();
+    public Stream<Table> findEnded(Game.Id gameId, int maxResults, Instant from) {
+        return findEnded(gameId, maxResults, from, MAX_TIMESTAMP, MAX_TABLE_ID);
     }
 
-    public Page<Table> findEnded(Game.Id gameId,  int maxResults, String continuationToken) {
-        return findEnded(gameId, Instant.ofEpochSecond(0L), maxResults, null);
-    }
+    Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults,
+                            @NonNull Instant fromEndedInclusive,
+                            @NonNull Instant toEndedExclusive,
+                            @NonNull Table.Id toTableIdExclusive) {
+        if (maxResults < 1) {
+            throw new IllegalArgumentException("Max results must be >=1, but was: " + maxResults);
+        }
+        if (fromEndedInclusive.isBefore(MIN_TIMESTAMP)) {
+            throw new IllegalArgumentException("'From' timestamp must not be before " + MIN_TIMESTAMP + ", but was: " + fromEndedInclusive);
+        }
+        if (toEndedExclusive.isAfter(MAX_TIMESTAMP)) {
+            throw new IllegalArgumentException("'To' timestamp must not be after " + MAX_TIMESTAMP + ", but was: " + toEndedExclusive);
+        }
+        if (!toEndedExclusive.isAfter(fromEndedInclusive)) {
+            throw new IllegalArgumentException("'To' timestamp must be after 'from' timestamp " + fromEndedInclusive + ", but was: " + toEndedExclusive);
+        }
 
-    public Page<Table> findEnded(Game.Id gameId, Instant from, int maxResults, String continuationToken) {
-        var exclusiveStartKey = continuationToken != null ? ContinuationToken.parse(continuationToken) : null;
-        var tables = findByIds(IntStream.range(0, config.getReadGameIdShards())
+        return findByIds(IntStream.range(0, config.getReadGameIdShards())
                 // Scatter
                 .parallel()
                 .mapToObj(shard -> {
-                    var gsi1pk = Item.s(GAME_PREFIX + gameId.getId() + "#" + shard);
-                    var request = QueryRequest.builder()
+                    var gsi1skTo = GSISK.from(toTableIdExclusive, Table.Status.ENDED, toEndedExclusive, gameId);
+                    return client.queryPaginator(QueryRequest.builder()
                             .tableName(config.getTableName())
                             .indexName(GSI1)
                             .scanIndexForward(false)
-                            .keyConditionExpression(GSI1PK + "=:GSI1PK AND " + GSI1SK + ">=:GSI1SK")
+                            .keyConditionExpression(GSI1PK + "=:GSI1PK AND " + GSI1SK + " BETWEEN :GSI1SKFrom AND :GSI1SKTo")
                             .expressionAttributeValues(Map.of(
-                                    ":GSI1PK", gsi1pk,
-                                    ":GSI1SK", Item.s(GSISK.partial(Table.Status.ENDED, from))
+                                    ":GSI1PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                    ":GSI1SKFrom", Item.s(GSISK.partial(Table.Status.ENDED, fromEndedInclusive)),
+                                    ":GSI1SKTo", Item.s(gsi1skTo)
                             ))
-                            .exclusiveStartKey(exclusiveStartKey != null ?
-                                    Map.of(
-                                            PK, exclusiveStartKey.get(PK),
-                                            SK, exclusiveStartKey.get(SK),
-                                            GSI1PK, gsi1pk,
-                                            GSI1SK, exclusiveStartKey.get(GSI1SK)
-                                    ) : null)
-                            .limit(maxResults)
-                            .build();
-                    System.out.println(request);
-                    return client.queryPaginator(request)
+                            .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
+                            .build())
                             .stream()
                             .filter(QueryResponse::hasItems)
-                            .flatMap(response -> response.items().stream());
+                            .flatMap(response -> response.items().stream())
+                            .filter(item -> item.get(GSI1SK).s().compareTo(gsi1skTo) < 0) // Make upper limit exclusive, because BETWEEN is inclusive
+                            .limit(maxResults);
                 })
                 // Gather
                 .flatMap(Function.identity())
                 .sorted(Comparator.<Map<String, AttributeValue>, String>comparing(item -> item.get(GSI1SK).s()).reversed())
                 .map(item -> Table.Id.of(item.get(PK).s().replace(TABLE_PREFIX, "")))
-                .limit(maxResults))
-                .collect(Collectors.toList());
-
-        if (!tables.isEmpty()) {
-            var lastTable = tables.get(tables.size() - 1);
-            return new DynamoDbPage<>(tables, ContinuationToken.from(Map.of(
-                    PK, TABLE_PREFIX + lastTable.getId().getId(),
-                    SK, TABLE_PREFIX + lastTable.getId().getId(),
-                    // GSI1PK omitted, because it can be derived from shard
-                    GSI1SK, GSISK.fromTable(lastTable)
-            )));
-        }
-        return new DynamoDbPage<>(Collections.emptyList(), null);
+                .limit(maxResults));
     }
 
     /**
@@ -440,8 +450,6 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                                 SK, Item.s(TABLE_PREFIX + id.getId())))
                         .collect(Collectors.toList()))
                 .flatMap(keys -> {
-                    log.debug("findByIds: {}", keys);
-
                     var response = client.batchGetItem(BatchGetItemRequest.builder()
                             .requestItems(Map.of(config.getTableName(),
                                     KeysAndAttributes.builder()
@@ -610,8 +618,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                                                                AttributeValue state) {
         var item = new HashMap<String, AttributeValue>();
         item.put(PK, Item.s(TABLE_PREFIX + tableId.getId()));
-        item.put(SK, Item.s(STATE_PREFIX + timestamp.toString()));
-        item.put("Timestamp", Item.s(timestamp.toString()));
+        item.put(SK, Item.s(STATE_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(timestamp)));
+        item.put("Timestamp", Item.s(timestamp));
 
         previousTimestamp.map(Item::s).ifPresent(p -> item.put("Previous", p));
 
@@ -628,10 +636,10 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         map.put("Color", player.getColor() != null ? Item.s(player.getColor().name()) : null);
         map.put("Score", player.getScore().map(score -> AttributeValue.builder().n(Integer.toString(score)).build()).orElse(null));
         map.put("Winner", player.getWinner().map(winner -> AttributeValue.builder().bool(winner).build()).orElse(null));
-        map.put("Created", Item.s(player.getCreated().toString()));
-        map.put("Updated", Item.s(player.getUpdated().toString()));
+        map.put("Created", Item.s(player.getCreated()));
+        map.put("Updated", Item.s(player.getUpdated()));
         map.put("Turn", AttributeValue.builder().bool(player.isTurn()).build());
-        map.put("TurnLimit", player.getTurnLimit().map(turnLimit -> Item.s(turnLimit.toString())).orElse(null));
+        map.put("TurnLimit", player.getTurnLimit().map(Item::s).orElse(null));
         return AttributeValue.builder().m(map).build();
     }
 
@@ -651,6 +659,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     private Table mapToTable(List<Item> items) {
         var item = items.get(0);
+        if (!item.get(PK).s().startsWith(TABLE_PREFIX) || !item.get(SK).s().equals(item.get(PK).s())) {
+            throw new IllegalArgumentException("Not a valid Table item: PK=" + item.get(PK).s() + " SK=" + item.get(SK).s());
+        }
 
         var id = Table.Id.of(item.getString(PK).replace(TABLE_PREFIX, ""));
 
@@ -676,13 +687,18 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .ended(item.getOptionalInstant("Ended").orElse(null))
                 .ownerId(User.Id.of(item.getString("OwnerId")))
                 .players(players)
-                .currentState(items.size() > 1 ? Lazy.of(Optional.of(mapToCurrentState(id, items.get(1), game))) :
-                        Lazy.defer(() -> getCurrentState(id, game)))
+                .currentState(items.size() > 1
+                        ? Lazy.of(Optional.of(mapToCurrentState(id, items.get(1), game)))
+                        : Lazy.defer(() -> getCurrentState(id, game)))
                 .log(new LazyLog((since, before, limit) -> getLogEntries(id, since, before, limit)))
                 .build();
     }
 
     private Table.CurrentState mapToCurrentState(Table.Id tableId, Item item, Game game) {
+        if (!item.get(PK).s().equals(TABLE_PREFIX + tableId.getId()) && !item.get(SK).s().startsWith(STATE_PREFIX)) {
+            throw new IllegalArgumentException("Not a valid State item: PK=" + item.get(PK).s() + " SK=" + item.get(SK).s());
+        }
+
         return Table.CurrentState.builder()
                 .state(mapToState(game, item.get("State")))
                 .timestamp(Instant.parse(item.get("Timestamp").s()))
@@ -706,7 +722,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                         ":SK", Item.s(STATE_PREFIX)
                 ))
                 .scanIndexForward(false)
-                .limit(1)
+                .limit(1) // Latest
                 .build());
 
         if (response.hasItems() && response.count() > 0) {
@@ -722,7 +738,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .tableName(config.getTableName())
                 .key(Map.of(
                         PK, Item.s(TABLE_PREFIX + tableId.getId()),
-                        SK, Item.s(STATE_PREFIX + timestamp.toString())
+                        SK, Item.s(STATE_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(timestamp))
                 ))
                 .build());
 
@@ -752,8 +768,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .keyConditionExpression("PK=:PK AND SK BETWEEN :SKFrom AND :SKTo")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(TABLE_PREFIX + tableId.getId()),
-                        ":SKFrom", Item.s(LOG_PREFIX + since.toString()),
-                        ":SKTo", Item.s(LOG_PREFIX + before.toString())
+                        ":SKFrom", Item.s(LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(since)),
+                        ":SKTo", Item.s(LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(before))
                 ))
                 .scanIndexForward(false)
                 .limit(Math.min(9999, limit) + 2) // Retrieve 2 more because BETWEEN is inclusive on both ends
@@ -864,7 +880,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
         public static String partial(Table.Status status, Instant timestamp) {
             return TABLE_PREFIX + orderFromStatus(status)
-                    + "#" + timestamp.toString();
+                    + "#" + TIMESTAMP_SECS_FORMATTER.format(timestamp);
         }
 
         private static String orderFromStatus(Table.Status status) {

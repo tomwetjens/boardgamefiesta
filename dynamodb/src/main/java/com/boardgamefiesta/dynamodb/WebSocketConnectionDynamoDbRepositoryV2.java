@@ -13,6 +13,8 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Map;
 
 /**
@@ -44,6 +46,11 @@ public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnect
 
     private static final String USER_PREFIX = "User#";
     private static final String WEB_SOCKET_PREFIX = "WebSocket#";
+
+    private static final DateTimeFormatter TIMESTAMP_SECS_FORMATTER = new DateTimeFormatterBuilder()
+            .parseStrict()
+            .appendInstant(0) // No fractional second
+            .toFormatter();
 
     private final DynamoDbClient client;
     private final DynamoDbConfiguration config;
@@ -98,7 +105,7 @@ public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnect
 
         if (status == WebSocketConnection.Status.ACTIVE) {
             updateItem.setString(GSI2PK, USER_PREFIX + userId.getId())
-                    .setString(GSI2SK, WEB_SOCKET_PREFIX + updated.toString() + "#" + id);
+                    .setString(GSI2SK, WEB_SOCKET_PREFIX + TIMESTAMP_SECS_FORMATTER.format(updated) + "#" + id);
         } else {
             updateItem.remove(GSI2PK, GSI2SK);
         }

@@ -144,7 +144,7 @@ public class TableDynamoDbRepository implements Tables {
     }
 
     @Override
-    public Stream<Table> findRecentlyEnded(Game.Id gameId, Instant from, int maxResults) {
+    public Stream<Table> findEnded(Game.Id gameId, int maxResults, Instant from) {
         throw new UnsupportedOperationException();
     }
 
