@@ -5,10 +5,7 @@ import com.boardgamefiesta.domain.event.WebSocketConnections;
 import com.boardgamefiesta.domain.user.User;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -127,22 +124,12 @@ public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnect
         return client.query(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .indexName(GSI2)
-                .keyConditionExpression(GSI2PK + "=:GSI2PK AND begins_with(" + GSI2SK + ",:GSI2SK)")
-                .expressionAttributeNames(Map.of(
-                        "#Status", "Status",
-                        "#Updated", "Updated"
-                ))
+                .keyConditionExpression(GSI2PK + "=:GSI2PK AND " + GSI2SK + ">:GSI2SK)")
                 .expressionAttributeValues(Map.of(
                         ":GSI2PK", Item.s(USER_PREFIX + userId.getId()),
-                        ":GSI2SK", Item.s(WEB_SOCKET_PREFIX),
-                        ":Active", Item.s(WebSocketConnection.Status.ACTIVE),
-                        ":After", Item.s(after)
+                        ":GSI2SK", Item.s(WEB_SOCKET_PREFIX + TIMESTAMP_SECS_FORMATTER.format(after))
                 ))
-                .scanIndexForward(false)
-                .limit(1)
-                .build())
-                .items().stream()
-                .map(item -> Instant.parse(item.get(GSI2PK).s().split("#")[1]))
-                .anyMatch(updated -> updated.isAfter(after));
+                .select(Select.COUNT)
+                .build()).count() > 0;
     }
 }
