@@ -314,8 +314,6 @@ public class TableResource {
                                      @QueryParam("before") String before,
                                      @QueryParam("limit") Integer requestedLimit) {
         var tableId = Table.Id.of(id);
-        // Only retrieve table if log entry does not contain enough information (mostly older log entries)
-        var table = Lazy.defer(() -> tables.findById(tableId).orElseThrow(NotFoundException::new));
 
         var userMap = new HashMap<User.Id, User>();
 
@@ -328,7 +326,7 @@ public class TableResource {
         return tables.findLogEntries(tableId,
                 since != null ? Instant.parse(since) : Instant.ofEpochSecond(0),
                 before != null ? Instant.parse(before) : Instant.now(), limit)
-                .map(logEntry -> new LogEntryView(table::get, logEntry,
+                .map(logEntry -> new LogEntryView(logEntry,
                         userId -> userMap.computeIfAbsent(userId, k -> this.users.findById(userId).orElse(null))))
                 .collect(Collectors.toList());
     }

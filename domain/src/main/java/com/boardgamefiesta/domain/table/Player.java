@@ -3,6 +3,7 @@ package com.boardgamefiesta.domain.table;
 import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.Entity;
+import com.boardgamefiesta.domain.exception.DomainException;
 import com.boardgamefiesta.domain.user.User;
 import lombok.*;
 
@@ -36,12 +37,12 @@ public class Player implements Entity {
     @NonNull
     private Instant updated;
 
-    @Getter
     private PlayerColor color;
 
     @Getter
     @Setter(AccessLevel.PACKAGE)
     private boolean turn;
+
     private Instant turnLimit;
 
     private Integer score;
@@ -105,6 +106,10 @@ public class Player implements Entity {
     }
 
     void assignColor(PlayerColor color) {
+        if (this.color != null) {
+            throw new AlreadyAssignedColor();
+        }
+
         this.color = color;
 
         updated = Instant.now();
@@ -115,6 +120,10 @@ public class Player implements Entity {
         this.winner = winner;
 
         updated = Instant.now();
+    }
+
+    public Optional<PlayerColor> getColor() {
+        return Optional.ofNullable(color);
     }
 
     void leave() {
@@ -216,6 +225,12 @@ public class Player implements Entity {
 
         private static Player.Id generate() {
             return of(UUID.randomUUID().toString());
+        }
+    }
+
+    public static final class AlreadyAssignedColor extends DomainException {
+        public AlreadyAssignedColor() {
+            super("ALREADY_ASSIGNED_COLOR");
         }
     }
 

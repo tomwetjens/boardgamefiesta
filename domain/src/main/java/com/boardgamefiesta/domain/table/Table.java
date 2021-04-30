@@ -149,7 +149,7 @@ public class Table implements AggregateRoot {
 
         try {
             var state = game.start(players.stream()
-                    .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor(),
+                    .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor().orElseThrow(),
                             player.getType() == Player.Type.COMPUTER
                                     ? com.boardgamefiesta.api.domain.Player.Type.COMPUTER
                                     : com.boardgamefiesta.api.domain.Player.Type.HUMAN))

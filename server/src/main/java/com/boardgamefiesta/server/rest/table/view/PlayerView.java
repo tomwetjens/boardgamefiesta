@@ -36,7 +36,7 @@ public class PlayerView {
         turnLimit = player.getTurnLimit().orElse(null);
         score = player.getScore().orElse(null);
         winner = player.getWinner().orElse(null);
-        color = player.getColor();
+        color = player.getColor().orElse(null);
     }
 
 }

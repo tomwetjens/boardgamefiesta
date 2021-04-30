@@ -620,7 +620,7 @@ public class TableDynamoDbRepository implements Tables {
         map.put("Type", AttributeValue.builder().s(player.getType().name()).build());
         map.put("UserId", player.getUserId().map(userId -> AttributeValue.builder().s(userId.getId()).build()).orElse(null));
         map.put("Status", AttributeValue.builder().s(player.getStatus().name()).build());
-        map.put("Color", player.getColor() != null ? AttributeValue.builder().s(player.getColor().name()).build() : null);
+        map.put("Color", player.getColor().map(color -> AttributeValue.builder().s(color.name()).build()).orElse(null));
         map.put("Score", player.getScore().map(score -> AttributeValue.builder().n(Integer.toString(score)).build()).orElse(null));
         map.put("Winner", player.getWinner().map(winner -> AttributeValue.builder().bool(winner).build()).orElse(null));
         map.put("Created", AttributeValue.builder().n(Long.toString(player.getCreated().getEpochSecond())).build());
@@ -644,8 +644,6 @@ public class TableDynamoDbRepository implements Tables {
         item.put("Timestamp", AttributeValue.builder().n(Long.toString(logEntry.getTimestamp().toEpochMilli())).build());
         item.put("UserId", logEntry.getUserId().map(userId -> AttributeValue.builder().s(userId.getId()).build()).orElse(null));
         item.put("PlayerId", AttributeValue.builder().s(logEntry.getPlayerId().getId()).build());
-        logEntry.getPlayerColor().ifPresent(playerColor ->
-                item.put("PlayerColor", AttributeValue.builder().s(playerColor.name()).build()));
         item.put("Type", AttributeValue.builder().s(logEntry.getType().name()).build());
         item.put("Parameters", AttributeValue.builder().l(logEntry.getParameters().stream()
                 .map(param -> AttributeValue.builder().s(param).build())
@@ -659,7 +657,6 @@ public class TableDynamoDbRepository implements Tables {
         return LogEntry.builder()
                 .timestamp(Instant.ofEpochMilli(Long.parseLong(item.get("Timestamp").n())))
                 .playerId(item.containsKey("PlayerId") ? Player.Id.of(item.get("PlayerId").s()) : null)
-                .playerColor(item.containsKey("PlayerColor") ? PlayerColor.valueOf(item.get("PlayerColor").s()) : null)
                 .userId(item.containsKey("UserId") ? User.Id.of(item.get("UserId").s()) : null)
                 .type(LogEntry.Type.valueOf(item.get("Type").s()))
                 .parameters(item.get("Parameters").l().stream()

@@ -171,7 +171,6 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .setString(SK, LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(logEntry.getTimestamp()))
                 .setString("UserId", logEntry.getUserId().map(User.Id::getId).orElse(null))
                 .setString("PlayerId", logEntry.getPlayerId().getId())
-                .setEnum("PlayerColor", logEntry.getPlayerColor().orElse(null))
                 .setEnum("Type", logEntry.getType())
                 .set("Parameters", AttributeValue.builder()
                         .l(logEntry.getParameters().stream()
@@ -634,7 +633,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         map.put("Type", Item.s(player.getType().name()));
         map.put("UserId", player.getUserId().map(userId -> Item.s(userId.getId())).orElse(null));
         map.put("Status", Item.s(player.getStatus().name()));
-        map.put("Color", player.getColor() != null ? Item.s(player.getColor().name()) : null);
+        map.put("Color", player.getColor().map(Item::s).orElse(null));
         map.put("Score", player.getScore().map(score -> AttributeValue.builder().n(Integer.toString(score)).build()).orElse(null));
         map.put("Winner", player.getWinner().map(winner -> AttributeValue.builder().bool(winner).build()).orElse(null));
         map.put("Created", Item.s(player.getCreated()));
@@ -788,7 +787,6 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         return LogEntry.builder()
                 .timestamp(Instant.parse(item.getString("SK").replace(LOG_PREFIX, "")))
                 .playerId(Player.Id.of(item.getString("PlayerId")))
-                .playerColor(item.getOptionalEnum("PlayerColor", PlayerColor.class).orElse(null))
                 .userId(item.getOptionalString("UserId")
                         .map(User.Id::of)
                         .orElse(null))

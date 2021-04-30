@@ -1,7 +1,6 @@
 package com.boardgamefiesta.domain.table;
 
 import com.boardgamefiesta.api.domain.InGameEvent;
-import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.domain.user.User;
 import lombok.*;
 
@@ -26,8 +25,6 @@ public class LogEntry {
     @NonNull
     Player.Id playerId;
 
-    PlayerColor playerColor;
-
     User.Id userId;
 
     @NonNull
@@ -42,7 +39,6 @@ public class LogEntry {
     LogEntry(@NonNull Table table, @NonNull InGameEvent event) {
         this.playerId = Player.Id.of(event.getPlayer().getName());
         var player = table.getPlayerById(this.playerId);
-        this.playerColor = player.map(Player::getColor).orElse(null);
         this.userId = player.flatMap(Player::getUserId).orElse(null);
         this.timestamp = generateTimestamp();
         this.type = Type.IN_GAME_EVENT;
@@ -57,7 +53,6 @@ public class LogEntry {
 
     LogEntry(@NonNull Player player, @NonNull Type type, @NonNull List<Object> parameters) {
         this.playerId = player.getId();
-        this.playerColor = player.getColor();
         this.userId = player.getUserId().orElse(null);
         this.timestamp = generateTimestamp();
         this.type = type;
@@ -66,10 +61,6 @@ public class LogEntry {
 
     public Optional<User.Id> getUserId() {
         return Optional.ofNullable(userId);
-    }
-
-    public Optional<PlayerColor> getPlayerColor() {
-        return Optional.ofNullable(playerColor);
     }
 
     private static Instant generateTimestamp() {
