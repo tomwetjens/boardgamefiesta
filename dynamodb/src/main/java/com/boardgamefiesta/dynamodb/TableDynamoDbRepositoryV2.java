@@ -691,7 +691,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .currentState(items.size() > 1
                         ? Lazy.of(Optional.of(mapToCurrentState(id, items.get(1), game)))
                         : Lazy.defer(() -> getCurrentState(id, game)))
-                .log(new LazyLog((since, before, limit) -> getLogEntries(id, since, before, limit)))
+                .log(new LazyLog((since, before, limit) -> findLogEntries(id, since, before, limit)))
                 .build();
     }
 
@@ -760,8 +760,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         return Optional.empty();
     }
 
-    private Stream<LogEntry> getLogEntries(Table.Id tableId, Instant since, Instant before, int limit) {
-        log.debug("getLogEntries: {} >={} <{} limit {}", tableId, since, before, limit);
+    @Override
+    public Stream<LogEntry> findLogEntries(Table.Id tableId, Instant since, Instant before, int limit) {
+        log.debug("findLogEntries: {} >={} <{} limit {}", tableId, since, before, limit);
 
         return client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())

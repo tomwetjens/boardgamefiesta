@@ -52,6 +52,8 @@ public interface Tables extends Repository {
      */
     Stream<Table> findEnded(Game.Id gameId, int maxResults, Instant from);
 
+    Stream<LogEntry> findLogEntries(Table.Id tableId, Instant since, Instant before, int limit);
+
     final class ExceedsMaxRealtimeGames extends AggregateRoot.InvalidCommandException {
         public ExceedsMaxRealtimeGames() {
             super("EXCEEDS_MAX_REALTIME_GAMES");

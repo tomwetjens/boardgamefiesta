@@ -668,7 +668,8 @@ public class TableDynamoDbRepository implements Tables {
                 .build();
     }
 
-    private Stream<LogEntry> findLogEntries(Table.Id gameId, Instant from, Instant to, int limit) {
+    @Override
+    public Stream<LogEntry> findLogEntries(Table.Id gameId, Instant from, Instant to, int limit) {
         var expressionAttributeValues = new HashMap<String, AttributeValue>();
         expressionAttributeValues.put(":GameId", AttributeValue.builder().s(gameId.getId()).build());
         expressionAttributeValues.put(":From", AttributeValue.builder().n(Long.toString(from.toEpochMilli())).build());
