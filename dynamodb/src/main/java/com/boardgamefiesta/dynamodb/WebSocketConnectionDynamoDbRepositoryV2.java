@@ -124,7 +124,7 @@ public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnect
         return client.query(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .indexName(GSI2)
-                .keyConditionExpression(GSI2PK + "=:GSI2PK AND " + GSI2SK + ">:GSI2SK)")
+                .keyConditionExpression(GSI2PK + "=:GSI2PK AND " + GSI2SK + ">:GSI2SK")
                 .expressionAttributeValues(Map.of(
                         ":GSI2PK", Item.s(USER_PREFIX + userId.getId()),
                         ":GSI2SK", Item.s(WEB_SOCKET_PREFIX + TIMESTAMP_SECS_FORMATTER.format(after))
