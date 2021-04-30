@@ -56,7 +56,7 @@ public class StatsResource {
             try (PrintWriter writer = new PrintWriter(outputStream)) {
                 List<String> keys = new ArrayList<>();
 
-                tables.findEnded(Game.Id.of(gameId), 999999, from)
+                tables.findEnded(Game.Id.of(gameId), Integer.MAX_VALUE, from, Tables.MAX_TIMESTAMP, false)
                         .filter(table -> table.getStatus() == Table.Status.ENDED)
                         .filter(table -> !table.hasComputerPlayers())
                         .forEach(table -> table.getPlayers().forEach(player -> {

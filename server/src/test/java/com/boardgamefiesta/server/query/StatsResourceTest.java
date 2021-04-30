@@ -1,7 +1,10 @@
 package com.boardgamefiesta.server.query;
 
 import com.boardgamefiesta.domain.game.Games;
-import com.boardgamefiesta.dynamodb.*;
+import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
+import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
+import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
+import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
 import com.boardgamefiesta.server.rest.game.StatsResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -37,8 +40,8 @@ class StatsResourceTest {
 
         var dynamoDbClient = DynamoDbClient.create();
         var tables = new TableDynamoDbRepositoryV2(games, dynamoDbClient, config);
-        var users = new UserDynamoDbRepository(dynamoDbClient, config);
-        var ratings = new RatingDynamoDbRepository(dynamoDbClient, config);
+        var users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
+        var ratings = new RatingDynamoDbRepositoryV2(dynamoDbClient, config);
 
         statsResource = new StatsResource(tables, users, ratings);
     }

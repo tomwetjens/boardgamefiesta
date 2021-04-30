@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -25,10 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-/**
- *
- */
-//@ApplicationScoped
+@ApplicationScoped
 @Slf4j
 public class TableDynamoDbRepositoryV2 implements Tables {
 
@@ -57,8 +55,6 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     private static final int MAX_BATCH_WRITE_SIZE = 25;
     private static final int MAX_BATCH_GET_ITEM_SIZE = 100;
-    private static final Instant MIN_TIMESTAMP = Instant.ofEpochSecond(0);
-    private static final Instant MAX_TIMESTAMP = Instant.parse("9999-12-31T23:59:59.999Z");
     private static final Table.Id MAX_TABLE_ID = Table.Id.of("ffffffff-ffff-ffff-ffff-ffffffffffff");
     private static final DateTimeFormatter TIMESTAMP_SECS_FORMATTER = new DateTimeFormatterBuilder()
             .parseStrict()
@@ -165,7 +161,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                                 .build()));
     }
 
-    public Item mapItemFromLogEntry(LogEntry logEntry, Table.Id tableId) {
+    private Item mapItemFromLogEntry(LogEntry logEntry, Table.Id tableId) {
         return new Item()
                 .setString(PK, TABLE_PREFIX + tableId.getId())
                 .setString(SK, LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(logEntry.getTimestamp()))
@@ -258,7 +254,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         addLogEntries(table);
     }
 
-    public void addState(@NonNull Table.Id tableId,
+    private void addState(@NonNull Table.Id tableId,
                          @NonNull Game game, @NonNull State state, @NonNull Instant timestamp,
                          @NonNull Optional<Instant> previousTimestamp) {
         client.putItem(PutItemRequest.builder()
@@ -322,12 +318,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     @Override
-    public Stream<Table> findAll(User.Id userId, int maxResults) {
-        return findAll(userId, maxResults, null).stream();
-    }
-
-    public Page<Table> findAll(User.Id userId, int maxResults, String continuationToken) {
-        var tables = findByIds(client.queryPaginator(QueryRequest.builder()
+    public Stream<Table> findAll(User.@NonNull Id userId, int maxResults) {
+        return findByIds(client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .indexName(GSI1)
                 .scanIndexForward(false)
@@ -336,35 +328,15 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                         ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
                         ":GSI1SK", Item.s(TABLE_PREFIX)
                 ))
-                .exclusiveStartKey(continuationToken != null ? ContinuationToken.parse(continuationToken) : null)
-                .limit(maxResults)
                 .build())
-                .stream()
-                .filter(QueryResponse::hasItems)
-                .flatMap(response -> response.items().stream())
-                .map(item -> Table.Id.of(item.get(PK).s().replace(TABLE_PREFIX, "")))
-                .limit(maxResults))
-                .collect(Collectors.toList());
-
-
-        if (!tables.isEmpty()) {
-            var lastTable = tables.get(tables.size() - 1);
-            var playerId = lastTable.getPlayerByUserId(userId)
-                    .map(Player::getId)
-                    .map(Player.Id::getId);
-
-            return new DynamoDbPage<>(tables, ContinuationToken.from(Map.of(
-                    PK, TABLE_PREFIX + lastTable.getId().getId(),
-                    SK, PLAYER_PREFIX + playerId.orElse(""),
-                    GSI1PK, USER_PREFIX + userId.getId(),
-                    GSI1SK, GSISK.fromTable(lastTable)
-            )));
-        }
-        return new DynamoDbPage<>(Collections.emptyList(), null);
+                .items().stream()
+                .map(item -> GSISK.parse(item.get(GSI1SK).s()))
+                .map(GSISK::getTableId)
+                .limit(maxResults));
     }
 
     @Override
-    public Stream<Table> findAll(User.Id userId, Game.Id gameId, int maxResults) {
+    public Stream<Table> findAll(@NonNull User.Id userId, Game.Id gameId, int maxResults) {
         return findByIds(client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())
                 .indexName(GSI1)
@@ -383,45 +355,150 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     @Override
-    public Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults) {
-        return findEnded(gameId, maxResults, MIN_TIMESTAMP, MAX_TIMESTAMP, MAX_TABLE_ID);
+    public Stream<Table> findStarted(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from,
+                                     @NonNull Instant to) {
+        return findStarted(gameId, maxResults, from, to, MAX_TABLE_ID);
     }
 
     @Override
-    public Stream<Table> findEnded(Game.Id gameId, int maxResults, Instant from) {
-        return findEnded(gameId, maxResults, from, MAX_TIMESTAMP, MAX_TABLE_ID);
-    }
-
-    Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults,
-                            @NonNull Instant fromEndedInclusive,
-                            @NonNull Instant toEndedExclusive,
-                            @NonNull Table.Id toTableIdExclusive) {
+    public Stream<Table> findStarted(@NonNull Game.Id gameId, int maxResults,
+                                     @NonNull Instant from,
+                                     @NonNull Instant to,
+                                     @NonNull Table.Id lastEvaluatedId) {
         if (maxResults < 1) {
             throw new IllegalArgumentException("Max results must be >=1, but was: " + maxResults);
         }
-        if (fromEndedInclusive.isBefore(MIN_TIMESTAMP)) {
-            throw new IllegalArgumentException("'From' timestamp must not be before " + MIN_TIMESTAMP + ", but was: " + fromEndedInclusive);
+        if (from.isBefore(MIN_TIMESTAMP)) {
+            throw new IllegalArgumentException("'From' must not be before " + MIN_TIMESTAMP + ", but was: " + from);
         }
-        if (toEndedExclusive.isAfter(MAX_TIMESTAMP)) {
-            throw new IllegalArgumentException("'To' timestamp must not be after " + MAX_TIMESTAMP + ", but was: " + toEndedExclusive);
+        if (to.isAfter(MAX_TIMESTAMP)) {
+            throw new IllegalArgumentException("'To' must not be after " + MAX_TIMESTAMP + ", but was: " + to);
         }
-        if (!toEndedExclusive.isAfter(fromEndedInclusive)) {
-            throw new IllegalArgumentException("'To' timestamp must be after 'from' timestamp " + fromEndedInclusive + ", but was: " + toEndedExclusive);
+        if (!to.isAfter(from)) {
+            throw new IllegalArgumentException("'To' must be after " + from + ", but was: " + to);
         }
 
         return findByIds(IntStream.range(0, config.getReadGameIdShards())
                 // Scatter
                 .parallel()
                 .mapToObj(shard -> {
-                    var gsi1skTo = GSISK.from(toTableIdExclusive, Table.Status.ENDED, toEndedExclusive, gameId);
+                    var gsi2skTo = GSISK.from(lastEvaluatedId, Table.Status.STARTED, to, gameId);
+                    return client.queryPaginator(QueryRequest.builder()
+                            .tableName(config.getTableName())
+                            .indexName(GSI2)
+                            .scanIndexForward(false)
+                            .keyConditionExpression(GSI2PK + "=:GSI2PK AND " + GSI2SK + " BETWEEN :GSI2SKFrom AND :GSI2SKTo")
+                            .expressionAttributeValues(Map.of(
+                                    ":GSI2PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                    ":GSI2SKFrom", Item.s(GSISK.partial(Table.Status.STARTED, from)),
+                                    ":GSI2SKTo", Item.s(gsi2skTo)
+                            ))
+                            .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
+                            .build())
+                            .stream()
+                            .filter(QueryResponse::hasItems)
+                            .flatMap(response -> response.items().stream())
+                            .filter(item -> item.get(GSI1SK).s().compareTo(gsi2skTo) < 0) // Make upper limit exclusive, because BETWEEN is inclusive
+                            .limit(maxResults);
+                })
+                // Gather
+                .flatMap(Function.identity())
+                .sorted(Comparator.<Map<String, AttributeValue>, String>comparing(item -> item.get(GSI2SK).s()).reversed())
+                .map(item -> Table.Id.of(item.get(PK).s().replace(TABLE_PREFIX, "")))
+                .limit(maxResults));
+    }
+
+    @Override
+    public Stream<Table> findOpen(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from,
+                                  @NonNull Instant to) {
+        return findOpen(gameId, maxResults, from, to, MAX_TABLE_ID);
+    }
+
+    @Override
+    public Stream<Table> findOpen(@NonNull Game.Id gameId, int maxResults,
+                                  @NonNull Instant from,
+                                  @NonNull Instant to,
+                                  @NonNull Table.Id lastEvaluatedId) {
+        if (maxResults < 1) {
+            throw new IllegalArgumentException("Max results must be >=1, but was: " + maxResults);
+        }
+        if (from.isBefore(MIN_TIMESTAMP)) {
+            throw new IllegalArgumentException("'From' must not be before " + MIN_TIMESTAMP + ", but was: " + from);
+        }
+        if (to.isAfter(MAX_TIMESTAMP)) {
+            throw new IllegalArgumentException("'To' must not be after " + MAX_TIMESTAMP + ", but was: " + to);
+        }
+        if (!to.isAfter(from)) {
+            throw new IllegalArgumentException("'To' must be after " + from + ", but was: " + to);
+        }
+
+        return findByIds(IntStream.range(0, config.getReadGameIdShards())
+                // Scatter
+                .parallel()
+                .mapToObj(shard -> {
+                    var gsi3skTo = GSISK.from(lastEvaluatedId, Table.Status.NEW, to, gameId);
+                    return client.queryPaginator(QueryRequest.builder()
+                            .tableName(config.getTableName())
+                            .indexName(GSI3)
+                            .scanIndexForward(false)
+                            .keyConditionExpression(GSI3PK + "=:GSI3PK AND " + GSI3SK + " BETWEEN :GSI3SKFrom AND :GSI3SKTo")
+                            .expressionAttributeValues(Map.of(
+                                    ":GSI3SK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                    ":GSI3SKFrom", Item.s(GSISK.partial(Table.Status.NEW, from)),
+                                    ":GSI3SKTo", Item.s(gsi3skTo)
+                            ))
+                            .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
+                            .build())
+                            .stream()
+                            .filter(QueryResponse::hasItems)
+                            .flatMap(response -> response.items().stream())
+                            .filter(item -> item.get(GSI3SK).s().compareTo(gsi3skTo) < 0) // Make upper limit exclusive, because BETWEEN is inclusive
+                            .limit(maxResults);
+                })
+                // Gather
+                .flatMap(Function.identity())
+                .sorted(Comparator.<Map<String, AttributeValue>, String>comparing(item -> item.get(GSI3SK).s()).reversed())
+                .map(item -> Table.Id.of(item.get(PK).s().replace(TABLE_PREFIX, "")))
+                .limit(maxResults));
+    }
+
+    @Override
+    public Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, boolean ascending) {
+        return findEnded(gameId, maxResults, from, to, ascending, MAX_TABLE_ID);
+    }
+
+    @Override
+    public Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults,
+                                   @NonNull Instant from,
+                                   @NonNull Instant to,
+                                   boolean ascending,
+                                   @NonNull Table.Id lastEvaluatedId) {
+        if (maxResults < 1) {
+            throw new IllegalArgumentException("Max results must be >=1, but was: " + maxResults);
+        }
+        if (from.isBefore(MIN_TIMESTAMP)) {
+            throw new IllegalArgumentException("'From' must not be before " + MIN_TIMESTAMP + ", but was: " + from);
+        }
+        if (to.isAfter(MAX_TIMESTAMP)) {
+            throw new IllegalArgumentException("'To' must not be after " + MAX_TIMESTAMP + ", but was: " + to);
+        }
+        if (!to.isAfter(from)) {
+            throw new IllegalArgumentException("'To' must be after " + from + ", but was: " + to);
+        }
+
+        return findByIds(IntStream.range(0, config.getReadGameIdShards())
+                // Scatter
+                .parallel()
+                .mapToObj(shard -> {
+                    var gsi1skTo = GSISK.from(lastEvaluatedId, Table.Status.ENDED, to, gameId);
                     return client.queryPaginator(QueryRequest.builder()
                             .tableName(config.getTableName())
                             .indexName(GSI1)
-                            .scanIndexForward(false)
+                            .scanIndexForward(ascending)
                             .keyConditionExpression(GSI1PK + "=:GSI1PK AND " + GSI1SK + " BETWEEN :GSI1SKFrom AND :GSI1SKTo")
                             .expressionAttributeValues(Map.of(
                                     ":GSI1PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
-                                    ":GSI1SKFrom", Item.s(GSISK.partial(Table.Status.ENDED, fromEndedInclusive)),
+                                    ":GSI1SKFrom", Item.s(GSISK.partial(Table.Status.ENDED, from)),
                                     ":GSI1SKTo", Item.s(gsi1skTo)
                             ))
                             .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
@@ -434,7 +511,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 })
                 // Gather
                 .flatMap(Function.identity())
-                .sorted(Comparator.<Map<String, AttributeValue>, String>comparing(item -> item.get(GSI1SK).s()).reversed())
+                .sorted(ascending
+                        ? Comparator.<Map<String, AttributeValue>, String>comparing(item -> item.get(GSI1SK).s())
+                        : Comparator.<Map<String, AttributeValue>, String>comparing(item -> item.get(GSI1SK).s()).reversed())
                 .map(item -> Table.Id.of(item.get(PK).s().replace(TABLE_PREFIX, "")))
                 .limit(maxResults));
     }
@@ -612,7 +691,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         return mapItemFromState(tableId, timestamp, previousTimestamp, serialized);
     }
 
-    public static Map<String, AttributeValue> mapItemFromState(Table.Id tableId,
+    private static Map<String, AttributeValue> mapItemFromState(Table.Id tableId,
                                                                Instant timestamp,
                                                                Optional<Instant> previousTimestamp,
                                                                AttributeValue state) {

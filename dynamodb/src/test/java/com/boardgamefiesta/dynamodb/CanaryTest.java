@@ -3,6 +3,7 @@ package com.boardgamefiesta.dynamodb;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.table.Table;
+import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.gwt.GWT;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -25,15 +26,15 @@ public class CanaryTest {
 
     Games games = new Games();
 
-    TableDynamoDbRepository tableDynamodbRepository;
+    Tables tables;
 
     @Test
     void allTablesCanBeOpened() {
         when(config.getTableSuffix()).thenReturn(Optional.of(""));
 
-        tableDynamodbRepository = new TableDynamoDbRepository(games, DynamoDbClient.create(), config);
+        tables = new TableDynamoDbRepositoryV2(games, DynamoDbClient.create(), config);
 
-        var count = tableDynamodbRepository.findEnded(Game.Id.of(GWT.ID), 999)
+        var count = tables.findEnded(Game.Id.of(GWT.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .filter(table -> table.getStatus() == Table.Status.STARTED || table.getStatus() == Table.Status.ENDED)
                 .peek(table -> {
                     System.out.println(table.getId().getId());

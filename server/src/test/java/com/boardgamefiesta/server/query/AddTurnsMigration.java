@@ -7,9 +7,9 @@ import com.boardgamefiesta.domain.table.LogEntry;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
-import com.boardgamefiesta.dynamodb.RatingDynamoDbRepository;
-import com.boardgamefiesta.dynamodb.TableDynamoDbRepository;
-import com.boardgamefiesta.dynamodb.UserDynamoDbRepository;
+import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
+import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
+import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
 import com.boardgamefiesta.gwt.GWT;
 import com.boardgamefiesta.gwt.logic.Game;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,17 +43,16 @@ public class AddTurnsMigration {
         when(config.getTableSuffix()).thenReturn(Optional.of(""));
 
         var dynamoDbClient = DynamoDbClient.create();
-        users = new UserDynamoDbRepository(dynamoDbClient, config);
-        ratings = new RatingDynamoDbRepository(dynamoDbClient, config);
-        tables = new TableDynamoDbRepository(new Games(), dynamoDbClient, config);
+        users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
+        ratings = new RatingDynamoDbRepositoryV2(dynamoDbClient, config);
+        tables = new TableDynamoDbRepositoryV2(new Games(), dynamoDbClient, config);
 
         ratingAdjuster = new RatingAdjuster(tables, ratings);
     }
 
     @Test
     void run() {
-        tables.findEnded(com.boardgamefiesta.domain.game.Game.Id.of(GWT.ID), 9999999)
-//        tables.findById(Table.Id.of("5ed2c957-4905-4d5f-b5d6-cc5776bcda10")).stream()
+        tables.findEnded(com.boardgamefiesta.domain.game.Game.Id.of(GWT.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .filter(table -> table.getGame().getId().getId().equals(GWT.ID))
 //                .limit(100)
                 .forEach(table -> {

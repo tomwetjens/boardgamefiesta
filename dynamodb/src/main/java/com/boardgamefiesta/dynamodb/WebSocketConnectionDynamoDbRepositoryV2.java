@@ -29,7 +29,7 @@ import java.util.Map;
  * GSI2PK=User#<ID>
  * GSI2SK=WebSocket#<Updated>#<ID>
  */
-//@ApplicationScoped
+@ApplicationScoped
 public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnections {
 
     private static final String PK = "PK";

@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.ZoneId;
 import java.util.Map;
@@ -32,7 +33,7 @@ import java.util.stream.Stream;
  * GSI3PK=User#<cognito:username>
  * GSI3SK=User#<cognito:username>
  */
-//@ApplicationScoped
+@ApplicationScoped
 @Slf4j
 public class UserDynamoDbRepositoryV2 implements Users {
 

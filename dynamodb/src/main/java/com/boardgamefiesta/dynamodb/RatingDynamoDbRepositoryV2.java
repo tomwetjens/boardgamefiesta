@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  * GSI1PK=Game#<GameID>#<Shard>
  * GSI1SK=<Rating>#<Timestamp>#<UserID>
  */
-//@ApplicationScoped
+@ApplicationScoped
 @Slf4j
 public class RatingDynamoDbRepositoryV2 implements Ratings {
 

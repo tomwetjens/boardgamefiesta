@@ -1,13 +1,18 @@
 package com.boardgamefiesta.server.query;
 
+import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.RatingAdjuster;
+import com.boardgamefiesta.domain.rating.Ratings;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
+import com.boardgamefiesta.domain.table.Tables;
+import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
-import com.boardgamefiesta.dynamodb.RatingDynamoDbRepository;
-import com.boardgamefiesta.dynamodb.TableDynamoDbRepository;
-import com.boardgamefiesta.dynamodb.UserDynamoDbRepository;
+import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
+import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
+import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
+import com.boardgamefiesta.gwt.GWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -29,9 +34,9 @@ class RecalculateAllRatingsTest {
     @Mock
     DynamoDbConfiguration config;
 
-    UserDynamoDbRepository users;
-    RatingDynamoDbRepository ratings;
-    TableDynamoDbRepository tables;
+    Users users;
+    Ratings ratings;
+    Tables tables;
 
     RatingAdjuster ratingAdjuster;
 
@@ -40,20 +45,16 @@ class RecalculateAllRatingsTest {
         when(config.getTableSuffix()).thenReturn(Optional.of(""));
 
         var dynamoDbClient = DynamoDbClient.create();
-        users = new UserDynamoDbRepository(dynamoDbClient, config);
-        ratings = new RatingDynamoDbRepository(dynamoDbClient, config);
-        tables = new TableDynamoDbRepository(new Games(), dynamoDbClient, config);
+        users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
+        ratings = new RatingDynamoDbRepositoryV2(dynamoDbClient, config);
+        tables = new TableDynamoDbRepositoryV2(new Games(), dynamoDbClient, config);
 
         ratingAdjuster = new RatingAdjuster(tables, ratings);
     }
 
     @Test
     void run() {
-        tables.findAllEndedSortedByEndedAscending()
-//        tables.findRecent(User.Id.of("f256e997-3b9f-47c6-85b9-01cc21e882c3"), Game.Id.of(GWT.ID), 9999)
-//                .filter(table -> !table.hasComputerPlayers())
-//                .filter(table -> !table.getEnded().isBefore(Instant.now().minus(1, ChronoUnit.DAYS)))
-//                .limit(1)
+        tables.findEnded(Game.Id.of(GWT.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .forEach(this::recalculate);
     }
 
@@ -101,9 +102,11 @@ class RecalculateAllRatingsTest {
                             .noneMatch(newRating -> newRating.getTimestamp().toEpochMilli()
                                     == oldRating.getTimestamp().toEpochMilli()))
                     .collect(Collectors.toList());
-            oldRatingsToDelete.forEach(ratings::delete);
+            // TODO Implement delete
+//            oldRatingsToDelete.forEach(ratings::delete);
         } else {
-            oldRatings.forEach(ratings::delete);
+            // TODO Implement delete
+//            oldRatings.forEach(ratings::delete);
         }
     }
 }

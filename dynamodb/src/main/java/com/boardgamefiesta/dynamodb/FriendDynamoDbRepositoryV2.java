@@ -20,7 +20,7 @@ import java.util.stream.Stream;
  * PK=User#<UserID>
  * SK=Friend#<OtherUserID>
  */
-//@ApplicationScoped
+@ApplicationScoped
 @Slf4j
 public class FriendDynamoDbRepositoryV2 implements Friends {
 

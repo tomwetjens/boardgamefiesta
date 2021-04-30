@@ -4,6 +4,7 @@ import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.Repository;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.user.User;
+import lombok.NonNull;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -12,7 +13,9 @@ import java.util.stream.Stream;
 public interface Tables extends Repository {
 
     int MAX_ACTIVE_GAMES = 10;
-    int MAX_ACTIVE_REALTIME_GAMES = MAX_ACTIVE_GAMES;
+
+    Instant MIN_TIMESTAMP = Instant.ofEpochSecond(0);
+    Instant MAX_TIMESTAMP = Instant.parse("9999-12-31T23:59:59.999Z");
 
     Optional<Table> findById(Table.Id id);
 
@@ -22,43 +25,23 @@ public interface Tables extends Repository {
 
     Stream<Table> findActive(User.Id userId);
 
-    /**
-     * @param userId
-     * @param maxResults min 1, max 100
-     * @return
-     */
-    Stream<Table> findAll(User.Id userId, int maxResults);
+    Stream<Table> findAll(@NonNull User.Id userId, int maxResults);
 
-    /**
-     * @param userId
-     * @param gameId
-     * @param maxResults min 1, max 100
-     * @return
-     */
-    Stream<Table> findAll(User.Id userId, Game.Id gameId, int maxResults);
+    Stream<Table> findAll(@NonNull User.Id userId, @NonNull Game.Id gameId, int maxResults);
 
-    /**
-     * @param gameId
-     * @param maxResults min 1, max 100
-     * @return
-     */
-    Stream<Table> findEnded(Game.Id gameId, int maxResults);
+    Stream<Table> findStarted(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to);
 
-    /**
-     * @param gameId
-     * @param maxResults min 1, max 100
-     * @param from       table must have an ended timestamp greater than or equal to this value
-     * @return
-     */
-    Stream<Table> findEnded(Game.Id gameId, int maxResults, Instant from);
+    Stream<Table> findStarted(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, @NonNull Table.Id lastEvaluatedId);
 
-    Stream<LogEntry> findLogEntries(Table.Id tableId, Instant since, Instant before, int limit);
+    Stream<Table> findOpen(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to);
 
-    final class ExceedsMaxRealtimeGames extends AggregateRoot.InvalidCommandException {
-        public ExceedsMaxRealtimeGames() {
-            super("EXCEEDS_MAX_REALTIME_GAMES");
-        }
-    }
+    Stream<Table> findOpen(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, @NonNull Table.Id lastEvaluatedId);
+
+    Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, boolean ascending);
+
+    Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, boolean ascending, @NonNull Table.Id lastEvaluatedId);
+
+    Stream<LogEntry> findLogEntries(@NonNull Table.Id tableId, @NonNull Instant since, @NonNull Instant before, int limit);
 
     final class ExceedsMaxActiveGames extends AggregateRoot.InvalidCommandException {
         public ExceedsMaxActiveGames() {
