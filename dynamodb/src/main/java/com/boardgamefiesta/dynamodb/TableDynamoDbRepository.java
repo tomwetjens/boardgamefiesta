@@ -278,7 +278,7 @@ public class TableDynamoDbRepository implements Tables {
                 : log.stream();
 
         List<WriteRequest> writeRequests = logEntries
-                .map(logEntry -> mapFromLogEntry(table.getId(), logEntry))
+                .map(logEntry -> mapFromLogEntry(table, logEntry))
                 .map(logItem -> WriteRequest.builder()
                         .putRequest(PutRequest.builder()
                                 .item(logItem)
@@ -637,13 +637,15 @@ public class TableDynamoDbRepository implements Tables {
         return key;
     }
 
-    private Map<String, AttributeValue> mapFromLogEntry(Table.Id gameId, LogEntry logEntry) {
+    private Map<String, AttributeValue> mapFromLogEntry(Table table, LogEntry logEntry) {
         var item = new HashMap<String, AttributeValue>();
 
-        item.put("GameId", AttributeValue.builder().s(gameId.getId()).build());
+        item.put("GameId", AttributeValue.builder().s(table.getId().getId()).build());
         item.put("Timestamp", AttributeValue.builder().n(Long.toString(logEntry.getTimestamp().toEpochMilli())).build());
         item.put("UserId", logEntry.getUserId().map(userId -> AttributeValue.builder().s(userId.getId()).build()).orElse(null));
         item.put("PlayerId", AttributeValue.builder().s(logEntry.getPlayerId().getId()).build());
+        table.getPlayerById(logEntry.getPlayerId()).ifPresent(player ->
+                item.put("PlayerColor", AttributeValue.builder().s(player.getColor().name()).build()));
         item.put("Type", AttributeValue.builder().s(logEntry.getType().name()).build());
         item.put("Parameters", AttributeValue.builder().l(logEntry.getParameters().stream()
                 .map(param -> AttributeValue.builder().s(param).build())
