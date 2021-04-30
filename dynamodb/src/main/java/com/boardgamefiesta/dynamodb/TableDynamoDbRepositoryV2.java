@@ -153,7 +153,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 table.getLog().stream()
                         .map(logEntry -> WriteRequest.builder()
                                 .putRequest(PutRequest.builder()
-                                        .item(mapItemFromLogEntry(logEntry, table.getId()).asMap())
+                                        .item(mapItemFromLogEntry(logEntry, table).asMap())
                                         .build())
                                 .build())
         )
@@ -165,9 +165,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                                 .build()));
     }
 
-    public Item mapItemFromLogEntry(LogEntry logEntry, Table.Id tableId) {
-        return new Item()
-                .setString(PK, TABLE_PREFIX + tableId.getId())
+    public Item mapItemFromLogEntry(LogEntry logEntry, Table table) {
+        var item = new Item()
+                .setString(PK, TABLE_PREFIX + table.getId().getId())
                 .setString(SK, LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(logEntry.getTimestamp()))
                 .setString("UserId", logEntry.getUserId().map(User.Id::getId).orElse(null))
                 .setString("PlayerId", logEntry.getPlayerId().getId())
@@ -177,6 +177,11 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                                 .map(Item::s)
                                 .collect(Collectors.toList()))
                         .build());
+
+        table.getPlayerById(logEntry.getPlayerId()).ifPresent(player ->
+                item.setEnum("PlayerColor", player.getColor()));
+
+        return item;
     }
 
     @Override
@@ -275,7 +280,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 : log.stream();
 
         var writeRequests = logEntries
-                .map(logEntry -> mapItemFromLogEntry(logEntry, table.getId()))
+                .map(logEntry -> mapItemFromLogEntry(logEntry, table))
                 .map(logItem -> WriteRequest.builder()
                         .putRequest(PutRequest.builder()
                                 .item(logItem.asMap())
