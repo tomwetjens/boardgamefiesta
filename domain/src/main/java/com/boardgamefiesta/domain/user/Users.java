@@ -12,7 +12,9 @@ public interface Users extends Repository {
     Stream<User> findByUsernameStartsWith(String username, int maxResults);
 
     Optional<User> findByUsername(String username);
+
     Optional<User> findByEmail(String email);
+
     Optional<User.Id> findIdByCognitoUsername(String cognitoUsername);
 
     void add(User user);
@@ -20,6 +22,8 @@ public interface Users extends Repository {
     void update(User user) throws ConcurrentModificationException;
 
     void validateBeforeAdd(String email);
+
+    Stream<User> findByIds(Stream<User.Id> ids);
 
     final class EmailAlreadyInUse extends DuplicateException {
         public EmailAlreadyInUse() {

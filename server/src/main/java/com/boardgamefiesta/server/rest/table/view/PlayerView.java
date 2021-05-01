@@ -1,9 +1,9 @@
 package com.boardgamefiesta.server.rest.table.view;
 
 import com.boardgamefiesta.api.domain.PlayerColor;
+import com.boardgamefiesta.domain.rating.Rating;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.user.User;
-import com.boardgamefiesta.domain.rating.Rating;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 import lombok.NonNull;
 import lombok.Value;
@@ -32,7 +32,10 @@ public class PlayerView {
         type = player.getType();
         status = player.getStatus();
         rating = player.getUserId().map(ratingMap::get).map(Rating::getRating).orElse(null);
-        this.user = player.getUserId().map(userId -> new UserView(userId, userFunction.apply(userId), null)).orElse(null);
+        this.user = player.getUserId()
+                .map(userId ->
+                        new UserView(userId, userFunction.apply(userId), null))
+                .orElse(null);
         turnLimit = player.getTurnLimit().orElse(null);
         score = player.getScore().orElse(null);
         winner = player.getWinner().orElse(null);

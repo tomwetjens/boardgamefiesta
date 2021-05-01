@@ -13,7 +13,6 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -98,6 +97,15 @@ public class Table implements AggregateRoot {
     @Getter
     private Instant ended;
 
+    @Getter
+    private int minNumberOfPlayers;
+
+    @Getter
+    private int maxNumberOfPlayers;
+
+    @Getter
+    private boolean autoStart;
+
     public static Table create(@NonNull Game game,
                                @NonNull Mode mode,
                                @NonNull User.Id ownerId,
@@ -120,6 +128,9 @@ public class Table implements AggregateRoot {
                 .players(new HashSet<>(Collections.singleton(player)))
                 .log(new Log())
                 .currentState(Lazy.of(Optional.empty()))
+                .minNumberOfPlayers(game.getMinNumberOfPlayers())
+                .maxNumberOfPlayers(game.getMaxNumberOfPlayers())
+                .autoStart(false)
                 .build();
 
         table.log.add(new LogEntry(player, LogEntry.Type.CREATE));
@@ -436,6 +447,8 @@ public class Table implements AggregateRoot {
         log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
 
         updated = Instant.now();
+
+        autoStartIfPossible();
     }
 
     public void abandon() {
@@ -506,7 +519,7 @@ public class Table implements AggregateRoot {
     public void invite(User user) {
         checkNew();
 
-        if (players.size() == game.getMaxNumberOfPlayers()) {
+        if (players.size() == maxNumberOfPlayers) {
             throw new ExceedsMaxPlayers();
         }
 
@@ -547,7 +560,7 @@ public class Table implements AggregateRoot {
             throw new NotPublic();
         }
 
-        if (players.size() == game.getMaxNumberOfPlayers()) {
+        if (players.size() == maxNumberOfPlayers) {
             throw new ExceedsMaxPlayers();
         }
 
@@ -561,6 +574,14 @@ public class Table implements AggregateRoot {
         log.add(new LogEntry(player, LogEntry.Type.JOIN, List.of(userId)));
 
         new Joined(id, userId).fire();
+
+        autoStartIfPossible();
+    }
+
+    private void autoStartIfPossible() {
+        if (autoStart && playersThatAccepted().count() >= minNumberOfPlayers) {
+            start();
+        }
     }
 
     private boolean isPlayer(User.@NonNull Id userId) {
@@ -586,7 +607,7 @@ public class Table implements AggregateRoot {
     public void addComputer() {
         checkNew();
 
-        if (players.size() == game.getMaxNumberOfPlayers()) {
+        if (players.size() == maxNumberOfPlayers) {
             throw new ExceedsMaxPlayers();
         }
 
@@ -664,7 +685,7 @@ public class Table implements AggregateRoot {
 
     public boolean canJoin(User.Id userId) {
         return status == Status.NEW && visibility == Visibility.PUBLIC
-                && !isPlayer(userId) && players.size() < game.getMaxNumberOfPlayers();
+                && !isPlayer(userId) && players.size() < maxNumberOfPlayers;
     }
 
     public void changeType(Type type) {
@@ -693,7 +714,7 @@ public class Table implements AggregateRoot {
     public boolean canJoin() {
         return status == Status.NEW
                 && visibility == Visibility.PUBLIC
-                && players.size() < game.getMaxNumberOfPlayers();
+                && players.size() < maxNumberOfPlayers;
     }
 
     public Optional<Stats> stats(Player player) {
@@ -701,6 +722,41 @@ public class Table implements AggregateRoot {
 
         return state.getPlayerByName(player.getId().getId()) // could be empty when player has left
                 .map(state::stats);
+    }
+
+    public void changeMode(@NonNull Mode mode) {
+        checkNew();
+
+        this.mode = mode;
+
+        new OptionsChanged(id).fire();
+    }
+
+    public void changeMinMaxNumberOfPlayers(int minNumberOfPlayers, int maxNumberOfPlayers) {
+        checkNew();
+
+        if (minNumberOfPlayers < game.getMinNumberOfPlayers() || minNumberOfPlayers > game.getMaxNumberOfPlayers()) {
+            throw new MinNumberOfPlayers();
+        }
+        if (maxNumberOfPlayers > game.getMaxNumberOfPlayers() || maxNumberOfPlayers < game.getMinNumberOfPlayers()) {
+            throw new MaxNumberOfPlayers();
+        }
+        if (maxNumberOfPlayers < minNumberOfPlayers) {
+            throw new MaxNumberOfPlayers();
+        }
+
+        this.minNumberOfPlayers = minNumberOfPlayers;
+        this.maxNumberOfPlayers = maxNumberOfPlayers;
+
+        new OptionsChanged(id).fire();
+    }
+
+    public void changeAutoStart(boolean autoStart) {
+        checkNew();
+
+        this.autoStart = autoStart;
+
+        new OptionsChanged(id).fire();
     }
 
     public enum Status {
@@ -717,7 +773,7 @@ public class Table implements AggregateRoot {
 
     public enum Mode {
         NORMAL,
-        TRAINING
+        PRACTICE
     }
 
     public enum Visibility {
@@ -988,6 +1044,18 @@ public class Table implements AggregateRoot {
     public static final class UndoNotAllowed extends NotAllowedException {
         private UndoNotAllowed() {
             super("CANNOT_UNDO");
+        }
+    }
+
+    public static final class MinNumberOfPlayers extends NotAllowedException {
+        private MinNumberOfPlayers() {
+            super("MIN_NUMBER_OF_PLAYERS");
+        }
+    }
+
+    public static final class MaxNumberOfPlayers extends NotAllowedException {
+        private MaxNumberOfPlayers() {
+            super("MAX_NUMBER_OF_PLAYERS");
         }
     }
 

@@ -20,13 +20,13 @@ echo "${ACTION}: $STACK_NAME"
 #aws cloudformation $ACTION --stack-name $STACK_NAME-db \
 #  --template-body file://db.yaml \
 #  --parameters ParameterKey=Suffix,ParameterValue=$SUFFIX
-
-aws s3 cp ../dynamodb-triggers/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/dynamodb-triggers.zip
-
-aws cloudformation $ACTION --stack-name $STACK_NAME-triggers \
-  --template-body file://triggers.yaml \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
+#
+#aws s3 cp ../dynamodb-triggers/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/dynamodb-triggers.zip
+#
+#aws cloudformation $ACTION --stack-name $STACK_NAME-triggers \
+#  --template-body file://triggers.yaml \
+#  --capabilities CAPABILITY_NAMED_IAM \
+#  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
 
 aws s3 cp ../cognito/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/cognito.zip
 

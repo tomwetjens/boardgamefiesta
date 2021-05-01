@@ -33,6 +33,10 @@ public class Item {
         return value != null ? AttributeValue.builder().s(value).build() : NUL;
     }
 
+    public static AttributeValue bool(Boolean value) {
+        return value != null ? AttributeValue.builder().bool(value).build() : NUL;
+    }
+
     public static AttributeValue map(Map<String, AttributeValue> value) {
         return value != null ? AttributeValue.builder().m(value).build() : NUL;
     }
@@ -102,6 +106,11 @@ public class Item {
                 .map(Integer::valueOf);
     }
 
+    public Optional<Boolean> getOptionalBoolean(String attributeName) {
+        return getOptionalNotNull(attributeName)
+                .map(AttributeValue::bool);
+    }
+
     public int getInt(String attributeName) {
         return getOptionalInt(attributeName).orElseThrow(() -> new NoSuchAttributeException(attributeName));
     }
@@ -167,6 +176,11 @@ public class Item {
 
     public Map<String, AttributeValue> getMap(String attributeName) {
         return map.get(attributeName).m();
+    }
+
+    public Item setBoolean(String attributeName, boolean value) {
+        map.put(attributeName, bool(value));
+        return this;
     }
 
     public static final class NoSuchAttributeException extends RuntimeException {

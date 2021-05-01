@@ -5,16 +5,16 @@ import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -56,6 +56,8 @@ public class UserDynamoDbRepositoryV2 implements Users {
 
     private static final String VERSION = "Version";
 
+    private static final int MAX_BATCH_GET_ITEM_SIZE = 100;
+
     private final DynamoDbClient client;
     private final DynamoDbConfiguration config;
 
@@ -81,6 +83,35 @@ public class UserDynamoDbRepositoryV2 implements Users {
             return Optional.of(mapToUser(Item.of(response.items().get(0))));
         }
         return Optional.empty();
+    }
+
+    @Override
+    public Stream<User> findByIds(Stream<User.Id> ids) {
+        return Chunked.stream(ids, MAX_BATCH_GET_ITEM_SIZE)
+                .map(chunk -> chunk
+                        .map(id -> Map.of(
+                                PK, Item.s(USER_PREFIX + id.getId()),
+                                SK, Item.s(USER_PREFIX + id.getId())))
+                        .collect(Collectors.toList()))
+                .flatMap(keys -> {
+                    var response = client.batchGetItem(BatchGetItemRequest.builder()
+                            .requestItems(Map.of(config.getTableName(),
+                                    KeysAndAttributes.builder()
+                                            .keys(keys)
+                                            .build()))
+                            .build());
+
+                    if (response.hasResponses()) {
+                        var items = response.responses().get(config.getTableName()).stream()
+                                .collect(Collectors.toMap(item -> item.get(PK).s(), Function.identity()));
+                        return keys.stream()
+                                .map(key -> key.get(PK).s())
+                                .map(items::get)
+                                .map(Item::of)
+                                .map(this::mapToUser);
+                    }
+                    return Stream.empty();
+                });
     }
 
     private User mapToUser(Item item) {

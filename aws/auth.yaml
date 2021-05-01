@@ -96,8 +96,8 @@ Resources:
                 Action:
                   - dynamodb:Query
                 Resource:
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-users'
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-users/index/*'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
 
   PreSignUpTriggerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -152,8 +152,8 @@ Resources:
                   - dynamodb:Query
                   - dynamodb:PutItem
                 Resource:
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-users'
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/gwt-users/index/*'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
 
   PostConfirmationTriggerLambdaFunction:
     Type: AWS::Lambda::Function

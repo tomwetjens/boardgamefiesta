@@ -198,7 +198,10 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                         .map(this::mapFromPlayer)
                         .collect(Collectors.toList()))
                         .build())
-                .set("Options", mapFromOptions(table.getOptions()));
+                .set("Options", mapFromOptions(table.getOptions()))
+                .setInt("MinNumberOfPlayers", table.getMinNumberOfPlayers())
+                .setInt("MaxNumberOfPlayers", table.getMaxNumberOfPlayers())
+                .setBoolean("AutoStart", table.isAutoStart());
 
         if (table.getStarted() != null) {
             updateItem.setInstant("Started", table.getStarted());
@@ -255,8 +258,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     private void addState(@NonNull Table.Id tableId,
-                         @NonNull Game game, @NonNull State state, @NonNull Instant timestamp,
-                         @NonNull Optional<Instant> previousTimestamp) {
+                          @NonNull Game game, @NonNull State state, @NonNull Instant timestamp,
+                          @NonNull Optional<Instant> previousTimestamp) {
         client.putItem(PutItemRequest.builder()
                 .tableName(config.getTableName())
                 .item(mapItemFromState(tableId, game, state, timestamp, previousTimestamp))
@@ -398,7 +401,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                             .stream()
                             .filter(QueryResponse::hasItems)
                             .flatMap(response -> response.items().stream())
-                            .filter(item -> item.get(GSI1SK).s().compareTo(gsi2skTo) < 0) // Make upper limit exclusive, because BETWEEN is inclusive
+                            .filter(item -> item.get(GSI2SK).s().compareTo(gsi2skTo) < 0) // Make upper limit exclusive, because BETWEEN is inclusive
                             .limit(maxResults);
                 })
                 // Gather
@@ -443,7 +446,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                             .scanIndexForward(false)
                             .keyConditionExpression(GSI3PK + "=:GSI3PK AND " + GSI3SK + " BETWEEN :GSI3SKFrom AND :GSI3SKTo")
                             .expressionAttributeValues(Map.of(
-                                    ":GSI3SK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                    ":GSI3PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
                                     ":GSI3SKFrom", Item.s(GSISK.partial(Table.Status.NEW, from)),
                                     ":GSI3SKTo", Item.s(gsi3skTo)
                             ))
@@ -642,7 +645,10 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .setEnum("Status", table.getStatus())
                 .set("Options", mapFromOptions(table.getOptions()))
                 .setInstant("Created", table.getCreated())
-                .setInstant("Updated", table.getUpdated());
+                .setInstant("Updated", table.getUpdated())
+                .setInt("MinNumberOfPlayers", table.getMinNumberOfPlayers())
+                .setInt("MaxNumberOfPlayers", table.getMaxNumberOfPlayers())
+                .setBoolean("AutoStart", table.isAutoStart());
         if (table.getStarted() != null) {
             item.setInstant("Started", table.getStarted());
         }
@@ -692,9 +698,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     private static Map<String, AttributeValue> mapItemFromState(Table.Id tableId,
-                                                               Instant timestamp,
-                                                               Optional<Instant> previousTimestamp,
-                                                               AttributeValue state) {
+                                                                Instant timestamp,
+                                                                Optional<Instant> previousTimestamp,
+                                                                AttributeValue state) {
         var item = new HashMap<String, AttributeValue>();
         item.put(PK, Item.s(TABLE_PREFIX + tableId.getId()));
         item.put(SK, Item.s(STATE_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(timestamp)));
@@ -770,6 +776,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                         ? Lazy.of(Optional.of(mapToCurrentState(id, items.get(1), game)))
                         : Lazy.defer(() -> getCurrentState(id, game)))
                 .log(new LazyLog((since, before, limit) -> findLogEntries(id, since, before, limit)))
+                .minNumberOfPlayers(item.getOptionalInt("MinNumberOfPlayers").orElse(game.getMinNumberOfPlayers()))
+                .maxNumberOfPlayers(item.getOptionalInt("MaxNumberOfPlayers").orElse(game.getMaxNumberOfPlayers()))
+                .autoStart(item.getOptionalBoolean("AutoStart").orElse(false))
                 .build();
     }
 

@@ -20,6 +20,7 @@ public class TableView {
     String id;
     String game;
     Table.Type type;
+    Table.Mode mode;
     Table.Visibility visibility;
     Table.Status status;
     Instant created;
@@ -29,6 +30,7 @@ public class TableView {
     String player;
     Set<String> otherPlayers;
     Map<String, PlayerView> players;
+    int numberOfPlayers;
     boolean canAccept;
     boolean canStart;
     boolean canJoin;
@@ -54,6 +56,9 @@ public class TableView {
 
     int minNumberOfPlayers;
     int maxNumberOfPlayers;
+    int minNumberOfPlayersGame;
+    int maxNumberOfPlayersGame;
+    boolean autoStart;
 
     public TableView(@NonNull Table table,
                      @NonNull Map<User.Id, User> userMap,
@@ -62,6 +67,7 @@ public class TableView {
         id = table.getId().getId();
         game = table.getGame().getId().getId();
         type = table.getType();
+        mode = table.getMode();
         visibility = table.getVisibility();
         status = table.getStatus();
         owner = new UserView(table.getOwnerId(), userMap.get(table.getOwnerId()), currentUserId);
@@ -82,6 +88,8 @@ public class TableView {
                 .collect(Collectors.toMap(player -> player.getId().getId(),
                         player -> new PlayerView(player, userMap::get, ratingMap)));
 
+        numberOfPlayers = table.getPlayers().size();
+
         created = table.getCreated();
         started = table.getStarted();
         ended = table.getEnded();
@@ -98,8 +106,11 @@ public class TableView {
                 .filter(player -> currentUserId.equals(player.getUserId().orElse(null)))
                 .anyMatch(player -> player.getStatus() == Player.Status.ACCEPTED);
 
-        minNumberOfPlayers = table.getGame().getMinNumberOfPlayers();
-        maxNumberOfPlayers = table.getGame().getMaxNumberOfPlayers();
+        minNumberOfPlayers = table.getMinNumberOfPlayers();
+        maxNumberOfPlayers = table.getMaxNumberOfPlayers();
+        minNumberOfPlayersGame = table.getGame().getMinNumberOfPlayers();
+        maxNumberOfPlayersGame = table.getGame().getMaxNumberOfPlayers();
+        autoStart = table.isAutoStart();
 
         if (table.getStatus() == Table.Status.STARTED) {
             var currentPlayers = table.getCurrentPlayers();

@@ -5,7 +5,6 @@ import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.Rating;
 import com.boardgamefiesta.domain.rating.Ratings;
-import com.boardgamefiesta.domain.table.Lazy;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
@@ -283,6 +282,39 @@ public class TableResource {
             checkOwner(table);
 
             table.changeType(request.getType());
+        });
+    }
+
+    @POST
+    @Path("/{id}/change-mode")
+    @Transactional
+    public void changeType(@PathParam("id") String id, @NotNull @Valid ChangeModeRequest request) {
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
+
+            table.changeMode(request.getMode());
+        });
+    }
+
+    @POST
+    @Path("/{id}/change-min-max-players")
+    @Transactional
+    public void changeMinMaxPlayers(@PathParam("id") String id, @NotNull @Valid ChangeMinMaxPlayersRequest request) {
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
+
+            table.changeMinMaxNumberOfPlayers(request.getMinNumberOfPlayers(), request.getMaxNumberOfPlayers());
+        });
+    }
+
+    @POST
+    @Path("/{id}/change-auto-start")
+    @Transactional
+    public void changeAutoStart(@PathParam("id") String id, @NotNull @Valid ChangeAutoStartRequest request) {
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            checkOwner(table);
+
+            table.changeAutoStart(request.isAutoStart());
         });
     }
 

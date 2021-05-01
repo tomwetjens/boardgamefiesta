@@ -41,6 +41,10 @@ public class UpdateItem {
         return set(attributeName, Item.n(value));
     }
 
+    public UpdateItem setBoolean(String attributeName, boolean value) {
+        return set(attributeName, Item.bool(value));
+    }
+
     public UpdateItem setInstant(String attributeName, Instant value) {
         return set(attributeName, Item.s(value));
     }
