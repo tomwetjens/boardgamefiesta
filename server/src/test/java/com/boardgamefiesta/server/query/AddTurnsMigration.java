@@ -40,8 +40,6 @@ public class AddTurnsMigration {
 
     @BeforeEach
     void setUp() {
-        when(config.getTableSuffix()).thenReturn(Optional.of(""));
-
         var dynamoDbClient = DynamoDbClient.create();
         users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
         ratings = new RatingDynamoDbRepositoryV2(dynamoDbClient, config);

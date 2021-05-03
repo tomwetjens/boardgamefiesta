@@ -19,6 +19,11 @@ public class Translations {
     private static final ResourceBundle defaultBundle = ResourceBundle.getBundle(BASE_NAME, Locale.ENGLISH);
     private static final Map<Locale, CachedBundle> bundles = new ConcurrentHashMap<>();
 
+    static {
+        // Must set this to reliably fallback to English when no translation is found for a given locale
+        Locale.setDefault(Locale.ENGLISH);
+    }
+
     private ResourceBundle getBundle(Locale locale) {
         var bundle = bundles.computeIfAbsent(locale, l -> new CachedBundle(ResourceBundle.getBundle(BASE_NAME, locale)));
         return bundle.getBundle() != null ? bundle.getBundle() : defaultBundle;

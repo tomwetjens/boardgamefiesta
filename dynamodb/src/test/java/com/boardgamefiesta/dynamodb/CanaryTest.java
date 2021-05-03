@@ -12,10 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @Disabled
@@ -30,8 +27,6 @@ public class CanaryTest {
 
     @Test
     void allTablesCanBeOpened() {
-        when(config.getTableSuffix()).thenReturn(Optional.of(""));
-
         tables = new TableDynamoDbRepositoryV2(games, DynamoDbClient.create(), config);
 
         var count = tables.findEnded(Game.Id.of(GWT.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
