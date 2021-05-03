@@ -100,4 +100,32 @@ class EmailTemplatesTest {
                 "Sincerely,<br/>Board Game Fiesta<br/>" +
                 "<a href=\"https://boardgamefiesta.com\">https://boardgamefiesta.com</a>");
     }
+
+    @Test
+    void endedMissingTranslations() {
+        when(user.getLocale()).thenReturn(Locale.forLanguageTag("it-IT"));
+        when(user.getTimeZone()).thenReturn(ZoneId.of("Europe/Rome"));
+
+        var game = mock(Game.class);
+        when(game.getId()).thenReturn(GAME_ID);
+
+        var player = mock(Player.class);
+        when(player.getUserId()).thenReturn(Optional.of(USER_ID));
+
+        var table = mock(Table.class);
+        when(table.getId()).thenReturn(TABLE_ID);
+        when(table.getGame()).thenReturn(game);
+        when(table.getEnded()).thenReturn(Instant.parse("2021-03-23T16:46:00.000Z"));
+
+        var userMap = Map.of(USER_ID, user);
+
+        var message = emailTemplates.createEndedMessage(table, player, userMap);
+
+        assertThat(message.subject().data()).isEqualTo("Ranchers Of The Old West has ended at 23/03/21, 17:46");
+        assertThat(message.body().html().data()).isEqualTo("<p>Howdy!</p><br/>" +
+                "<p>Your game of Ranchers Of The Old West has ended at 23/03/21, 17:46.</p>" +
+                "<p><a href=\"https://boardgamefiesta.com/gwt/tableId\">Go to table</a></p><br/>" +
+                "Sincerely,<br/>Board Game Fiesta<br/>" +
+                "<a href=\"https://boardgamefiesta.com\">https://boardgamefiesta.com</a>");
+    }
 }
