@@ -60,6 +60,8 @@ class ActionTypeTest {
 
         ObjectiveCard objectiveCard1 = mock(ObjectiveCard.class);
         when(objectiveCard1.getPoints()).thenReturn(3);
+        when(objectiveCard1.getPenalty()).thenReturn(2);
+        when(objectiveCard1.getPossibleActions()).thenReturn(Set.of(Action.DrawCard.class, Action.Draw2Cards.class, Action.Draw3Cards.class));
         when(objectiveCard1.getTasks()).thenReturn(List.of(ObjectiveCard.Task.BUILDING, ObjectiveCard.Task.BLUE_TEEPEE, ObjectiveCard.Task.BLUE_TEEPEE));
 
         when(currentPlayerState.getHand()).thenReturn(Set.of(objectiveCard1));
@@ -69,6 +71,8 @@ class ActionTypeTest {
                 .add("type", ActionType.PLAY_OBJECTIVE_CARD.name())
                 .add("objectiveCard", Json.createObjectBuilder()
                         .add("points", 3)
+                        .add("penalty", 2)
+                        .add("action", ActionType.DRAW_CARD.name())
                         .add("tasks", Json.createArrayBuilder()
                                 .add("BUILDING")
                                 .add("BLUE_TEEPEE")
