@@ -369,15 +369,19 @@ public enum ActionType {
     }
 
     private static ObjectiveCard findObjectiveCard(Game game, JsonObject jsonObject) {
-        List<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
+        var tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
                 .map(JsonString::getString)
                 .map(ObjectiveCard.Task::valueOf)
                 .collect(Collectors.toList());
-        int points = getInt(jsonObject, JsonProperties.POINTS);
+        var points = getInt(jsonObject, JsonProperties.POINTS);
+        var penalty = getInt(jsonObject, JsonProperties.PENALTY);
+        var action = getEnum(jsonObject, JsonProperties.ACTION, ActionType.class);
 
         return game.getObjectiveCards().getAvailable().stream()
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
+                .filter(objectiveCard -> objectiveCard.getPenalty() == penalty)
                 .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
+                .filter(objectiveCard -> objectiveCard.getPossibleActions().contains(action.getAction()))
                 .findAny()
                 .orElseThrow(() -> new JsonException("Objective card not available"));
     }
@@ -409,31 +413,23 @@ public enum ActionType {
     }
 
     private static ObjectiveCard findObjectiveCardInHand(Collection<Card> hand, JsonObject jsonObject) {
-        List<ObjectiveCard.Task> tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
+        var tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
                 .map(JsonString::getString)
                 .map(ObjectiveCard.Task::valueOf)
                 .collect(Collectors.toList());
-        int points = getInt(jsonObject, JsonProperties.POINTS);
+        var points = getInt(jsonObject, JsonProperties.POINTS);
+        var penalty = getInt(jsonObject, JsonProperties.PENALTY);
+        var action = getEnum(jsonObject, JsonProperties.ACTION, ActionType.class);
 
         return hand.stream()
                 .filter(card -> card instanceof ObjectiveCard)
                 .map(card -> (ObjectiveCard) card)
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
-                .filter(objectiveCard -> containsExactlyInAnyOrder(objectiveCard.getTasks(), tasks))
+                .filter(objectiveCard -> objectiveCard.getPenalty() == penalty)
+                .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
+                .filter(objectiveCard -> objectiveCard.getPossibleActions().contains(action.getAction()))
                 .findAny()
                 .orElseThrow(() -> new JsonException("Objective card not in hand"));
-    }
-
-    private static <T> boolean containsExactlyInAnyOrder(Collection<T> actual, Collection<T> values) {
-        List<Object> notExpected = new ArrayList<>(actual);
-
-        for (T value : values) {
-            if (!notExpected.remove(value)) {
-                return false;
-            }
-        }
-
-        return notExpected.isEmpty();
     }
 
     private static List<Card.CattleCard> findCattleCards(Game game, JsonArray cattleCards) {
@@ -523,6 +519,8 @@ public enum ActionType {
     }
 
     private static class JsonProperties {
+        private static final String PENALTY = "penalty";
+        private static final String ACTION = "action";
         private static final String CATTLE_CARD = "cattleCard";
         private static final String STATION_MASTER = "stationMaster";
         private static final String TOWN = "town";
