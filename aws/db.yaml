@@ -6,191 +6,65 @@ Parameters:
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
 Resources:
-  UserTable:
+  Table:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub 'boardgamefiesta-${Environment}-user'
+      TableName: !Sub 'boardgamefiesta-${Environment}'
       AttributeDefinitions:
-        - AttributeName: Id
+        - AttributeName: PK
           AttributeType: S
-        - AttributeName: Username
+        - AttributeName: SK
           AttributeType: S
-        - AttributeName: Email
+        - AttributeName: GSI1PK
           AttributeType: S
-      BillingMode: PAY_PER_REQUEST
-      GlobalSecondaryIndexes:
-        - IndexName: Email-index
-          KeySchema:
-            - AttributeName: Email
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-        - IndexName: Username-index
-          KeySchema:
-            - AttributeName: Username
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-      KeySchema:
-        - AttributeName: Id
-          KeyType: HASH
-      TimeToLiveSpecification:
-        AttributeName: Expires
-        Enabled: True
-
-  TableTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub 'boardgamefiesta-${Environment}-table'
-      AttributeDefinitions:
-        - AttributeName: Id
+        - AttributeName: GSI1SK
           AttributeType: S
-        - AttributeName: UserId
+        - AttributeName: GSI2PK
           AttributeType: S
-        - AttributeName: Created
-          AttributeType: N
+        - AttributeName: GSI2SK
+          AttributeType: S
+        - AttributeName: GSI3PK
+          AttributeType: S
+        - AttributeName: GSI3SK
+          AttributeType: S
       BillingMode: !If [ IsProduction, 'PROVISIONED', 'PAY_PER_REQUEST' ]
       GlobalSecondaryIndexes:
-        - IndexName: UserId-Created-index
+        - IndexName: GSI1
           KeySchema:
-            - AttributeName: UserId
+            - AttributeName: GSI1PK
               KeyType: HASH
-            - AttributeName: Created
+            - AttributeName: GSI1SK
               KeyType: RANGE
           Projection:
-            ProjectionType: ALL
+            ProjectionType: KEYS_ONLY
           ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
-        - IndexName: UserId-Id-index
+        - IndexName: GSI2
           KeySchema:
-            - AttributeName: UserId
+            - AttributeName: GSI2PK
               KeyType: HASH
-            - AttributeName: Id
+            - AttributeName: GSI2SK
               KeyType: RANGE
           Projection:
-            ProjectionType: ALL
+            ProjectionType: KEYS_ONLY
+          ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
+        - IndexName: GSI3
+          KeySchema:
+            - AttributeName: GSI3PK
+              KeyType: HASH
+            - AttributeName: GSI3SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: KEYS_ONLY
           ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
       KeySchema:
-        - AttributeName: Id
+        - AttributeName: PK
           KeyType: HASH
-        - AttributeName: UserId
+        - AttributeName: SK
           KeyType: RANGE
-      ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 9, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
       TimeToLiveSpecification:
-        AttributeName: Expires
+        AttributeName: TTL
         Enabled: True
-
-  StateTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub 'boardgamefiesta-${Environment}-state'
-      AttributeDefinitions:
-        - AttributeName: TableId
-          AttributeType: S
-        - AttributeName: Timestamp
-          AttributeType: N
-      BillingMode: !If [ IsProduction, 'PROVISIONED', 'PAY_PER_REQUEST' ]
-      KeySchema:
-        - AttributeName: TableId
-          KeyType: HASH
-        - AttributeName: Timestamp
-          KeyType: RANGE
       ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
-      TimeToLiveSpecification:
-        AttributeName: Expires
-        Enabled: True
-
-  LogTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub 'boardgamefiesta-${Environment}-log'
-      AttributeDefinitions:
-        - AttributeName: TableId
-          AttributeType: S
-        - AttributeName: Timestamp
-          AttributeType: N
-      BillingMode: PAY_PER_REQUEST
-      KeySchema:
-        - AttributeName: TableId
-          KeyType: HASH
-        - AttributeName: Timestamp
-          KeyType: RANGE
-
-  RatingTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub 'boardgamefiesta-${Environment}-rating'
-      AttributeDefinitions:
-        - AttributeName: UserIdGameId
-          AttributeType: S
-        - AttributeName: Timestamp
-          AttributeType: N
-        - AttributeName: TableId
-          AttributeType: S
-        - AttributeName: UserId
-          AttributeType: S
-      BillingMode: PAY_PER_REQUEST
-      GlobalSecondaryIndexes:
-        - IndexName: TableId-UserId-index
-          KeySchema:
-            - AttributeName: TableId
-              KeyType: HASH
-            - AttributeName: UserId
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-      KeySchema:
-        - AttributeName: UserIdGameId
-          KeyType: HASH
-        - AttributeName: Timestamp
-          KeyType: RANGE
-
-  RankingTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub 'boardgamefiesta-${Environment}-ranking'
-      AttributeDefinitions:
-        - AttributeName: UserId
-          AttributeType: S
-        - AttributeName: GameId
-          AttributeType: S
-        - AttributeName: RankOrder
-          AttributeType: S
-      BillingMode: PAY_PER_REQUEST
-      GlobalSecondaryIndexes:
-        - IndexName: GameId-RankOrder-index
-          KeySchema:
-            - AttributeName: GameId
-              KeyType: HASH
-            - AttributeName: RankOrder
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-      KeySchema:
-        - AttributeName: UserId
-          KeyType: HASH
-        - AttributeName: GameId
-          KeyType: RANGE
-
-  FriendTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub 'boardgamefiesta-${Environment}-friend'
-      AttributeDefinitions:
-        - AttributeName: UserId
-          AttributeType: S
-        - AttributeName: OtherUserId
-          AttributeType: S
-      BillingMode: PAY_PER_REQUEST
-      KeySchema:
-        - AttributeName: UserId
-          KeyType: HASH
-        - AttributeName: OtherUserId
-          KeyType: RANGE
-
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !If [ IsProduction, true, false ]

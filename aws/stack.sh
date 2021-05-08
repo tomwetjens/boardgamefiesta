@@ -17,9 +17,9 @@ echo "${ACTION}: $STACK_NAME"
 #aws cloudformation $ACTION --stack-name $STACK_NAME-vpc \
 #  --template-body file://vpc.yaml
 
-#aws cloudformation $ACTION --stack-name $STACK_NAME-db \
-#  --template-body file://db.yaml \
-#  --parameters ParameterKey=Suffix,ParameterValue=$SUFFIX
+aws cloudformation $ACTION --stack-name $STACK_NAME-db \
+  --template-body file://db.yaml \
+  --parameters ParameterKey=Environment,ParameterValue=$ENV
 #
 #aws s3 cp ../dynamodb-triggers/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/dynamodb-triggers.zip
 #
