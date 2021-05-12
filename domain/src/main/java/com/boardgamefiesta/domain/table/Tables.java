@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 public interface Tables extends Repository {
 
-    int MAX_ACTIVE_GAMES = 10;
+    int MAX_ACTIVE_GAMES = 50;
 
     Instant MIN_TIMESTAMP = Instant.ofEpochSecond(0);
     Instant MAX_TIMESTAMP = Instant.parse("9999-12-31T23:59:59.999Z");
