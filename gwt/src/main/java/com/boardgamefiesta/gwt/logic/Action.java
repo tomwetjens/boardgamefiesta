@@ -721,7 +721,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                     if (fillUpCattleMarket) {
                         game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.FILL_UP_CATTLE_MARKET, Collections.emptyList());
 
-                        game.getCattleMarket().fillUp(game.getPlayerOrder().size());
+                        game.getCattleMarket().fillUp(game.getPlayers().size());
 
                         undoAllowed = false;
                     }
@@ -1187,7 +1187,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             PlayerState currentPlayerState = game.currentPlayerState();
             if (atMost == null) {
-                var stepLimit = currentPlayerState.getStepLimit(game.getPlayerOrder().size());
+                var stepLimit = currentPlayerState.getStepLimit(game.getPlayers().size());
                 if (steps.size() > stepLimit) {
                     throw new GWTException(GWTError.STEPS_EXCEED_LIMIT);
                 }
@@ -1274,7 +1274,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             // Can never pay more than player has
             int amount = Math.min(currentPlayerState.getBalance(),
-                    location.getHand().getFee(game.getPlayerOrder().size()));
+                    location.getHand().getFee(game.getPlayers().size()));
 
             if (amount > 0) {
                 feeRecipient(location)

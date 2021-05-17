@@ -487,7 +487,7 @@ public class Game implements State {
 
         var stats = Stats.builder()
                 .value("rttn", railsToTheNorth ? 'Y' : 'N')
-                .value("players", playerOrder.size())
+                .value("players", players.size())
                 .value("seat", playerOrder.indexOf(player) + 1)
                 .value("cowboys", playerState.getNumberOfCowboys())
                 .value("craftsmen", playerState.getNumberOfCraftsmen())
