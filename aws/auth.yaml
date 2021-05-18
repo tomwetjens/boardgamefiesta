@@ -5,18 +5,15 @@ Parameters:
     Type: String
   Version:
     Type: String
-  UserPoolId:
-    Type: String
-    Default: eu-west-1_4FuZdxo27
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
+Mappings:
+  Environments:
+    dev:
+      UserPoolId: eu-west-1_s6Ypfd935
+    prod:
+      UserPoolId: eu-west-1_4FuZdxo27
 Resources:
-  MigrateUserTriggerLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '${AWS::StackName}-MigrateUserTrigger'
-      RetentionInDays: 7
-
   MigrateUserTriggerRole:
     Type: AWS::IAM::Role
     Properties:
@@ -37,14 +34,12 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !GetAtt MigrateUserTriggerLogGroup.Arn
-              - Effect: Allow
-                Action:
                   - cognito-idp:AdminInitiateAuth
                   - cognito-idp:AdminGetUser
                 Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/eu-west-1_c5qwAzc0x'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
 
   MigrateUserTriggerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -62,12 +57,6 @@ Resources:
       Code:
         S3Bucket: boardgamefiesta-builds
         S3Key: !Sub '${Version}/cognito.zip'
-
-  PreSignUpTriggerLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '${AWS::StackName}-PreSignUpTrigger'
-      RetentionInDays: 7
 
   PreSignUpTriggerRole:
     Type: AWS::IAM::Role
@@ -89,15 +78,13 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !GetAtt PreSignUpTriggerLogGroup.Arn
-              - Effect: Allow
-                Action:
                   - dynamodb:Query
                 Resource:
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
 
   PreSignUpTriggerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -110,15 +97,10 @@ Resources:
       Environment:
         Variables:
           QUARKUS_LAMBDA_HANDLER: preSignUp
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
         S3Key: !Sub '${Version}/cognito.zip'
-
-  PostConfirmationTriggerLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '${AWS::StackName}-PostConfirmationTrigger'
-      RetentionInDays: 7
 
   PostConfirmationTriggerRole:
     Type: AWS::IAM::Role
@@ -140,13 +122,8 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !GetAtt PostConfirmationTriggerLogGroup.Arn
-              - Effect: Allow
-                Action:
                   - cognito-idp:AdminAddUserToGroup
-                Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
+                Resource: !Join [ '', [ !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
               - Effect: Allow
                 Action:
                   - dynamodb:Query
@@ -154,6 +131,9 @@ Resources:
                 Resource:
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
 
   PostConfirmationTriggerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -166,6 +146,7 @@ Resources:
       Environment:
         Variables:
           QUARKUS_LAMBDA_HANDLER: postConfirmation
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
         S3Key: !Sub '${Version}/cognito.zip'
@@ -216,7 +197,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt MigrateUserTriggerLambdaFunction.Arn
       Principal: cognito-idp.amazonaws.com
-      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
+      SourceArn: !Join [ '', [ !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
 
   PreSignUpTriggerPermission:
     Type: AWS::Lambda::Permission
@@ -226,7 +207,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt PreSignUpTriggerLambdaFunction.Arn
       Principal: cognito-idp.amazonaws.com
-      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
+      SourceArn: !Join [ '', [ !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
 
   PostConfirmationTriggerPermission:
     Type: AWS::Lambda::Permission
@@ -236,7 +217,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt PostConfirmationTriggerLambdaFunction.Arn
       Principal: cognito-idp.amazonaws.com
-      SourceArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
+      SourceArn: !Join [ '', [ !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
 
 #
 #  UserPoolDomain:
