@@ -349,7 +349,8 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
     }
 
     private Table.TableBuilder table() {
-        return Table.create(game, Table.Mode.NORMAL, userA.getId(), new Options(Collections.emptyMap()))
-                .toBuilder();
+        var table = Table.create(game, Table.Mode.NORMAL, userA.getId(), new Options(Collections.emptyMap()));
+        table.invite(userB);
+        return table.toBuilder();
     }
 }
