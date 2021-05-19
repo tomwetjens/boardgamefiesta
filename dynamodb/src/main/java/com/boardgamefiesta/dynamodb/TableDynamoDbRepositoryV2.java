@@ -211,18 +211,22 @@ public class TableDynamoDbRepositoryV2 implements Tables {
             updateItem.setInstant("Ended", table.getEnded());
         }
 
-        if (table.getStatus() == Table.Status.ENDED) {
-            updateItem.setString(GSI1PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
-            updateItem.setString(GSI1SK, GSISK.fromTable(table));
-        } else {
-            updateItem.remove(GSI1PK, GSI1SK);
-        }
+        if (table.hasMoreThanOneHumanPlayer()) {
+            if (table.getStatus() == Table.Status.ENDED) {
+                updateItem.setString(GSI1PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+                updateItem.setString(GSI1SK, GSISK.fromTable(table));
+            } else {
+                updateItem.remove(GSI1PK, GSI1SK);
+            }
 
-        if (table.getStatus() == Table.Status.STARTED) {
-            updateItem.setString(GSI2PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
-            updateItem.setString(GSI2SK, GSISK.fromTable(table));
+            if (table.getStatus() == Table.Status.STARTED) {
+                updateItem.setString(GSI2PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+                updateItem.setString(GSI2SK, GSISK.fromTable(table));
+            } else {
+                updateItem.remove(GSI2PK, GSI2SK);
+            }
         } else {
-            updateItem.remove(GSI2PK, GSI2SK);
+            updateItem.remove(GSI1PK, GSI1SK, GSI2PK, GSI2SK);
         }
 
         if (table.getStatus() == Table.Status.NEW && table.canJoin()) {
@@ -623,14 +627,16 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .setString(SK, TABLE_PREFIX + table.getId().getId())
                 .setInt(VERSION, table.getVersion());
 
-        if (table.getStatus() == Table.Status.ENDED) {
-            item.setString(GSI1PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
-            item.setString(GSI1SK, GSISK.fromTable(table));
-        }
+        if (table.hasMoreThanOneHumanPlayer()) {
+            if (table.getStatus() == Table.Status.ENDED) {
+                item.setString(GSI1PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+                item.setString(GSI1SK, GSISK.fromTable(table));
+            }
 
-        if (table.getStatus() == Table.Status.STARTED) {
-            item.setString(GSI2PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
-            item.setString(GSI2SK, GSISK.fromTable(table));
+            if (table.getStatus() == Table.Status.STARTED) {
+                item.setString(GSI2PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+                item.setString(GSI2SK, GSISK.fromTable(table));
+            }
         }
 
         if (table.getStatus() == Table.Status.NEW && table.canJoin()) {

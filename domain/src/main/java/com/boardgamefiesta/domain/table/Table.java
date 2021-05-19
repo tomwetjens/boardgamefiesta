@@ -683,6 +683,10 @@ public class Table implements AggregateRoot {
         return players.stream().anyMatch(player -> player.getType() == Player.Type.COMPUTER);
     }
 
+    public boolean hasMoreThanOneHumanPlayer() {
+        return players.stream().filter(player -> player.getType() == Player.Type.USER).count() > 1;
+    }
+
     public boolean canJoin(User.Id userId) {
         return status == Status.NEW && visibility == Visibility.PUBLIC
                 && !isPlayer(userId) && players.size() < maxNumberOfPlayers;
