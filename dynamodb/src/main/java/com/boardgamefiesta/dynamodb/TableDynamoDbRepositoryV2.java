@@ -599,7 +599,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         player.getUserId().ifPresentOrElse(userId -> {
             updateItem.setString(GSI1SK, GSISK.fromTable(table));
 
-            if (table.isActive()) {
+            if (player.isActive() && table.isActive()) {
                 updateItem.setString(GSI2SK, GSISK.fromTable(table));
             } else {
                 updateItem.remove(GSI2PK, GSI2SK);
