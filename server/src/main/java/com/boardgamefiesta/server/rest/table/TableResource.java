@@ -256,9 +256,10 @@ public class TableResource {
     @Transactional
     public void kick(@PathParam("id") String id, @PathParam("playerId") String playerId) {
         handleConcurrentModification(Table.Id.of(id), table -> {
-            checkOwner(table);
-
-            table.kick(table.getPlayerById(Player.Id.of(playerId))
+            if (table.getStatus() == Table.Status.NEW) {
+                checkOwner(table);
+            }
+            table.kick(currentUser.getId(), table.getPlayerById(Player.Id.of(playerId))
                     .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME)));
         });
     }

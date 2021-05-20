@@ -27,6 +27,8 @@ public class Table implements AggregateRoot {
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(365 * 5, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.DAYS);
 
+    private static final Duration TURN_BASED_TIME_LIMIT = Duration.of(12, ChronoUnit.HOURS);
+
     private static final SecureRandom RANDOM;
 
     static {
@@ -179,16 +181,16 @@ public class Table implements AggregateRoot {
                     .map(Player.Id::of)
                     .map(this::getPlayerById)
                     .flatMap(Optional::stream)
-                    .forEach(player -> {
-                        player.beginTurn(game.getTimeLimit(options));
-
-                        new BeginTurn(game.getId(), id, type, player.getUserId(),
-                                player.getTurnLimit().orElse(null),
-                                started).fire();
-                    });
+                    .forEach(this::beginTurn);
         } catch (InGameException e) {
             throw new InGameError(game.getId(), e);
         }
+    }
+
+    private void beginTurn(Player player) {
+        player.beginTurn(type == Type.TURN_BASED ? TURN_BASED_TIME_LIMIT : game.getTimeLimit(options));
+
+        new BeginTurn(game.getId(), id, type, player.getUserId(), player.getTurnLimit().orElse(null), started).fire();
     }
 
     public Optional<Instant> getExpires() {
@@ -271,13 +273,7 @@ public class Table implements AggregateRoot {
         if (!state.isEnded()) {
             newCurrentPlayers.stream()
                     .filter(newCurrentPlayer -> !currentPlayers.contains(newCurrentPlayer))
-                    .forEach(player -> {
-                        player.beginTurn(game.getTimeLimit(options));
-
-                        new BeginTurn(game.getId(), id, type, player.getUserId(),
-                                player.getTurnLimit().orElse(null),
-                                started).fire();
-                    });
+                    .forEach(this::beginTurn);
         }
 
         afterStateChange();
@@ -535,19 +531,55 @@ public class Table implements AggregateRoot {
         new Invited(id, user.getId(), game.getId(), ownerId).fire();
     }
 
-    public void kick(Player player) {
-        checkNew();
+    public void kick(User.Id currentUserId, Player player) {
+        if (status == Status.ENDED) {
+            throw new AlreadyEnded();
+        }
 
-        // TODO With enough time passed, or votes, a player can be removed after the game has started
+        if (status == Status.ABANDONED) {
+            throw new AlreadyAbandoned();
+        }
 
-        if (!players.remove(player)) {
+        if (!players.contains(player)) {
             throw new NotPlayer();
+        }
+
+        if (status == Status.NEW) {
+            players.remove(player);
+        } else {
+            checkStarted();
+
+            //  With enough time passed, or votes, a player can be removed after the game has started
+            if (player.getTurnLimit().orElse(Instant.MAX).isAfter(Instant.now())) {
+                throw new KickNotAllowed();
+            }
+
+            player.leave();
+
+            if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
+                // Game is still able to continue with one less player
+                runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
+            } else {
+                // Game cannot be continued without player
+                abandon();
+            }
+
+            // TODO Deduct karma points if playing with humans
         }
 
         if (player.getType() == Player.Type.USER) {
             var userId = player.getUserId().orElseThrow();
 
-            log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.KICK, List.of(userId.getId())));
+            if (ownerId.equals(userId)) {
+                // if owner is kicked, have to appoint a new owner
+                otherUsersPlaying(userId)
+                        .findAny()
+                        .flatMap(Player::getUserId)
+                        .ifPresentOrElse(this::changeOwner, this::abandon);
+            }
+
+            log.add(new LogEntry(getPlayerByUserId(currentUserId)
+                    .orElseThrow(NotPlayer::new), LogEntry.Type.KICK, List.of(userId.getId())));
 
             new Kicked(this.id, userId).fire();
         }
@@ -1048,6 +1080,12 @@ public class Table implements AggregateRoot {
     public static final class UndoNotAllowed extends NotAllowedException {
         private UndoNotAllowed() {
             super("CANNOT_UNDO");
+        }
+    }
+
+    public static final class KickNotAllowed extends NotAllowedException {
+        private KickNotAllowed() {
+            super("CANNOT_KICK");
         }
     }
 
