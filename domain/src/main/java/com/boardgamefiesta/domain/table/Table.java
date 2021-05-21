@@ -549,6 +549,8 @@ public class Table implements AggregateRoot {
                 .orElseThrow(NotPlayer::new);
 
         if (status == Status.NEW) {
+            checkOwner(currentUserId);
+
             players.remove(player);
         } else {
             checkStarted();
@@ -586,6 +588,12 @@ public class Table implements AggregateRoot {
                 // Game cannot be continued without player
                 abandon();
             }
+        }
+    }
+
+    private void checkOwner(User.Id userId) {
+        if (!ownerId.equals(userId)) {
+            throw new MustBeOwner();
         }
     }
 
@@ -1036,6 +1044,12 @@ public class Table implements AggregateRoot {
     public static final class NotPlayer extends NotAllowedException {
         private NotPlayer() {
             super("NOT_PLAYER_IN_GAME");
+        }
+    }
+
+    public static final class MustBeOwner extends NotAllowedException {
+        private MustBeOwner() {
+            super("MUST_BE_OWNER");
         }
     }
 
