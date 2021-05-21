@@ -531,7 +531,7 @@ public class Table implements AggregateRoot {
         new Invited(id, user.getId(), game.getId(), ownerId).fire();
     }
 
-    public void kick(User.Id currentUserId, Player player) {
+    public void kick(@NonNull User.Id currentUserId, @NonNull Player player) {
         if (status == Status.ENDED) {
             throw new AlreadyEnded();
         }
@@ -564,9 +564,7 @@ public class Table implements AggregateRoot {
             // TODO Deduct karma points if playing with humans
         }
 
-        if (player.getType() == Player.Type.USER) {
-            var userId = player.getUserId().orElseThrow();
-
+        player.getUserId().ifPresent(userId -> {
             log.add(new LogEntry(kickingPlayer, LogEntry.Type.KICK, List.of(userId.getId())));
 
             new Kicked(this.id, userId).fire();
@@ -578,7 +576,7 @@ public class Table implements AggregateRoot {
                         .flatMap(Player::getUserId)
                         .ifPresentOrElse(this::changeOwner, this::abandon);
             }
-        }
+        });
 
         if (status == Status.STARTED) {
             if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
