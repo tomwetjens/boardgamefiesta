@@ -544,6 +544,10 @@ public class Table implements AggregateRoot {
             throw new NotPlayer();
         }
 
+        var kickingPlayer = getPlayerByUserId(currentUserId)
+                .filter(Player::isActive)
+                .orElseThrow(NotPlayer::new);
+
         if (status == Status.NEW) {
             players.remove(player);
         } else {
@@ -555,20 +559,15 @@ public class Table implements AggregateRoot {
             }
 
             player.leave();
-
-            if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
-                // Game is still able to continue with one less player
-                runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
-            } else {
-                // Game cannot be continued without player
-                abandon();
-            }
-
             // TODO Deduct karma points if playing with humans
         }
 
         if (player.getType() == Player.Type.USER) {
             var userId = player.getUserId().orElseThrow();
+
+            log.add(new LogEntry(kickingPlayer, LogEntry.Type.KICK, List.of(userId.getId())));
+
+            new Kicked(this.id, userId).fire();
 
             if (ownerId.equals(userId)) {
                 // if owner is kicked, have to appoint a new owner
@@ -577,11 +576,16 @@ public class Table implements AggregateRoot {
                         .flatMap(Player::getUserId)
                         .ifPresentOrElse(this::changeOwner, this::abandon);
             }
+        }
 
-            log.add(new LogEntry(getPlayerByUserId(currentUserId)
-                    .orElseThrow(NotPlayer::new), LogEntry.Type.KICK, List.of(userId.getId())));
-
-            new Kicked(this.id, userId).fire();
+        if (status == Status.STARTED) {
+            if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
+                // Game is still able to continue with one less player
+                runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
+            } else {
+                // Game cannot be continued without player
+                abandon();
+            }
         }
     }
 
