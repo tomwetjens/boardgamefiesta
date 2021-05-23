@@ -5,10 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import javax.json.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -368,6 +365,18 @@ public enum ActionType {
         return game.getRailroadTrack().getStations().get(index);
     }
 
+    private static <T> boolean containsExactlyAllElementsAlsoDuplicatesInAnyOrder(Collection<T> actual, Collection<T> values) {
+        List<Object> notExpected = new ArrayList<>(actual);
+
+        for (T value : values) {
+            if (!notExpected.remove(value)) {
+                return false;
+            }
+        }
+
+        return notExpected.isEmpty();
+    }
+
     private static ObjectiveCard findObjectiveCard(Game game, JsonObject jsonObject) {
         var tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
                 .map(JsonString::getString)
@@ -377,11 +386,14 @@ public enum ActionType {
         var penalty = getInt(jsonObject, JsonProperties.PENALTY);
         var action = getEnum(jsonObject, JsonProperties.ACTION, ActionType.class);
 
-        return game.getObjectiveCards().getAvailable().stream()
+        var matches = game.getObjectiveCards().getAvailable().stream()
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
                 .filter(objectiveCard -> objectiveCard.getPenalty() == penalty)
-                .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
+                .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && containsExactlyAllElementsAlsoDuplicatesInAnyOrder(objectiveCard.getTasks(), tasks))
                 .filter(objectiveCard -> objectiveCard.getPossibleActions().contains(action.getAction()))
+                .collect(Collectors.toSet());
+
+        return matches.stream()
                 .findAny()
                 .orElseThrow(() -> new JsonException("Objective card not available"));
     }
@@ -426,7 +438,7 @@ public enum ActionType {
                 .map(card -> (ObjectiveCard) card)
                 .filter(objectiveCard -> objectiveCard.getPoints() == points)
                 .filter(objectiveCard -> objectiveCard.getPenalty() == penalty)
-                .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && objectiveCard.getTasks().containsAll(tasks))
+                .filter(objectiveCard -> objectiveCard.getTasks().size() == tasks.size() && containsExactlyAllElementsAlsoDuplicatesInAnyOrder(objectiveCard.getTasks(), tasks))
                 .filter(objectiveCard -> objectiveCard.getPossibleActions().contains(action.getAction()))
                 .findAny()
                 .orElseThrow(() -> new JsonException("Objective card not in hand"));
