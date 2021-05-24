@@ -24,7 +24,7 @@ public class IstanbulProvider implements GameProvider<Istanbul> {
 
     public static final String ID = "big-bazar";
 
-    private static final Duration DEFAULT_TIME_LIMIT = Duration.ofSeconds(90);
+    private static final Duration DEFAULT_TIME_LIMIT = Duration.ofMinutes(10);
 
     @Override
     public String getId() {
