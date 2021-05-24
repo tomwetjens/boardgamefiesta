@@ -24,7 +24,7 @@ public class GWT implements GameProvider<Game> {
 
     public static final String ID = "gwt";
 
-    private static final Duration DEFAULT_TIME_LIMIT = Duration.of(3, ChronoUnit.MINUTES);
+    private static final Duration DEFAULT_TIME_LIMIT = Duration.of(10, ChronoUnit.MINUTES);
 
     @Override
     public String getId() {
