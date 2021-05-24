@@ -166,7 +166,6 @@ public class Game implements State {
 
         if (uncontested == playerOrder.size()) {
             actionStack.clear();
-            fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
             playerOrder = playerOrderFromBids();
 
@@ -199,8 +198,6 @@ public class Game implements State {
         actionStack.addActions(determineBeginTurnActions());
 
         currentPlayerState().beginTurn();
-
-        fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
     }
 
     private void placeInitialTiles() {
@@ -325,8 +322,6 @@ public class Game implements State {
         if (!actionStack.isEmpty()) {
             actionStack.skip();
 
-            fireEvent(currentPlayer, GWTEvent.Type.SKIP, Collections.emptyList());
-
             endTurnIfNoMoreActions(random);
         } else {
             endTurn(currentPlayer, random);
@@ -349,8 +344,6 @@ public class Game implements State {
         }
 
         actionStack.skipAll();
-
-        fireEvent(currentPlayer, GWTEvent.Type.END_TURN, Collections.emptyList());
 
         currentPlayerState().drawUpToHandLimit(random);
         canUndo = false;
@@ -375,8 +368,6 @@ public class Game implements State {
             if (status != Status.BIDDING) {
                 currentPlayerState().beginTurn();
             }
-
-            fireEvent(currentPlayer, GWTEvent.Type.BEGIN_TURN, Collections.emptyList());
         } else {
             status = Status.ENDED;
             fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());

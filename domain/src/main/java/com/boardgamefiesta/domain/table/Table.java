@@ -190,7 +190,15 @@ public class Table implements AggregateRoot {
     private void beginTurn(Player player) {
         player.beginTurn(type == Type.TURN_BASED ? TURN_BASED_TIME_LIMIT : game.getTimeLimit(options));
 
+        log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN));
+
         new BeginTurn(game.getId(), id, type, player.getUserId(), player.getTurnLimit().orElse(null), started).fire();
+    }
+
+    private void endTurnInternal(Player player) {
+        player.endTurn();
+
+        log.add(new LogEntry(player, LogEntry.Type.END_TURN));
     }
 
     public Optional<Instant> getExpires() {
@@ -268,7 +276,7 @@ public class Table implements AggregateRoot {
 
         currentPlayers.stream()
                 .filter(player -> state.isEnded() || !newCurrentPlayers.contains(player))
-                .forEach(Player::endTurn);
+                .forEach(this::endTurnInternal);
 
         if (!state.isEnded()) {
             newCurrentPlayers.stream()
@@ -283,6 +291,8 @@ public class Table implements AggregateRoot {
         checkStarted();
 
         checkTurn(player);
+
+        log.add(new LogEntry(player, LogEntry.Type.SKIP));
 
         try {
             runStateChange(state -> state.skip(getPlayer(player), RANDOM));
@@ -299,8 +309,6 @@ public class Table implements AggregateRoot {
         } catch (InGameException e) {
             throw new InGameError(game.getId(), e);
         }
-
-        player.endTurn();
     }
 
     public void leave(@NonNull User.Id userId) {
@@ -420,6 +428,8 @@ public class Table implements AggregateRoot {
                         .ifPresent(score ->
                                 player.assignScore(score, winner.getName().equals(player.getId().getId())));
             }
+
+            log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.END));
 
             new Ended(id).fire();
         } else {

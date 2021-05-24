@@ -20,9 +20,6 @@ public class GWTEvent implements InGameEvent {
     }
 
     public enum Type {
-        SKIP,
-        BEGIN_TURN,
-        END_TURN,
         ACTION,
         PAY_FEE_PLAYER,
         PAY_FEE_BANK,
