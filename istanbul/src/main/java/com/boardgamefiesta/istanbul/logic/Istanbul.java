@@ -219,7 +219,9 @@ public class Istanbul implements State {
                 .sorted(Comparator.<Map.Entry<Player, PlayerState>>comparingInt(entry -> entry.getValue().getRubies())
                         .thenComparingInt(entry -> entry.getValue().getLira())
                         .thenComparingInt(entry -> entry.getValue().getTotalGoods())
-                        .thenComparingInt(entry -> entry.getValue().getBonusCards().size()))
+                        .thenComparingInt(entry -> entry.getValue().getBonusCards().size())
+                        .thenComparingInt(entry -> playerOrder.indexOf(entry.getKey()))
+                        .reversed())
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }

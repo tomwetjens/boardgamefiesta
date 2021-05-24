@@ -319,6 +319,7 @@ class IstanbulTest {
             game.perform(new Action.BonusCardGain1Good(), new Random(0));
             assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
             game.perform(new Action.Take1Fabric(), new Random(0));
+            game.endTurn(new Random(0));
 
             // Green can still play certain bonus cards
             assertThat(game.getCurrentPlayer()).isSameAs(playerGreen);
@@ -328,6 +329,7 @@ class IstanbulTest {
             game.perform(new Action.BonusCardGain1Good(), new Random(0));
             assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
             game.perform(new Action.Take1Fabric(), new Random(0));
+            game.endTurn(new Random(0));
 
             assertThat(game.isEnded()).isTrue();
         }
@@ -393,6 +395,7 @@ class IstanbulTest {
             game.perform(new Action.BonusCardGain1Good(), new Random(0));
             assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
             game.perform(new Action.Take1Fabric(), new Random(0));
+            game.endTurn(new Random(0));
 
             // Green can still play certain bonus cards
             assertThat(game.getCurrentPlayer()).isSameAs(playerGreen);
@@ -402,6 +405,7 @@ class IstanbulTest {
             game.perform(new Action.BonusCardGain1Good(), new Random(0));
             assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
             game.perform(new Action.Take1Fabric(), new Random(0));
+            game.endTurn(new Random(0));
 
             // Red can still play certain bonus cards
             assertThat(game.getCurrentPlayer()).isSameAs(playerRed);
@@ -411,6 +415,7 @@ class IstanbulTest {
             game.perform(new Action.BonusCardGain1Good(), new Random(0));
             assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
             game.perform(new Action.Take1Fabric(), new Random(0));
+            game.endTurn(new Random(0));
 
             assertThat(game.isEnded()).isTrue();
         }
@@ -469,7 +474,7 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.ranking()).containsExactly(playerRed);
+            assertThat(game.ranking()).containsExactly(playerRed, playerGreen);
         }
 
         @Test
@@ -487,7 +492,7 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.ranking()).containsExactly(playerGreen);
+            assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
         }
 
         @Test
@@ -510,7 +515,7 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.ranking()).containsExactly(playerRed);
+            assertThat(game.ranking()).containsExactly(playerRed, playerGreen);
         }
 
         @Test
@@ -530,7 +535,7 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.ranking()).containsExactly(playerGreen);
+            assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
         }
 
         @Test
@@ -549,7 +554,7 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.ranking()).containsExactlyInAnyOrder(playerGreen, playerRed);
+            assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
         }
     }
 }
