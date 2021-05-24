@@ -23,7 +23,6 @@ public class PlayerStateView {
     int certificates;
 
     ScoreView score;
-    Boolean winner;
 
     List<CardView> hand;
     Integer handSize;
@@ -129,11 +128,7 @@ public class PlayerStateView {
                 .sorted()
                 .collect(Collectors.toList());
 
-        this.score = state.scoreDetails(playerState.getPlayer()).map(ScoreView::new).orElse(null);
-
-        if (state.isEnded()) {
-            winner = state.ranking().get(0) == playerState.getPlayer();
-        }
+        score = state.scoreDetails(playerState.getPlayer()).map(ScoreView::new).orElse(null);
 
         exchangeTokens = playerState.getExchangeTokens();
 
