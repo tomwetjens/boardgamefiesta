@@ -11,7 +11,7 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class GameTest {
+class IstanbulTest {
 
     private Player playerRed = new Player("Red", PlayerColor.RED, Player.Type.HUMAN);
     private Player playerGreen = new Player("Green", PlayerColor.GREEN, Player.Type.HUMAN);
@@ -26,7 +26,7 @@ class GameTest {
             @Test
             void availableBeforeMove() {
                 // Given
-                var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+                var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
 
                 // When
                 game.currentPlayerState().addBonusCard(BonusCard.TAKE_5_LIRA);
@@ -38,7 +38,7 @@ class GameTest {
             @Test
             void perform() {
                 // Given
-                var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+                var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
                 game.currentPlayerState().addBonusCard(BonusCard.TAKE_5_LIRA);
 
                 // When
@@ -55,7 +55,7 @@ class GameTest {
             @Test
             void availableBeforeMove() {
                 // Given
-                var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+                var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
 
                 // When
                 game.currentPlayerState().addBonusCard(BonusCard.GAIN_1_GOOD);
@@ -67,7 +67,7 @@ class GameTest {
             @Test
             void perform() {
                 // Given
-                var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+                var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
                 game.currentPlayerState().addBonusCard(BonusCard.GAIN_1_GOOD);
 
                 // When
@@ -89,7 +89,7 @@ class GameTest {
         @Test
         void leaveAssistantWithSmuggler() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
 
             // When
@@ -104,7 +104,7 @@ class GameTest {
         @Test
         void smugglerAfterPerformSendFamilyMember() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
             game.perform(new Action.SendFamilyMember(game.getSpiceWarehouse()), new Random(0));
@@ -122,7 +122,7 @@ class GameTest {
         @Test
         void smugglerAfterSkipSendFamilyMember() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
             game.skip(new Random(0));
@@ -139,7 +139,7 @@ class GameTest {
         @Test
         void sendFamilyMember() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
 
@@ -155,7 +155,7 @@ class GameTest {
         @Test
         void sendFamilyMemberToPlaceWithGovernor() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
             game.perform(new Action.SendFamilyMember(game.getLargeMarket()), new Random(0));
@@ -205,7 +205,7 @@ class GameTest {
         @Test
         void rollOrTakeBothAvailable() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
             game.perform(new Action.Move(game.getBlackMarket()), new Random(0));
 
             // When
@@ -222,7 +222,7 @@ class GameTest {
         @Test
         void rollFirst() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
             game.perform(new Action.Move(game.getBlackMarket()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
 
@@ -239,7 +239,7 @@ class GameTest {
         @Test
         void takeGoodFirst() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
             game.perform(new Action.Move(game.getBlackMarket()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
 
@@ -253,7 +253,7 @@ class GameTest {
         @Test
         void complete() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.LONG_PATHS, new Random(0));
             game.perform(new Action.Move(game.getBlackMarket()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
             game.perform(new Action.Take1Fabric(), new Random(0));
@@ -271,7 +271,7 @@ class GameTest {
 
         @Test
         void lastRoundTriggeredByStartPlayer() {
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerRed);
@@ -291,7 +291,7 @@ class GameTest {
 
         @Test
         void lastRoundTriggeredByStartPlayerAndPlayBonusCards() {
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
             game.getPlayerState(playerRed).addBonusCard(BonusCard.TAKE_5_LIRA);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.GAIN_1_GOOD);
@@ -335,7 +335,7 @@ class GameTest {
         @Test
         void lastRoundTriggeredByNonStartOrLastPlayer() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayerOrder()).containsExactly(playerBlue, playerGreen, playerRed);
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerBlue);
@@ -361,7 +361,7 @@ class GameTest {
         @Test
         void lastRoundTriggeredByNonStartOrLastPlayerAndPlayBonusCards() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayerOrder()).containsExactly(playerBlue, playerGreen, playerRed);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.TAKE_5_LIRA);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.GAIN_1_GOOD);
@@ -418,7 +418,7 @@ class GameTest {
         @Test
         void lastRoundTriggeredByLastPlayer() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerRed);
@@ -438,7 +438,7 @@ class GameTest {
         @Test
         void score() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
             game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
             game.getPlayerState(playerGreen).gainRubies(3);
@@ -459,7 +459,7 @@ class GameTest {
         @Test
         void winnerRubies() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
             game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
             game.getPlayerState(playerGreen).gainRubies(3);
@@ -469,13 +469,13 @@ class GameTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.winners()).containsExactly(playerRed);
+            assertThat(game.ranking()).containsExactly(playerRed);
         }
 
         @Test
         void winnerLira() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
             game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
             game.getPlayerState(playerGreen).gainRubies(PlayerState.maxRubies(2));
@@ -487,13 +487,13 @@ class GameTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.winners()).containsExactly(playerGreen);
+            assertThat(game.ranking()).containsExactly(playerGreen);
         }
 
         @Test
         void winnerTotalGoods() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
             game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
             game.getPlayerState(playerRed).gainLira(1);
@@ -510,13 +510,13 @@ class GameTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.winners()).containsExactly(playerRed);
+            assertThat(game.ranking()).containsExactly(playerRed);
         }
 
         @Test
         void winnerBonusCards() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
             game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
             game.getPlayerState(playerRed).gainLira(1);
@@ -530,13 +530,13 @@ class GameTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.winners()).containsExactly(playerGreen);
+            assertThat(game.ranking()).containsExactly(playerGreen);
         }
 
         @Test
         void winners() {
             // Given
-            var game = Game.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
             game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
             game.getPlayerState(playerRed).gainLira(1);
@@ -549,7 +549,7 @@ class GameTest {
             game.endTurn(new Random(0));
             assertThat(game.isEnded()).isTrue();
 
-            assertThat(game.winners()).containsExactlyInAnyOrder(playerGreen, playerRed);
+            assertThat(game.ranking()).containsExactlyInAnyOrder(playerGreen, playerRed);
         }
     }
 }

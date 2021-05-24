@@ -21,9 +21,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Game implements State {
+public class Istanbul implements State {
 
-    public static final Set<PlayerColor> SUPPORTED_COLORS = Set.of(PlayerColor.WHITE, PlayerColor.YELLOW, PlayerColor.RED, PlayerColor.GREEN, PlayerColor.BLUE);
+    public static final Set<PlayerColor> SUPPORTED_COLORS = Set.of(
+            PlayerColor.WHITE,
+            PlayerColor.YELLOW,
+            PlayerColor.RED,
+            PlayerColor.GREEN,
+            PlayerColor.BLUE);
 
     @NonNull
     @Getter
@@ -55,9 +60,11 @@ public class Game implements State {
     @NonNull
     private Status status;
 
+    private boolean canUndo;
+
     private List<EventListener> eventListeners;
 
-    public static Game start(@NonNull Set<Player> players, @NonNull LayoutType layoutType, @NonNull Random random) {
+    public static Istanbul start(@NonNull Set<Player> players, @NonNull LayoutType layoutType, @NonNull Random random) {
         var playerOrder = new ArrayList<>(players);
         Collections.shuffle(playerOrder, random);
 
@@ -80,7 +87,7 @@ public class Game implements State {
         var actionQueue = new ActionQueue();
         actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
 
-        var game = new Game(
+        var game = new Istanbul(
                 players,
                 playerOrder,
                 playerStates,
@@ -90,6 +97,7 @@ public class Game implements State {
                 actionQueue,
                 startPlayer,
                 Status.STARTED,
+                false,
                 new ArrayList<>());
 
         var fountain = layout.getFountain();
@@ -136,10 +144,11 @@ public class Game implements State {
                 .add("actionQueue", actionQueue.serialize(factory))
                 .add("currentPlayer", currentPlayer.getName())
                 .add("status", status.name())
+                .add("canUndo", canUndo)
                 .build();
     }
 
-    public static Game deserialize(JsonObject jsonObject) {
+    public static Istanbul deserialize(JsonObject jsonObject) {
         var players = jsonObject.getJsonArray("players").stream()
                 .map(JsonValue::asJsonObject)
                 .map(Player::deserialize)
@@ -153,7 +162,7 @@ public class Game implements State {
                 .map(playerMap::get)
                 .collect(Collectors.toList());
 
-        return new Game(
+        return new Istanbul(
                 players,
                 playerOrder,
                 JsonDeserializer.forObject(jsonObject.getJsonObject("playerStates")).asObjectMap(playerMap::get, PlayerState::deserialize),
@@ -166,7 +175,9 @@ public class Game implements State {
                         .collect(Collectors.toCollection(LinkedList::new)),
                 ActionQueue.deserialize(jsonObject.getJsonObject("actionQueue")),
                 playerMap.get(jsonObject.getString("currentPlayer")),
-                Status.valueOf(jsonObject.getString("status")), null);
+                Status.valueOf(jsonObject.getString("status")),
+                jsonObject.getBoolean("canUndo", false),
+                null);
     }
 
     @Override
@@ -203,21 +214,14 @@ public class Game implements State {
     }
 
     @Override
-    public Set<Player> winners() {
-        var max = playerStates.entrySet().stream()
-                .max(Comparator.<Map.Entry<Player, PlayerState>>comparingInt(entry -> entry.getValue().getRubies())
+    public List<Player> ranking() {
+        return playerStates.entrySet().stream()
+                .sorted(Comparator.<Map.Entry<Player, PlayerState>>comparingInt(entry -> entry.getValue().getRubies())
                         .thenComparingInt(entry -> entry.getValue().getLira())
                         .thenComparingInt(entry -> entry.getValue().getTotalGoods())
                         .thenComparingInt(entry -> entry.getValue().getBonusCards().size()))
-                .map(Map.Entry::getValue)
-                .orElseThrow();
-        return playerStates.entrySet().stream()
-                .filter(entry -> entry.getValue().getRubies() == max.getRubies()
-                        && entry.getValue().getLira() == max.getLira()
-                        && entry.getValue().getTotalGoods() == max.getTotalGoods()
-                        && entry.getValue().getBonusCards().size() == max.getBonusCards().size())
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     public void perform(@NonNull Action action, @NonNull Random random) {
@@ -234,7 +238,9 @@ public class Game implements State {
 
         actionQueue.addFirst(actionResult.getFollowUpActions());
 
-        if (!canPerformAnotherAction()) {
+        canUndo = actionResult.canUndo();
+
+        if (!canUndo && !canPerformAnotherAction()) {
             endTurn(currentPlayer, random);
         }
     }
@@ -283,6 +289,7 @@ public class Game implements State {
     private void nextPlayer() {
         if (status == Status.STARTED && currentPlayerState().hasMaxRubies(playerOrder.size())) {
             // Triggers end of game, finish the round
+            fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.LAST_ROUND));
             status = Status.LAST_ROUND;
         }
 
@@ -297,6 +304,7 @@ public class Game implements State {
             if (status == Status.LAST_ROUND) {
                 // Finished last round
                 status = Status.PLAY_LEFTOVER_BONUS_CARDS;
+                fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.PLAY_LEFTOVER_BONUS_CARDS));
             } else if (status == Status.PLAY_LEFTOVER_BONUS_CARDS) {
                 // All players have played last bonus cards (if applicable)
                 status = Status.ENDED;
@@ -328,8 +336,7 @@ public class Game implements State {
 
     @Override
     public boolean canUndo() {
-        // TODO Implement when rollback is allowed
-        return false;
+        return canUndo;
     }
 
     @Override
@@ -370,15 +377,17 @@ public class Game implements State {
      * Actions that can be performed at any time during the current player's turn, also during other actions.
      */
     private Set<Class<? extends Action>> anyTimeActions() {
-        if (currentPlayerState().hasBonusCard(BonusCard.TAKE_5_LIRA)) {
-            return Collections.singleton(Action.BonusCardTake5Lira.class);
-        }
-        if (status != Status.PLAY_LEFTOVER_BONUS_CARDS) {
-            if (currentPlayerState().hasBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION)) {
-                return Collections.singleton(Action.PlaceFamilyMemberOnPoliceStation.class);
+        if (!actionQueue.canPerform(Action.DiscardBonusCard.class)) { // Not during use of the Governor
+            if (currentPlayerState().hasBonusCard(BonusCard.TAKE_5_LIRA)) {
+                return Collections.singleton(Action.BonusCardTake5Lira.class);
             }
-            if (isFirstPhase() && currentPlayerState().hasBonusCard(BonusCard.RETURN_1_ASSISTANT)) {
-                return Collections.singleton(Action.Return1Assistant.class);
+            if (status != Status.PLAY_LEFTOVER_BONUS_CARDS) {
+                if (currentPlayerState().hasBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION)) {
+                    return Collections.singleton(Action.PlaceFamilyMemberOnPoliceStation.class);
+                }
+                if (isFirstPhase() && currentPlayerState().hasBonusCard(BonusCard.RETURN_1_ASSISTANT)) {
+                    return Collections.singleton(Action.Return1Assistant.class);
+                }
             }
         }
         return Collections.emptySet();
@@ -520,6 +529,17 @@ public class Game implements State {
 
     Merchant getCurrentMerchant() {
         return getCurrentPlace().getMerchant(currentPlayer.getColor());
+    }
+
+    public List<Place> possiblePlaces() {
+        var from = getCurrentPlace();
+        return layout.getPlaces().stream()
+                .filter(to -> {
+                    var distance = layout.distance(from, to);
+                    // TODO Take into account any bonus cards the player may have
+                    return distance >= 1 && distance <= 2;
+                })
+                .collect(Collectors.toList());
     }
 
     enum Status {

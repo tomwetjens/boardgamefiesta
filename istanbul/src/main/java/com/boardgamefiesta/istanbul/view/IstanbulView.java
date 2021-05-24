@@ -2,7 +2,7 @@ package com.boardgamefiesta.istanbul.view;
 
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
-import com.boardgamefiesta.istanbul.logic.Game;
+import com.boardgamefiesta.istanbul.logic.Istanbul;
 import lombok.Getter;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public class IstanbulView {
     private final List<ActionView> actions;
     private final Map<PlayerColor, PlayerStateView> players;
 
-    public IstanbulView(Game state, Player viewer) {
+    public IstanbulView(Istanbul state, Player viewer) {
         this.layout = IntStream.range(0, state.getLayout().width())
                 .mapToObj(x -> IntStream.range(0, state.getLayout().height())
                         .mapToObj(y -> state.getLayout().place(x, y))
@@ -33,7 +33,7 @@ public class IstanbulView {
                 : null;
 
         this.players = state.getPlayers().stream().collect(Collectors.toMap(Player::getColor, player ->
-                new PlayerStateView(state.getPlayerState(player), player == viewer)));
+                new PlayerStateView(player, state.getPlayerState(player), player == viewer)));
     }
 
 }

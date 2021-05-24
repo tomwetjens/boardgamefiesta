@@ -1,5 +1,6 @@
 package com.boardgamefiesta.istanbul.view;
 
+import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.istanbul.logic.BonusCard;
 import com.boardgamefiesta.istanbul.logic.GoodsType;
 import com.boardgamefiesta.istanbul.logic.MosqueTile;
@@ -11,6 +12,7 @@ import java.util.*;
 @Getter
 public class PlayerStateView {
 
+    private final String name;
     private final int rubies;
     private final int lira;
     private final int capacity;
@@ -19,7 +21,8 @@ public class PlayerStateView {
 
     private List<BonusCard> bonusCards;
 
-    public PlayerStateView(PlayerState playerState, boolean self) {
+    public PlayerStateView(Player player, PlayerState playerState, boolean self) {
+        this.name = player.getName();
         this.rubies = playerState.getRubies();
         this.lira = playerState.getLira();
         this.capacity = playerState.getCapacity();

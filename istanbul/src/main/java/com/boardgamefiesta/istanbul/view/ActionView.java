@@ -69,16 +69,16 @@ public enum ActionView {
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().intValue()));
     }
 
-    private static Place place(JsonObject jsonObject, Game game) {
+    private static Place place(JsonObject jsonObject, Istanbul game) {
         var x = jsonObject.getInt("x");
         var y = jsonObject.getInt("y");
         return game.place(x, y);
     }
 
     private final Class<? extends Action> actionClass;
-    private final BiFunction<JsonObject, Game, Action> actionFunction;
+    private final BiFunction<JsonObject, Istanbul, Action> actionFunction;
 
-    public Action toAction(JsonObject jsonObject, Game state) {
+    public Action toAction(JsonObject jsonObject, Istanbul state) {
         return actionFunction.apply(jsonObject, state);
     }
 

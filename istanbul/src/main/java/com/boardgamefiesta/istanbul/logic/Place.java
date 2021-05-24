@@ -34,9 +34,9 @@ public abstract class Place {
     @Getter
     private boolean smuggler;
 
-    protected abstract Optional<PossibleAction> getPossibleAction(Game game);
+    protected abstract Optional<PossibleAction> getPossibleAction(Istanbul game);
 
-    ActionResult placeMerchant(@NonNull Merchant merchant, @NonNull Game game) {
+    ActionResult placeMerchant(@NonNull Merchant merchant, @NonNull Istanbul game) {
         if (!merchants.add(merchant)) {
             throw new IstanbulException(IstanbulError.ALREADY_AT_PLACE);
         }
@@ -52,19 +52,22 @@ public abstract class Place {
         if (numberOfAssistants > 0) {
             // Picks up assistants
 
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PICK_UP_ASSISTANT));
+
             merchant.returnAssistants(numberOfAssistants);
             assistants.put(merchant.getColor(), 0);
 
             if (mustPayOtherMerchants()) {
-                return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class));
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MUST_PAY_OTHER_MERCHANTS));
+                return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class), true);
             }
 
             return placeActions(game);
         } else if (merchant.getAssistants() > 0) {
-            return ActionResult.followUp(PossibleAction.optional(Action.LeaveAssistant.class));
+            return ActionResult.followUp(PossibleAction.optional(Action.LeaveAssistant.class), true);
         } else {
             // No assistants left to leave
-            return ActionResult.none();
+            return ActionResult.none(true);
         }
     }
 
@@ -74,7 +77,7 @@ public abstract class Place {
         }
     }
 
-    ActionResult leaveAssistant(Merchant merchant, Game game) {
+    ActionResult leaveAssistant(Merchant merchant, Istanbul game) {
         if (!merchants.contains(merchant)) {
             throw new IstanbulException(IstanbulError.NOT_AT_PLACE);
         }
@@ -85,20 +88,21 @@ public abstract class Place {
         assistants.put(merchant.getColor(), currentAssistants + 1);
 
         if (mustPayOtherMerchants()) {
-            return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class));
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MUST_PAY_OTHER_MERCHANTS));
+            return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class), true);
         }
 
         return placeActions(game);
     }
 
-    ActionResult placeFamilyMember(Game game, Player player) {
+    ActionResult placeFamilyMember(Istanbul game, Player player) {
         if (!familyMembers.add(player)) {
             throw new IstanbulException(IstanbulError.ALREADY_AT_PLACE);
         }
         return placeActions(game);
     }
 
-    ActionResult placeActions(Game game) {
+    ActionResult placeActions(Istanbul game) {
         // Place actions:
         // 1. If there are other merchants present, then return "Pay Other Merchants" action
         //   1a. If player pays other merchants, then return actions 2+3
@@ -106,8 +110,8 @@ public abstract class Place {
         // 2. Action of the place
         // 3. Any governor, smuggler or family action
         return getPossibleAction(game)
-                .map(ActionResult::new)
-                .orElse(ActionResult.none())
+                .map(possibleAction -> ActionResult.followUp(possibleAction, true))
+                .orElse(ActionResult.none(true))
                 .andThen(encounterActions(game));
     }
 
@@ -115,7 +119,7 @@ public abstract class Place {
         return merchants.size() > 1;
     }
 
-    private ActionResult encounterActions(Game game) {
+    private ActionResult encounterActions(Istanbul game) {
         var actions = new HashSet<PossibleAction>();
 
         if (governor) {
@@ -127,13 +131,15 @@ public abstract class Place {
 
         var numberOfFamilyMembersToCatch = (int) familyMembersToCatch(game.getCurrentPlayer()).count();
         if (numberOfFamilyMembersToCatch > 0) {
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MAY_CATCH_FAMILY_MEMBER));
+
             actions.add(PossibleAction.repeat(numberOfFamilyMembersToCatch, numberOfFamilyMembersToCatch,
                     PossibleAction.choice(Set.of(
                             PossibleAction.optional(Action.CatchFamilyMemberForBonusCard.class),
                             PossibleAction.optional(Action.CatchFamilyMemberFor3Lira.class)))));
         }
 
-        return !actions.isEmpty() ? ActionResult.followUp(PossibleAction.any(actions)) : ActionResult.none();
+        return !actions.isEmpty() ? ActionResult.followUp(PossibleAction.any(actions), true) : ActionResult.none(true);
     }
 
     void placeGovernor() {
@@ -175,7 +181,7 @@ public abstract class Place {
                 .filter(familyMember -> familyMember != currentPlayer);
     }
 
-    void catchFamilyMember(Game game) {
+    Player catchFamilyMember(Istanbul game) {
         var policeStation = game.getPoliceStation();
 
         var otherFamilyMember = familyMembersToCatch(game.getCurrentPlayer())
@@ -184,6 +190,8 @@ public abstract class Place {
 
         takeFamilyMember(otherFamilyMember);
         policeStation.placeFamilyMember(game, otherFamilyMember);
+
+        return otherFamilyMember;
     }
 
     Merchant getMerchant(PlayerColor color) {
@@ -285,7 +293,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.BuyWheelbarrowExtension.class));
         }
 
@@ -298,7 +306,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.MaxFabric.class));
         }
 
@@ -311,7 +319,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.MaxSpice.class));
         }
 
@@ -324,7 +332,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.MaxFruit.class));
         }
 
@@ -344,19 +352,27 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.UsePostOffice.class));
         }
 
-        ActionResult use(Game game) {
+        ActionResult use(Istanbul game) {
             // row 1: fabric, 2 lira, blue, 2 lira
             // row 2: spice, 1 lira, fruit, 1 lira
 
             var currentPlayerState = game.currentPlayerState();
-            currentPlayerState.addGoods(indicators.get(0) == 1 ? GoodsType.SPICE : GoodsType.FABRIC, 1);
-            currentPlayerState.gainLira(indicators.get(1) == 1 ? 1 : 2);
-            currentPlayerState.addGoods(indicators.get(2) == 1 ? GoodsType.FRUIT : GoodsType.BLUE, 1);
-            currentPlayerState.gainLira(indicators.get(3) == 1 ? 1 : 2);
+            var goodsType1 = indicators.get(0) == 1 ? GoodsType.SPICE : GoodsType.FABRIC;
+            var goodsType2 = indicators.get(2) == 1 ? GoodsType.FRUIT : GoodsType.BLUE;
+            var lira1 = indicators.get(1) == 1 ? 1 : 2;
+            var lira2 = indicators.get(3) == 1 ? 1 : 2;
+
+            currentPlayerState.addGoods(goodsType1, 1);
+            currentPlayerState.addGoods(goodsType2, 1);
+            currentPlayerState.gainLira(lira1 + lira2);
+
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_LIRA, Integer.toString(lira1 + lira2)));
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TAKE_GOODS, goodsType1.name(), "1"));
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TAKE_GOODS, goodsType2.name(), "1"));
 
             var leftMost = leftMostInTopRow();
             if (leftMost >= 0) {
@@ -367,7 +383,7 @@ public abstract class Place {
                 IntStream.range(0, indicators.size()).forEach(index -> indicators.set(index, 0));
             }
 
-            return ActionResult.none();
+            return ActionResult.none(true);
         }
 
         @Override
@@ -408,7 +424,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.whenThen(PossibleAction.optional(Action.Take2BonusCards.class),
                     PossibleAction.mandatory(Action.DiscardBonusCard.class), 0, 1));
         }
@@ -449,7 +465,7 @@ public abstract class Place {
         }
 
         @Override
-        ActionResult placeMerchant(Merchant merchant, Game game) {
+        ActionResult placeMerchant(Merchant merchant, Istanbul game) {
             super.placeMerchant(merchant, game);
 
             // Immediately activate and return place actions
@@ -457,7 +473,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.ReturnAllAssistants.class));
         }
 
@@ -491,15 +507,17 @@ public abstract class Place {
             super(8);
         }
 
-        static void rollForBlueGoods(@NonNull PlayerState playerState, @NonNull Random random) {
-            var dice = random.nextInt(12);
+        static void rollForBlueGoods(Istanbul game, @NonNull PlayerState playerState, @NonNull Random random) {
+            var dice = random.nextInt(12) + 1;
+            var amount = dice > 10 ? 3 : dice > 8 ? 2 : dice > 6 ? 1 : 0;
 
-            playerState.addGoods(GoodsType.BLUE,
-                    dice > 10 ? 3 : dice > 8 ? 2 : dice > 6 ? 1 : 0);
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.ROLL_FOR_BLUE, Integer.toString(dice), Integer.toString(amount)));
+
+            playerState.addGoods(GoodsType.BLUE, amount);
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.any(Set.of(
                     PossibleAction.choice(Set.of(
                             PossibleAction.optional(Action.Take1Fabric.class),
@@ -516,17 +534,17 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.GuessAndRollForLira.class));
         }
 
-        void guessAndRoll(@NonNull Game game, int guess, @NonNull Random random) {
+        void guessAndRoll(@NonNull Istanbul game, int guess, @NonNull Random random) {
             var currentPlayer = game.getCurrentPlayer();
 
             game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.GUESSED, guess));
 
-            var die1 = random.nextInt(6);
-            var die2 = random.nextInt(6);
+            var die1 = random.nextInt(6) + 1;
+            var die2 = random.nextInt(6) + 1;
 
             game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.ROLLED, die1, die2));
 
@@ -542,21 +560,23 @@ public abstract class Place {
                         game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.TURNED_DIE));
 
                         lira = guess;
-                    }
+                    } else {
+                        // Else reroll automatically
+                        die1 = random.nextInt(6) + 1;
+                        die2 = random.nextInt(6) + 1;
 
-                    // Else reroll automatically
-                    die1 = random.nextInt(6);
-                    die2 = random.nextInt(6);
+                        game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.ROLLED, die1, die2));
 
-                    game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.ROLLED, die1, die2));
-
-                    if (die1 + die2 >= guess) {
-                        lira = guess;
+                        if (die1 + die2 >= guess) {
+                            lira = guess;
+                        }
                     }
                 }
             }
 
             currentPlayerState.gainLira(lira);
+
+            game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.GAIN_LIRA, Integer.toString(lira)));
         }
     }
 
@@ -585,7 +605,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.SellGoods.class));
         }
 
@@ -614,21 +634,31 @@ public abstract class Place {
             }
         }
 
-        void sellDemandGoods(Game game, Map<GoodsType, Integer> goods) {
+        void sellDemandGoods(Istanbul game, Map<GoodsType, Integer> goods) {
             var currentPlayerState = game.currentPlayerState();
             var demand = demands.get(0);
 
             var numberOfGoods = goods.entrySet().stream()
-                    .mapToInt(entry -> currentPlayerState.removeGoods(entry.getKey(),
-                            Math.min(entry.getValue(), demand.get(entry.getKey()))))
+                    .mapToInt(entry -> {
+                        var amount = currentPlayerState.removeGoods(entry.getKey(),
+                                Math.min(entry.getValue(), demand.get(entry.getKey())));
+
+                        game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.SELL_GOODS, Integer.toString(amount), entry.getKey().name()));
+
+                        return amount;
+                    })
                     .sum();
 
-            sell(currentPlayerState, numberOfGoods);
+            sell(game, numberOfGoods);
         }
 
-        protected void sell(PlayerState currentPlayerState, int numberOfGoods) {
+        protected void sell(Istanbul game, int numberOfGoods) {
             if (numberOfGoods > 0) {
-                currentPlayerState.gainLira(rewards.get(numberOfGoods - 1));
+                var reward = rewards.get(numberOfGoods - 1);
+
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_LIRA, Integer.toString(reward)));
+
+                game.currentPlayerState().gainLira(reward);
 
                 demands.add(demands.remove(0));
             }
@@ -654,14 +684,17 @@ public abstract class Place {
                     Map.of(GoodsType.FABRIC, 1, GoodsType.SPICE, 3, GoodsType.FRUIT, 1, GoodsType.BLUE, 0)), REWARDS, random);
         }
 
-        void sellAnyGoods(Game game, Map<GoodsType, Integer> goods) {
+        void sellAnyGoods(Istanbul game, Map<GoodsType, Integer> goods) {
             var currentPlayerState = game.currentPlayerState();
 
             var numberOfGoods = goods.entrySet().stream()
-                    .mapToInt(entry -> currentPlayerState.removeGoods(entry.getKey(), entry.getValue()))
+                    .mapToInt(entry -> {
+                        game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.SELL_GOODS, entry.getValue().toString(), entry.getKey().name()));
+                        return currentPlayerState.removeGoods(entry.getKey(), entry.getValue());
+                    })
                     .sum();
 
-            sell(currentPlayerState, numberOfGoods);
+            sell(game, numberOfGoods);
         }
 
         static SmallMarket randomize(@NonNull Random random) {
@@ -700,8 +733,11 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
-            return Optional.of(PossibleAction.optional(Action.SendFamilyMember.class));
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
+            if (getFamilyMembers().contains(game.getCurrentPlayer())) {
+                return Optional.of(PossibleAction.optional(Action.SendFamilyMember.class));
+            }
+            return Optional.empty();
         }
 
         @Override
@@ -792,7 +828,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             if (a.isAvailable() || b.isAvailable()) {
                 return Optional.of(PossibleAction.optional(Action.TakeMosqueTile.class));
             }
@@ -807,7 +843,7 @@ public abstract class Place {
             return b.getGoodsCount();
         }
 
-        ActionResult takeMosqueTile(@NonNull MosqueTile mosqueTile, @NonNull Game game) {
+        ActionResult takeMosqueTile(@NonNull MosqueTile mosqueTile, @NonNull Istanbul game) {
             MosqueTileStack stack = getStack(mosqueTile);
 
             var goodsCount = stack.getGoodsCount()
@@ -940,7 +976,7 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.DeliverToSultan.class));
         }
 
@@ -981,7 +1017,7 @@ public abstract class Place {
                             PossibleAction.optional(Action.Pay1Fabric.class),
                             PossibleAction.optional(Action.Pay1Fruit.class),
                             PossibleAction.optional(Action.Pay1Spice.class),
-                            PossibleAction.optional(Action.Pay1Blue.class)))));
+                            PossibleAction.optional(Action.Pay1Blue.class)))), true);
         }
 
         private boolean hasEnoughGoods(PlayerState playerState, Map<GoodsType, Long> requiredGoodsByType) {
@@ -1022,17 +1058,21 @@ public abstract class Place {
         }
 
         @Override
-        protected Optional<PossibleAction> getPossibleAction(Game game) {
+        protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
             return Optional.of(PossibleAction.optional(Action.BuyRuby.class));
         }
 
-        void buy(PlayerState playerState) {
+        void buy(Istanbul game) {
             if (cost > 23) {
                 throw new IstanbulException(IstanbulError.NO_RUBY_AVAILABLE);
             }
 
+            var playerState = game.currentPlayerState();
+
             playerState.payLira(cost);
             playerState.gainRubies(1);
+
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.BUY_RUBY, Integer.toString(cost)));
 
             cost++;
         }

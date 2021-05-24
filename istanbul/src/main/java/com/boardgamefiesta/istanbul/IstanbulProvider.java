@@ -9,7 +9,8 @@ import com.boardgamefiesta.api.repository.StateDeserializer;
 import com.boardgamefiesta.api.repository.StateSerializer;
 import com.boardgamefiesta.api.spi.GameProvider;
 import com.boardgamefiesta.istanbul.logic.Action;
-import com.boardgamefiesta.istanbul.logic.Game;
+import com.boardgamefiesta.istanbul.logic.Automa;
+import com.boardgamefiesta.istanbul.logic.Istanbul;
 import com.boardgamefiesta.istanbul.logic.LayoutType;
 import com.boardgamefiesta.istanbul.view.ActionView;
 import com.boardgamefiesta.istanbul.view.IstanbulView;
@@ -19,9 +20,9 @@ import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
 
-public class Istanbul implements GameProvider<Game> {
+public class IstanbulProvider implements GameProvider<Istanbul> {
 
-    public static final String ID = "istanbul";
+    public static final String ID = "big-bazar";
 
     private static final Duration DEFAULT_TIME_LIMIT = Duration.ofSeconds(90);
 
@@ -32,7 +33,7 @@ public class Istanbul implements GameProvider<Game> {
 
     @Override
     public Set<PlayerColor> getSupportedColors() {
-        return Game.SUPPORTED_COLORS;
+        return Istanbul.SUPPORTED_COLORS;
     }
 
     @Override
@@ -46,34 +47,34 @@ public class Istanbul implements GameProvider<Game> {
     }
 
     @Override
-    public Game start(Set<Player> players, Options options, Random random) {
+    public Istanbul start(Set<Player> players, Options options, Random random) {
         var layoutType = options.getEnum("layoutType", LayoutType.class, LayoutType.RANDOM);
-        return Game.start(players, layoutType, random);
+        return Istanbul.start(players, layoutType, random);
     }
 
     @Override
-    public void executeAutoma(Game state, Player player, Random random) {
-        throw new UnsupportedOperationException();
+    public void executeAutoma(Istanbul state, Player player, Random random) {
+        new Automa().execute(state, player, random);
     }
 
     @Override
-    public ViewMapper<Game> getViewMapper() {
+    public ViewMapper<Istanbul> getViewMapper() {
         return IstanbulView::new;
     }
 
     @Override
-    public StateSerializer<Game> getStateSerializer() {
-        return Game::serialize;
+    public StateSerializer<Istanbul> getStateSerializer() {
+        return Istanbul::serialize;
     }
 
     @Override
-    public StateDeserializer<Game> getStateDeserializer() {
-        return Game::deserialize;
+    public StateDeserializer<Istanbul> getStateDeserializer() {
+        return Istanbul::deserialize;
     }
 
     @Override
     public boolean hasAutoma() {
-        return false;
+        return true;
     }
 
     @Override
@@ -82,11 +83,11 @@ public class Istanbul implements GameProvider<Game> {
     }
 
     @Override
-    public ActionMapper<Game> getActionMapper() {
+    public ActionMapper<Istanbul> getActionMapper() {
         return this::toAction;
     }
 
-    private Action toAction(JsonObject jsonObject, Game state) {
+    private Action toAction(JsonObject jsonObject, Istanbul state) {
         var type = ActionView.valueOf(jsonObject.getString("type"));
         return type.toAction(jsonObject, state);
     }

@@ -1,5 +1,6 @@
 package com.boardgamefiesta.istanbul.logic;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -148,7 +149,15 @@ class PlaceTest {
     class GemstoneDealer {
 
         @Mock
+        Istanbul game;
+
+        @Mock
         PlayerState playerState;
+
+        @BeforeEach
+        void setUp() {
+            when(game.currentPlayerState()).thenReturn(playerState);
+        }
 
         @Test
         void forPlayerCount() {
@@ -162,7 +171,7 @@ class PlaceTest {
         void buy() {
             var gemstoneDealer = Place.GemstoneDealer.withCost(16);
 
-            gemstoneDealer.buy(playerState);
+            gemstoneDealer.buy(game);
 
             verify(playerState).payLira(16);
             verify(playerState).gainRubies(1);
@@ -174,7 +183,7 @@ class PlaceTest {
         void noRubyAvailable() {
             var gemstoneDealer = Place.GemstoneDealer.withCost(24);
 
-            assertThatThrownBy(() -> gemstoneDealer.buy(playerState))
+            assertThatThrownBy(() -> gemstoneDealer.buy(game))
                     .isInstanceOf(IstanbulException.class)
                     .hasMessage(IstanbulError.NO_RUBY_AVAILABLE.name());
         }

@@ -14,17 +14,14 @@ import java.util.stream.Stream;
 public class ActionResult {
     List<PossibleAction> followUpActions;
     List<PossibleAction> finalActions;
+    boolean undo;
 
-    ActionResult(PossibleAction possibleAction) {
-        this(Collections.singletonList(possibleAction), Collections.emptyList());
+    public static ActionResult none(boolean canUndo) {
+        return new ActionResult(Collections.emptyList(), Collections.emptyList(), canUndo);
     }
 
-    public static ActionResult none() {
-        return new ActionResult(Collections.emptyList(), Collections.emptyList());
-    }
-
-    public static ActionResult followUp(PossibleAction possibleAction) {
-        return new ActionResult(List.of(possibleAction), Collections.emptyList());
+    public static ActionResult followUp(PossibleAction possibleAction, boolean canUndo) {
+        return new ActionResult(List.of(possibleAction), Collections.emptyList(), canUndo);
     }
 
     public ActionResult andThen(ActionResult actionResult) {
@@ -32,6 +29,11 @@ public class ActionResult {
                 Stream.concat(followUpActions.stream(), actionResult.followUpActions.stream())
                         .collect(Collectors.toList()),
                 Stream.concat(finalActions.stream(), actionResult.finalActions.stream())
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()),
+                undo && actionResult.canUndo());
+    }
+
+    public boolean canUndo() {
+        return undo;
     }
 }
