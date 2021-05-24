@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Value
@@ -47,17 +48,16 @@ public class Rating {
     }
 
     public Rating adjust(Map<User.Id, Rating> currentRatings, Table table) {
-        var scores = table.getUserScores();
-
-        var numberOfPlayers = scores.size();
+        var ranking = table.getUserRanking();
+        var numberOfPlayers = ranking.size();
 
         // Assume 1v1 sub matches for now, no teams
         // So each player's score is considered against each other player's score individually
-        var deltas = scores.entrySet().stream()
-                .filter(entry -> !entry.getKey().equals(userId))
-                .collect(Collectors.toMap(Map.Entry::getKey, opponentScore -> {
-                    var actualScore = actualScore(scores.get(userId), opponentScore.getValue());
-                    return RATING_SYSTEM.calculateNewRating(actualScore, this, currentRatings.get(opponentScore.getKey()), numberOfPlayers) - rating;
+        var deltas = ranking.stream()
+                .filter(otherUserId -> !userId.equals(otherUserId))
+                .collect(Collectors.toMap(Function.identity(), opponentUserId -> {
+                    var actualScore = actualScore(ranking.indexOf(userId), ranking.indexOf(opponentUserId));
+                    return RATING_SYSTEM.calculateNewRating(actualScore, this, currentRatings.get(opponentUserId), numberOfPlayers) - rating;
                 }));
 
         var rating = this.rating + deltas.values().stream().reduce(Integer::sum).orElse(0);
@@ -65,8 +65,8 @@ public class Rating {
         return new Rating(userId, table.getEnded(), table.getGame().getId(), table.getId(), rating, deltas);
     }
 
-    private float actualScore(int score, int opponentScore) {
-        return score == opponentScore ? 0.5f : score < opponentScore ? 0f : 1f;
+    private float actualScore(int rank, int opponentRank) {
+        return rank == opponentRank ? 0.5f : rank < opponentRank ? 1f : 0f;
     }
 
 }

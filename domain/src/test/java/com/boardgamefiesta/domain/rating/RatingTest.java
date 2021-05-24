@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,8 +60,7 @@ class RatingTest {
             var c1 = Rating.initial(C, GAME_ID, 200);
 
             var ratings = Map.of(A, a1, B, b1, C, c1);
-            var scores = Map.of(A, 112, B, 90, C, 64);
-            when(table.getUserScores()).thenReturn(scores);
+            when(table.getUserRanking()).thenReturn(List.of(A, B, C));
 
             var a2 = a1.adjust(ratings, table);
             var b2 = b1.adjust(ratings, table);
@@ -86,10 +86,10 @@ class RatingTest {
             var c1 = Rating.initial(C, GAME_ID, 200);
             var d1 = Rating.initial(D, GAME_ID, 200);
 
-            when(table.getUserScores()).thenReturn(Map.of(A, 4, B, 3));
+            when(table.getUserRanking()).thenReturn(List.of(A, B));
             var adjustedAfterWinningAgainst1Opponent = a1.adjust(Map.of(A, a1, B, b1), table);
 
-            when(table.getUserScores()).thenReturn(Map.of(A, 4, B, 3, C, 2, D, 1));
+            when(table.getUserRanking()).thenReturn(List.of(A, B, C, D));
             var adjustedAfterWinningAgainst3Opponents = a1.adjust(Map.of(A, a1, B, b1, C, c1, D, d1), table);
 
             assertThat(adjustedAfterWinningAgainst3Opponents.getRating())
@@ -101,9 +101,8 @@ class RatingTest {
             var a = Rating.initial(A, GAME_ID, 1000);
             var b = Rating.initial(B, GAME_ID, 1000);
 
-            var scores = Map.of(A, 1, B, 0);
             var ratings = Map.of(A, a, B, b);
-            when(table.getUserScores()).thenReturn(scores);
+            when(table.getUserRanking()).thenReturn(List.of(A, B));
 
             assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1016);
             assertThat(b.adjust(ratings, table).getRating()).isEqualTo(984);
@@ -115,9 +114,8 @@ class RatingTest {
             var b = Rating.initial(B, GAME_ID, 1000);
             var c = Rating.initial(C, GAME_ID, 1000);
 
-            var scores = Map.of(A, 30, B, 20, C, 10);
             var ratings = Map.of(A, a, B, b, C, c);
-            when(table.getUserScores()).thenReturn(scores);
+            when(table.getUserRanking()).thenReturn(List.of(A, B, C));
 
             assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1022);
             assertThat(b.adjust(ratings, table).getRating()).isEqualTo(1000);
@@ -131,9 +129,8 @@ class RatingTest {
             var c = Rating.initial(C, GAME_ID, 1000);
             var d = Rating.initial(D, GAME_ID, 1000);
 
-            var scores = Map.of(A, 30, B, 20, C, 10, D, 0);
             var ratings = Map.of(A, a, B, b, C, c, D, d);
-            when(table.getUserScores()).thenReturn(scores);
+            when(table.getUserRanking()).thenReturn(List.of(A, B, C, D));
 
             assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1024);
             assertThat(b.adjust(ratings, table).getRating()).isEqualTo(1008);

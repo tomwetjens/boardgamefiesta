@@ -132,7 +132,7 @@ public class PlayerStateView {
         this.score = state.scoreDetails(playerState.getPlayer()).map(ScoreView::new).orElse(null);
 
         if (state.isEnded()) {
-            winner = state.winners().contains(playerState.getPlayer());
+            winner = state.ranking().get(0) == playerState.getPlayer();
         }
 
         exchangeTokens = playerState.getExchangeTokens();

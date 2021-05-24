@@ -27,7 +27,10 @@ public interface State {
 
     Optional<Integer> score(Player player);
 
-    Set<Player> winners();
+    /**
+     * @return players ranked by their scores. 0=1st place, 1=2nd place, etc. 1st place == winner
+     */
+    List<Player> ranking();
 
     boolean isEnded();
 

@@ -638,17 +638,18 @@ public class Game implements State {
     }
 
     @Override
-    public Set<Player> winners() {
+    public List<Player> ranking() {
         var scores = playerOrder.stream()
                 .collect(Collectors.toMap(Function.identity(), player -> score(player)
                         .orElseThrow(() -> new GWTException(GWTError.GAME_NOT_ENDED))));
 
-        int maxScore = scores.values().stream().max(Integer::compare).orElse(0);
-
         return scores.entrySet().stream()
-                .filter(entry -> entry.getValue().equals(maxScore))
+                .sorted(Comparator.<Map.Entry<Player, Integer>>comparingInt(Map.Entry::getValue)
+                        .thenComparingInt(entry -> playerStates.get(entry.getKey()).getBalance())
+                        .thenComparing(entry -> playerOrder.indexOf(entry.getKey()))
+                        .reversed())
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     @Override

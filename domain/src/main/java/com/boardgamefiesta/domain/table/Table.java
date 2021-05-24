@@ -411,12 +411,14 @@ public class Table implements AggregateRoot {
             status = Status.ENDED;
             ended = updated;
 
-            var winners = state.winners();
+            var ranking = state.ranking();
+            var winner = ranking.get(0);
 
             for (Player player : players) {
-                state.getPlayerByName(player.getId().getId()).ifPresent(playerInState ->
-                        state.score(playerInState).ifPresent(score ->
-                                player.assignScore(score, winners.contains(playerInState))));
+                state.getPlayerByName(player.getId().getId())
+                        .flatMap(state::score)
+                        .ifPresent(score ->
+                                player.assignScore(score, winner.getName().equals(player.getId().getId())));
             }
 
             new Ended(id).fire();
@@ -742,12 +744,17 @@ public class Table implements AggregateRoot {
         new OptionsChanged(id).fire();
     }
 
-    public Map<User.Id, Integer> getUserScores() {
-        return players.stream()
-                .filter(player -> player.getType() == Player.Type.USER)
-                .collect(Collectors.toMap(
-                        player -> player.getUserId().orElseThrow(),
-                        player -> player.getScore().orElseThrow()));
+    public List<User.Id> getUserRanking() {
+        return currentState.get()
+                .map(CurrentState::getState)
+                .map(State::ranking)
+                .map(ranking -> ranking.stream()
+                        .map(com.boardgamefiesta.api.domain.Player::getName)
+                        .map(Player.Id::of)
+                        .flatMap(playerId -> getPlayerById(playerId).stream())
+                        .flatMap(player -> player.getUserId().stream())
+                        .collect(Collectors.toList()))
+                .orElse(Collections.emptyList());
     }
 
     public boolean canLeave(User.Id userId) {

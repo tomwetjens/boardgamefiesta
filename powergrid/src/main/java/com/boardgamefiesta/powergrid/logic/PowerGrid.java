@@ -319,7 +319,7 @@ public class PowerGrid implements State {
     }
 
     @Override
-    public Set<Player> winners() {
+    public List<Player> ranking() {
         return null;
     }
 
