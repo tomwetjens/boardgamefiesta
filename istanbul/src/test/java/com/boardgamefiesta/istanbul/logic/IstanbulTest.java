@@ -272,7 +272,7 @@ class IstanbulTest {
         @Test
         void lastRoundTriggeredByStartPlayer() {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
-            game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerRed);
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
@@ -292,7 +292,7 @@ class IstanbulTest {
         @Test
         void lastRoundTriggeredByStartPlayerAndPlayBonusCards() {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
-            game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerRed).addBonusCard(BonusCard.TAKE_5_LIRA);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.GAIN_1_GOOD);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.RETURN_1_ASSISTANT);
@@ -346,7 +346,7 @@ class IstanbulTest {
 
             // When
             assertThat(game.getCurrentPlayer()).isSameAs(playerGreen);
-            game.getPlayerState(playerGreen).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerGreen).gainRubies(game.getMaxRubies());
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
 
@@ -371,7 +371,7 @@ class IstanbulTest {
             game.getPlayerState(playerGreen).addBonusCard(BonusCard.TAKE_5_LIRA);
             game.getPlayerState(playerGreen).addBonusCard(BonusCard.GAIN_1_GOOD);
             game.getPlayerState(playerGreen).addBonusCard(BonusCard.RETURN_1_ASSISTANT);
-            game.getPlayerState(playerBlue).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerBlue).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerBlue).addBonusCard(BonusCard.TAKE_5_LIRA);
             game.getPlayerState(playerBlue).addBonusCard(BonusCard.GAIN_1_GOOD);
             game.getPlayerState(playerBlue).addBonusCard(BonusCard.RETURN_1_ASSISTANT);
@@ -432,7 +432,7 @@ class IstanbulTest {
 
             // When
             assertThat(game.getCurrentPlayer()).isSameAs(playerGreen);
-            game.getPlayerState(playerGreen).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerGreen).gainRubies(game.getMaxRubies());
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
 
@@ -445,7 +445,7 @@ class IstanbulTest {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
-            game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerGreen).gainRubies(3);
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
@@ -466,7 +466,7 @@ class IstanbulTest {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
-            game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerGreen).gainRubies(3);
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
@@ -482,8 +482,8 @@ class IstanbulTest {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
-            game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
-            game.getPlayerState(playerGreen).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
+            game.getPlayerState(playerGreen).gainRubies(game.getMaxRubies());
             assertThat(game.getPlayerState(playerRed).getLira()).isEqualTo(2);
             assertThat(game.getPlayerState(playerGreen).getLira()).isEqualTo(3);
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
@@ -500,11 +500,11 @@ class IstanbulTest {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
-            game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerRed).gainLira(1);
             game.getPlayerState(playerRed).addGoods(GoodsType.FABRIC, 2);
             game.getPlayerState(playerRed).addGoods(GoodsType.FRUIT, 2);
-            game.getPlayerState(playerGreen).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerGreen).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerGreen).addGoods(GoodsType.FABRIC, 1);
             game.getPlayerState(playerGreen).addGoods(GoodsType.SPICE, 2);
             assertThat(game.getPlayerState(playerRed).getLira()).isEqualTo(3);
@@ -523,9 +523,9 @@ class IstanbulTest {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
-            game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerRed).gainLira(1);
-            game.getPlayerState(playerGreen).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerGreen).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerGreen).addBonusCard(BonusCard.GEMSTONE_DEALER_2X);
             assertThat(game.getPlayerState(playerRed).getLira()).isEqualTo(3);
             assertThat(game.getPlayerState(playerGreen).getLira()).isEqualTo(3);
@@ -543,9 +543,9 @@ class IstanbulTest {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
-            game.getPlayerState(playerRed).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerRed).gainLira(1);
-            game.getPlayerState(playerGreen).gainRubies(PlayerState.maxRubies(2));
+            game.getPlayerState(playerGreen).gainRubies(game.getMaxRubies());
             assertThat(game.getPlayerState(playerRed).getLira()).isEqualTo(3);
             assertThat(game.getPlayerState(playerGreen).getLira()).isEqualTo(3);
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));

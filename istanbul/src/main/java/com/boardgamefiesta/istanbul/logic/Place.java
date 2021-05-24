@@ -449,6 +449,10 @@ public abstract class Place {
             return result;
         }
 
+        void addBonusCard(BonusCard bonusCard) {
+            discardPile.add(0, bonusCard);
+        }
+
         public BonusCard drawBonusCard() {
             if (discardPile.isEmpty()) {
                 throw new IstanbulException(IstanbulError.NO_BONUS_CARD_AVAILABLE);
@@ -860,6 +864,7 @@ public abstract class Place {
             stack.take();
 
             if (hasBothMosqueTiles(currentPlayerState)) {
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_RUBY_FROM_MOSQUE));
                 currentPlayerState.gainRubies(1);
             }
 

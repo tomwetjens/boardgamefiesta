@@ -1,8 +1,8 @@
 
 package com.boardgamefiesta.istanbul.logic;
 
-import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.repository.JsonDeserializer;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.AccessLevel;
@@ -105,6 +105,8 @@ public class Istanbul implements State {
         players.forEach(player -> {
             fountain.placeMerchant(Merchant.forPlayer(player), game);
             policeStation.placeFamilyMember(game, player);
+
+            game.takeBonusCard(player, random);
         });
 
         if (playerCount == 2) {
@@ -270,7 +272,9 @@ public class Istanbul implements State {
     }
 
     public void skip(@NonNull Random random) {
-        actionQueue.skip();
+        if (!actionQueue.isEmpty()) {
+            actionQueue.skip();
+        }
 
         if (actionQueue.isEmpty()) {
             endTurn(currentPlayer, random);
@@ -286,6 +290,8 @@ public class Istanbul implements State {
         actionQueue.skipAll();
 
         nextPlayer();
+
+        canUndo = false;
     }
 
     private void nextPlayer() {
@@ -388,7 +394,7 @@ public class Istanbul implements State {
                     return Collections.singleton(Action.PlaceFamilyMemberOnPoliceStation.class);
                 }
                 if (isFirstPhase() && currentPlayerState().hasBonusCard(BonusCard.RETURN_1_ASSISTANT)) {
-                    return Collections.singleton(Action.Return1Assistant.class);
+                    return Collections.singleton(Action.BonusCardReturnAssistant.class);
                 }
             }
         }
@@ -542,6 +548,25 @@ public class Istanbul implements State {
                     return distance >= 1 && distance <= 2;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public void takeBonusCard(Random random) {
+        takeBonusCard(currentPlayer, random);
+    }
+
+    private void takeBonusCard(Player player, Random random) {
+        var bonusCard = drawBonusCard(random);
+        playerStates.get(player).addBonusCard(bonusCard);
+
+        fireEvent(IstanbulEvent.create(player, IstanbulEvent.Type.TAKE_BONUS_CARD));
+    }
+
+    public int getBonusCardsSize() {
+        return bonusCards.size();
+    }
+
+    public int getMaxRubies() {
+        return PlayerState.maxRubies(players.size());
     }
 
     enum Status {

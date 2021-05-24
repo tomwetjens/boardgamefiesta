@@ -54,7 +54,7 @@ public enum ActionView {
     TAKE_3_LIRA(Action.Take3Lira.class, (jsonObject, game) -> new Action.Take3Lira()),
     TAKE_BONUS_CARD(Action.TakeBonusCard.class, (jsonObject, game) -> new Action.TakeBonusCard()),
     PLACE_MEMBER_ON_POLICE_STATION(Action.PlaceFamilyMemberOnPoliceStation.class, (jsonObject, game) -> new Action.PlaceFamilyMemberOnPoliceStation()),
-    RETURN_1_ASSISTANT(Action.Return1Assistant.class, (jsonObject, game) -> new Action.Return1Assistant(place(jsonObject, game)));
+    RETURN_1_ASSISTANT(Action.BonusCardReturnAssistant.class, (jsonObject, game) -> new Action.BonusCardReturnAssistant(place(jsonObject, game)));
 
     private static BonusCard getBonusCard(JsonObject jsonObject) {
         return jsonObject.containsKey("bonusCard") ? BonusCard.valueOf(jsonObject.getString("bonusCard")) : null;
@@ -70,8 +70,8 @@ public enum ActionView {
     }
 
     private static Place place(JsonObject jsonObject, Istanbul game) {
-        var x = jsonObject.getInt("x");
-        var y = jsonObject.getInt("y");
+        var x = getInt(jsonObject,"x");
+        var y = getInt(jsonObject,"y");
         return game.place(x, y);
     }
 

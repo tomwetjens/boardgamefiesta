@@ -50,18 +50,25 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             if (bonusCard == BonusCard.MOVE_0) {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, bonusCard.name()));
+
                 game.currentPlayerState().removeBonusCard(BonusCard.MOVE_0);
+                game.getCaravansary().addBonusCard(BonusCard.MOVE_0);
 
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE, Integer.toString(to.getNumber())));
+
                 return game.moveMerchant(game.getCurrentMerchant(), to, 0, 0);
             } else if (bonusCard == BonusCard.MOVE_3_OR_4) {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, bonusCard.name()));
+
                 game.currentPlayerState().removeBonusCard(BonusCard.MOVE_3_OR_4);
+                game.getCaravansary().addBonusCard(BonusCard.MOVE_3_OR_4);
 
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE, Integer.toString(to.getNumber())));
+
                 return game.moveMerchant(game.getCurrentMerchant(), to, 3, 4);
             } else {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE, Integer.toString(to.getNumber())));
+
                 return game.moveMerchant(game.getCurrentMerchant(), to, 1, 2);
             }
         }
@@ -120,11 +127,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class Governor extends Action {
         @Override
         ActionResult perform(Istanbul game, Random random) {
-            var bonusCard = game.drawBonusCard(random);
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.USE_GOVERNOR));
 
-            game.currentPlayerState().addBonusCard(bonusCard);
-
-            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.USE_GOVERNOR, bonusCard.name()));
+            game.takeBonusCard(random);
 
             game.place(Place::isGovernor).takeGovernor();
             var to = game.randomPlace(random);
@@ -134,7 +139,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             return ActionResult.followUp(PossibleAction.choice(Set.of(
                     PossibleAction.optional(Action.Pay2Lira.class),
-                    PossibleAction.optional(Action.DiscardBonusCard.class))),  false);
+                    PossibleAction.optional(Action.DiscardBonusCard.class))), false);
         }
 
     }
@@ -208,7 +213,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var currentPlayerState = game.currentPlayerState();
 
             currentPlayerState.maxGoods(goodsType);
-            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MAX_GOODS, Integer.toString(currentPlayerState.getGoods().get(goodsType))));
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MAX_GOODS, goodsType.name(), Integer.toString(currentPlayerState.getGoods().get(goodsType))));
 
             if (currentPlayerState.hasMosqueTile(MosqueTile.PAY_2_LIRA_FOR_1_ADDITIONAL_GOOD)) {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MAY_PAY_2_LIRA_FOR_1_ADDITIONAL_GOOD));
@@ -291,9 +296,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.POST_OFFICE_2X.name()));
 
-            var actionResult = new UsePostOffice().perform(game, random);
             game.currentPlayerState().removeBonusCard(BonusCard.POST_OFFICE_2X);
-            return actionResult;
+            game.getCaravansary().addBonusCard(BonusCard.POST_OFFICE_2X);
+
+            return new UsePostOffice().perform(game, random);
         }
     }
 
@@ -303,12 +309,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var place = game.getCurrentPlace();
 
             var familyMember = place.catchFamilyMember(game);
-
-            var bonusCard = game.drawBonusCard(random);
-            game.currentPlayerState().addBonusCard(bonusCard);
-
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.CATCH_FAMILY_MEMBER, familyMember.getName()));
-            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TAKE_BONUS_CARD, bonusCard.name()));
+
+            game.takeBonusCard(random);
 
             return ActionResult.none(false);
         }
@@ -348,8 +351,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         ActionResult perform(Istanbul game, Random random) {
-            game.currentPlayerState().removeBonusCard(bonusCard);
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.DISCARD_BONUS_CARD, bonusCard.name()));
+
+            game.currentPlayerState().removeBonusCard(bonusCard);
+            game.getCaravansary().addBonusCard(bonusCard);
+
             return ActionResult.none(true);
         }
     }
@@ -361,28 +367,23 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         ActionResult perform(Istanbul game, Random random) {
-            var currentPlayerState = game.currentPlayerState();
-
-            BonusCard a;
-            BonusCard b;
             boolean canUndo;
 
             if (caravansary) {
                 var caravansary = expectCurrentPlace(game, game.getCaravansary());
-                a = caravansary.drawBonusCard();
-                b = caravansary.drawBonusCard();
+
+                var a = caravansary.drawBonusCard();
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_BONUS_CARD, a.name()));
+
+                var b = caravansary.drawBonusCard();
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_BONUS_CARD, b.name()));
+
                 canUndo = true;
             } else {
-                a = game.drawBonusCard(random);
-                b = game.drawBonusCard(random);
+                game.takeBonusCard(random);
+                game.takeBonusCard(random);
                 canUndo = false;
             }
-
-            currentPlayerState.addBonusCard(a);
-            currentPlayerState.addBonusCard(b);
-
-            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TAKE_BONUS_CARD, a.name()));
-            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TAKE_BONUS_CARD, b.name()));
 
             return ActionResult.none(canUndo);
         }
@@ -500,6 +501,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, bonusCard.name()));
 
                 game.currentPlayerState().removeBonusCard(bonusCard);
+                game.getCaravansary().addBonusCard(bonusCard);
 
                 smallMarket.sellAnyGoods(game, goods);
             } else {
@@ -557,9 +559,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.SULTAN_2X.name()));
 
-            var actionResult = new DeliverToSultan().perform(game, random);
             game.currentPlayerState().removeBonusCard(BonusCard.SULTAN_2X);
-            return actionResult;
+            game.getCaravansary().addBonusCard(BonusCard.SULTAN_2X);
+
+            return new DeliverToSultan().perform(game, random);
         }
     }
 
@@ -583,20 +586,22 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.GEMSTONE_DEALER_2X.name()));
 
-            var actionResult = new BuyRuby().perform(game, random);
             game.currentPlayerState().removeBonusCard(BonusCard.GEMSTONE_DEALER_2X);
-            return actionResult;
+            game.getCaravansary().addBonusCard(BonusCard.GEMSTONE_DEALER_2X);
+
+            return new BuyRuby().perform(game, random);
         }
     }
 
     public static class BonusCardTake5Lira extends Action {
         @Override
         ActionResult perform(Istanbul game, Random random) {
-            var currentPlayerState = game.currentPlayerState();
-
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.TAKE_5_LIRA.name()));
 
+            var currentPlayerState = game.currentPlayerState();
             currentPlayerState.removeBonusCard(BonusCard.TAKE_5_LIRA);
+            game.getCaravansary().addBonusCard(BonusCard.TAKE_5_LIRA);
+
             currentPlayerState.gainLira(5);
 
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_LIRA, "5"));
@@ -610,9 +615,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.GAIN_1_GOOD.name()));
 
-            var currentPlayerState = game.currentPlayerState();
-
-            currentPlayerState.removeBonusCard(BonusCard.GAIN_1_GOOD);
+            game.currentPlayerState().removeBonusCard(BonusCard.GAIN_1_GOOD);
+            game.getCaravansary().addBonusCard(BonusCard.GAIN_1_GOOD);
 
             return ActionResult.followUp(PossibleAction.choice(Set.of(
                     PossibleAction.optional(Action.Take1Fabric.class),
@@ -634,6 +638,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.FAMILY_MEMBER_TO_POLICE_STATION.name()));
 
             game.currentPlayerState().removeBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION);
+            game.getCaravansary().addBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION);
 
             var from = game.getFamilyMemberCurrentPlace(game.getCurrentPlayer());
 
@@ -651,10 +656,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class TakeBonusCard extends Action {
         @Override
         ActionResult perform(Istanbul game, Random random) {
-            var bonusCard = game.drawBonusCard(random);
-            game.currentPlayerState().addBonusCard(bonusCard);
-
-            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TAKE_BONUS_CARD, bonusCard.name()));
+            game.takeBonusCard(random);
 
             return ActionResult.none(false);
         }
@@ -671,13 +673,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static class Return1Assistant extends Action {
+    public static class BonusCardReturnAssistant extends Action {
         Place from;
 
         @Override
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.RETURN_1_ASSISTANT.name()));
+
+            game.currentPlayerState().removeBonusCard(BonusCard.RETURN_1_ASSISTANT);
+            game.getCaravansary().addBonusCard(BonusCard.RETURN_1_ASSISTANT);
+
             from.returnAssistant(game.getCurrentMerchant());
+
             return ActionResult.none(true);
         }
     }

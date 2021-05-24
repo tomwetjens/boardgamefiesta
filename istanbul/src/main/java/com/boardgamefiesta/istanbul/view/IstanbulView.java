@@ -3,6 +3,7 @@ package com.boardgamefiesta.istanbul.view;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.istanbul.logic.Istanbul;
+import com.boardgamefiesta.istanbul.logic.PlayerState;
 import lombok.Getter;
 
 import java.util.List;
@@ -16,24 +17,30 @@ public class IstanbulView {
     private final List<List<PlaceView>> layout;
     private final List<ActionView> actions;
     private final Map<PlayerColor, PlayerStateView> players;
+    private final int bonusCards;
+    private final int maxRubies;
 
     public IstanbulView(Istanbul state, Player viewer) {
-        this.layout = IntStream.range(0, state.getLayout().width())
+        layout = IntStream.range(0, state.getLayout().width())
                 .mapToObj(x -> IntStream.range(0, state.getLayout().height())
                         .mapToObj(y -> state.getLayout().place(x, y))
                         .map(PlaceView::of)
                         .collect(Collectors.toList()))
                 .collect(Collectors.toList());
 
-        this.actions = state.getCurrentPlayer() == viewer
+        actions = state.getCurrentPlayer() == viewer
                 ? state.getPossibleActions().stream()
                 .map(ActionView::of)
                 .sorted()
                 .collect(Collectors.toList())
                 : null;
 
-        this.players = state.getPlayers().stream().collect(Collectors.toMap(Player::getColor, player ->
+        players = state.getPlayers().stream().collect(Collectors.toMap(Player::getColor, player ->
                 new PlayerStateView(player, state.getPlayerState(player), player == viewer)));
+
+        bonusCards = state.getBonusCardsSize();
+
+        maxRubies = state.getMaxRubies();
     }
 
 }

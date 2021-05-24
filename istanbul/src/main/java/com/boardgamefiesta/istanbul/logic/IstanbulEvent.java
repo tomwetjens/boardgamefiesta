@@ -72,6 +72,8 @@ public class IstanbulEvent implements InGameEvent {
         BUY_RUBY,
         ROLL_FOR_BLUE,
         LAST_ROUND,
+        GAIN_BONUS_CARD,
+        GAIN_RUBY_FROM_MOSQUE,
         PLAY_LEFTOVER_BONUS_CARDS
     }
 }
