@@ -198,7 +198,9 @@ public class Table implements AggregateRoot {
     private void endTurnInternal(Player player) {
         player.endTurn();
 
-        log.add(new LogEntry(player, LogEntry.Type.END_TURN));
+        if (player.getStatus() != Player.Status.LEFT) {
+            log.add(new LogEntry(player, LogEntry.Type.END_TURN));
+        }
     }
 
     public Optional<Instant> getExpires() {

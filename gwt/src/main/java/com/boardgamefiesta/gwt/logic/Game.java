@@ -645,18 +645,22 @@ public class Game implements State {
 
     @Override
     public void leave(Player player, Random random) {
-        playerOrder.remove(player);
-        // Do not remove player from "players" set since there may be buildings, railroad track etc. referring to the player still,
-        // and these are deserialized back from that single set which must therefore not be modified after game has started
-
         if (status == Status.BIDDING) {
+            playerOrder.remove(player);
+
             endBiddingIfCompleted(random);
+
+            if (currentPlayer == player && status != Status.STARTED) {
+                afterEndTurn();
+            }
         } else if (status == Status.STARTED) {
             if (currentPlayer == player) {
                 actionStack.clear();
 
                 afterEndTurn();
             }
+
+            playerOrder.remove(player);
         } else {
             throw new GWTException(GWTError.GAME_ENDED);
         }
