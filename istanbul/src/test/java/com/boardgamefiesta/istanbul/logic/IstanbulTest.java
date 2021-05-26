@@ -105,6 +105,11 @@ class IstanbulTest {
         void smugglerAfterPerformSendFamilyMember() {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            game.getPoliceStation().takeSmuggler();
+            game.getSpiceWarehouse().placeSmuggler();
+            game.getSpiceWarehouse().takeGovernor();
+            game.getLargeMarket().placeGovernor();
+
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
             game.perform(new Action.SendFamilyMember(game.getSpiceWarehouse()), new Random(0));
@@ -156,6 +161,11 @@ class IstanbulTest {
         void sendFamilyMemberToPlaceWithGovernor() {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            game.getPoliceStation().takeSmuggler();
+            game.getSpiceWarehouse().placeSmuggler();
+            game.getSpiceWarehouse().takeGovernor();
+            game.getLargeMarket().placeGovernor();
+
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
             game.perform(new Action.SendFamilyMember(game.getLargeMarket()), new Random(0));
@@ -262,7 +272,7 @@ class IstanbulTest {
             game.perform(new Action.RollForBlueGoods(), new Random(0));
 
             // Then
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Move.class);
+            assertThat(game.getPossibleActions()).contains(Action.Move.class);
         }
     }
 
@@ -272,6 +282,10 @@ class IstanbulTest {
         @Test
         void lastRoundTriggeredByStartPlayer() {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            game.getPlayers().stream()
+                    .map(game::getPlayerState)
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+
             game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerRed);
@@ -292,6 +306,10 @@ class IstanbulTest {
         @Test
         void lastRoundTriggeredByStartPlayerAndPlayBonusCards() {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            game.getPlayers().stream()
+                    .map(game::getPlayerState)
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+
             game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerRed).addBonusCard(BonusCard.TAKE_5_LIRA);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.GAIN_1_GOOD);
@@ -313,21 +331,21 @@ class IstanbulTest {
 
             // Red can still play certain bonus cards
             assertThat(game.getCurrentPlayer()).isSameAs(playerRed);
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.BonusCardTake5Lira.class, Action.BonusCardGain1Good.class);
+            assertThat(game.getPossibleActions()).contains(Action.BonusCardTake5Lira.class, Action.BonusCardGain1Good.class);
             game.perform(new Action.BonusCardTake5Lira(), new Random(0));
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.BonusCardGain1Good.class);
+            assertThat(game.getPossibleActions()).contains(Action.BonusCardGain1Good.class);
             game.perform(new Action.BonusCardGain1Good(), new Random(0));
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
+            assertThat(game.getPossibleActions()).contains(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
             game.perform(new Action.Take1Fabric(), new Random(0));
             game.endTurn(new Random(0));
 
             // Green can still play certain bonus cards
             assertThat(game.getCurrentPlayer()).isSameAs(playerGreen);
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.BonusCardTake5Lira.class, Action.BonusCardGain1Good.class);
+            assertThat(game.getPossibleActions()).contains(Action.BonusCardTake5Lira.class, Action.BonusCardGain1Good.class);
             game.perform(new Action.BonusCardTake5Lira(), new Random(0));
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.BonusCardGain1Good.class);
+            assertThat(game.getPossibleActions()).contains(Action.BonusCardGain1Good.class);
             game.perform(new Action.BonusCardGain1Good(), new Random(0));
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
+            assertThat(game.getPossibleActions()).contains(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
             game.perform(new Action.Take1Fabric(), new Random(0));
             game.endTurn(new Random(0));
 
@@ -338,6 +356,10 @@ class IstanbulTest {
         void lastRoundTriggeredByNonStartOrLastPlayer() {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
+            game.getPlayers().stream()
+                    .map(game::getPlayerState)
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+
             assertThat(game.getPlayerOrder()).containsExactly(playerBlue, playerGreen, playerRed);
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerBlue);
@@ -364,6 +386,10 @@ class IstanbulTest {
         void lastRoundTriggeredByNonStartOrLastPlayerAndPlayBonusCards() {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
+            game.getPlayers().stream()
+                    .map(game::getPlayerState)
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+
             assertThat(game.getPlayerOrder()).containsExactly(playerBlue, playerGreen, playerRed);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.TAKE_5_LIRA);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.GAIN_1_GOOD);
@@ -389,11 +415,11 @@ class IstanbulTest {
 
             // Blue can still play certain bonus cards
             assertThat(game.getCurrentPlayer()).isSameAs(playerBlue);
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.BonusCardTake5Lira.class, Action.BonusCardGain1Good.class);
+            assertThat(game.getPossibleActions()).contains(Action.BonusCardTake5Lira.class, Action.BonusCardGain1Good.class);
             game.perform(new Action.BonusCardTake5Lira(), new Random(0));
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.BonusCardGain1Good.class);
+            assertThat(game.getPossibleActions()).contains(Action.BonusCardGain1Good.class);
             game.perform(new Action.BonusCardGain1Good(), new Random(0));
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
+            assertThat(game.getPossibleActions()).contains(Action.Take1Blue.class, Action.Take1Spice.class, Action.Take1Fruit.class, Action.Take1Fabric.class);
             game.perform(new Action.Take1Fabric(), new Random(0));
             game.endTurn(new Random(0));
 
@@ -424,6 +450,10 @@ class IstanbulTest {
         void lastRoundTriggeredByLastPlayer() {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+            game.getPlayers().stream()
+                    .map(game::getPlayerState)
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerRed);
@@ -439,23 +469,22 @@ class IstanbulTest {
             // Then
             assertThat(game.isEnded()).isTrue();
         }
+    }
 
-        @Test
-        void score() {
-            // Given
-            var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
-            assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
-            game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
-            game.getPlayerState(playerGreen).gainRubies(3);
-            game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
-            game.endTurn(new Random(0));
-            game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
-            game.endTurn(new Random(0));
-            assertThat(game.isEnded()).isTrue();
+    @Test
+    void score() {
+        // Given
+        var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
+        assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
+        game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
+        game.getPlayerState(playerGreen).gainRubies(3);
+        game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
+        game.endTurn(new Random(0));
+        game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
+        game.endTurn(new Random(0));
 
-            assertThat(game.score(playerRed)).contains(6);
-            assertThat(game.score(playerGreen)).contains(3);
-        }
+        assertThat(game.score(playerRed)).contains(6);
+        assertThat(game.score(playerGreen)).contains(3);
     }
 
     @Nested
@@ -472,7 +501,6 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
-            assertThat(game.isEnded()).isTrue();
 
             assertThat(game.ranking()).containsExactly(playerRed, playerGreen);
         }
@@ -490,7 +518,6 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
-            assertThat(game.isEnded()).isTrue();
 
             assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
         }
@@ -513,7 +540,6 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
-            assertThat(game.isEnded()).isTrue();
 
             assertThat(game.ranking()).containsExactly(playerRed, playerGreen);
         }
@@ -533,7 +559,6 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
-            assertThat(game.isEnded()).isTrue();
 
             assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
         }
@@ -552,7 +577,6 @@ class IstanbulTest {
             game.endTurn(new Random(0));
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
-            assertThat(game.isEnded()).isTrue();
 
             assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
         }
