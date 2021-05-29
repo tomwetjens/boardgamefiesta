@@ -284,7 +284,7 @@ class IstanbulTest {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.getPlayers().stream()
                     .map(game::getPlayerState)
-                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::playBonusCard));
 
             game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
 
@@ -308,7 +308,7 @@ class IstanbulTest {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.getPlayers().stream()
                     .map(game::getPlayerState)
-                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::playBonusCard));
 
             game.getPlayerState(playerRed).gainRubies(game.getMaxRubies());
             game.getPlayerState(playerRed).addBonusCard(BonusCard.TAKE_5_LIRA);
@@ -358,7 +358,7 @@ class IstanbulTest {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
             game.getPlayers().stream()
                     .map(game::getPlayerState)
-                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::playBonusCard));
 
             assertThat(game.getPlayerOrder()).containsExactly(playerBlue, playerGreen, playerRed);
 
@@ -388,7 +388,7 @@ class IstanbulTest {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen, playerBlue)), LayoutType.SHORT_PATHS, new Random(0));
             game.getPlayers().stream()
                     .map(game::getPlayerState)
-                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::playBonusCard));
 
             assertThat(game.getPlayerOrder()).containsExactly(playerBlue, playerGreen, playerRed);
             game.getPlayerState(playerRed).addBonusCard(BonusCard.TAKE_5_LIRA);
@@ -452,7 +452,7 @@ class IstanbulTest {
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, new Random(0));
             game.getPlayers().stream()
                     .map(game::getPlayerState)
-                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::removeBonusCard));
+                    .forEach(playerState -> playerState.getBonusCards().forEach(playerState::playBonusCard));
 
             assertThat(game.getPlayers()).containsExactly(playerRed, playerGreen);
 

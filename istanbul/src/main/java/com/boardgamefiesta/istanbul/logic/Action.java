@@ -51,7 +51,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             if (bonusCard == BonusCard.MOVE_0) {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, bonusCard.name()));
 
-                game.currentPlayerState().removeBonusCard(BonusCard.MOVE_0);
+                game.currentPlayerState().playBonusCard(BonusCard.MOVE_0);
                 game.getCaravansary().addBonusCard(BonusCard.MOVE_0);
 
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE, Integer.toString(to.getNumber())));
@@ -60,7 +60,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             } else if (bonusCard == BonusCard.MOVE_3_OR_4) {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, bonusCard.name()));
 
-                game.currentPlayerState().removeBonusCard(BonusCard.MOVE_3_OR_4);
+                game.currentPlayerState().playBonusCard(BonusCard.MOVE_3_OR_4);
                 game.getCaravansary().addBonusCard(BonusCard.MOVE_3_OR_4);
 
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE, Integer.toString(to.getNumber())));
@@ -100,8 +100,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new IstanbulException(IstanbulError.NOT_ENOUGH_LIRA);
             }
 
+            var amount = 2;
             otherMerchants.forEach(otherMerchant -> {
-                var amount = 2;
                 currentPlayerState.payLira(amount);
 
                 otherMerchant.getPlayer().ifPresentOrElse(otherPlayer -> {
@@ -119,6 +119,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                         });
             });
 
+            currentPlayerState.getStats().paidOtherMerchant(otherMerchants.size() * amount);
+            currentPlayerState.getStats().placeUsed(place);
+
             return place.placeActions(game);
         }
 
@@ -128,6 +131,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         @Override
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.USE_GOVERNOR));
+            game.currentPlayerState().getStats().usedGovernor();
 
             game.takeBonusCard(random);
 
@@ -148,6 +152,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         @Override
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.USE_SMUGGLER));
+            game.currentPlayerState().getStats().usedSmuggler();
 
             game.place(Place::isSmuggler).takeSmuggler();
             var to = game.randomPlace(random);
@@ -296,7 +301,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.POST_OFFICE_2X.name()));
 
-            game.currentPlayerState().removeBonusCard(BonusCard.POST_OFFICE_2X);
+            game.currentPlayerState().playBonusCard(BonusCard.POST_OFFICE_2X);
             game.getCaravansary().addBonusCard(BonusCard.POST_OFFICE_2X);
 
             return new UsePostOffice().perform(game, random);
@@ -353,7 +358,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.DISCARD_BONUS_CARD, bonusCard.name()));
 
-            game.currentPlayerState().removeBonusCard(bonusCard);
+            game.currentPlayerState().discardBonusCard(bonusCard);
             game.getCaravansary().addBonusCard(bonusCard);
 
             return ActionResult.none(true);
@@ -500,7 +505,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, bonusCard.name()));
 
-                game.currentPlayerState().removeBonusCard(bonusCard);
+                game.currentPlayerState().playBonusCard(bonusCard);
                 game.getCaravansary().addBonusCard(bonusCard);
 
                 smallMarket.sellAnyGoods(game, goods);
@@ -559,7 +564,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.SULTAN_2X.name()));
 
-            game.currentPlayerState().removeBonusCard(BonusCard.SULTAN_2X);
+            game.currentPlayerState().playBonusCard(BonusCard.SULTAN_2X);
             game.getCaravansary().addBonusCard(BonusCard.SULTAN_2X);
 
             return new DeliverToSultan().perform(game, random);
@@ -586,7 +591,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.GEMSTONE_DEALER_2X.name()));
 
-            game.currentPlayerState().removeBonusCard(BonusCard.GEMSTONE_DEALER_2X);
+            game.currentPlayerState().playBonusCard(BonusCard.GEMSTONE_DEALER_2X);
             game.getCaravansary().addBonusCard(BonusCard.GEMSTONE_DEALER_2X);
 
             return new BuyRuby().perform(game, random);
@@ -599,7 +604,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.TAKE_5_LIRA.name()));
 
             var currentPlayerState = game.currentPlayerState();
-            currentPlayerState.removeBonusCard(BonusCard.TAKE_5_LIRA);
+            currentPlayerState.playBonusCard(BonusCard.TAKE_5_LIRA);
             game.getCaravansary().addBonusCard(BonusCard.TAKE_5_LIRA);
 
             currentPlayerState.gainLira(5);
@@ -615,7 +620,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.GAIN_1_GOOD.name()));
 
-            game.currentPlayerState().removeBonusCard(BonusCard.GAIN_1_GOOD);
+            game.currentPlayerState().playBonusCard(BonusCard.GAIN_1_GOOD);
             game.getCaravansary().addBonusCard(BonusCard.GAIN_1_GOOD);
 
             return ActionResult.followUp(PossibleAction.choice(Set.of(
@@ -637,7 +642,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.FAMILY_MEMBER_TO_POLICE_STATION.name()));
 
-            game.currentPlayerState().removeBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION);
+            game.currentPlayerState().playBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION);
             game.getCaravansary().addBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION);
 
             var from = game.getFamilyMemberCurrentPlace(game.getCurrentPlayer());
@@ -680,7 +685,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PLAY_BONUS_CARD, BonusCard.RETURN_1_ASSISTANT.name()));
 
-            game.currentPlayerState().removeBonusCard(BonusCard.RETURN_1_ASSISTANT);
+            game.currentPlayerState().playBonusCard(BonusCard.RETURN_1_ASSISTANT);
             game.getCaravansary().addBonusCard(BonusCard.RETURN_1_ASSISTANT);
 
             from.returnAssistant(game.getCurrentMerchant());

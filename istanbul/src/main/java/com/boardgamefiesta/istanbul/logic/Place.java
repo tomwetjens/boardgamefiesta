@@ -57,10 +57,14 @@ public abstract class Place {
             merchant.returnAssistants(numberOfAssistants);
             assistants.put(merchant.getColor(), 0);
 
+            game.currentPlayerState().getStats().pickedUpAssistants(numberOfAssistants);
+
             if (mustPayOtherMerchants()) {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MUST_PAY_OTHER_MERCHANTS));
                 return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class), true);
             }
+
+            game.currentPlayerState().getStats().placeUsed(this);
 
             return placeActions(game);
         } else if (merchant.getAssistants() > 0) {
@@ -87,10 +91,14 @@ public abstract class Place {
         var currentAssistants = assistants.getOrDefault(merchant.getColor(), 0);
         assistants.put(merchant.getColor(), currentAssistants + 1);
 
+        game.currentPlayerState().getStats().leftAssistant();
+
         if (mustPayOtherMerchants()) {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MUST_PAY_OTHER_MERCHANTS));
             return ActionResult.followUp(PossibleAction.optional(Action.PayOtherMerchants.class), true);
         }
+
+        game.currentPlayerState().getStats().placeUsed(this);
 
         return placeActions(game);
     }
@@ -99,6 +107,11 @@ public abstract class Place {
         if (!familyMembers.add(player)) {
             throw new IstanbulException(IstanbulError.ALREADY_AT_PLACE);
         }
+
+        var playerState = game.getPlayerState(player);
+        playerState.getStats().placedFamilyMember();
+        playerState.getStats().placeUsed(this);
+
         return placeActions(game);
     }
 
@@ -190,6 +203,8 @@ public abstract class Place {
 
         takeFamilyMember(otherFamilyMember);
         policeStation.placeFamilyMember(game, otherFamilyMember);
+
+        game.currentPlayerState().getStats().caughtFamilyMember();
 
         return otherFamilyMember;
     }

@@ -3,7 +3,6 @@ package com.boardgamefiesta.istanbul.view;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.istanbul.logic.Istanbul;
-import com.boardgamefiesta.istanbul.logic.PlayerState;
 import lombok.Getter;
 
 import java.util.List;
@@ -36,7 +35,7 @@ public class IstanbulView {
                 : null;
 
         players = state.getPlayers().stream().collect(Collectors.toMap(Player::getColor, player ->
-                new PlayerStateView(player, state.getPlayerState(player), player == viewer)));
+                new PlayerStateView(player, state.getPlayerState(player), player == viewer, state.isEnded())));
 
         bonusCards = state.getBonusCardsSize();
 

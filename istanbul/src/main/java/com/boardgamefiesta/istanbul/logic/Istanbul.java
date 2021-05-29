@@ -211,8 +211,7 @@ public class Istanbul implements State {
 
     @Override
     public Stats stats(Player player) {
-        // TODO Export stats
-        return Stats.builder().build();
+        return playerStates.get(player).stats();
     }
 
     @Override
@@ -306,6 +305,8 @@ public class Istanbul implements State {
         var nextPlayerState = getPlayerState(nextPlayer);
 
         this.currentPlayer = nextPlayer;
+
+        playerStates.get(currentPlayer).beginTurn();
 
         // Status transitions
         if (this.currentPlayer == startPlayer) {
@@ -439,8 +440,11 @@ public class Istanbul implements State {
         }
 
         from.removeMerchant(merchant);
+        var actionResult = to.placeMerchant(merchant, this);
 
-        return to.placeMerchant(merchant, this);
+        currentPlayerState().getStats().movedMerchant(dist);
+
+        return actionResult;
     }
 
     void fireEvent(IstanbulEvent event) {
