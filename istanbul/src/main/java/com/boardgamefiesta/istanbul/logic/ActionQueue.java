@@ -122,12 +122,18 @@ public class ActionQueue {
 
         var possibleAction = queue.peek();
 
-        if (possibleAction == null) {
-            throw new IstanbulException(IstanbulError.NO_ACTION);
+        if (possibleAction != null) {
+            possibleAction.skip();
+            queue.poll();
+        } else {
+            if (anyTime.isEmpty()) {
+                throw new IstanbulException(IstanbulError.NO_ACTION);
+            }
         }
 
-        possibleAction.skip();
-        queue.poll();
+        if (queue.isEmpty()) {
+            anyTime.clear();
+        }
     }
 
     public void skipAll() {
