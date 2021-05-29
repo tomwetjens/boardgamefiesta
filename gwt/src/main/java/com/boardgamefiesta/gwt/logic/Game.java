@@ -263,6 +263,10 @@ public class Game implements State {
         actionStack.addActions(actionResult.getNewActions());
 
         canUndo = actionResult.canUndo();
+
+        if (!canUndo && status == Status.BIDDING) {
+            endTurnIfNoMoreActions(random);
+        }
     }
 
     private static boolean isAnytimeAction(Action action) {
