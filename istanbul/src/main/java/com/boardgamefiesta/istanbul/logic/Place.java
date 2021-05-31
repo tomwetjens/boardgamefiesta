@@ -527,7 +527,7 @@ public abstract class Place {
         }
 
         static void rollForBlueGoods(Istanbul game, @NonNull PlayerState playerState, @NonNull Random random) {
-            var dice = random.nextInt(12) + 1;
+            var dice = random.nextInt(6) + random.nextInt(6) + 2;
             var amount = dice > 10 ? 3 : dice > 8 ? 2 : dice > 6 ? 1 : 0;
 
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.ROLL_FOR_BLUE, Integer.toString(dice), Integer.toString(amount)));
