@@ -99,8 +99,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .limit(2)
                 .build());
 
-        if (response.hasItems()) {
-            return Optional.of(mapToTable(response.count() >= 2
+        if (response.hasItems() && response.items().get(0).get(SK).s().startsWith(TABLE_PREFIX)) {
+            return Optional.of(mapToTable(response.count() >= 2 && response.items().get(1).get(SK).s().startsWith(STATE_PREFIX)
                     // Latest State# found
                     ? List.of(Item.of(response.items().get(0)), Item.of(response.items().get(1)))
                     // No State# found
