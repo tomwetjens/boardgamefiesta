@@ -526,13 +526,65 @@ public abstract class Place {
             super(8);
         }
 
-        static void rollForBlueGoods(Istanbul game, @NonNull PlayerState playerState, @NonNull Random random) {
-            var dice = random.nextInt(6) + random.nextInt(6) + 2;
-            var amount = dice > 10 ? 3 : dice > 8 ? 2 : dice > 6 ? 1 : 0;
+        static ActionResult rollForBlueGoods(Istanbul game, @NonNull Random random) {
+            var playerState = game.currentPlayerState();
 
-            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.ROLL_FOR_BLUE, Integer.toString(dice), Integer.toString(amount)));
+            var roll = playerState.roll(random);
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.ROLLED, Integer.toString(roll.getDie1()), Integer.toString(roll.getDie2())));
 
-            playerState.addGoods(GoodsType.BLUE, amount);
+            if (roll.getTotal() < 11 && playerState.hasMosqueTile(MosqueTile.TURN_OR_REROLL_DICE)) {
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MAY_TURN_OR_REROLL_DICE));
+
+                if (roll.getDie1() + 4 >= 11 || roll.getDie2() + 4 >= 11) {
+                    roll.turnDie();
+
+                    game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TURNED_DIE));
+
+                    finalizeRoll(game, roll);
+
+                    return ActionResult.none(false);
+                }
+
+                return ActionResult.immediate(PossibleAction.choice(Set.of(
+                        PossibleAction.mandatory(Action.RerollForBlueGoods.class),
+                        PossibleAction.mandatory(Action.NoRerollForBlueGoods.class))), false);
+            } else {
+                finalizeRoll(game, roll);
+
+                return ActionResult.none(false);
+            }
+        }
+
+        static ActionResult rerollForBlueGoods(Istanbul game, @NonNull Random random) {
+            var roll = game.currentPlayerState().roll(random);
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.REROLLED, roll.getDie1(), roll.getDie2()));
+
+            finalizeRoll(game, roll);
+
+            return ActionResult.none(false);
+        }
+
+        static ActionResult noRerollForBlueGoods(Istanbul game, Random random) {
+            var roll = game.currentPlayerState().getRoll()
+                    .orElseThrow();
+
+            if (roll.canTurnDie()) {
+                roll.turnDie();
+
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TURNED_DIE));
+            }
+
+            finalizeRoll(game, roll);
+
+            return ActionResult.none(true);
+        }
+
+        private static void finalizeRoll(Istanbul game, Roll roll) {
+            var amount = roll.getTotal() > 10 ? 3 : roll.getTotal() > 8 ? 2 : roll.getTotal() > 6 ? 1 : 0;
+
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.ROLL_FOR_BLUE, Integer.toString(roll.getTotal()), Integer.toString(amount)));
+
+            game.currentPlayerState().addGoods(GoodsType.BLUE, amount);
         }
 
         @Override
@@ -597,6 +649,7 @@ public abstract class Place {
 
             game.fireEvent(IstanbulEvent.create(currentPlayer, IstanbulEvent.Type.GAIN_LIRA, Integer.toString(lira)));
         }
+
     }
 
     public static class Market extends Place {

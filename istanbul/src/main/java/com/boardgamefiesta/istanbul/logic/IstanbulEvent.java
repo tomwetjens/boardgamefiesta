@@ -74,6 +74,8 @@ public class IstanbulEvent implements InGameEvent {
         LAST_ROUND,
         GAIN_BONUS_CARD,
         GAIN_RUBY_FROM_MOSQUE,
-        PLAY_LEFTOVER_BONUS_CARDS
+        PLAY_LEFTOVER_BONUS_CARDS,
+        MAY_TURN_OR_REROLL_DICE,
+        REROLLED
     }
 }

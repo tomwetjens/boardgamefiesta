@@ -5,10 +5,7 @@ import com.boardgamefiesta.api.repository.JsonDeserializer;
 import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.*;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonString;
+import javax.json.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -35,6 +32,8 @@ public class PlayerState {
     @Getter
     private final PlayerStats stats;
 
+    private Roll roll;
+
     @Builder
     PlayerState(int lira,
                 int capacity,
@@ -42,7 +41,8 @@ public class PlayerState {
                 @Singular @NonNull List<BonusCard> bonusCards,
                 @Singular @NonNull Set<MosqueTile> mosqueTiles,
                 @Singular @NonNull Map<GoodsType, Integer> goods,
-                @NonNull PlayerStats stats) {
+                @NonNull PlayerStats stats,
+                Roll roll) {
         if (lira < 0) {
             throw new IllegalArgumentException("Lira must be >= 0");
         }
@@ -66,14 +66,17 @@ public class PlayerState {
         this.mosqueTiles = new HashSet<>(mosqueTiles);
         this.goods = new HashMap<>(goods);
         this.stats = stats;
+        this.roll = roll;
     }
 
     static PlayerState start(int playerIndex) {
-        return new PlayerState(2 + playerIndex, 2, 0, Collections.emptyList(), Collections.emptySet(), Collections.emptyMap(), new PlayerStats());
+        return new PlayerState(2 + playerIndex, 2, 0, Collections.emptyList(), Collections.emptySet(), Collections.emptyMap(), new PlayerStats(), null);
     }
 
     void beginTurn() {
         stats.beginTurn();
+
+        roll = null;
     }
 
     boolean hasMosqueTile(MosqueTile mosqueTile) {
@@ -82,6 +85,10 @@ public class PlayerState {
 
     boolean hasAtLeastGoods(GoodsType goodsType, Integer amount) {
         return goods.getOrDefault(goodsType, 0) >= amount;
+    }
+
+    public Optional<Roll> getRoll() {
+        return Optional.ofNullable(roll);
     }
 
     int removeGoods(GoodsType goodsType, int amount) {
@@ -185,6 +192,7 @@ public class PlayerState {
                 .add("capacity", capacity)
                 .add("rubies", rubies)
                 .add("stats", stats.serialize(factory, serializer))
+                .add("roll", roll != null ? roll.serialize(factory) : null)
                 .build();
     }
 
@@ -204,7 +212,8 @@ public class PlayerState {
                         .map(MosqueTile::valueOf)
                         .collect(Collectors.toSet()),
                 JsonDeserializer.forObject(jsonObject.getJsonObject("goods")).asIntegerMap(GoodsType::valueOf),
-                PlayerStats.deserialize(jsonObject.getJsonObject("stats"))
+                PlayerStats.deserialize(jsonObject.getJsonObject("stats")),
+                jsonObject.containsKey("roll") && !jsonObject.isNull("roll") ? Roll.deserialize(jsonObject.getJsonObject("roll")) : null
         );
     }
 
@@ -236,6 +245,11 @@ public class PlayerState {
         builder.value("liraPaidToOtherMerchants", stats.liraPaidToOtherMerchants);
 
         return builder.build();
+    }
+
+    Roll roll(Random random) {
+        roll = Roll.random(random);
+        return roll;
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)

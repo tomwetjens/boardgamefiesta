@@ -456,9 +456,21 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class RollForBlueGoods extends Action {
         @Override
         ActionResult perform(Istanbul game, Random random) {
-            Place.BlackMarket.rollForBlueGoods(game, game.currentPlayerState(), random);
+            return Place.BlackMarket.rollForBlueGoods(game, random);
+        }
+    }
 
-            return ActionResult.none(false);
+    public static class RerollForBlueGoods extends Action {
+        @Override
+        ActionResult perform(Istanbul game, Random random) {
+            return Place.BlackMarket.rerollForBlueGoods(game, random);
+        }
+    }
+
+    public static class NoRerollForBlueGoods extends Action {
+        @Override
+        ActionResult perform(Istanbul game, Random random) {
+            return Place.BlackMarket.noRerollForBlueGoods(game, random);
         }
     }
 

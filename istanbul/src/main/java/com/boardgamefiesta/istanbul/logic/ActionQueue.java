@@ -106,11 +106,11 @@ public class ActionQueue {
         return getAnyTimeAction(action).isPresent();
     }
 
-    public void addFirst(@NonNull PossibleAction possibleAction) {
+    public void addFollowUp(@NonNull PossibleAction possibleAction) {
         queue.addFirst(possibleAction);
     }
 
-    public void addFirst(@NonNull Collection<PossibleAction> possibleActions) {
+    public void addFollowUp(@NonNull Collection<PossibleAction> possibleActions) {
         queue.addAll(0, possibleActions);
     }
 
@@ -170,6 +170,10 @@ public class ActionQueue {
     public void clear() {
         queue.clear();
         anyTime.clear();
+    }
+
+    public void stopCurrent() {
+        current = null;
     }
 
     public Optional<PossibleAction> getCurrent() {

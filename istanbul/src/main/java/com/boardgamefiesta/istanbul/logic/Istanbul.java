@@ -51,6 +51,7 @@ public class Istanbul implements State {
     @NonNull
     private final LinkedList<BonusCard> bonusCards;
 
+    @Getter(AccessLevel.PACKAGE)
     private final ActionQueue actionQueue;
 
     @Getter
@@ -85,7 +86,7 @@ public class Istanbul implements State {
         Collections.shuffle(bonusCards, random);
 
         var actionQueue = new ActionQueue();
-        actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
+        actionQueue.addFollowUp(PossibleAction.mandatory(Action.Move.class));
 
         var game = new Istanbul(
                 players,
@@ -239,7 +240,10 @@ public class Istanbul implements State {
             throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
         }
 
-        actionQueue.addFirst(actionResult.getFollowUpActions());
+        actionQueue.addFollowUp(actionResult.getFollowUpActions());
+        if (actionResult.isImmediate()) {
+            actionQueue.stopCurrent();
+        }
 
         canUndo = actionResult.canUndo();
 
@@ -329,7 +333,7 @@ public class Istanbul implements State {
         }
 
         if (!isEnded() && status != Status.PLAY_LEFTOVER_BONUS_CARDS) {
-            this.actionQueue.addFirst(PossibleAction.mandatory(Action.Move.class));
+            this.actionQueue.addFollowUp(PossibleAction.mandatory(Action.Move.class));
 
             if (nextPlayerState.hasMosqueTile(MosqueTile.PAY_2_LIRA_TO_RETURN_ASSISTANT)) {
                 // Once in a turn

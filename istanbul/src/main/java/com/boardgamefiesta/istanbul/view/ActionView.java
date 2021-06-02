@@ -38,6 +38,8 @@ public enum ActionView {
     PAY_OTHER_MERCHANTS(Action.PayOtherMerchants.class, (jsonObject, game) -> new Action.PayOtherMerchants()),
     RETURN_ALL_ASSISTANTS(Action.ReturnAllAssistants.class, (jsonObject, game) -> new Action.ReturnAllAssistants()),
     ROLL_FOR_BLUE_GOODS(Action.RollForBlueGoods.class, (jsonObject, game) -> new Action.RollForBlueGoods()),
+    REROLL_FOR_BLUE_GOODS(Action.RerollForBlueGoods.class, (jsonObject, game) -> new Action.RerollForBlueGoods()),
+    NO_REROLL_FOR_BLUE_GOODS(Action.NoRerollForBlueGoods.class, (jsonObject, game) -> new Action.NoRerollForBlueGoods()),
     SELL_GOODS(Action.SellGoods.class, (jsonObject, game) -> new Action.SellGoods(getGoods(jsonObject), getBonusCard(jsonObject))),
     SEND_FAMILY_MEMBER(Action.SendFamilyMember.class, (jsonObject, game) -> new Action.SendFamilyMember(place(jsonObject, game))),
     SMUGGLER(Action.Smuggler.class, (jsonObject, game) -> new Action.Smuggler()),

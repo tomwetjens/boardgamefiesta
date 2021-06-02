@@ -13,24 +13,27 @@ import java.util.stream.Stream;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ActionResult {
     List<PossibleAction> followUpActions;
-    List<PossibleAction> finalActions;
     boolean undo;
+    boolean immediate;
 
     public static ActionResult none(boolean canUndo) {
-        return new ActionResult(Collections.emptyList(), Collections.emptyList(), canUndo);
+        return new ActionResult(Collections.emptyList(), canUndo, false);
+    }
+
+    public static ActionResult immediate(PossibleAction possibleAction, boolean canUndo) {
+        return new ActionResult(List.of(possibleAction), canUndo, true);
     }
 
     public static ActionResult followUp(PossibleAction possibleAction, boolean canUndo) {
-        return new ActionResult(List.of(possibleAction), Collections.emptyList(), canUndo);
+        return new ActionResult(List.of(possibleAction), canUndo, false);
     }
 
     public ActionResult andThen(ActionResult actionResult) {
         return new ActionResult(
                 Stream.concat(followUpActions.stream(), actionResult.followUpActions.stream())
                         .collect(Collectors.toList()),
-                Stream.concat(finalActions.stream(), actionResult.finalActions.stream())
-                        .collect(Collectors.toList()),
-                undo && actionResult.canUndo());
+                undo && actionResult.canUndo(),
+                immediate || actionResult.isImmediate());
     }
 
     public boolean canUndo() {
