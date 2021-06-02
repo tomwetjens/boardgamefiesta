@@ -97,7 +97,8 @@ class DynamoDbJsonObject extends DynamoDbJsonValue implements JsonObject {
 
     @Override
     public boolean isNull(String key) {
-        return attributeValue.m().get(key).nul();
+        var attributeValue = this.attributeValue.m().get(key);
+        return attributeValue == null || Boolean.TRUE.equals(attributeValue.nul());
     }
 
     @Override
