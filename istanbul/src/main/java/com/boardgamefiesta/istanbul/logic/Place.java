@@ -536,18 +536,17 @@ public abstract class Place {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MAY_TURN_OR_REROLL_DICE));
 
                 if (roll.getDie1() + 4 >= 11 || roll.getDie2() + 4 >= 11) {
-                    roll.turnDie();
-
-                    game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.TURNED_DIE));
-
-                    finalizeRoll(game, roll);
-
-                    return ActionResult.none(false);
+                    // Turning die gives us maximum blue goods, so just do that automatically
+                    return turnDieIfPossibleForBlueGoods(game, random);
+                } else if (roll.getDie1() + 4 < 8 && roll.getDie2() + 4 < 8) {
+                    // Turning die does not give us any blue goods, so just reroll automatically
+                    return rerollForBlueGoods(game, random);
+                } else {
+                    // Give player a choice to reroll for possibly more (or less) goods, or turn a die
+                    return ActionResult.immediate(PossibleAction.choice(Set.of(
+                            PossibleAction.mandatory(Action.RerollForBlueGoods.class),
+                            PossibleAction.mandatory(Action.NoRerollForBlueGoods.class))), false);
                 }
-
-                return ActionResult.immediate(PossibleAction.choice(Set.of(
-                        PossibleAction.mandatory(Action.RerollForBlueGoods.class),
-                        PossibleAction.mandatory(Action.NoRerollForBlueGoods.class))), false);
             } else {
                 finalizeRoll(game, roll);
 
@@ -564,7 +563,7 @@ public abstract class Place {
             return ActionResult.none(false);
         }
 
-        static ActionResult noRerollForBlueGoods(Istanbul game, Random random) {
+        static ActionResult turnDieIfPossibleForBlueGoods(Istanbul game, Random random) {
             var roll = game.currentPlayerState().getRoll()
                     .orElseThrow();
 
@@ -1053,10 +1052,12 @@ public abstract class Place {
             return Optional.of(PossibleAction.optional(Action.DeliverToSultan.class));
         }
 
-        ActionResult deliverToSultan(PlayerState playerState) {
+        ActionResult deliverToSultan(Istanbul game) {
             if (uncovered > 10) {
                 throw new IstanbulException(IstanbulError.NO_RUBY_AVAILABLE);
             }
+
+            var playerState = game.currentPlayerState();
 
             var requiredGoodsByType = REQUIRED_GOODS.stream()
                     .limit(uncovered)
@@ -1074,13 +1075,18 @@ public abstract class Place {
                 throw new IstanbulException(IstanbulError.NOT_ENOUGH_GOODS);
             }
 
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.DELIVER_TO_SULTAN));
+
             // First pay all the required goods types
-            requiredGoodsByType.forEach((goodsType, amount) ->
-                    playerState.removeGoods(goodsType, amount.intValue()));
+            requiredGoodsByType.forEach((goodsType, amount) -> {
+                playerState.removeGoods(goodsType, amount.intValue());
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PAY_GOODS, Long.toString(amount), goodsType.name()));
+            });
 
             // Because we checked the player has enough goods, give the ruby already
             // even though the player still needs to choose which of the "any" goods to pay
             playerState.gainRubies(1);
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_RUBY_FROM_SULTAN));
 
             uncovered++;
 

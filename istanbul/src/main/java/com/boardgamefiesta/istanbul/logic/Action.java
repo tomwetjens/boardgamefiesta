@@ -470,7 +470,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class NoRerollForBlueGoods extends Action {
         @Override
         ActionResult perform(Istanbul game, Random random) {
-            return Place.BlackMarket.noRerollForBlueGoods(game, random);
+            return Place.BlackMarket.turnDieIfPossibleForBlueGoods(game, random);
         }
     }
 
@@ -558,7 +558,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Istanbul game, Random random) {
             var sultansPalace = game.getSultansPalace();
 
-            var actionResult = sultansPalace.deliverToSultan(game.currentPlayerState());
+            var actionResult = sultansPalace.deliverToSultan(game);
 
             if (game.currentPlayerState().hasBonusCard(BonusCard.SULTAN_2X)) {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MAY_DELIVER_TO_SULTAN_2X));
