@@ -217,8 +217,6 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
-    @Value
-    @EqualsAndHashCode(callSuper = false)
     public static class TakeObjectiveCard extends Action {
 
         // null means draw from stack
@@ -236,10 +234,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             if (objectiveCard != null) {
                 game.getObjectiveCards().remove(objectiveCard);
-                game.currentPlayerState().gainCard(objectiveCard);
             } else {
-                game.currentPlayerState().gainCard(game.getObjectiveCards().draw());
+                objectiveCard = game.getObjectiveCards().draw();
             }
+            game.currentPlayerState().gainCard(objectiveCard);
 
             game.fireActionEvent(GWTEvent.Type.TAKE_OBJECTIVE_CARD, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
 
