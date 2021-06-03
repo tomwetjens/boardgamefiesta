@@ -220,6 +220,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class TakeObjectiveCard extends Action {
 
         // null means draw from stack
+        @Getter
         ObjectiveCard objectiveCard;
 
         public TakeObjectiveCard() {
