@@ -299,11 +299,11 @@ public class Game implements State {
     }
 
     void fireActionEvent(Class<? extends Action> actionClass, List<String> params) {
-        fireActionEvent(ActionType.of(actionClass).name(), params);
+        fireActionEvent(GWTEvent.Type.ACTION, Stream.concat(Stream.of(ActionType.of(actionClass).name()), params.stream()).collect(Collectors.toList()));
     }
 
-    void fireActionEvent(String name, List<String> params) {
-        fireEvent(currentPlayer, GWTEvent.Type.ACTION, Stream.concat(Stream.of(name), params.stream()).collect(Collectors.toList()));
+    void fireActionEvent(GWTEvent.Type type, List<String> params) {
+        fireEvent(currentPlayer, type, params);
     }
 
     private void endTurnIfNoMoreActions(@NonNull Random random) {

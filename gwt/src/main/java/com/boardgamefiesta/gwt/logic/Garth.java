@@ -444,7 +444,7 @@ public class Garth {
                     if (buy.getSecondCard() != null) {
                         playerState.gainCard(buy.getSecondCard());
 
-                        game.fireActionEvent("BUY_2_CATTLE", List.of(
+                        game.fireEvent(player, GWTEvent.Type.BUY_2_CATTLE, List.of(
                                 Integer.toString(buy.getDollars()),
                                 buy.getCard().getType().name(),
                                 Integer.toString(buy.getCard().getPoints()),
@@ -452,7 +452,7 @@ public class Garth {
                                 Integer.toString(buy.getSecondCard().getPoints()),
                                 Integer.toString(buy.getCowboys())));
                     } else {
-                        game.fireActionEvent("BUY_CATTLE", List.of(
+                        game.fireEvent(player, GWTEvent.Type.BUY_CATTLE, List.of(
                                 Integer.toString(buy.getDollars()),
                                 buy.getCard().getType().name(),
                                 Integer.toString(buy.getCard().getPoints()),
@@ -565,7 +565,7 @@ public class Garth {
                 .ifPresent(to -> {
                     railroadTrack.moveEngineForward(player, to, 1, atMost);
 
-                    game.fireActionEvent(Action.MoveEngineForward.class, Collections.emptyList());
+                    game.fireEvent(player, GWTEvent.Type.MOVE_ENGINE_FORWARD, List.of(to.getName()));
 
                     upgradeIfPossible(game, player, to);
 
@@ -588,7 +588,7 @@ public class Garth {
                 .ifPresent(to -> {
                     railroadTrack.moveEngineBackwards(player, to, 1, Integer.MAX_VALUE);
 
-                    game.fireActionEvent(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Collections.emptyList());
+                    game.fireEvent(player, GWTEvent.Type.MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS, List.of(to.getName()));
 
                     upgradeIfPossible(game, player, to);
                 });
@@ -603,7 +603,7 @@ public class Garth {
             if (!railroadTrack.hasUpgraded(station, player)) {
                 railroadTrack.upgradeStation(game, station);
 
-                game.fireActionEvent(Action.UpgradeStation.class, Collections.emptyList());
+                game.fireEvent(player, GWTEvent.Type.UPGRADE_STATION, List.of(Integer.toString(station.getCost()), Integer.toString(station.getPoints())));
 
                 railroadTrack.getStationMaster(station)
                         .ifPresent(stationMaster -> {

@@ -64,7 +64,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             if (secondCard != null) {
                 playerState.gainCard(secondCard);
 
-                game.fireActionEvent("BUY_2_CATTLE", List.of(
+                game.fireActionEvent(GWTEvent.Type.BUY_2_CATTLE, List.of(
                         Integer.toString(cost.getDollars()),
                         card.getType().name(),
                         Integer.toString(card.getPoints()),
@@ -72,7 +72,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                         Integer.toString(secondCard.getPoints()),
                         Integer.toString(cost.getCowboys())));
             } else {
-                game.fireActionEvent("BUY_CATTLE", List.of(
+                game.fireActionEvent(GWTEvent.Type.BUY_CATTLE, List.of(
                         Integer.toString(cost.getDollars()),
                         card.getType().name(),
                         Integer.toString(card.getPoints()),
@@ -139,7 +139,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             game.currentPlayerState().payDollars(2);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 2).getImmediateActions());
         }
@@ -241,7 +241,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.currentPlayerState().gainCard(game.getObjectiveCards().draw());
             }
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.TAKE_OBJECTIVE_CARD, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
 
             return ActionResult.undoNotAllowed(ImmediateActions.none());
         }
@@ -276,7 +276,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, game.currentPlayerState().getNumberOfEngineers());
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_FORWARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -293,7 +293,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 1);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_1_FORWARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -310,7 +310,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             game.currentPlayerState().removeCards(Collections.singleton(card));
 
-            game.fireActionEvent(this, Collections.emptyList());
+            if (card instanceof Card.CattleCard) {
+                var cattleCard = (Card.CattleCard) this.card;
+                game.fireActionEvent(GWTEvent.Type.REMOVE_CATTLE_CARD, List.of(cattleCard.getType().name(), Integer.toString(cattleCard.getPoints())));
+            } else if (card instanceof ObjectiveCard) {
+                var objectiveCard = (ObjectiveCard) this.card;
+                game.fireActionEvent(GWTEvent.Type.REMOVE_OBJECTIVE_CARD, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
+            }
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
@@ -356,9 +362,19 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             game.currentPlayerState().discardCard(card);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            fireEvent(game, card);
 
             return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+
+        private static void fireEvent(Game game, Card card) {
+            if (card instanceof Card.CattleCard) {
+                var cattleCard = (Card.CattleCard) card;
+                game.fireActionEvent(GWTEvent.Type.DISCARD_CATTLE_CARD, List.of(cattleCard.getType().name(), Integer.toString(cattleCard.getPoints())));
+            } else if (card instanceof ObjectiveCard) {
+                var objectiveCard = (ObjectiveCard) card;
+                game.fireActionEvent(GWTEvent.Type.DISCARD_OBJECTIVE_CARD, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
+            }
         }
     }
 
@@ -605,7 +621,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             var immediateActions = game.getRailroadTrack().upgradeStation(game, station);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.UPGRADE_STATION, List.of(Integer.toString(station.getCost()), Integer.toString(station.getPoints())));
 
             return ActionResult.undoAllowed(immediateActions);
         }
@@ -640,7 +656,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(Game game, Random random) {
             game.getRailroadTrack().downgradeStation(game, station);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.DOWNGRADE_STATION, List.of(Integer.toString(station.getPoints()), Integer.toString(station.getCost())));
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
@@ -776,7 +792,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         private ImmediateActions normalDelivery(Game game) {
-            var breedingValue = game.currentPlayerState().handValue() + certificates;
+            var currentPlayerState = game.currentPlayerState();
+            var breedingValue = currentPlayerState.handValue() + certificates;
             if (breedingValue < city.getValue()
                     && game.getCurrentPlayer().getType() != Player.Type.COMPUTER) {
                 throw new GWTException(GWTError.NOT_ENOUGH_BREEDING_VALUE);
@@ -789,16 +806,20 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 payout += 6;
             }
 
-            var tempCertificates = Math.max(0, certificates - game.currentPlayerState().permanentCertificates());
+            var tempCertificates = Math.max(0, certificates - currentPlayerState.permanentCertificates());
             if (tempCertificates > 0) {
-                game.currentPlayerState().spendTempCertificates(tempCertificates);
+                currentPlayerState.spendTempCertificates(tempCertificates);
             }
 
-            game.currentPlayerState().gainDollars(payout);
-            game.currentPlayerState().discardHand();
+            currentPlayerState.gainDollars(payout);
 
             fireEvent(game, payout, certificates);
             var immediateActions = game.deliverToCity(city);
+
+            for (var card : currentPlayerState.getHand()) {
+                DiscardCard.fireEvent(game, card);
+            }
+            currentPlayerState.discardHand();
 
             game.getTrail().moveToStart(game.getCurrentPlayer());
 
@@ -870,7 +891,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(Game game, Random random) {
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS, List.of(to.getName()));
 
             // According to the rules, the dollars gained can be used to upgrade a station when moving backwards
             game.currentPlayerState().gainDollars(3);
@@ -891,7 +912,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move
                     .getImmediateActions()
@@ -910,7 +931,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 2, 3);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_2_OR_3_FORWARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -939,7 +960,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var playerState = game.currentPlayerState();
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE, List.of(to.getName()));
 
             playerState.payDollars(1);
             var engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
@@ -960,7 +981,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var playerState = game.currentPlayerState();
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES, List.of(to.getName()));
 
             playerState.payDollars(2);
             var engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2);
@@ -983,7 +1004,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 1);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.PAY_1_DOLLAR_TO_MOVE_ENGINE_1_FORWARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1000,7 +1021,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move
                     .getImmediateActions()
@@ -1021,7 +1042,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             playerState.discardCattleCards(type, 2);
             playerState.gainDollars(4);
 
-            game.fireActionEvent(this, List.of(type.name()));
+            game.fireActionEvent(GWTEvent.Type.DISCARD_PAIR_TO_GAIN_4_DOLLARS, List.of(type.name()));
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
@@ -1072,7 +1093,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var immediateActions = game.currentPlayerState().playObjectiveCard(objectiveCard);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.PLAY_OBJECTIVE_CARD, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
 
             return ActionResult.undoAllowed(immediateActions);
         }
@@ -1158,7 +1179,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             playerState.discardCattleCards(type, 2);
             playerState.gainDollars(3);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.DISCARD_PAIR_TO_GAIN_3_DOLLARS, List.of(type.name()));
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
@@ -1221,16 +1242,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 ((Location.BuildingLocation) to).getBuilding()
                         .ifPresentOrElse(building -> {
                             if (building instanceof PlayerBuilding) {
-                                game.fireActionEvent("MOVE_TO_PLAYER_BUILDING"
-                                        + (payFeesAndActivate ? "" : "_WITHOUT_FEES"), List.of(to.getName(), building.getName(), ((PlayerBuilding) building).getPlayer().getName()));
+                                game.fireActionEvent(payFeesAndActivate ? GWTEvent.Type.MOVE_TO_PLAYER_BUILDING : GWTEvent.Type.MOVE_TO_PLAYER_BUILDING_WITHOUT_FEES, List.of(to.getName(), building.getName(), ((PlayerBuilding) building).getPlayer().getName()));
                             } else {
-                                game.fireActionEvent("MOVE_TO_BUILDING"
-                                        + (payFeesAndActivate ? "" : "_WITHOUT_FEES"), List.of(to.getName(), building.getName()));
+                                game.fireActionEvent(payFeesAndActivate ? GWTEvent.Type.MOVE_TO_BUILDING : GWTEvent.Type.MOVE_TO_BUILDING_WITHOUT_FEES, List.of(to.getName(), building.getName()));
                             }
-                        }, () -> game.fireActionEvent("MOVE"
-                                + (payFeesAndActivate ? "" : "_WITHOUT_FEES"), List.of(to.getName())));
+                        }, () -> game.fireActionEvent(payFeesAndActivate ? GWTEvent.Type.MOVE : GWTEvent.Type.MOVE_WITHOUT_FEES, List.of(to.getName())));
             } else {
-                game.fireActionEvent("MOVE", List.of(to.getName()));
+                game.fireActionEvent(GWTEvent.Type.MOVE, List.of(to.getName()));
             }
 
             if (!game.getActionStack().canPerform(Move.class)) {
@@ -1380,7 +1398,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 2);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_AT_MOST_2_FORWARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1397,7 +1415,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 3);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_AT_MOST_3_FORWARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1526,7 +1544,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
             game.currentPlayerState().gainDollars(3);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1625,7 +1643,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             playerState.discardCattleCards(cattleType, 1);
             playerState.gainDollars(3);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND, List.of(cattleType.name()));
 
             return ActionResult.undoAllowed(
                     !game.getObjectiveCards().isEmpty()
@@ -1646,7 +1664,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             int buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, buildingsInWoods);
 
-            game.fireActionEvent(this, List.of(to.getName()));
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_BUILDINGS_IN_WOODS, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1664,7 +1682,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             int hazards = game.currentPlayerState().numberOfHazards();
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, hazards);
 
-            game.fireActionEvent(this, List.of(to.getName()));
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_FORWARD_UP_TO_NUMBER_OF_HAZARDS, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1697,7 +1715,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
             }
 
-            game.fireActionEvent(this, Collections.emptyList());
+            if (building instanceof PlayerBuilding) {
+                game.fireActionEvent(GWTEvent.Type.USE_ADJACENT_PLAYER_BUILDING, List.of(building.getName(), ((PlayerBuilding) building).getPlayer().getName()));
+            } else {
+                game.fireActionEvent(GWTEvent.Type.USE_ADJACENT_BUILDING, List.of(building.getName()));
+            }
 
             return ActionResult.undoAllowed(adjacentLocation.activate(game, true));
         }
@@ -1721,7 +1743,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             var immediateActions = game.getRailroadTrack().upgradeStation(game, station);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.UPGRADE_ANY_STATION_BEHIND_ENGINE, List.of(Integer.toString(station.getCost()), Integer.toString(station.getPoints())));
 
             return ActionResult.undoAllowed(immediateActions);
         }
@@ -1774,7 +1796,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(Game game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 4);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_AT_MOST_4_FORWARD, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move.getImmediateActions());
         }
@@ -1793,7 +1815,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             playerState.discardCattleCards(cattleType, 1);
             playerState.gainTempCertificates(1);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.DISCARD_1_CATTLE_CARD_TO_GAIN_1_CERTIFICATE, List.of(cattleType.name()));
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
@@ -1840,7 +1862,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 playerState.addCardToHand(game.getObjectiveCards().draw());
             }
 
-            game.fireActionEvent(this, Collections.emptyList());
+            game.fireActionEvent(GWTEvent.Type.ADD_1_OBJECTIVE_CARD_TO_HAND, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
 
             return ActionResult.undoNotAllowed(ImmediateActions.none());
         }
