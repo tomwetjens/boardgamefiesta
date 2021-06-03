@@ -14,11 +14,19 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PlaceTest {
 
+    @Mock
+    Istanbul game;
+
     @Nested
     class SultansPalace {
 
         @Mock
         PlayerState playerState;
+
+        @BeforeEach
+        void setUp() {
+            lenient().when(game.currentPlayerState()).thenReturn(playerState);
+        }
 
         @Test
         void initialUncovered() {
@@ -32,7 +40,7 @@ class PlaceTest {
         void notEnoughGoods() {
             var sultansPalace = Place.SultansPalace.withUncovered(5);
 
-            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState))
+            assertThatThrownBy(() -> sultansPalace.deliverToSultan(game))
                     .isInstanceOf(IstanbulException.class)
                     .hasMessage(IstanbulError.NOT_ENOUGH_GOODS.name());
         }
@@ -47,7 +55,7 @@ class PlaceTest {
             when(playerState.hasAtLeastGoods(GoodsType.BLUE, 1)).thenReturn(true);
             when(playerState.getTotalGoods()).thenReturn(5);
 
-            var actionResult = sultansPalace.deliverToSultan(playerState);
+            var actionResult = sultansPalace.deliverToSultan(game);
 
             assertThat(actionResult.getFollowUpActions())
                     .hasOnlyOneElementSatisfying(possibleAction -> {
@@ -83,7 +91,7 @@ class PlaceTest {
             when(playerState.hasAtLeastGoods(GoodsType.BLUE, 1)).thenReturn(true);
             when(playerState.getTotalGoods()).thenReturn(4);
 
-            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState))
+            assertThatThrownBy(() -> sultansPalace.deliverToSultan(game))
                     .isInstanceOf(IstanbulException.class)
                     .hasMessage(IstanbulError.NOT_ENOUGH_GOODS.name());
         }
@@ -98,7 +106,7 @@ class PlaceTest {
             when(playerState.hasAtLeastGoods(GoodsType.BLUE, 2)).thenReturn(true);
             when(playerState.getTotalGoods()).thenReturn(10);
 
-            var actionResult = sultansPalace.deliverToSultan(playerState);
+            var actionResult = sultansPalace.deliverToSultan(game);
 
             assertThat(actionResult.getFollowUpActions()).hasSize(1);
             var followUpAction = actionResult.getFollowUpActions().get(0);
@@ -129,7 +137,7 @@ class PlaceTest {
             when(playerState.hasAtLeastGoods(GoodsType.BLUE, 2)).thenReturn(true);
             when(playerState.getTotalGoods()).thenReturn(9);
 
-            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState))
+            assertThatThrownBy(() -> sultansPalace.deliverToSultan(game))
                     .isInstanceOf(IstanbulException.class)
                     .hasMessage(IstanbulError.NOT_ENOUGH_GOODS.name());
         }
@@ -138,7 +146,7 @@ class PlaceTest {
         void noRubyAvailable() {
             var sultansPalace = Place.SultansPalace.withUncovered(11);
 
-            assertThatThrownBy(() -> sultansPalace.deliverToSultan(playerState))
+            assertThatThrownBy(() -> sultansPalace.deliverToSultan(game))
                     .isInstanceOf(IstanbulException.class)
                     .hasMessage(IstanbulError.NO_RUBY_AVAILABLE.name());
         }
