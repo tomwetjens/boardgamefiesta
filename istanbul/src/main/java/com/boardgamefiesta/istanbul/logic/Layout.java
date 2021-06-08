@@ -14,11 +14,10 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class Layout {
 
-    private static final int WIDTH = 4;
-    private static final int HEIGHT = 4;
+    static final int WIDTH = 4;
+    static final int HEIGHT = 4;
 
     private final Place[][] layout;
 
@@ -40,6 +39,14 @@ public class Layout {
                 this.layout[x][y] = iterator.next();
             }
         }
+    }
+
+    /**
+     *
+     * @param layout [x][y]
+     */
+    Layout(@NonNull Place[][] layout) {
+        this.layout = layout;
     }
 
     Place randomPlace(@NonNull Random random) {
