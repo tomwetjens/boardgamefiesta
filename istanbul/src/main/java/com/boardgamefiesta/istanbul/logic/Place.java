@@ -1090,13 +1090,17 @@ public abstract class Place {
 
             uncovered++;
 
-            // Make sure the player pays the remaining "any" goods
-            return ActionResult.followUp(PossibleAction.repeat(numberOfAnyGoodsType, numberOfAnyGoodsType,
-                    PossibleAction.choice(Set.of(
-                            PossibleAction.optional(Action.Pay1Fabric.class),
-                            PossibleAction.optional(Action.Pay1Fruit.class),
-                            PossibleAction.optional(Action.Pay1Spice.class),
-                            PossibleAction.optional(Action.Pay1Blue.class)))), true);
+            if (numberOfAnyGoodsType > 0) {
+                // Make sure the player pays the remaining "any" goods
+                return ActionResult.followUp(PossibleAction.repeat(numberOfAnyGoodsType, numberOfAnyGoodsType,
+                        PossibleAction.choice(Set.of(
+                                PossibleAction.optional(Action.Pay1Fabric.class),
+                                PossibleAction.optional(Action.Pay1Fruit.class),
+                                PossibleAction.optional(Action.Pay1Spice.class),
+                                PossibleAction.optional(Action.Pay1Blue.class)))), true);
+            } else {
+                return ActionResult.none(true);
+            }
         }
 
         private boolean hasEnoughGoods(PlayerState playerState, Map<GoodsType, Long> requiredGoodsByType) {

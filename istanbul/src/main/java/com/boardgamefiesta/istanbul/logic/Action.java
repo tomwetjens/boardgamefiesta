@@ -564,7 +564,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MAY_DELIVER_TO_SULTAN_2X));
                 return actionResult.andThen(ActionResult.followUp(PossibleAction.optional(BonusCardDeliverToSultan.class), true));
             }
-            return ActionResult.none(true);
+            return actionResult;
         }
     }
 
