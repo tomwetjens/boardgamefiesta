@@ -389,7 +389,7 @@ public abstract class PossibleAction {
 
         @Override
         protected PossibleAction clone() {
-            return new Repeat(atLeast, atMost, repeatingAction.clone(), current.clone(), count);
+            return new Repeat(atLeast, atMost, repeatingAction.clone(), current != null ? current.clone() : null, count);
         }
 
         @Override
@@ -464,7 +464,7 @@ public abstract class PossibleAction {
                 // Must continue the current first
                 return current.canPerform(action);
             }
-            return (whens < atMost && when.canPerform(action)) || (thens < whens && then.canPerform(action));
+            return (whens < atMost && when.canPerform(action)) || (whens >= atLeast && thens < whens && then.canPerform(action));
         }
 
         @Override

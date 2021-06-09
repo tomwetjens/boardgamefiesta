@@ -365,32 +365,23 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
-    @Value
-    @EqualsAndHashCode(callSuper = false)
-    public static class Take2BonusCards extends Action {
-        boolean caravansary;
+    @AllArgsConstructor
+    public static class TakeBonusCardCaravansary extends Action {
+        private final boolean caravansary;
 
         @Override
         ActionResult perform(Istanbul game, Random random) {
-            boolean canUndo;
-
             if (caravansary) {
                 var caravansary = expectCurrentPlace(game, game.getCaravansary());
 
-                var a = caravansary.drawBonusCard();
-                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_BONUS_CARD, a.name()));
-
-                var b = caravansary.drawBonusCard();
-                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_BONUS_CARD, b.name()));
-
-                canUndo = true;
+                var bonusCard = caravansary.drawBonusCard();
+                game.currentPlayerState().addBonusCard(bonusCard);
+                game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.GAIN_BONUS_CARD, bonusCard.name()));
             } else {
                 game.takeBonusCard(random);
-                game.takeBonusCard(random);
-                canUndo = false;
             }
 
-            return ActionResult.none(canUndo);
+            return ActionResult.none(caravansary);
         }
     }
 

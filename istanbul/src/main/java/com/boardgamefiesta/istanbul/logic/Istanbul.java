@@ -390,7 +390,8 @@ public class Istanbul implements State {
      * Actions that can be performed at any time during the current player's turn, also during other actions.
      */
     private Set<Class<? extends Action>> anyTimeActions() {
-        if (!actionQueue.canPerform(Action.DiscardBonusCard.class)) { // Not during use of the Governor
+        if (!actionQueue.canPerform(Action.DiscardBonusCard.class) // Not during use of the Governor
+                && !actionQueue.canPerform(Action.TakeBonusCardCaravansary.class)) { // Not during use of Caravansary
             if (currentPlayerState().hasBonusCard(BonusCard.TAKE_5_LIRA)) {
                 return Collections.singleton(Action.BonusCardTake5Lira.class);
             }

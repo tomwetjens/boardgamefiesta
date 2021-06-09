@@ -440,7 +440,8 @@ public abstract class Place {
 
         @Override
         protected Optional<PossibleAction> getPossibleAction(Istanbul game) {
-            return Optional.of(PossibleAction.whenThen(PossibleAction.optional(Action.Take2BonusCards.class),
+            return Optional.of(PossibleAction.whenThen(
+                    PossibleAction.repeat(2, 2, PossibleAction.mandatory(Action.TakeBonusCardCaravansary.class)),
                     PossibleAction.mandatory(Action.DiscardBonusCard.class), 0, 1));
         }
 
