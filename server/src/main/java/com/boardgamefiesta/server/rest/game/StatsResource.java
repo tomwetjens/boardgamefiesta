@@ -86,7 +86,7 @@ public class StatsResource {
     }
 
     private void writeHeader(PrintWriter writer, List<String> keys) {
-        writer.print("tableId,started,ended,time,username,score,winner,rating");
+        writer.print("tableId,started,ended,time,userId,username,score,winner,rating");
         keys.forEach(key -> {
             writer.print(',');
             writer.print(key);
@@ -102,6 +102,8 @@ public class StatsResource {
         writer.print(table.getEnded().toString());
         writer.print(',');
         writer.print(Duration.between(table.getStarted(), table.getEnded()).toMinutes());
+        writer.print(',');
+        writer.print(user.getId().getId());
         writer.print(',');
         writer.print(user.getUsername());
         writer.print(',');
