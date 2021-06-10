@@ -372,14 +372,14 @@ public abstract class Place {
         }
 
         ActionResult use(Istanbul game) {
-            // row 1: fabric, 2 lira, blue, 2 lira
-            // row 2: spice, 1 lira, fruit, 1 lira
-
             var currentPlayerState = game.currentPlayerState();
-            var goodsType1 = indicators.get(0) == 1 ? GoodsType.SPICE : GoodsType.FABRIC;
-            var goodsType2 = indicators.get(2) == 1 ? GoodsType.FRUIT : GoodsType.BLUE;
-            var lira1 = indicators.get(1) == 1 ? 1 : 2;
-            var lira2 = indicators.get(3) == 1 ? 1 : 2;
+
+            // row 1: fabric, 2 lira, blue,  2 lira
+            // row 2:  spice, 1 lira, fruit, 1 lira
+            var goodsType1 = indicators.get(0) == 0 ? GoodsType.SPICE : GoodsType.FABRIC;
+            var lira1 = indicators.get(1) == 0 ? 1 : 2;
+            var goodsType2 = indicators.get(2) == 0 ? GoodsType.FRUIT : GoodsType.BLUE;
+            var lira2 = indicators.get(3) == 0 ? 1 : 2;
 
             currentPlayerState.addGoods(goodsType1, 1);
             currentPlayerState.addGoods(goodsType2, 1);
