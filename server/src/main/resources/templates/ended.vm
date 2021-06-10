@@ -1,0 +1,17 @@
+<html>
+<head>
+    <title>
+        $translations.get('email.ended.subject', $translations.get(
+            'game.' + $table.game.id.id + '.name'), $dateTime.format($table.ended))
+    </title>
+</head>
+<body>
+<p>$translations.get('email.salutation', $user.username)</p><br/>
+<p>$translations.get(
+    'email.ended.body', $translations.get('game.' + $table.game.id.id + '.name'), $dateTime.format($table.ended))</p>
+<p><a href="$url/$table.game.id.id/$table.id.id">$translations.get('email.ended.action')</a></p><br/>
+    $translations.get('email.greeting')<br/>
+Board Game Fiesta<br/>
+<a href="$url">$url</a>
+</body>
+</html>

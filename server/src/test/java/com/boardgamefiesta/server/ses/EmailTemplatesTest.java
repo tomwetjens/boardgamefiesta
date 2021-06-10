@@ -94,11 +94,6 @@ class EmailTemplatesTest {
         var message = emailTemplates.createEndedMessage(table, player, userMap);
 
         assertThat(message.subject().data()).isEqualTo("Ranchers Of The Old West has ended at 3/23/21, 12:46 PM");
-        assertThat(message.body().html().data()).isEqualTo("<p>Howdy!</p><br/>" +
-                "<p>Your game of Ranchers Of The Old West has ended at 3/23/21, 12:46 PM.</p>" +
-                "<p><a href=\"https://boardgamefiesta.com/gwt/tableId\">Go to table</a></p><br/>" +
-                "Sincerely,<br/>Board Game Fiesta<br/>" +
-                "<a href=\"https://boardgamefiesta.com\">https://boardgamefiesta.com</a>");
     }
 
     @Test
@@ -122,10 +117,5 @@ class EmailTemplatesTest {
         var message = emailTemplates.createEndedMessage(table, player, userMap);
 
         assertThat(message.subject().data()).isEqualTo("Ranchers Of The Old West has ended at 23/03/21, 17:46");
-        assertThat(message.body().html().data()).isEqualTo("<p>Howdy!</p><br/>" +
-                "<p>Your game of Ranchers Of The Old West has ended at 23/03/21, 17:46.</p>" +
-                "<p><a href=\"https://boardgamefiesta.com/gwt/tableId\">Go to table</a></p><br/>" +
-                "Sincerely,<br/>Board Game Fiesta<br/>" +
-                "<a href=\"https://boardgamefiesta.com\">https://boardgamefiesta.com</a>");
     }
 }

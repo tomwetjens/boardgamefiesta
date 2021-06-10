@@ -1,0 +1,17 @@
+<html>
+<head>
+    <title>
+        $translations.get('email.invited.subject', $translations.get(
+            'game.' + $event.gameId.id + '.name'), $dateTime.format($event.started))
+    </title>
+</head>
+<body>
+<p>$translations.get('email.salutation', $user.username)</p><br/>
+<p>$translations.get(
+    'email.invited.body', $translations.get('game.' + $event.gameId.id + '.name'), $dateTime.format($event.started))</p>
+<p><a href="$url/$event.gameId.id/$event.tableId.id">$translations.get('email.invited.action')</a></p><br/>
+    $translations.get('email.greeting')<br/>
+Board Game Fiesta<br/>
+<a href="$url">$url</a>
+</body>
+</html>

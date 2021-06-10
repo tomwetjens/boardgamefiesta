@@ -4,16 +4,22 @@ import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import lombok.NonNull;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.ses.model.Body;
 import software.amazon.awssdk.services.ses.model.Content;
 import software.amazon.awssdk.services.ses.model.Message;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
+import java.time.ZoneId;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @ApplicationScoped
 public class EmailTemplates {
@@ -21,55 +27,77 @@ public class EmailTemplates {
     private final Translations translations;
     private final String url;
 
+    private final VelocityEngine velocityEngine;
+
     public EmailTemplates(@NonNull Translations translations,
                           @ConfigProperty(name = "bgf.url") String url) {
         this.translations = translations;
         this.url = url;
+
+        velocityEngine = new VelocityEngine();
+        velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
+        velocityEngine.setProperty("classpath." + RuntimeConstants.RESOURCE_LOADER + "." + RuntimeConstants.RESOURCE_LOADER_CLASS, ClasspathResourceLoader.class.getName());
+        velocityEngine.init();
     }
 
     Message createBeginTurnMessage(Table.BeginTurn event, User user) {
-        var locale = user.getLocale();
-        var timeZone = user.getTimeZone();
+        var context = createDefaultContext(user.getLocale(), user.getTimeZone());
+        context.put("event", event);
+        context.put("user", user);
 
-        var dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-                .withLocale(locale)
-                .withZone(timeZone);
-
-        var game = translations.getTranslation("game." + event.getGameId().getId() + ".name", locale);
-        var started = dateTimeFormatter.format(event.getStarted());
-        var link = url + "/" + event.getGameId().getId() + "/" + event.getTableId().getId();
+        var template = velocityEngine.getTemplate("/templates/begin_turn.vm");
+        var writer = new StringWriter();
+        template.merge(context, writer);
 
         return Message.builder()
                 .subject(Content.builder()
                         .charset(StandardCharsets.UTF_8.name())
-                        .data(translations.getTranslation("email.turn.subject", locale, game, started))
+                        .data(extractTitle(writer.toString()))
                         .build())
                 .body(Body.builder()
                         .html(Content.builder()
                                 .charset(StandardCharsets.UTF_8.name())
-                                .data(translations.getTranslation("email.turn.body", locale, game, started, link) +
-                                        "Board Game Fiesta<br/><a href=\"" + url + "\">" + url + "</a>")
+                                .data(writer.toString())
                                 .build())
                         .build())
                 .build();
     }
 
-    Message createInvitedMessage(Table.Invited event, User user, User host) {
-        var locale = user.getLocale();
+    private VelocityContext createDefaultContext(Locale locale, ZoneId timeZone) {
+        var context = new VelocityContext();
+        context.put("url", url);
+        context.put("dateTime", new DateTimeTool(locale, timeZone));
+        context.put("translations", new TranslationsTool(translations, locale));
+        return context;
+    }
 
-        var game = translations.getTranslation("game." + event.getGameId().getId() + ".name", locale);
-        var link = url + "/" + event.getGameId().getId() + "/" + event.getTableId().getId();
+    private String extractTitle(String html) {
+        var matcher = Pattern.compile("<title>(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(html);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        throw new IllegalStateException("No title tag found in HTML: " + html);
+    }
+
+    Message createInvitedMessage(Table.Invited event, User user, User host) {
+        var context = createDefaultContext(user.getLocale(), user.getTimeZone());
+        context.put("event", event);
+        context.put("user", user);
+        context.put("host", host);
+
+        var template = velocityEngine.getTemplate("/templates/invited.vm");
+        var writer = new StringWriter();
+        template.merge(context, writer);
 
         return Message.builder()
                 .subject(Content.builder()
                         .charset(StandardCharsets.UTF_8.name())
-                        .data(translations.getTranslation("email.invited.subject", locale, game, host.getUsername()))
+                        .data(extractTitle(writer.toString()))
                         .build())
                 .body(Body.builder()
                         .html(Content.builder()
                                 .charset(StandardCharsets.UTF_8.name())
-                                .data(translations.getTranslation("email.invited.body", locale, game, host.getUsername(), link) +
-                                        "Board Game Fiesta<br/><a href=\"" + url + "\">" + url + "</a>")
+                                .data(writer.toString())
                                 .build())
                         .build())
                 .build();
@@ -77,27 +105,26 @@ public class EmailTemplates {
 
     public Message createEndedMessage(Table table, Player player, Map<User.Id, User> userMap) {
         var user = userMap.get(player.getUserId().get());
-        var locale = user.getLocale();
-        var timeZone = user.getTimeZone();
 
-        var dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-                .withLocale(locale)
-                .withZone(timeZone);
+        var context = createDefaultContext(user.getLocale(), user.getTimeZone());
+        context.put("table", table);
+        context.put("player", player);
+        context.put("user", user);
+        context.put("userMap", userMap);
 
-        var game = translations.getTranslation("game." + table.getGame().getId().getId() + ".name", locale);
-        var ended = dateTimeFormatter.format(table.getEnded());
-        var link = url + "/" + table.getGame().getId().getId() + "/" + table.getId().getId();
+        var template = velocityEngine.getTemplate("/templates/ended.vm");
+        var writer = new StringWriter();
+        template.merge(context, writer);
 
         return Message.builder()
                 .subject(Content.builder()
                         .charset(StandardCharsets.UTF_8.name())
-                        .data(translations.getTranslation("email.ended.subject", locale, game, ended))
+                        .data(extractTitle(writer.toString()))
                         .build())
                 .body(Body.builder()
                         .html(Content.builder()
                                 .charset(StandardCharsets.UTF_8.name())
-                                .data(translations.getTranslation("email.ended.body", locale, game, ended, link) +
-                                        "Board Game Fiesta<br/><a href=\"" + url + "\">" + url + "</a>")
+                                .data(writer.toString())
                                 .build())
                         .build())
                 .build();
