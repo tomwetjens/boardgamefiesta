@@ -1,5 +1,7 @@
 package com.boardgamefiesta.dynamodb;
 
+import com.boardgamefiesta.domain.user.EmailPreferences;
+import com.boardgamefiesta.domain.user.TurnBasedPreferences;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
@@ -10,7 +12,6 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -126,6 +127,24 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .timeZone(item.getOptionalString("TimeZone").map(ZoneId::of).orElse(null))
                 .created(item.getInstant("Created"))
                 .updated(item.getInstant("Updated"))
+                .emailPreferences(item.getOptionalMap("EmailPreferences")
+                        .map(Item::of)
+                        .map(this::mapToEmailPreferences)
+                        .orElseGet(EmailPreferences::new))
+                .build();
+    }
+
+    private EmailPreferences mapToEmailPreferences(Item attributeValue) {
+        return EmailPreferences.builder()
+                .sendInviteEmail(attributeValue.getBoolean("SendInviteEmail"))
+                .turnBasedPreferences(mapToTurnBasedPreferences(Item.of(attributeValue.getMap("TurnBasedPreferences"))))
+                .build();
+    }
+
+    private TurnBasedPreferences mapToTurnBasedPreferences(Item attributeValue) {
+        return TurnBasedPreferences.builder()
+                .sendTurnEmail(attributeValue.getBoolean("SendTurnEmail"))
+                .sendEndedEmail(attributeValue.getBoolean("SendEndedEmail"))
                 .build();
     }
 
@@ -228,6 +247,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
                         .setString("TimeZone", user.getTimeZone().getId())
                         .setInstant("Created", user.getCreated())
                         .setInstant("Updated", user.getUpdated())
+                        .set("EmailPreferences", mapFromEmailPreferences(user.getEmailPreferences()))
                         .setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
                         .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
                         .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
@@ -236,6 +256,20 @@ public class UserDynamoDbRepositoryV2 implements Users {
                         .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername())
                         .asMap())
                 .build());
+    }
+
+    private AttributeValue mapFromEmailPreferences(EmailPreferences emailPreferences) {
+        return new Item()
+                .setBoolean("SendInviteEmail", emailPreferences.isSendInviteEmail())
+                .set("TurnBasedPreferences", mapFromTurnBasedPreferences(emailPreferences.getTurnBasedPreferences()))
+                .asAttributeValue();
+    }
+
+    private AttributeValue mapFromTurnBasedPreferences(TurnBasedPreferences turnBasedPreferences) {
+        return new Item()
+                .setBoolean("SendTurnEmail", turnBasedPreferences.isSendTurnEmail())
+                .setBoolean("SendEndedEmail", turnBasedPreferences.isSendEndedEmail())
+                .asAttributeValue();
     }
 
     @Override
@@ -255,6 +289,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .setString("Location", user.getLocation().orElse(null))
                 .setString("TimeZone", user.getTimeZone().getId())
                 .setInstant("Updated", user.getUpdated())
+                .set("EmailPreferences", mapFromEmailPreferences(user.getEmailPreferences()))
                 .setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
                 .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
                 .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())

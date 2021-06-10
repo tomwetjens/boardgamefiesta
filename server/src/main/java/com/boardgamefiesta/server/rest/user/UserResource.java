@@ -4,6 +4,7 @@ import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.user.view.UserView;
+import lombok.NonNull;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -34,6 +35,26 @@ public class UserResource {
         var user = currentUser.get();
 
         user.changeUsername(request.getUsername());
+
+        users.update(user);
+    }
+
+    @POST
+    @Path("/change-email-preferences")
+    public void changeEmailPreferences(@NonNull ChangeEmailPreferences changeEmailPreferences) {
+        var user = currentUser.get();
+
+        if (changeEmailPreferences.getSendInviteEmail() != null) {
+            user.getEmailPreferences().setSendInviteEmail(changeEmailPreferences.getSendInviteEmail());
+        }
+        if (changeEmailPreferences.getTurnBasedPreferences() != null) {
+            if (changeEmailPreferences.getTurnBasedPreferences().getSendTurnEmail() != null) {
+                user.getEmailPreferences().getTurnBasedPreferences().setSendTurnEmail(changeEmailPreferences.getTurnBasedPreferences().getSendTurnEmail());
+            }
+            if (changeEmailPreferences.getTurnBasedPreferences().getSendEndedEmail() != null) {
+                user.getEmailPreferences().getTurnBasedPreferences().setSendEndedEmail(changeEmailPreferences.getTurnBasedPreferences().getSendEndedEmail());
+            }
+        }
 
         users.update(user);
     }

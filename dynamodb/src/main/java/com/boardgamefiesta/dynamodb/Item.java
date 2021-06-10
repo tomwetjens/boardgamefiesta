@@ -61,10 +61,19 @@ public class Item {
         return map;
     }
 
+    public AttributeValue asAttributeValue() {
+        return map(map);
+    }
+
     public String getString(String attributeName) {
         var attributeValue = map.get(attributeName);
         return attributeValue != null && !Boolean.TRUE.equals(attributeValue.nul())
                 ? attributeValue.s() : null;
+    }
+
+    public boolean getBoolean(String attributeName) {
+        var attributeValue = map.get(attributeName);
+        return attributeValue != null && attributeValue.bool();
     }
 
     public Instant getInstant(String attributeName) {
@@ -176,6 +185,10 @@ public class Item {
 
     public Map<String, AttributeValue> getMap(String attributeName) {
         return map.get(attributeName).m();
+    }
+
+    public Optional<Map<String, AttributeValue>> getOptionalMap(String attributeName) {
+        return getOptionalNotNull(attributeName).map(AttributeValue::m);
     }
 
     public Item setBoolean(String attributeName, boolean value) {

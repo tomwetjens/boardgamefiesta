@@ -1,9 +1,9 @@
 package com.boardgamefiesta.server.ses;
 
+import com.boardgamefiesta.domain.event.WebSocketConnections;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
-import com.boardgamefiesta.domain.event.WebSocketConnections;
 import lombok.NonNull;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -33,9 +33,11 @@ public class InviteEmailer {
 
     void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited event) {
         if (!webSocketConnections.wasActiveAfter(event.getUserId(), Instant.now().minusSeconds(60))) {
-            users.findById(event.getUserId()).ifPresent(user ->
-                    users.findById(event.getHostId()).ifPresent(host ->
-                            sendEmail(event, user, host)));
+            users.findById(event.getUserId())
+                    .filter(user -> user.getEmailPreferences().isSendInviteEmail())
+                    .ifPresent(user ->
+                            users.findById(event.getHostId()).ifPresent(host ->
+                                    sendEmail(event, user, host)));
         }
     }
 

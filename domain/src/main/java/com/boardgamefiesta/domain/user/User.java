@@ -74,6 +74,11 @@ public class User implements AggregateRoot {
 
     private ZoneId timeZone;
 
+    @Getter
+    @NonNull
+    @Builder.Default
+    private final EmailPreferences emailPreferences = new EmailPreferences();
+
     public static User createAutomatically(@NonNull String cognitoUsername, @NonNull String email) {
         var created = Instant.now();
 

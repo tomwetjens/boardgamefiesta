@@ -47,6 +47,7 @@ public class TurnBasedEmailer {
         event.getUserId()
                 .filter(this::isInactive)
                 .flatMap(users::findById)
+                .filter(user -> user.getEmailPreferences().getTurnBasedPreferences().isSendTurnEmail())
                 .ifPresent(user -> sendEmail(event, user));
     }
 
@@ -68,6 +69,7 @@ public class TurnBasedEmailer {
                         humanPlayers.stream()
                                 .filter(player -> isInactive(player.getUserId().get()))
                                 .forEach(player -> users.findById(player.getUserId().get())
+                                        .filter(user -> user.getEmailPreferences().getTurnBasedPreferences().isSendEndedEmail())
                                         .ifPresent(user -> sendEmail(table, player, userMap)));
                     }
                 });
