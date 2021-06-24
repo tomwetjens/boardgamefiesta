@@ -1,6 +1,8 @@
 package com.boardgamefiesta.server.rest.table;
 
 import com.boardgamefiesta.api.domain.Options;
+import com.boardgamefiesta.domain.featuretoggle.FeatureToggle;
+import com.boardgamefiesta.domain.featuretoggle.FeatureToggles;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.Rating;
@@ -40,6 +42,9 @@ import java.util.stream.Collectors;
 public class TableResource {
 
     @Inject
+    FeatureToggles featureToggles;
+
+    @Inject
     Games games;
 
     @Inject
@@ -67,8 +72,16 @@ public class TableResource {
     @Path("/create")
     @Transactional
     public TableView create(@NotNull @Valid CreateTableRequest request) {
+        var gameId = Game.Id.of(request.getGame());
+
+        FeatureToggle.Id.forGameId(gameId)
+                .map(featureToggles::get)
+                .ifPresent(featureToggle -> featureToggle.throwIfNotContains(currentUser.getId()));
+
+        var game = games.get(gameId);
+
         Table table = Table.create(
-                games.get(Game.Id.of(request.getGame())),
+                game,
                 request.getMode(),
                 currentUser.getId(),
                 new Options(request.getOptions() != null ? request.getOptions() : Collections.emptyMap()));
