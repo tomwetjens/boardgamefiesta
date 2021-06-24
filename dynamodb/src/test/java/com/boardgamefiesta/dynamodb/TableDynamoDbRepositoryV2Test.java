@@ -6,7 +6,7 @@ import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.User;
-import com.boardgamefiesta.gwt.GWT;
+import com.boardgamefiesta.gwt.GWTProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
-    static final Game.Id GAME_ID = Game.Id.of(GWT.ID);
+    static final Game.Id GAME_ID = Game.Id.of(GWTProvider.ID);
 
     static Games games = new Games();
 
