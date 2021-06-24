@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GameProviders {
 
@@ -35,4 +36,7 @@ public class GameProviders {
         return Optional.ofNullable(providers.get(id));
     }
 
+    public Stream<GameProvider<State>> list() {
+        return providers.values().stream();
+    }
 }
