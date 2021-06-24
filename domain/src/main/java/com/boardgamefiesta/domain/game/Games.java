@@ -6,27 +6,34 @@ import com.boardgamefiesta.domain.DomainService;
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @ApplicationScoped
 public class Games implements DomainService {
 
-    private final Map<Game.Id, Game> games = new ConcurrentHashMap<>();
+    private final Map<Game.Id, Game> games;
+
+    public Games() {
+        games = GameProviders.instance()
+                .list()
+                .map(provider -> Game.builder()
+                        .id(Game.Id.of(provider.getId()))
+                        .provider(provider)
+                        .build())
+                .collect(Collectors.toMap(Game::getId, Function.identity()));
+    }
 
     public Game get(Game.Id id) {
-        return games.computeIfAbsent(id, key -> Game.builder()
-                .id(key)
-                .provider(GameProviders.instance().get(id.getId()))
-                .build());
+        return games.get(id);
     }
 
     public Optional<Game> findById(Game.Id id) {
-        return Optional.ofNullable(games.computeIfAbsent(id, key ->
-                GameProviders.instance().find(id.getId())
-                        .map(provider -> Game.builder()
-                                .id(key)
-                                .provider(provider)
-                                .build())
-                        .orElse(null)));
+        return Optional.ofNullable(games.get(id));
+    }
+
+    public Stream<Game> list() {
+        return games.values().stream();
     }
 }
