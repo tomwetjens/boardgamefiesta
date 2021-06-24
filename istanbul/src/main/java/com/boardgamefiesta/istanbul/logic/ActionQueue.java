@@ -48,11 +48,20 @@ public class ActionQueue {
 
         var current = jsonObject.getJsonObject("current");
 
-        return new ActionQueue(anyTime, queue, current != null
-                ? current.getInt("anyTime") != -1
-                ? anyTime.get(current.getInt("anyTime"))
-                : queue.get(current.getInt("queue"))
-                : null);
+        if (current != null) {
+            return new ActionQueue(anyTime, queue, current.getInt("anyTime") != -1
+                    ? safeGet(anyTime, current.getInt("anyTime"))
+                    : safeGet(queue, current.getInt("queue")));
+        } else {
+            return new ActionQueue(anyTime, queue, null);
+        }
+    }
+
+    private static <T> T safeGet(List<T> list, int index) {
+        if (index < 0 || index >= list.size()) {
+            return null;
+        }
+        return list.get(index);
     }
 
     void perform(@NonNull Class<? extends Action> action) {
