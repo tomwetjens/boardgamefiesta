@@ -20,7 +20,7 @@ import java.util.EnumSet;
 import java.util.Random;
 import java.util.Set;
 
-public class GWT implements GameProvider<Game> {
+public class GWTProvider implements GameProvider<Game> {
 
     public static final String ID = "gwt";
 
