@@ -11,7 +11,7 @@ import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
 import com.boardgamefiesta.gwt.GWTProvider;
-import com.boardgamefiesta.gwt.logic.Game;
+import com.boardgamefiesta.gwt.logic.GWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -59,7 +59,7 @@ public class AddTurnsMigration {
                             .collect(Collectors.groupingBy(LogEntry::getPlayerId));
 
                     movesPerPlayer.forEach((playerId, logEntries) -> {
-                        var state = (Game) table.getState();
+                        var state = (GWT) table.getState();
 
                         state.getPlayerByName(playerId.getId())
                                 .map(state::playerState)
