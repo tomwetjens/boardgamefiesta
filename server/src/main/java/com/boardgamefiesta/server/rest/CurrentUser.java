@@ -7,6 +7,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.NotAuthorizedException;
+import java.util.Optional;
 
 @RequestScoped
 public class CurrentUser {
@@ -21,13 +22,16 @@ public class CurrentUser {
     private User user;
 
     public User.Id getId() {
-        if (id == null) {
-            var cognitoUsername = getCognitoUsername();
+        return getOptionalId().orElseThrow(() -> new NotAuthorizedException("User not authenticated"));
+    }
 
-            users.findIdByCognitoUsername(cognitoUsername)
-                    .ifPresentOrElse(id -> this.id = id, this::createAutomatically);
+    public Optional<User.Id> getOptionalId() {
+        if (id == null) {
+            getOptionalCognitoUsername()
+                    .ifPresent(cognitoUsername -> users.findIdByCognitoUsername(cognitoUsername)
+                            .ifPresentOrElse(id -> this.id = id, this::createAutomatically));
         }
-        return id;
+        return Optional.ofNullable(id);
     }
 
     private void createAutomatically() {
@@ -52,7 +56,11 @@ public class CurrentUser {
     }
 
     private String getCognitoUsername() {
-        return jsonWebToken.getClaim("cognito:username");
+        return getOptionalCognitoUsername().orElseThrow(() -> new NotAuthorizedException("Invalid token"));
+    }
+
+    private Optional<String> getOptionalCognitoUsername() {
+        return Optional.ofNullable(jsonWebToken.getClaim("cognito:username"));
     }
 
     private String getEmail() {
