@@ -174,7 +174,7 @@ public class RailroadTrack {
     @Builder.Default
     private final Map<Town, List<Player>> branchlets = new HashMap<>();
 
-    static RailroadTrack initial(@NonNull Set<Player> players, @NonNull Game.Options options, @NonNull Random random) {
+    static RailroadTrack initial(@NonNull Set<Player> players, @NonNull GWT.Options options, @NonNull Random random) {
         var engines = players.stream().collect(Collectors.toMap(Function.identity(), player -> START));
 
         var stationMastersPile = createStationMastersPile(options, random);
@@ -208,7 +208,7 @@ public class RailroadTrack {
                 new HashMap<>());
     }
 
-    private static Queue<StationMaster> createStationMastersPile(@NonNull Game.Options options, Random random) {
+    private static Queue<StationMaster> createStationMastersPile(@NonNull GWT.Options options, Random random) {
         var stationMasters = options.isRailsToTheNorth() ? new LinkedList<>(StationMaster.RAILS_TO_THE_NORTH)
                 : options.isStationMasterPromos() ? new LinkedList<>(StationMaster.WITH_PROMOS)
                 : new LinkedList<>(StationMaster.ORIGINAL);
@@ -599,7 +599,7 @@ public class RailroadTrack {
         return deliveries.computeIfAbsent(city, k -> new LinkedList<>()).contains(player);
     }
 
-    ImmediateActions deliverToCity(Player player, City city, Game game) {
+    ImmediateActions deliverToCity(Player player, City city, GWT game) {
         if (!canDeliver(player, city)) {
             if (!isAccessible(player, city)) {
                 throw new GWTException(GWTError.CITY_NOT_ACCESSIBLE);
@@ -814,7 +814,7 @@ public class RailroadTrack {
         return getUpgradedBy(station).contains(player);
     }
 
-    ImmediateActions upgradeStation(@NonNull Game game, @NonNull Station station) {
+    ImmediateActions upgradeStation(@NonNull GWT game, @NonNull Station station) {
         var player = game.getCurrentPlayer();
         var upgradedBy = getUpgradedBy(station);
 
@@ -843,7 +843,7 @@ public class RailroadTrack {
         return upgrades.computeIfAbsent(station, k -> new LinkedList<>());
     }
 
-    ImmediateActions appointStationMaster(@NonNull Game game, @NonNull Station station, @NonNull Worker worker) {
+    ImmediateActions appointStationMaster(@NonNull GWT game, @NonNull Station station, @NonNull Worker worker) {
         var playerState = game.currentPlayerState();
 
         if (playerState.getPlayer().getType() != Player.Type.COMPUTER) {
@@ -860,7 +860,7 @@ public class RailroadTrack {
         return reward.activate(game);
     }
 
-    void downgradeStation(@NonNull Game game, @NonNull Station station) {
+    void downgradeStation(@NonNull GWT game, @NonNull Station station) {
         var player = game.getCurrentPlayer();
         var upgradedBy = getUpgradedBy(station);
 
@@ -912,7 +912,7 @@ public class RailroadTrack {
             return new SmallTown(name, area);
         }
 
-        static Space smallTown(String name, Area area, BiFunction<Game, Town, ImmediateActions> activate) {
+        static Space smallTown(String name, Area area, BiFunction<GWT, Town, ImmediateActions> activate) {
             return new SmallTown(name, area, activate);
         }
 
@@ -924,7 +924,7 @@ public class RailroadTrack {
             return new BigTown(name, area, city);
         }
 
-        static BigTown bigTown(String name, Area area, City city, BiFunction<Game, Town, ImmediateActions> activate) {
+        static BigTown bigTown(String name, Area area, City city, BiFunction<GWT, Town, ImmediateActions> activate) {
             return new BigTown(name, area, city, activate);
         }
 
@@ -973,7 +973,7 @@ public class RailroadTrack {
         }
     }
 
-    ImmediateActions placeBranchlet(Game game, Town town) {
+    ImmediateActions placeBranchlet(GWT game, Town town) {
         if (!isRailsToTheNorth()) {
             throw new GWTException(GWTError.CANNOT_PERFORM_ACTION);
         }
@@ -1007,9 +1007,9 @@ public class RailroadTrack {
 
         @Getter
         private final Area area;
-        private final BiFunction<Game, Town, ImmediateActions> activate;
+        private final BiFunction<GWT, Town, ImmediateActions> activate;
 
-        Town(String name, Area area, BiFunction<Game, Town, ImmediateActions> activate) {
+        Town(String name, Area area, BiFunction<GWT, Town, ImmediateActions> activate) {
             super(name, Collections.emptySet(), Collections.emptySet());
             this.area = area;
             this.activate = activate;
@@ -1017,7 +1017,7 @@ public class RailroadTrack {
             TOWNS.put(name, this);
         }
 
-        public ImmediateActions placeBranchlet(Game game) {
+        public ImmediateActions placeBranchlet(GWT game) {
             return activate.apply(game, this);
         }
     }
@@ -1028,7 +1028,7 @@ public class RailroadTrack {
             this(name, area, (game, town) -> ImmediateActions.none());
         }
 
-        SmallTown(String name, Area area, BiFunction<Game, Town, ImmediateActions> activate) {
+        SmallTown(String name, Area area, BiFunction<GWT, Town, ImmediateActions> activate) {
             super(name, area, activate);
         }
     }
@@ -1053,7 +1053,7 @@ public class RailroadTrack {
             this(name, area, city, (game, town) -> ImmediateActions.none());
         }
 
-        BigTown(String name, Area area, City city, BiFunction<Game, Town, ImmediateActions> activate) {
+        BigTown(String name, Area area, City city, BiFunction<GWT, Town, ImmediateActions> activate) {
             super(name, area, activate);
             this.city = city;
 
@@ -1078,35 +1078,35 @@ public class RailroadTrack {
 
     }
 
-    private static ImmediateActions gainExchangeToken(Game game, Town town) {
+    private static ImmediateActions gainExchangeToken(GWT game, Town town) {
         return ImmediateActions.of(PossibleAction.optional(Action.GainExchangeToken.class));
     }
 
-    private static ImmediateActions firstPlayerGainsExchangeToken(Game game, Town town) {
+    private static ImmediateActions firstPlayerGainsExchangeToken(GWT game, Town town) {
         return game.getRailroadTrack().getBranchlets(town).isEmpty()
                 ? ImmediateActions.of(PossibleAction.optional(Action.GainExchangeToken.class))
                 : ImmediateActions.none();
     }
 
-    private static ImmediateActions firstPlayerTakeObjectiveCard(Game game, Town town) {
+    private static ImmediateActions firstPlayerTakeObjectiveCard(GWT game, Town town) {
         return game.getRailroadTrack().getBranchlets(town).isEmpty()
                 ? ImmediateActions.of(PossibleAction.optional(Action.TakeObjectiveCard.class))
                 : ImmediateActions.none();
     }
 
-    private static ImmediateActions firstPlayerGains2Dollars(Game game, Town town) {
+    private static ImmediateActions firstPlayerGains2Dollars(GWT game, Town town) {
         return game.getRailroadTrack().getBranchlets(town).isEmpty()
                 ? ImmediateActions.of(PossibleAction.optional(Action.Gain2Dollars.class))
                 : ImmediateActions.none();
     }
 
-    private static ImmediateActions firstPlayerGains1Certificate(Game game, Town town) {
+    private static ImmediateActions firstPlayerGains1Certificate(GWT game, Town town) {
         return game.getRailroadTrack().getBranchlets(town).isEmpty()
                 ? ImmediateActions.of(PossibleAction.optional(Action.Gain1Certificate.class))
                 : ImmediateActions.none();
     }
 
-    private static ImmediateActions pay1Or2Or3Dollars(Game game, Town town) {
+    private static ImmediateActions pay1Or2Or3Dollars(GWT game, Town town) {
         int amount;
         switch (game.getRailroadTrack().getBranchlets(town).size()) {
             case 0:
@@ -1125,7 +1125,7 @@ public class RailroadTrack {
         return ImmediateActions.none();
     }
 
-    private static ImmediateActions pay1Or3Or4Dollars(Game game, Town town) {
+    private static ImmediateActions pay1Or3Or4Dollars(GWT game, Town town) {
         int amount;
         switch (game.getRailroadTrack().getBranchlets(town).size()) {
             case 0:

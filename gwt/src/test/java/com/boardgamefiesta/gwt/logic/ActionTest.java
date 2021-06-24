@@ -42,7 +42,7 @@ class ActionTest {
     Player otherPlayer = new Player("Player B", PlayerColor.BLUE, Player.Type.HUMAN);
 
     @Mock
-    Game game;
+    GWT game;
 
     @Mock
     PlayerState currentPlayerState;

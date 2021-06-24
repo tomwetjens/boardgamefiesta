@@ -74,7 +74,7 @@ public class PlayerState {
     @Getter
     private Map<Location, Integer> stops = new HashMap<>();
 
-    PlayerState(@NonNull Player player, @NonNull Game.Options options, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildingSet) {
+    PlayerState(@NonNull Player player, @NonNull GWT.Options options, int balance, @NonNull Random random, PlayerBuilding.BuildingSet buildingSet) {
         this.player = player;
         this.balance = player.getType() == Player.Type.COMPUTER ? 999 : balance;
         this.tempCertificates = 0;
@@ -274,7 +274,7 @@ public class PlayerState {
         balance -= amount;
     }
 
-    ImmediateActions gainWorker(Worker worker, Game game) {
+    ImmediateActions gainWorker(Worker worker, GWT game) {
         addWorker(worker);
 
         var count = workers.get(worker);
@@ -631,7 +631,7 @@ public class PlayerState {
                 .count();
     }
 
-    Score score(Game game) {
+    Score score(GWT game) {
         var objectives = scoreObjectives(game);
         var score = new Score(Map.of(
                 ScoreCategory.BID, bid != null ? -bid.getPoints() : 0,
@@ -651,7 +651,7 @@ public class PlayerState {
         return score;
     }
 
-    public ObjectiveCard.Score scoreObjectives(Game game) {
+    public ObjectiveCard.Score scoreObjectives(GWT game) {
         return ObjectiveCard.score(objectives, getOptionalObjectives().collect(Collectors.toSet()), game, player,
                 stationMasters.contains(StationMaster.REMOVE_HAZARD_OR_TEEPEE_POINTS_FOR_EACH_2_OBJECTIVE_CARDS));
     }
@@ -683,7 +683,7 @@ public class PlayerState {
                 .collect(Collectors.toSet());
     }
 
-    private int scoreStationMasters(Game game, Set<ObjectiveCard> committed) {
+    private int scoreStationMasters(GWT game, Set<ObjectiveCard> committed) {
         int result = 0;
         if (stationMasters.contains(StationMaster.GAIN_2_DOLLARS_POINT_FOR_EACH_WORKER)) {
             result += getNumberOfCowboys() + getNumberOfCraftsmen() + getNumberOfEngineers();
@@ -747,13 +747,13 @@ public class PlayerState {
                 new Card.CattleCard(CattleType.GUERNSEY, 0)));
     }
 
-    boolean canRemoveDisc(Collection<DiscColor> discColors, Game game) {
+    boolean canRemoveDisc(Collection<DiscColor> discColors, GWT game) {
         return Arrays.stream(Unlockable.values())
                 .filter(unlockable -> canUnlock(unlockable, game))
                 .anyMatch(unlockable -> discColors.contains(unlockable.getDiscColor()));
     }
 
-    public boolean canUnlock(Unlockable unlockable, Game game) {
+    public boolean canUnlock(Unlockable unlockable, GWT game) {
         return (unlockable != Unlockable.AUX_DISCARD_CATTLE_CARD_TO_PLACE_BRANCHLET || game.isRailsToTheNorth())
                 && unlocked.getOrDefault(unlockable, 0) < unlockable.getCount()
                 && balance >= unlockable.getCost();

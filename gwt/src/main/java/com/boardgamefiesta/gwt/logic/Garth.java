@@ -28,7 +28,7 @@ public class Garth {
     @Getter
     private Worker specialization;
 
-    Score adjustScore(Score score, Game game, PlayerState playerState) {
+    Score adjustScore(Score score, GWT game, PlayerState playerState) {
         return score.set(ScoreCategory.DOLLARS, 0)
                 .set(ScoreCategory.EXTRA_STEP_POINTS, 0)
                 .set(ScoreCategory.STATION_MASTERS, 0)
@@ -41,7 +41,7 @@ public class Garth {
                         + game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO) * 6);
     }
 
-    void start(Game game, Random random) {
+    void start(GWT game, Random random) {
         var playerState = game.playerState(player);
 
         switch (difficulty) {
@@ -86,7 +86,7 @@ public class Garth {
         List<City> startCities;
         List<City> startCitiesRailsToTheNorth;
 
-        List<City> getStartCities(Game game) {
+        List<City> getStartCities(GWT game) {
             return game.isRailsToTheNorth() ? startCitiesRailsToTheNorth : startCities;
         }
     }
@@ -139,7 +139,7 @@ public class Garth {
                 Worker.valueOf(jsonObject.getString("specialization")));
     }
 
-    public void execute(Game game, Random random) {
+    public void execute(GWT game, Random random) {
         var playerState = game.playerState(player);
         var possibleActions = game.possibleActions();
 
@@ -191,7 +191,7 @@ public class Garth {
         }
     }
 
-    private City calculateDelivery(Game game, Player player) {
+    private City calculateDelivery(GWT game, Player player) {
         var startCities = difficulty.getStartCities(game);
         var highestStartCity = startCities.get(startCities.size() - 1);
 
@@ -208,7 +208,7 @@ public class Garth {
                         .orElse(City.SAN_FRANCISCO));
     }
 
-    private ObjectiveCard randomObjectiveCard(Game game, Random random) {
+    private ObjectiveCard randomObjectiveCard(GWT game, Random random) {
         var objectiveCards = new ArrayList<ObjectiveCard>(game.getObjectiveCards().getAvailable());
         return objectiveCards.get(random.nextInt(objectiveCards.size()));
     }
@@ -246,37 +246,37 @@ public class Garth {
 
         GARTH_15(GarthAction::numberOfSpecializedWorkers, Garth::placeBuildingIfSpecializedInCraftsmen);
 
-        private static int numberOfSpecializedWorkers(Game game, Player player) {
+        private static int numberOfSpecializedWorkers(GWT game, Player player) {
             var playerState = game.playerState(player);
             return playerState.getNumberOfWorkers(playerState.getAutomaState().orElseThrow().specialization);
         }
 
-        private static int highestNumberOfBuildingsAmongPlayers(Game game) {
+        private static int highestNumberOfBuildingsAmongPlayers(GWT game) {
             return game.getPlayers().stream()
                     .mapToInt(player -> game.getTrail().getBuildings(player).size())
                     .max().orElse(0);
         }
 
-        BiFunction<Game, Player, Integer> steps;
+        BiFunction<GWT, Player, Integer> steps;
 
         @Getter
         GarthActionLogic logic;
 
-        int getSteps(Game game, Player player) {
+        int getSteps(GWT game, Player player) {
             return steps.apply(game, player);
         }
 
-        void perform(Garth garth, Game game, Player player, Random random) {
+        void perform(Garth garth, GWT game, Player player, Random random) {
             logic.accept(garth, game, player, random);
         }
 
         @FunctionalInterface
         private interface GarthActionLogic {
-            void accept(Garth garth, Game game, Player player, Random random);
+            void accept(Garth garth, GWT game, Player player, Random random);
         }
     }
 
-    private void drawCattleCardsAndBuyCattleCardsIfSpecializedInCowboys(Game game, Player player, Random random) {
+    private void drawCattleCardsAndBuyCattleCardsIfSpecializedInCowboys(GWT game, Player player, Random random) {
         if (specialization == Worker.COWBOY) {
             drawCattleCards(game);
 
@@ -288,26 +288,26 @@ public class Garth {
         }
     }
 
-    private void buyCattleCardsIfSpecializedInCowboys(Game game, Player player, Random random) {
+    private void buyCattleCardsIfSpecializedInCowboys(GWT game, Player player, Random random) {
         if (specialization == Worker.COWBOY) {
             buyCattleCards(game, player, random);
         }
     }
 
-    private void drawCattleCards(Game game) {
+    private void drawCattleCards(GWT game) {
         game.getCattleMarket().draw();
         game.getCattleMarket().draw();
 
         game.fireActionEvent(Action.Draw2CattleCards.class, Collections.emptyList());
     }
 
-    private void placeBuildingIfSpecializedInCraftsmen(Game game, Player player, Random random) {
+    private void placeBuildingIfSpecializedInCraftsmen(GWT game, Player player, Random random) {
         if (specialization == Worker.CRAFTSMAN) {
             placeBuilding(game, player);
         }
     }
 
-    private void hireEngineerAndMoveEngineForwardIfSpecializedInEngineers(Game game, Player player, Random random) {
+    private void hireEngineerAndMoveEngineForwardIfSpecializedInEngineers(GWT game, Player player, Random random) {
         if (specialization == Worker.ENGINEER) {
             hireEngineer(game, player);
 
@@ -315,7 +315,7 @@ public class Garth {
         }
     }
 
-    private void hireEngineer(Game game, Player player) {
+    private void hireEngineer(GWT game, Player player) {
         var playerState = game.playerState(player);
 
         if (playerState.hasMaxWorkers(Worker.ENGINEER)) {
@@ -336,13 +336,13 @@ public class Garth {
                 });
     }
 
-    private void moveEngineForwardIfSpecializedInEngineers(Game game, Player player, Random random) {
+    private void moveEngineForwardIfSpecializedInEngineers(GWT game, Player player, Random random) {
         if (specialization == Worker.ENGINEER) {
             moveEngineForward(game, player);
         }
     }
 
-    private void placeBranchletAndPlaceBuilding(Game game, Player player, Random random) {
+    private void placeBranchletAndPlaceBuilding(GWT game, Player player, Random random) {
         if (game.isRailsToTheNorth()) {
             placeBranchlet(game, player, random);
         }
@@ -350,7 +350,7 @@ public class Garth {
         placeBuilding(game, player);
     }
 
-    private void placeBuilding(Game game, Player player) {
+    private void placeBuilding(GWT game, Player player) {
         var playerCount = game.getPlayers().size();
         var playerState = game.playerState(player);
 
@@ -426,11 +426,11 @@ public class Garth {
         Location.BuildingLocation location;
     }
 
-    private void buyCattleCards(Game game, Player player, Random random) {
+    private void buyCattleCards(GWT game, Player player, Random random) {
         buyCattleCards(game, player, game.playerState(player).getNumberOfCowboys());
     }
 
-    private void buyCattleCards(Game game, Player player, int numberOfCowboys) {
+    private void buyCattleCards(GWT game, Player player, int numberOfCowboys) {
         var playerState = game.playerState(player);
 
         game.getCattleMarket().possibleBuys(numberOfCowboys, 8)
@@ -470,7 +470,7 @@ public class Garth {
         int dollars;
     }
 
-    private Optional<Buy> bestCattleCards(Game game, CattleMarket.PossibleBuy possibleBuy) {
+    private Optional<Buy> bestCattleCards(GWT game, CattleMarket.PossibleBuy possibleBuy) {
         return game.getCattleMarket().getMarket().stream()
                 .filter(cattleCard -> cattleCard.getType().getValue() == possibleBuy.getBreedingValue())
                 .max(Comparator.comparingInt(Card.CattleCard::getPoints))
@@ -484,7 +484,7 @@ public class Garth {
                         : new Buy(card, null, card.getPoints(), possibleBuy.getCowboys(), possibleBuy.getDollars()));
     }
 
-    private void removeHighestHazardOfTypeWithMostHazards(Game game, Player player, Random random) {
+    private void removeHighestHazardOfTypeWithMostHazards(GWT game, Player player, Random random) {
         mostNumerousHazardType(game)
                 .flatMap(mostNumerousHazardType -> highestPointsHazard(game, mostNumerousHazardType))
                 .ifPresent(hazardLocation -> {
@@ -494,7 +494,7 @@ public class Garth {
                 });
     }
 
-    private Optional<HazardType> mostNumerousHazardType(Game game) {
+    private Optional<HazardType> mostNumerousHazardType(GWT game) {
         return Arrays.stream(HazardType.values())
                 .flatMap(hazardType -> game.getTrail().getHazardLocations(hazardType).stream())
                 .flatMap(hazardLocation -> hazardLocation.getHazard().stream())
@@ -503,14 +503,14 @@ public class Garth {
                 .map(Map.Entry::getKey);
     }
 
-    private Optional<Location.HazardLocation> highestPointsHazard(Game game, HazardType mostNumerousHazardType) {
+    private Optional<Location.HazardLocation> highestPointsHazard(GWT game, HazardType mostNumerousHazardType) {
         return game.getTrail().getHazardLocations(mostNumerousHazardType).stream()
                 .max(Comparator.comparingInt(hazardLocation -> hazardLocation.getHazard()
                         .map(Hazard::getPoints)
                         .orElse(0)));
     }
 
-    private void removeHighestValueTeepee(Game game, Player player, Random random) {
+    private void removeHighestValueTeepee(GWT game, Player player, Random random) {
         highestValueTeepee(game)
                 .ifPresent(teepeeLocation -> {
                     var teepee = teepeeLocation.removeTeepee();
@@ -519,13 +519,13 @@ public class Garth {
                 });
     }
 
-    private Optional<Location.TeepeeLocation> highestValueTeepee(Game game) {
+    private Optional<Location.TeepeeLocation> highestValueTeepee(GWT game) {
         return game.getTrail().getTeepeeLocations().stream()
                 .filter(teepeeLocation -> !teepeeLocation.isEmpty())
                 .max(Comparator.comparing(Location.TeepeeLocation::getReward));
     }
 
-    private void placeBranchletAndTakeObjectiveCard(Game game, Player player, Random random) {
+    private void placeBranchletAndTakeObjectiveCard(GWT game, Player player, Random random) {
         if (game.isRailsToTheNorth()) {
             placeBranchlet(game, player, random);
         }
@@ -533,7 +533,7 @@ public class Garth {
         takeObjectiveCard(game, player);
     }
 
-    private void takeObjectiveCard(Game game, Player player) {
+    private void takeObjectiveCard(GWT game, Player player) {
         var objectiveCards = game.getObjectiveCards();
 
         if (!objectiveCards.isEmpty()) {
@@ -544,7 +544,7 @@ public class Garth {
         }
     }
 
-    private void placeBranchletAndMoveEngineForward(Game game, Player player, Random random) {
+    private void placeBranchletAndMoveEngineForward(GWT game, Player player, Random random) {
         if (game.isRailsToTheNorth()) {
             placeBranchlet(game, player, random);
         }
@@ -552,7 +552,7 @@ public class Garth {
         moveEngineForward(game, player);
     }
 
-    private void moveEngineForward(Game game, Player player) {
+    private void moveEngineForward(GWT game, Player player) {
         var atMost = game.playerState(player).getNumberOfEngineers();
         var railroadTrack = game.getRailroadTrack();
 
@@ -577,7 +577,7 @@ public class Garth {
                 });
     }
 
-    private void moveEngineAtLeast1Backwards(Game game, Player player) {
+    private void moveEngineAtLeast1Backwards(GWT game, Player player) {
         var railroadTrack = game.getRailroadTrack();
 
         railroadTrack.reachableSpacesBackwards(railroadTrack.currentSpace(player), 1, Integer.MAX_VALUE)
@@ -594,7 +594,7 @@ public class Garth {
                 });
     }
 
-    private void upgradeIfPossible(Game game, Player player, RailroadTrack.Space space) {
+    private void upgradeIfPossible(GWT game, Player player, RailroadTrack.Space space) {
         var railroadTrack = game.getRailroadTrack();
 
         if (space.isTurnout()) {
@@ -616,7 +616,7 @@ public class Garth {
         }
     }
 
-    private void placeBranchlet(Game game, Player player, Random random) {
+    private void placeBranchlet(GWT game, Player player, Random random) {
         var railroadTrack = game.getRailroadTrack();
         var playerState = game.playerState(player);
 
@@ -712,7 +712,7 @@ public class Garth {
         }
     }
 
-    private void hireCheapestWorkerOfAnyType(Game game, Player player, Random random) {
+    private void hireCheapestWorkerOfAnyType(GWT game, Player player, Random random) {
         var playerState = game.playerState(player);
 
         game.getJobMarket().getRows().stream()
@@ -749,7 +749,7 @@ public class Garth {
                 .ifPresent(worker -> specialization = worker);
     }
 
-    private void hireSpecializedOrMostNumerous(Game game, Player player, Random random) {
+    private void hireSpecializedOrMostNumerous(GWT game, Player player, Random random) {
         var playerState = game.playerState(player);
 
         game.getJobMarket().getRows().stream()
@@ -792,7 +792,7 @@ public class Garth {
                 });
     }
 
-    private Unlockable randomWhiteDisc(PlayerState playerState, Game game) {
+    private Unlockable randomWhiteDisc(PlayerState playerState, GWT game) {
         return Arrays.stream(Unlockable.values())
                 .filter(unlockable -> unlockable.getDiscColor() == DiscColor.WHITE)
                 .filter(unlockable -> playerState.canUnlock(unlockable, game))
@@ -800,14 +800,14 @@ public class Garth {
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
     }
 
-    private Unlockable randomBlackOrWhiteDisc(PlayerState playerState, Game game) {
+    private Unlockable randomBlackOrWhiteDisc(PlayerState playerState, GWT game) {
         return Arrays.stream(Unlockable.values())
                 .filter(unlockable -> playerState.canUnlock(unlockable, game))
                 .findAny()
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
     }
 
-    private Bid lowestBidPossible(Game game) {
+    private Bid lowestBidPossible(GWT game) {
         var bids = game.getPlayers().stream()
                 .map(game::playerState)
                 .map(PlayerState::getBid)
@@ -824,7 +824,7 @@ public class Garth {
                         .orElse(new Bid(0, 0)));
     }
 
-    private List<Location> calculateMove(Game game, int steps) {
+    private List<Location> calculateMove(GWT game, int steps) {
         if (game.getTrail().getCurrentLocation(player).isEmpty()) {
             // Start of trail
             return List.of(game.getTrail().getLocation("A"));

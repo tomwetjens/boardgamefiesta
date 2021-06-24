@@ -25,7 +25,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         return action.getSimpleName();
     }
 
-    abstract ActionResult perform(@NonNull Game game, @NonNull Random random);
+    abstract ActionResult perform(@NonNull GWT game, @NonNull Random random);
 
     @Value
     @AllArgsConstructor
@@ -45,7 +45,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
 
             var usableCowboys = playerState.getNumberOfCowboys() - playerState.getNumberOfCowboysUsedInTurn();
@@ -86,7 +86,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     public static final class SingleAuxiliaryAction extends Action {
 
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
             return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions(game.isRailsToTheNorth())));
@@ -96,7 +96,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain2Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainDollars(2);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -108,7 +108,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain3Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainDollars(3);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -120,7 +120,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class SingleOrDoubleAuxiliaryAction extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
             return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions(game.isRailsToTheNorth())));
@@ -136,7 +136,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().payDollars(2);
 
             game.fireActionEvent(GWTEvent.Type.PAY_2_DOLLARS_TO_MOVE_ENGINE_2_FORWARD, List.of(to.getName()));
@@ -148,7 +148,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class DrawCard extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().drawCard(random);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -160,7 +160,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Draw2Cards extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().drawCards(2, random);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -172,7 +172,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Draw3Cards extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().drawCards(3, random);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -184,7 +184,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Draw4Cards extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().drawCards(4, random);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -196,7 +196,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Draw5Cards extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().drawCards(5, random);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -208,7 +208,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Draw6Cards extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().drawCards(6, random);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -232,7 +232,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             if (objectiveCard != null) {
                 game.getObjectiveCards().remove(objectiveCard);
             } else {
@@ -254,7 +254,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Card.CattleCard card;
 
         @Override
-        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+        ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             game.fireActionEvent(this, Collections.singletonList(card.getType().name()));
 
             game.getCattleMarket().take(card);
@@ -272,7 +272,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, game.currentPlayerState().getNumberOfEngineers());
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_FORWARD, List.of(to.getName()));
@@ -289,7 +289,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 1);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_1_FORWARD, List.of(to.getName()));
@@ -306,7 +306,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Card card;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().removeCards(Collections.singleton(card));
 
             if (card instanceof Card.CattleCard) {
@@ -328,7 +328,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         int reward;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             Location.TeepeeLocation teepeeLocation = game.getTrail().getTeepeeLocation(reward);
             Teepee teepee = teepeeLocation.getTeepee()
                     .orElseThrow(() -> new GWTException(GWTError.NO_TEEPEE_AT_LOCATION));
@@ -358,7 +358,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Card card;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().discardCard(card);
 
             fireEvent(game, card);
@@ -366,7 +366,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
 
-        private static void fireEvent(Game game, Card card) {
+        private static void fireEvent(GWT game, Card card) {
             if (card instanceof Card.CattleCard) {
                 var cattleCard = (Card.CattleCard) card;
                 game.fireActionEvent(GWTEvent.Type.DISCARD_CATTLE_CARD, List.of(cattleCard.getType().name(), Integer.toString(cattleCard.getPoints())));
@@ -396,7 +396,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1Guernsey extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             PlayerState playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.GUERNSEY, 1);
             playerState.gainDollars(2);
@@ -423,7 +423,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             int cost = game.getJobMarket().cost(rowIndex, worker) + modifier;
 
             game.currentPlayerState().payDollars(cost);
@@ -461,7 +461,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1JerseyToGain1Certificate extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.JERSEY, 1);
             playerState.gainTempCertificates(1);
@@ -475,7 +475,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1JerseyToGain2Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.JERSEY, 1);
             playerState.gainDollars(2);
@@ -503,7 +503,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1JerseyToGain2Certificates extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.JERSEY, 1);
             playerState.gainTempCertificates(2);
@@ -517,7 +517,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1JerseyToGain4Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.JERSEY, 1);
             playerState.gainDollars(4);
@@ -531,7 +531,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1DutchBeltToGain2Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             PlayerState playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.DUTCH_BELT, 1);
             playerState.gainDollars(2);
@@ -559,7 +559,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             if (!game.currentPlayerState().hasAvailable(building)) {
                 throw new GWTException(GWTError.BUILDING_NOT_AVAILABLE);
             }
@@ -615,7 +615,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class UpgradeStation extends Action {
 
         @Override
-        public ActionResult perform(@NonNull Game game, Random random) {
+        public ActionResult perform(@NonNull GWT game, Random random) {
             Station station = game.getRailroadTrack().currentStation(game.getCurrentPlayer());
 
             var immediateActions = game.getRailroadTrack().upgradeStation(game, station);
@@ -629,7 +629,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class UpgradeStationTown extends Action {
 
         @Override
-        public ActionResult perform(@NonNull Game game, Random random) {
+        public ActionResult perform(@NonNull GWT game, Random random) {
             var town = game.currentPlayerState().getLastPlacedBranchlet()
                     .orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
 
@@ -652,7 +652,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Station station;
 
         @Override
-        ActionResult perform(Game game, Random random) {
+        ActionResult perform(GWT game, Random random) {
             game.getRailroadTrack().downgradeStation(game, station);
 
             game.fireActionEvent(GWTEvent.Type.DOWNGRADE_STATION, List.of(Integer.toString(station.getPoints()), Integer.toString(station.getCost())));
@@ -669,7 +669,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Worker worker;
 
         @Override
-        public ActionResult perform(@NonNull Game game, Random random) {
+        public ActionResult perform(@NonNull GWT game, Random random) {
             Station station = getStation(game);
 
             var stationMaster = game.getRailroadTrack().getStationMaster(station).orElseThrow(() -> new GWTException(GWTError.CANNOT_PERFORM_ACTION));
@@ -680,7 +680,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return ActionResult.undoAllowed(immediateActions);
         }
 
-        private Station getStation(Game game) {
+        private Station getStation(GWT game) {
             return game.currentPlayerState().getLastUpgradedStation()
                     // For backwards compatibility (can be removed if all player states in active games have a last remembered station):
                     .orElseGet(() -> game.getRailroadTrack().currentStation(game.getCurrentPlayer()));
@@ -696,7 +696,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         int rowIndex;
 
         @Override
-        public ActionResult perform(@NonNull Game game, @NonNull Random random) {
+        public ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             KansasCitySupply.Tile tile = game.getForesights().take(columnIndex, rowIndex);
 
             game.fireActionEvent(this, List.of(tile.getTeepee() != null
@@ -710,7 +710,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return undoAllowed ? ActionResult.undoAllowed(immediateActions) : ActionResult.undoNotAllowed(immediateActions);
         }
 
-        private static Class<? extends Action> getNextAction(Game game, int columnIndex) {
+        private static Class<? extends Action> getNextAction(GWT game, int columnIndex) {
             switch (columnIndex) {
                 case 0:
                     return game.getForesights().isEmpty(1) ? getNextAction(game, 1) : ChooseForesight2.class;
@@ -724,7 +724,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             }
         }
 
-        private boolean placeTile(Game game, KansasCitySupply.Tile tile) {
+        private boolean placeTile(GWT game, KansasCitySupply.Tile tile) {
             var undoAllowed = true;
 
             if (tile.getWorker() != null) {
@@ -785,12 +785,12 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         int certificates; // temp + perm player wants to use
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var extraordinary = !game.getTrail().atKansasCity(game.getCurrentPlayer());
             return ActionResult.undoAllowed(extraordinary ? extraordinaryDelivery(game) : normalDelivery(game));
         }
 
-        private ImmediateActions normalDelivery(Game game) {
+        private ImmediateActions normalDelivery(GWT game) {
             var currentPlayerState = game.currentPlayerState();
             var breedingValue = currentPlayerState.handValue() + certificates;
             if (breedingValue < city.getValue()
@@ -825,7 +825,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return immediateActions;
         }
 
-        private ImmediateActions extraordinaryDelivery(Game game) {
+        private ImmediateActions extraordinaryDelivery(GWT game) {
             if (city.getValue() > game.currentPlayerState().getLastEngineMove()) {
                 throw new GWTException(GWTError.CITY_VALUE_MUST_BE_LESS_THEN_OR_EQUAL_TO_SPACES_THAT_ENGINE_MOVED_BACKWARDS);
             }
@@ -835,7 +835,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return game.deliverToCity(city);
         }
 
-        private void fireEvent(Game game, int payout, Integer certificates) {
+        private void fireEvent(GWT game, int payout, Integer certificates) {
             game.fireActionEvent(this, List.of(city.name(), Integer.toString(certificates), Integer.toString(payout)));
         }
 
@@ -849,7 +849,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Unlockable unlock;
 
         @Override
-        ActionResult perform(Game game, Random random) {
+        ActionResult perform(GWT game, Random random) {
             if (unlock.getDiscColor() != DiscColor.WHITE) {
                 throw new GWTException(GWTError.MUST_PICK_WHITE_DISC);
             }
@@ -871,7 +871,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Unlockable unlock;
 
         @Override
-        ActionResult perform(Game game, Random random) {
+        ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().unlock(unlock);
 
             game.fireActionEvent(this, List.of(unlock.name()));
@@ -889,7 +889,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS, List.of(to.getName()));
 
             // According to the rules, the dollars gained can be used to upgrade a station when moving backwards
@@ -908,7 +908,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS, List.of(to.getName()));
@@ -927,7 +927,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 2, 3);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_2_OR_3_FORWARD, List.of(to.getName()));
@@ -939,7 +939,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain1Dollar extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainDollars(1);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -956,7 +956,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
 
             game.fireActionEvent(GWTEvent.Type.PAY_1_DOLLAR_AND_MOVE_ENGINE_1_BACKWARDS_TO_GAIN_1_CERTIFICATE, List.of(to.getName()));
@@ -977,7 +977,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
 
             game.fireActionEvent(GWTEvent.Type.PAY_2_DOLLARS_AND_MOVE_ENGINE_2_BACKWARDS_TO_GAIN_2_CERTIFICATES, List.of(to.getName()));
@@ -998,7 +998,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().payDollars(1);
 
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 1);
@@ -1017,7 +1017,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD, List.of(to.getName()));
@@ -1036,7 +1036,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         CattleType type;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(type, 2);
             playerState.gainDollars(4);
@@ -1063,7 +1063,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             if (game.getTrail().getLocation(location.getName()) != location) {
                 throw new GWTException(GWTError.NO_SUCH_LOCATION);
             }
@@ -1089,7 +1089,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ObjectiveCard objectiveCard;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var immediateActions = game.currentPlayerState().playObjectiveCard(objectiveCard);
 
             game.fireActionEvent(GWTEvent.Type.PLAY_OBJECTIVE_CARD, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
@@ -1101,7 +1101,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1BlackAngusToGain2Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.BLACK_ANGUS, 1);
             playerState.gainDollars(2);
@@ -1115,7 +1115,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain1Certificate extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainTempCertificates(1);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -1127,7 +1127,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain2Certificates extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainTempCertificates(2);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -1139,7 +1139,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Draw2CattleCards extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().useCowboys(1);
 
             game.getCattleMarket().draw();
@@ -1154,7 +1154,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1GuernseyToGain4Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.GUERNSEY, 1);
             playerState.gainDollars(4);
@@ -1173,7 +1173,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         CattleType type;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(type, 2);
             playerState.gainDollars(3);
@@ -1200,7 +1200,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             if (steps.isEmpty()) {
                 throw new GWTException(GWTError.MUST_MOVE_AT_LEAST_STEPS);
             }
@@ -1280,13 +1280,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             }
         }
 
-        private void payFees(Game game) {
+        private void payFees(GWT game) {
             for (Location location : steps) {
                 payFee(game, location);
             }
         }
 
-        private void payFee(Game game, Location location) {
+        private void payFee(GWT game, Location location) {
             PlayerState currentPlayerState = game.currentPlayerState();
 
             // Can never pay more than player has
@@ -1375,7 +1375,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1HolsteinToGain10Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.HOLSTEIN, 1);
             playerState.gainDollars(10);
@@ -1394,7 +1394,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 2);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_AT_MOST_2_FORWARD, List.of(to.getName()));
@@ -1411,7 +1411,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 3);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_AT_MOST_3_FORWARD, List.of(to.getName()));
@@ -1428,7 +1428,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             RailroadTrack.EngineMove engineMove = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, Integer.MAX_VALUE);
 
             game.fireActionEvent(this, List.of(Integer.toString(engineMove.getStepsNotCountingTurnouts()), to.getName()));
@@ -1444,7 +1444,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class MaxCertificates extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainMaxTempCertificates();
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -1456,7 +1456,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain2DollarsPerBuildingInWoods extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
 
             var amount = buildingsInWoods * 2;
@@ -1471,7 +1471,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain2DollarsPerStation extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var stations = game.getRailroadTrack().numberOfUpgradedStations(game.getCurrentPlayer());
 
             var amount = stations * 2;
@@ -1486,7 +1486,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain2CertificatesAnd2DollarsPerTeepeePair extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             int pairs = playerState.numberOfTeepeePairs();
             playerState.gainTempCertificates(pairs * 2);
@@ -1501,7 +1501,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain1CertificateAnd1DollarPerBell extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             int bells = playerState.numberOfBells();
             playerState.gainTempCertificates(bells);
@@ -1520,7 +1520,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ObjectiveCard card;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCard(card);
             playerState.gainTempCertificates(2);
@@ -1539,7 +1539,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
             game.currentPlayerState().gainDollars(3);
 
@@ -1552,7 +1552,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1JerseyToMoveEngine1Forward extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -1564,7 +1564,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1JerseyForSingleAuxiliaryAction extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().discardCattleCards(CattleType.JERSEY, 1);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -1576,7 +1576,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1DutchBeltToGain3Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.DUTCH_BELT, 1);
             playerState.gainDollars(3);
@@ -1590,7 +1590,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1BlackAngusToGain2Certificates extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.BLACK_ANGUS, 1);
             playerState.gainTempCertificates(2);
@@ -1604,7 +1604,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain1DollarPerEngineer extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.gainDollars(playerState.getNumberOfEngineers());
 
@@ -1617,7 +1617,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain1DollarPerCraftsman extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
 
             var amount = playerState.getNumberOfCraftsmen();
@@ -1637,7 +1637,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         CattleType cattleType;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(cattleType, 1);
             playerState.gainDollars(3);
@@ -1659,7 +1659,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             int buildingsInWoods = game.getTrail().buildingsInWoods(game.getCurrentPlayer());
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, buildingsInWoods);
 
@@ -1677,7 +1677,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             int hazards = game.currentPlayerState().numberOfHazards();
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, hazards);
 
@@ -1694,7 +1694,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Location.BuildingLocation adjacentLocation;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             var currentLocation = playerState.getLastActivatedLocation()
                     .orElseGet(() -> game.getTrail().getCurrentLocation(game.getCurrentPlayer())
@@ -1732,7 +1732,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         Station station;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             RailroadTrack.Space stationSpace = game.getRailroadTrack().getSpace(station);
             RailroadTrack.Space currentSpace = game.getRailroadTrack().currentSpace(game.getCurrentPlayer());
 
@@ -1751,7 +1751,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain4Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainDollars(4);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -1763,7 +1763,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain5Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainDollars(5);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -1775,7 +1775,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Gain12Dollars extends Action {
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             game.currentPlayerState().gainDollars(12);
 
             game.fireActionEvent(this, Collections.emptyList());
@@ -1792,7 +1792,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Space to;
 
         @Override
-        public ActionResult perform(Game game, Random random) {
+        public ActionResult perform(GWT game, Random random) {
             var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 0, 4);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_AT_MOST_4_FORWARD, List.of(to.getName()));
@@ -1809,7 +1809,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         CattleType cattleType;
 
         @Override
-        ActionResult perform(Game game, Random random) {
+        ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(cattleType, 1);
             playerState.gainTempCertificates(1);
@@ -1823,7 +1823,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static final class Discard1JerseyToGain1CertificateAnd2Dollars extends Action {
 
         @Override
-        ActionResult perform(Game game, Random random) {
+        ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
             playerState.discardCattleCards(CattleType.JERSEY, 1);
             playerState.gainTempCertificates(1);
@@ -1851,7 +1851,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        ActionResult perform(Game game, Random random) {
+        ActionResult perform(GWT game, Random random) {
             var playerState = game.currentPlayerState();
 
             if (objectiveCard != null) {
@@ -1875,7 +1875,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+        ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             game.fireActionEvent(this, List.of(Integer.toString(bid.getPoints()), Integer.toString(bid.getPosition() + 1)));
 
             game.placeBid(bid, random);
@@ -1892,7 +1892,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         RailroadTrack.Town town;
 
         @Override
-        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+        ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             game.fireActionEvent(this, List.of(town.getName()));
 
             var immediateActions = game.currentPlayerState().removeBranchlet();
@@ -1910,7 +1910,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         CattleType cattleType;
 
         @Override
-        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+        ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             game.fireActionEvent(this, List.of(cattleType.name()));
 
             if (cattleType.getValue() != 2) {
@@ -1926,7 +1926,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class GainExchangeToken extends Action {
 
         @Override
-        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+        ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
             game.currentPlayerState().gainExchangeTokens(1);
@@ -1937,7 +1937,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     public static class UseExchangeToken extends Action {
 
-        static boolean canPerform(Game game) {
+        static boolean canPerform(GWT game) {
             return game.currentPlayerState().getExchangeTokens() > 0
                     && !game.getActionStack().canPerform(Action.DrawCard.class)
                     && !game.getActionStack().canPerform(Action.Draw2Cards.class)
@@ -1946,7 +1946,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         @Override
-        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+        ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
             game.currentPlayerState().payExchangeTokens(1);
@@ -1963,7 +1963,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         StationMaster stationMaster;
 
         @Override
-        ActionResult perform(@NonNull Game game, @NonNull Random random) {
+        ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             game.fireActionEvent(this, Collections.singletonList(stationMaster.name()));
 
             game.getRailroadTrack().takeBonusStationMaster(stationMaster);

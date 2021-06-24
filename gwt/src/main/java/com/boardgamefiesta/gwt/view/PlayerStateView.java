@@ -47,7 +47,7 @@ public class PlayerStateView {
 
     AutomaStateView automaState;
 
-    PlayerStateView(@NonNull Game state, @NonNull PlayerState playerState, Player viewingPlayer) {
+    PlayerStateView(@NonNull GWT state, @NonNull PlayerState playerState, Player viewingPlayer) {
         player = new PlayerView(playerState.getPlayer());
 
         balance = playerState.getBalance();
@@ -75,7 +75,7 @@ public class PlayerStateView {
         }
 
         if (state.isEnded() || viewingPlayer == playerState.getPlayer()
-                || state.getMode() == Game.Options.Mode.STRATEGIC) {
+                || state.getMode() == GWT.Options.Mode.STRATEGIC) {
             // Player is allowed to go through discard pile
             discardPile = playerState.getDiscardPile().stream()
                     .map(CardView::of)
@@ -84,7 +84,7 @@ public class PlayerStateView {
         }
 
         drawStackSize = playerState.getDrawStack().size();
-        if (state.isEnded() || state.getMode() == Game.Options.Mode.STRATEGIC) {
+        if (state.isEnded() || state.getMode() == GWT.Options.Mode.STRATEGIC) {
             if (viewingPlayer == playerState.getPlayer()) {
                 // Hand already visible to player, show only cards in actual draw stack
                 drawStack = playerState.getDrawStack().stream()
@@ -119,7 +119,7 @@ public class PlayerStateView {
         teepees = playerState.getTeepees();
 
         var objectivesScores = playerState.scoreObjectives(state);
-        objectives = (state.isEnded() || state.getMode() == Game.Options.Mode.STRATEGIC
+        objectives = (state.isEnded() || state.getMode() == GWT.Options.Mode.STRATEGIC
                 ? Stream.concat(playerState.getCommittedObjectives().stream(), playerState.getOptionalObjectives())
                 : playerState.getCommittedObjectives().stream())
                 .map(objectiveCard -> new ObjectiveView(new ObjectiveCardView(objectiveCard), objectivesScores.getScore(objectiveCard),

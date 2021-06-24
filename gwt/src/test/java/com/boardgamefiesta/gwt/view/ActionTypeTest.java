@@ -8,7 +8,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
-import org.mockito.MockSettings;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.json.Json;
@@ -25,7 +24,7 @@ import static org.mockito.Mockito.*;
 class ActionTypeTest {
 
     @Mock
-    Game game;
+    GWT game;
 
     @Mock
     PlayerState currentPlayerState;

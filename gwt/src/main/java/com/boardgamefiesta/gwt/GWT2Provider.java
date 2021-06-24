@@ -20,9 +20,9 @@ import java.util.EnumSet;
 import java.util.Random;
 import java.util.Set;
 
-public class GWTProvider implements GameProvider<GWT> {
+public class GWT2Provider implements GameProvider<GWT> {
 
-    public static final String ID = "gwt";
+    public static final String ID = "gwt2";
 
     private static final Duration DEFAULT_TIME_LIMIT = Duration.of(10, ChronoUnit.MINUTES);
 

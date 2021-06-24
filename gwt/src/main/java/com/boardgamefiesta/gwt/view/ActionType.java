@@ -128,7 +128,7 @@ public enum ActionType {
         throw new IllegalArgumentException("No enum constant for action: " + action);
     }
 
-    public static Action toAction(JsonObject jsonObject, Game game) {
+    public static Action toAction(JsonObject jsonObject, GWT game) {
         var type = getEnum(jsonObject, "type", ActionType.class);
 
         switch (type) {
@@ -354,14 +354,14 @@ public enum ActionType {
         }
     }
 
-    private static List<Location> getSteps(JsonObject jsonObject, Game game) {
+    private static List<Location> getSteps(JsonObject jsonObject, GWT game) {
         return getJsonStrings(jsonObject, JsonProperties.STEPS).stream()
                 .map(JsonString::getString)
                 .map(game.getTrail()::getLocation)
                 .collect(Collectors.toList());
     }
 
-    private static Station findStation(Game game, int index) {
+    private static Station findStation(GWT game, int index) {
         return game.getRailroadTrack().getStations().get(index);
     }
 
@@ -377,7 +377,7 @@ public enum ActionType {
         return notExpected.isEmpty();
     }
 
-    private static ObjectiveCard findObjectiveCard(Game game, JsonObject jsonObject) {
+    private static ObjectiveCard findObjectiveCard(GWT game, JsonObject jsonObject) {
         var tasks = getJsonStrings(jsonObject, JsonProperties.TASKS).stream()
                 .map(JsonString::getString)
                 .map(ObjectiveCard.Task::valueOf)
@@ -398,7 +398,7 @@ public enum ActionType {
                 .orElseThrow(() -> new JsonException("Objective card not available"));
     }
 
-    private static PlayerBuilding findPlayerBuilding(Game game, String building) {
+    private static PlayerBuilding findPlayerBuilding(GWT game, String building) {
         return game.currentPlayerState().getBuildings().stream()
                 .filter(playerBuilding -> playerBuilding.getName().equals(building))
                 .findAny()
@@ -444,7 +444,7 @@ public enum ActionType {
                 .orElseThrow(() -> new JsonException("Objective card not in hand"));
     }
 
-    private static List<Card.CattleCard> findCattleCards(Game game, JsonArray cattleCards) {
+    private static List<Card.CattleCard> findCattleCards(GWT game, JsonArray cattleCards) {
         var available = new HashSet<>(game.getCattleMarket().getMarket());
 
         return cattleCards.stream()

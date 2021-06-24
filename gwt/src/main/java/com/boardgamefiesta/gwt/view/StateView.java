@@ -1,7 +1,7 @@
 package com.boardgamefiesta.gwt.view;
 
 import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.gwt.logic.Game;
+import com.boardgamefiesta.gwt.logic.GWT;
 import com.boardgamefiesta.gwt.logic.RailroadTrack;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -26,7 +26,7 @@ public class StateView {
     ObjectiveCardsView objectiveCards;
     PlayerView currentPlayer;
     List<ActionType> actions;
-    Game.Status status;
+    GWT.Status status;
     List<ObjectiveCardView> startingObjectiveCards;
     List<BidView> bids;
     boolean turn;
@@ -38,7 +38,7 @@ public class StateView {
     Map<ActionType, Set<String>> possibleTowns;
     boolean railsToTheNorth;
 
-    public StateView(Game state, Player viewingPlayer) {
+    public StateView(GWT state, Player viewingPlayer) {
         status = state.getStatus();
 
         railsToTheNorth = state.isRailsToTheNorth();
@@ -215,25 +215,25 @@ public class StateView {
         }
     }
 
-    private Set<String> getPossibleSpacesForward(Game state, Player player, int atLeast, int atMost) {
+    private Set<String> getPossibleSpacesForward(GWT state, Player player, int atLeast, int atMost) {
         return state.getRailroadTrack().reachableSpacesForward(state.getRailroadTrack().currentSpace(player), atLeast, atMost).stream()
                 .map(RailroadTrack.Space::getName)
                 .collect(Collectors.toSet());
     }
 
-    private Set<String> getPossibleSpacesBackwards(Game state, Player player, int atLeast, int atMost) {
+    private Set<String> getPossibleSpacesBackwards(GWT state, Player player, int atLeast, int atMost) {
         return state.getRailroadTrack().reachableSpacesBackwards(state.getRailroadTrack().currentSpace(player), atLeast, atMost).stream()
                 .map(RailroadTrack.Space::getName)
                 .collect(Collectors.toSet());
     }
 
-    private Set<PossibleDeliveryView> getPossibleDeliveries(Game game, Player player) {
+    private Set<PossibleDeliveryView> getPossibleDeliveries(GWT game, Player player) {
         return game.possibleDeliveries(player).stream()
                 .map(PossibleDeliveryView::new)
                 .collect(Collectors.toSet());
     }
 
-    private Set<PossibleBuyView> getPossibleBuys(Game game, Player player) {
+    private Set<PossibleBuyView> getPossibleBuys(GWT game, Player player) {
         var playerState = game.playerState(player);
         return game.getCattleMarket().possibleBuys(playerState.getNumberOfCowboys() - playerState.getNumberOfCowboysUsedInTurn(), playerState.getBalance())
                 .map(PossibleBuyView::new)

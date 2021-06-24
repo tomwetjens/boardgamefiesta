@@ -51,9 +51,9 @@ public enum StationMaster {
                     GAIN_EXCHANGE_TOKEN_POINTS_PER_AREA
             )).collect(Collectors.toList());
 
-    private final Function<Game, ImmediateActions> activateFunction;
+    private final Function<GWT, ImmediateActions> activateFunction;
 
-    ImmediateActions activate(Game state) {
+    ImmediateActions activate(GWT state) {
         return activateFunction.apply(state);
     }
 }

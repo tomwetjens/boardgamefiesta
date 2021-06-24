@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class RailroadTrackTest {
 
-    private static final Game.Options ORIGINAL = Game.Options.builder().build();
+    private static final GWT.Options ORIGINAL = GWT.Options.builder().build();
 
     private RailroadTrack railroadTrack;
     private Player playerA = new Player("Player A", PlayerColor.BLUE, Player.Type.HUMAN);
@@ -481,7 +481,7 @@ class RailroadTrackTest {
     class Score {
 
         @Mock
-        Game game;
+        GWT game;
 
         @Mock
         ObjectiveCards objectiveCards;
@@ -708,7 +708,7 @@ class RailroadTrackTest {
     class BranchletTest {
 
         @Mock
-        Game game;
+        GWT game;
 
         @Mock
         PlayerState currentPlayerState;
@@ -716,7 +716,7 @@ class RailroadTrackTest {
         @Mock
         ObjectiveCards objectiveCards;
 
-        Game.Options options = Game.Options.builder().railsToTheNorth(true).build();
+        GWT.Options options = GWT.Options.builder().railsToTheNorth(true).build();
 
         RailroadTrack railroadTrack;
 

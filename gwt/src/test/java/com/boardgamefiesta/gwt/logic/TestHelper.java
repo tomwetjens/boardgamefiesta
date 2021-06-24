@@ -21,8 +21,8 @@ public class TestHelper {
             PlayerBuilding.Building10A.class
     };
 
-    static final Game.Options BEGINNER = Game.Options.builder()
-            .buildings(Game.Options.Buildings.BEGINNER)
+    static final GWT.Options BEGINNER = GWT.Options.builder()
+            .buildings(GWT.Options.Buildings.BEGINNER)
             .build();
 
     static final Player PLAYER_A = new Player("Player A", PlayerColor.WHITE, Player.Type.HUMAN);
@@ -30,8 +30,8 @@ public class TestHelper {
     static final Player PLAYER_C = new Player("Player C", PlayerColor.BLUE, Player.Type.HUMAN);
     static final Player PLAYER_D = new Player("Player D", PlayerColor.RED, Player.Type.HUMAN);
 
-    static Game givenAGame() {
-        return Game.start(Set.of(PLAYER_A, PLAYER_B, PLAYER_C, PLAYER_D), BEGINNER, new Random(0));
+    static GWT givenAGame() {
+        return GWT.start(Set.of(PLAYER_A, PLAYER_B, PLAYER_C, PLAYER_D), BEGINNER, new Random(0));
     }
 
 }

@@ -19,11 +19,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PlayerStateTest {
 
-    static final PlayerBuilding.BuildingSet BUILDING_SET = PlayerBuilding.BuildingSet.from(Game.Options.builder()
-            .buildings(Game.Options.Buildings.BEGINNER)
+    static final PlayerBuilding.BuildingSet BUILDING_SET = PlayerBuilding.BuildingSet.from(GWT.Options.builder()
+            .buildings(GWT.Options.Buildings.BEGINNER)
             .build(), new Random(0));
 
-    static final Game.Options OPTIONS = Game.Options.builder().build();
+    static final GWT.Options OPTIONS = GWT.Options.builder().build();
 
     private Player player = new Player("A", PlayerColor.WHITE, Player.Type.HUMAN);
 
@@ -399,7 +399,7 @@ class PlayerStateTest {
     class Score {
 
         @Mock
-        private Game game;
+        private GWT game;
 
         @Mock
         private Trail trail;

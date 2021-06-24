@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 
 public class Automa {
 
-    public void execute(Game game, Player player, Random random) {
+    public void execute(GWT game, Player player, Random random) {
         // TODO Currently a super stupid implementation
         var currentPlayerState = game.currentPlayerState();
         var possibleActions = game.possibleActions();
@@ -70,7 +70,7 @@ public class Automa {
         }
     }
 
-    private Bid lowestBidPossible(Game game) {
+    private Bid lowestBidPossible(GWT game) {
         var bids = game.getPlayers().stream()
                 .map(game::playerState)
                 .map(PlayerState::getBid)
@@ -87,7 +87,7 @@ public class Automa {
                         .orElse(new Bid(0, 0)));
     }
 
-    private List<Location> calculateMove(Game game, Player player) {
+    private List<Location> calculateMove(GWT game, Player player) {
         // TODO For now just go to the nearest own player/neutral building, using the cheapest route
         return game.possibleMoves(player).stream()
                 .min(Comparator.comparingInt((PossibleMove possibleMove) ->
@@ -105,7 +105,7 @@ public class Automa {
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
     }
 
-    private List<Location> calculateMoveWithoutFees(Game game, Player player) {
+    private List<Location> calculateMoveWithoutFees(GWT game, Player player) {
         // TODO For now just go to closest location past the highest fees
         return game.possibleMoves(player).stream()
                 .max(Comparator.comparingInt(PossibleMove::getCost)
@@ -114,7 +114,7 @@ public class Automa {
                 .getSteps();
     }
 
-    private Unlockable chooseWhiteDisc(PlayerState playerState, Game game) {
+    private Unlockable chooseWhiteDisc(PlayerState playerState, GWT game) {
         if (playerState.canUnlock(Unlockable.AUX_GAIN_DOLLAR, game)) {
             return Unlockable.AUX_GAIN_DOLLAR;
         }
@@ -133,7 +133,7 @@ public class Automa {
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
     }
 
-    private Unlockable chooseBlackOrWhiteDisc(PlayerState playerState, Game game) {
+    private Unlockable chooseBlackOrWhiteDisc(PlayerState playerState, GWT game) {
         if (playerState.canUnlock(Unlockable.EXTRA_STEP_DOLLARS, game)) {
             return Unlockable.EXTRA_STEP_DOLLARS;
         }

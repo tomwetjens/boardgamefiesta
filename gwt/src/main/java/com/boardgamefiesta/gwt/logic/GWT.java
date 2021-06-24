@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PRIVATE)
-public class Game implements State {
+public class GWT implements State {
 
     @Getter
     private final Options.Mode mode;
@@ -71,7 +71,7 @@ public class Game implements State {
     @Getter
     private final List<ObjectiveCard> startingObjectiveCards;
 
-    public static Game start(@NonNull Set<Player> players, @NonNull Options options, @NonNull Random random) {
+    public static GWT start(@NonNull Set<Player> players, @NonNull Options options, @NonNull Random random) {
         if (players.size() < 2) {
             throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
         }
@@ -573,7 +573,7 @@ public class Game implements State {
                 .build();
     }
 
-    public static Game deserialize(JsonObject jsonObject) {
+    public static GWT deserialize(JsonObject jsonObject) {
         var players = jsonObject.getJsonArray("players").stream()
                 .map(JsonValue::asJsonObject)
                 .map(Player::deserialize)

@@ -1,7 +1,6 @@
 package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.repository.JsonSerializer;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -132,7 +131,7 @@ public class ObjectiveCard extends Card {
         return type.possibleAction != null ? type.possibleAction.getPossibleActions() : Collections.emptySet();
     }
 
-    static Score score(Set<ObjectiveCard> committed, Set<ObjectiveCard> uncommitted, Game game, Player player, boolean committedPairs3Points) {
+    static Score score(Set<ObjectiveCard> committed, Set<ObjectiveCard> uncommitted, GWT game, Player player, boolean committedPairs3Points) {
         Counts counts = counts(game, player);
 
         List<ObjectiveCard> objectiveCards = Stream.concat(committed.stream(), uncommitted.stream())
@@ -228,7 +227,7 @@ public class ObjectiveCard extends Card {
         }
     }
 
-    private static Counts counts(Game game, Player player) {
+    private static Counts counts(GWT game, Player player) {
         var playerState = game.playerState(player);
 
         var teepees = playerState.numberOfTeepees();

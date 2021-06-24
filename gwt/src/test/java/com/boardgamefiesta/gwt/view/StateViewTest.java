@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 class StateViewTest {
 
     @Mock
-    Game game;
+    GWT game;
 
     @Mock
     RailroadTrack railroadTrack;

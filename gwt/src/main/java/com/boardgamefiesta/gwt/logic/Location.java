@@ -24,7 +24,7 @@ public abstract class Location {
         return Collections.unmodifiableSet(next);
     }
 
-    PossibleAction activate(Game game) {
+    PossibleAction activate(GWT game) {
         throw new GWTException(GWTError.LOCATION_EMPTY);
     }
 
@@ -87,7 +87,7 @@ public abstract class Location {
         }
 
         @Override
-        PossibleAction activate(Game game) {
+        PossibleAction activate(GWT game) {
             return activate(game, false);
         }
 
@@ -95,7 +95,7 @@ public abstract class Location {
          * @param adjacent Normally using another player's building is not allowed, but when performing
          *                 the "Use Adjacent Location" tile action, it is allowed to use another player's building.
          */
-        PossibleAction activate(Game game, boolean adjacent) {
+        PossibleAction activate(GWT game, boolean adjacent) {
             if (building == null) {
                 throw new GWTException(GWTError.LOCATION_EMPTY);
             }
@@ -130,7 +130,7 @@ public abstract class Location {
             }
         }
 
-        private boolean canUseBuilding(Game game, boolean adjacent) {
+        private boolean canUseBuilding(GWT game, boolean adjacent) {
             return adjacent || building instanceof NeutralBuilding
                     || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer();
         }
@@ -202,7 +202,7 @@ public abstract class Location {
         }
 
         @Override
-        PossibleAction activate(Game game) {
+        PossibleAction activate(GWT game) {
             if (hazard == null) {
                 throw new GWTException(GWTError.LOCATION_EMPTY);
             }
@@ -254,7 +254,7 @@ public abstract class Location {
         }
 
         @Override
-        PossibleAction activate(Game game) {
+        PossibleAction activate(GWT game) {
             if (game.getForesights().isEmpty(0)) {
                 if (game.getForesights().isEmpty(1)) {
                     if (game.getForesights().isEmpty(2)) {
@@ -286,7 +286,7 @@ public abstract class Location {
         }
 
         @Override
-        public PossibleAction activate(Game game) {
+        public PossibleAction activate(GWT game) {
             if (teepee == null) {
                 throw new GWTException(GWTError.LOCATION_EMPTY);
             }

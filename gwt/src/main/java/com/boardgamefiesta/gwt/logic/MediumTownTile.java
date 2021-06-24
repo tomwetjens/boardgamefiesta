@@ -29,7 +29,7 @@ public enum MediumTownTile {
         return new LinkedList<>(list);
     }
 
-    ImmediateActions activate(Game game) {
+    ImmediateActions activate(GWT game) {
         return ImmediateActions.of(possibleAction.clone());
     }
 }
