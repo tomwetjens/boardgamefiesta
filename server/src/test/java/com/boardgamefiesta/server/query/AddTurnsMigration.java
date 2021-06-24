@@ -10,7 +10,7 @@ import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
-import com.boardgamefiesta.gwt.GWT;
+import com.boardgamefiesta.gwt.GWTProvider;
 import com.boardgamefiesta.gwt.logic.Game;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -21,10 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @Disabled
@@ -50,8 +47,8 @@ public class AddTurnsMigration {
 
     @Test
     void run() {
-        tables.findEnded(com.boardgamefiesta.domain.game.Game.Id.of(GWT.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
-                .filter(table -> table.getGame().getId().getId().equals(GWT.ID))
+        tables.findEnded(com.boardgamefiesta.domain.game.Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
+                .filter(table -> table.getGame().getId().getId().equals(GWTProvider.ID))
 //                .limit(100)
                 .forEach(table -> {
                     System.out.println(table.getId());

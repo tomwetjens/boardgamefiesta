@@ -12,7 +12,7 @@ import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
-import com.boardgamefiesta.gwt.GWT;
+import com.boardgamefiesta.gwt.GWTProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -24,8 +24,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @Disabled
@@ -52,7 +50,7 @@ class RecalculateAllRatingsTest {
 
     @Test
     void run() {
-        tables.findEnded(Game.Id.of(GWT.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
+        tables.findEnded(Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .forEach(this::recalculate);
     }
 
