@@ -48,14 +48,11 @@ public class GWT2Provider implements GameProvider<GWT> {
 
     @Override
     public GWT start(Set<Player> players, Options options, Random random) {
-        return GWT.start(players, GWT.Options.builder()
+        return GWT.start(GWT.Edition.SECOND, players, GWT.Options.builder()
                 .mode(options.getEnum("mode", GWT.Options.Mode.class, GWT.Options.Mode.ORIGINAL))
                 .buildings(options.getEnum("buildings", GWT.Options.Buildings.class, GWT.Options.Buildings.RANDOMIZED))
                 .playerOrder(options.getEnum("playerOrder", GWT.Options.PlayerOrder.class, GWT.Options.PlayerOrder.RANDOMIZED))
                 .variant(options.getEnum("variant", GWT.Options.Variant.class, GWT.Options.Variant.ORIGINAL))
-                .stationMasterPromos(options.getBoolean("stationMasterPromos", false))
-                .building11(options.getBoolean("building11", false))
-                .building13(options.getBoolean("building13", false))
                 .railsToTheNorth(options.getBoolean("railsToTheNorth", false))
                 .difficulty(options.getEnum("difficulty", Garth.Difficulty.class, Garth.Difficulty.EASY))
                 .build(), random);

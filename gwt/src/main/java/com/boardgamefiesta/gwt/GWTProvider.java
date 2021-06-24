@@ -48,7 +48,7 @@ public class GWTProvider implements GameProvider<GWT> {
 
     @Override
     public GWT start(Set<Player> players, Options options, Random random) {
-        return GWT.start(players, GWT.Options.builder()
+        return GWT.start(GWT.Edition.FIRST, players, GWT.Options.builder()
                 .mode(options.getEnum("mode", GWT.Options.Mode.class, GWT.Options.Mode.ORIGINAL))
                 .buildings(options.getEnum("buildings", GWT.Options.Buildings.class, GWT.Options.Buildings.RANDOMIZED))
                 .playerOrder(options.getEnum("playerOrder", GWT.Options.PlayerOrder.class, GWT.Options.PlayerOrder.RANDOMIZED))

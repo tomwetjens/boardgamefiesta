@@ -22,6 +22,14 @@ import java.util.stream.Stream;
 @Builder(access = AccessLevel.PRIVATE)
 public class GWT implements State {
 
+    public enum Edition {
+        FIRST,
+        SECOND
+    }
+
+    @Getter
+    private final Edition edition;
+
     @Getter
     private final Options.Mode mode;
 
@@ -71,7 +79,14 @@ public class GWT implements State {
     @Getter
     private final List<ObjectiveCard> startingObjectiveCards;
 
+    /**
+     * For backwards compatbility, starts 1nd edition.
+     */
     public static GWT start(@NonNull Set<Player> players, @NonNull Options options, @NonNull Random random) {
+        return start(Edition.FIRST, players, options, random);
+    }
+
+    public static GWT start(@NonNull Edition edition, @NonNull Set<Player> players, @NonNull Options options, @NonNull Random random) {
         if (players.size() < 2) {
             throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
         }
@@ -93,6 +108,7 @@ public class GWT implements State {
                 .collect(Collectors.toMap(Function.identity(), player -> new PlayerState(player, options, 0, random, buildings)));
 
         var game = builder()
+                .edition(edition)
                 .mode(options.getMode())
                 .railsToTheNorth(options.isRailsToTheNorth())
                 .players(players)
@@ -553,6 +569,7 @@ public class GWT implements State {
     public JsonObject serialize(JsonBuilderFactory factory) {
         var serializer = JsonSerializer.forFactory(factory);
         return factory.createObjectBuilder()
+                .add("edition", edition.name())
                 .add("mode", mode.name())
                 .add("railsToTheNorth", railsToTheNorth)
                 .add("players", serializer.fromCollection(players, Player::serialize))
@@ -596,6 +613,7 @@ public class GWT implements State {
         var trail = Trail.deserialize(playerMap, jsonObject.getJsonObject("trail"));
 
         return builder()
+                .edition(Edition.valueOf(jsonObject.getString("edition", Edition.FIRST.name())))
                 .mode(Options.Mode.valueOf(jsonObject.getString("mode", Options.Mode.STRATEGIC.name())))
                 .railsToTheNorth(railsToTheNorth)
                 .players(players)
