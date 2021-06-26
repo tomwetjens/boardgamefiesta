@@ -150,6 +150,10 @@ public class StateView {
                 possibleSpaces.put(ActionType.MOVE_ENGINE_1_FORWARD,
                         getPossibleSpacesForward(state, viewingPlayer, 1, 1));
             }
+            if (actions.contains(ActionType.MOVE_ENGINE_2_FORWARD)) {
+                possibleSpaces.put(ActionType.MOVE_ENGINE_2_FORWARD,
+                        getPossibleSpacesForward(state, viewingPlayer, 1, 2));
+            }
             if (actions.contains(ActionType.MOVE_ENGINE_2_OR_3_FORWARD)) {
                 possibleSpaces.put(ActionType.MOVE_ENGINE_2_OR_3_FORWARD,
                         getPossibleSpacesForward(state, viewingPlayer, 2, 3));
@@ -200,8 +204,16 @@ public class StateView {
                 possibleSpaces.put(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD,
                         getPossibleSpacesBackwards(state, viewingPlayer, 1, 1));
             }
+            if (actions.contains(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD_AND_GAIN_1_DOLLAR)) {
+                possibleSpaces.put(ActionType.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD_AND_GAIN_1_DOLLAR,
+                        getPossibleSpacesBackwards(state, viewingPlayer, 1, 1));
+            }
             if (actions.contains(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS)) {
                 possibleSpaces.put(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS,
+                        getPossibleSpacesBackwards(state, viewingPlayer, 2, 2));
+            }
+            if (actions.contains(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS_AND_GAIN_2_DOLLARS)) {
+                possibleSpaces.put(ActionType.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS_AND_GAIN_2_DOLLARS,
                         getPossibleSpacesBackwards(state, viewingPlayer, 2, 2));
             }
 

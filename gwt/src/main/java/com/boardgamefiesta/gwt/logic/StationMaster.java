@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @AllArgsConstructor
 public enum StationMaster {
@@ -33,23 +31,19 @@ public enum StationMaster {
             PERM_CERT_POINTS_FOR_TEEPEE_PAIRS,
             PERM_CERT_POINTS_FOR_EACH_2_CERTS);
 
-    static final List<StationMaster> WITH_PROMOS = Stream.concat(
-            ORIGINAL.stream(),
-            Stream.of(
-                    TWO_PERM_CERTS,
-                    TWELVE_DOLLARS
-            )).collect(Collectors.toList());
+    static final List<StationMaster> PROMOS = List.of(
+            TWO_PERM_CERTS,
+            TWELVE_DOLLARS
+    );
 
-    static final List<StationMaster> RAILS_TO_THE_NORTH = Stream.concat(
-            ORIGINAL.stream(),
-            Stream.of(
-                    TWO_PERM_CERTS,
-                    TWELVE_DOLLARS,
-                    PERM_CERT_POINTS_PER_2_STATIONS,
-                    GAIN_2_CERTS_POINTS_PER_BUILDING,
-                    PLACE_BRANCHLET_POINTS_PER_2_EXCHANGE_TOKENS,
-                    GAIN_EXCHANGE_TOKEN_POINTS_PER_AREA
-            )).collect(Collectors.toList());
+    static final List<StationMaster> RTTN_AND_2ND_EDITION = List.of(
+            TWO_PERM_CERTS,
+            TWELVE_DOLLARS,
+            PERM_CERT_POINTS_PER_2_STATIONS,
+            GAIN_2_CERTS_POINTS_PER_BUILDING,
+            PLACE_BRANCHLET_POINTS_PER_2_EXCHANGE_TOKENS,
+            GAIN_EXCHANGE_TOKEN_POINTS_PER_AREA
+    );
 
     private final Function<GWT, ImmediateActions> activateFunction;
 

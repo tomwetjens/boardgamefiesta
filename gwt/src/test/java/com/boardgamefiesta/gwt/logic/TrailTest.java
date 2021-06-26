@@ -24,7 +24,7 @@ class TrailTest {
 
     @BeforeEach
     void setUp() {
-        trail = new Trail(true, new Random(0));
+        trail = new Trail(GWT.Edition.FIRST, true, new Random(0));
 
         ((Location.BuildingLocation) trail.getLocation("A-1")).placeBuilding(new PlayerBuilding.Building1A(playerA));
         ((Location.BuildingLocation) trail.getLocation("A-2")).placeBuilding(new PlayerBuilding.Building2A(playerA));
@@ -95,7 +95,7 @@ class TrailTest {
 
     @Test
     void scott() {
-        var trail = new Trail();
+        var trail = new Trail(GWT.Edition.FIRST);
 
         ((Location.BuildingLocation) trail.getLocation("A")).placeBuilding(new NeutralBuilding.A());
         ((Location.BuildingLocation) trail.getLocation("B")).placeBuilding(new NeutralBuilding.B());
@@ -117,7 +117,7 @@ class TrailTest {
 
     @Test
     void shouldDifferentiateBetweenPlayerFeesButExcludeOwnBuildings() {
-        var trail = new Trail();
+        var trail = new Trail(GWT.Edition.FIRST);
 
         ((Location.BuildingLocation) trail.getLocation("A")).placeBuilding(new NeutralBuilding.A());
         ((Location.BuildingLocation) trail.getLocation("B")).placeBuilding(new NeutralBuilding.B());

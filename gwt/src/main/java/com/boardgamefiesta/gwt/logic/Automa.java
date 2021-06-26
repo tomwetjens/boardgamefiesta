@@ -61,7 +61,7 @@ public class Automa {
                         .filter(teepeeLocation -> teepeeLocation.getReward() > 0)
                         .max(Comparator.comparingInt(Location.TeepeeLocation::getReward));
                 if (teepeeToTake.isPresent()) {
-                    game.perform(new Action.TradeWithTribes(teepeeToTake.get().getReward()), random);
+                    game.perform(new Action.TradeWithTribes(teepeeToTake.get()), random);
                     return;
                 }
             }

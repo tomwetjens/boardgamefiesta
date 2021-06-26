@@ -123,7 +123,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(GWT game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions(game.isRailsToTheNorth())));
+            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions(game)));
         }
     }
 
@@ -300,6 +300,23 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
+    public static class MoveEngine2Forward extends Action {
+
+        @NonNull
+        RailroadTrack.Space to;
+
+        @Override
+        public ActionResult perform(GWT game, Random random) {
+            var move = game.getRailroadTrack().moveEngineForward(game.getCurrentPlayer(), to, 1, 2);
+
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_2_FORWARD, List.of(to.getName()));
+
+            return ActionResult.undoAllowed(move.getImmediateActions());
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
     public static class RemoveCard extends Action {
 
         @NonNull
@@ -323,27 +340,56 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static class TradeWithTribes extends Action {
+    public static class RemoveCardAndGain1Dollar extends Action {
 
-        int reward;
+        @NonNull
+        Card card;
 
         @Override
         public ActionResult perform(GWT game, Random random) {
-            Location.TeepeeLocation teepeeLocation = game.getTrail().getTeepeeLocation(reward);
+            game.currentPlayerState().removeCards(Collections.singleton(card));
+
+            if (card instanceof Card.CattleCard) {
+                var cattleCard = (Card.CattleCard) this.card;
+                game.fireActionEvent(GWTEvent.Type.REMOVE_CATTLE_CARD_AND_GAIN_1_DOLLAR, List.of(cattleCard.getType().name(), Integer.toString(cattleCard.getPoints())));
+            } else if (card instanceof ObjectiveCard) {
+                var objectiveCard = (ObjectiveCard) this.card;
+                game.fireActionEvent(GWTEvent.Type.REMOVE_OBJECTIVE_CARD_AND_GAIN_2_DOLLARS, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
+            }
+
+            game.currentPlayerState().gainDollars(1);
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class TradeWithTribes extends Action {
+
+        @NonNull
+        Location.TeepeeLocation teepeeLocation;
+
+        @Override
+        public ActionResult perform(GWT game, Random random) {
             Teepee teepee = teepeeLocation.getTeepee()
                     .orElseThrow(() -> new GWTException(GWTError.NO_TEEPEE_AT_LOCATION));
 
             if (teepeeLocation.getReward() > 0) {
-                teepeeLocation.removeTeepee();
-                game.currentPlayerState().addTeepee(teepee);
                 game.currentPlayerState().gainDollars(teepeeLocation.getReward());
-            } else {
+            } else if (teepeeLocation.getReward() < 0) {
                 game.currentPlayerState().payDollars(-teepeeLocation.getReward());
-                teepeeLocation.removeTeepee();
-                game.currentPlayerState().addTeepee(teepee);
             }
 
-            game.fireActionEvent(this, List.of(Integer.toString(reward)));
+            game.fireActionEvent(this, List.of(Integer.toString(teepeeLocation.getReward())));
+
+            teepeeLocation.removeTeepee();
+            game.currentPlayerState().addTeepee(teepee);
+
+            if (teepeeLocation.isExchangeToken()) {
+                game.currentPlayerState().gainExchangeTokens(1);
+                game.fireActionEvent(Action.GainExchangeToken.class, Collections.emptyList());
+            }
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
@@ -802,7 +848,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             var payout = Math.max(0, breedingValue - transportCosts);
             if (city == City.KANSAS_CITY) {
-                payout += 6;
+                payout += game.getEdition() == GWT.Edition.FIRST ? 6 : 4;
             }
 
             var tempCertificates = Math.max(0, certificates - currentPlayerState.permanentCertificates());
@@ -921,6 +967,25 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
+    public static class MoveEngine2BackwardsToRemove2CardsAndGain2Dollars extends Action {
+
+        @NonNull
+        RailroadTrack.Space to;
+
+        @Override
+        public ActionResult perform(GWT game, Random random) {
+            var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2);
+
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS_AND_GAIN_2_DOLLARS, List.of(to.getName()));
+
+            return ActionResult.undoAllowed(move
+                    .getImmediateActions()
+                    .andThen(PossibleAction.repeat(2, 2, RemoveCardAndGain1Dollar.class)));
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
     public static class MoveEngine2Or3Forward extends Action {
 
         @NonNull
@@ -1025,6 +1090,25 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return ActionResult.undoAllowed(move
                     .getImmediateActions()
                     .andThen(PossibleAction.mandatory(RemoveCard.class)));
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class MoveEngine1BackwardsToRemove1CardAndGain1Dollar extends Action {
+
+        @NonNull
+        RailroadTrack.Space to;
+
+        @Override
+        public ActionResult perform(GWT game, Random random) {
+            var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
+
+            game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD_AND_GAIN_1_DOLLAR, List.of(to.getName()));
+
+            return ActionResult.undoAllowed(move
+                    .getImmediateActions()
+                    .andThen(PossibleAction.mandatory(RemoveCardAndGain1Dollar.class)));
         }
     }
 
@@ -1561,6 +1645,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    public static final class Discard1DutchBeltToMoveEngine2Forward extends Action {
+
+        @Override
+        public ActionResult perform(GWT game, Random random) {
+            game.currentPlayerState().discardCattleCards(CattleType.DUTCH_BELT, 1);
+
+            game.fireActionEvent(GWTEvent.Type.DISCARD_1_DUTCH_BELT_TO_MOVE_ENGINE_2_FORWARD, Collections.emptyList());
+
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(MoveEngine2Forward.class)));
+        }
+    }
+
     public static final class Discard1JerseyForSingleAuxiliaryAction extends Action {
 
         @Override
@@ -1643,6 +1739,28 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             playerState.gainDollars(3);
 
             game.fireActionEvent(GWTEvent.Type.DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND, List.of(cattleType.name()));
+
+            return ActionResult.undoAllowed(
+                    !game.getObjectiveCards().isEmpty()
+                            ? ImmediateActions.of(PossibleAction.mandatory(Add1ObjectiveCardToHand.class))
+                            : ImmediateActions.none());
+        }
+    }
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class Discard1CattleCardToGain6DollarsAndAdd1ObjectiveCardToHand extends Action {
+
+        @NonNull
+        CattleType cattleType;
+
+        @Override
+        public ActionResult perform(GWT game, Random random) {
+            var playerState = game.currentPlayerState();
+            playerState.discardCattleCards(cattleType, 1);
+            playerState.gainDollars(6);
+
+            game.fireActionEvent(GWTEvent.Type.DISCARD_1_CATTLE_CARD_TO_GAIN_6_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND, List.of(cattleType.name()));
 
             return ActionResult.undoAllowed(
                     !game.getObjectiveCards().isEmpty()
@@ -1820,6 +1938,31 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class DiscardCattleCardToGain7Dollars extends Action {
+
+        @NonNull
+        CattleType cattleType;
+
+        @Override
+        ActionResult perform(GWT game, Random random) {
+            game.fireActionEvent(this, List.of(cattleType.name()));
+
+            if (cattleType.getValue() != 3) {
+                throw new GWTException(GWTError.INVALID_CATTLE_TYPE);
+            }
+
+            var currentPlayerState = game.currentPlayerState();
+            currentPlayerState.discardCattleCards(cattleType, 1);
+            currentPlayerState.gainDollars(7);
+
+            game.fireActionEvent(GWTEvent.Type.DISCARD_CATTLE_CARD_TO_GAIN_7_DOLLARS, List.of(cattleType.name()));
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
+
     public static final class Discard1JerseyToGain1CertificateAnd2Dollars extends Action {
 
         @Override
@@ -1938,7 +2081,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     public static class UseExchangeToken extends Action {
 
         static boolean canPerform(GWT game) {
-            return game.currentPlayerState().getExchangeTokens() > 0
+            return (game.isRailsToTheNorth() || game.getEdition() == GWT.Edition.SECOND)
+                    && game.currentPlayerState().getExchangeTokens() > 0
                     && !game.getActionStack().canPerform(Action.DrawCard.class)
                     && !game.getActionStack().canPerform(Action.Draw2Cards.class)
                     && !game.getActionStack().canPerform(Action.DiscardCard.class)

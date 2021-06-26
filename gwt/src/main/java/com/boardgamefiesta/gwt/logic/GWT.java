@@ -98,7 +98,7 @@ public class GWT implements State {
         var playerOrder = new LinkedList<>(players);
         Collections.shuffle(playerOrder, random);
 
-        PlayerBuilding.BuildingSet buildings = PlayerBuilding.BuildingSet.from(options, random);
+        PlayerBuilding.BuildingSet buildings = PlayerBuilding.BuildingSet.from(edition, options, random);
 
         var kansasCitySupply = options.getVariant() == Options.Variant.BALANCED
                 ? KansasCitySupply.balanced(players.size(), random)
@@ -115,9 +115,9 @@ public class GWT implements State {
                 .playerOrder(playerOrder)
                 .playerStates(playerStates)
                 .currentPlayer(playerOrder.get(0))
-                .railroadTrack(RailroadTrack.initial(players, options, random))
+                .railroadTrack(RailroadTrack.initial(edition, players, options, random))
                 .kansasCitySupply(kansasCitySupply)
-                .trail(new Trail(options.getBuildings() == Options.Buildings.BEGINNER, random))
+                .trail(new Trail(edition, options.getBuildings() == Options.Buildings.BEGINNER, random))
                 .jobMarket(new JobMarket(players.size()))
                 .foresights(new Foresights(kansasCitySupply))
                 .cattleMarket(options.getVariant() == Options.Variant.BALANCED
@@ -200,6 +200,11 @@ public class GWT implements State {
 
             playerState.gainDollars(startBalance);
             playerState.commitToObjectiveCard(startingObjectiveCards.remove(0));
+
+            if (edition == Edition.SECOND && player.getType() != Player.Type.COMPUTER) {
+                // Draw extra cards that must be discarded at the beginning of the first turn
+                playerState.drawCards(i, random);
+            }
 
             playerState.getAutomaState().ifPresent(automaState -> automaState.start(this, random));
         }
@@ -394,7 +399,14 @@ public class GWT implements State {
         if (mustPlaceBid(currentPlayer)) {
             return Collections.singletonList(PossibleAction.mandatory(Action.PlaceBid.class));
         } else {
-            return Collections.singletonList(PossibleAction.mandatory(Action.Move.class));
+            var currentPlayerState = currentPlayerState();
+            var mustDiscardCards = currentPlayerState.getHand().size() - currentPlayerState.getHandLimit();
+            if (mustDiscardCards > 0) {
+                return List.of(PossibleAction.repeat(mustDiscardCards, mustDiscardCards, Action.DiscardCard.class),
+                        PossibleAction.mandatory(Action.Move.class));
+            } else {
+                return Collections.singletonList(PossibleAction.mandatory(Action.Move.class));
+            }
         }
     }
 
@@ -478,7 +490,7 @@ public class GWT implements State {
         if (isEnded() || mode == Options.Mode.STRATEGIC) {
             return Optional.of(playerState.score(this)
                     .add(trail.score(player))
-                    .add(railroadTrack.score(player, playerState)));
+                    .add(railroadTrack.score(this, player, playerState)));
         }
         return Optional.empty();
     }
@@ -591,6 +603,8 @@ public class GWT implements State {
     }
 
     public static GWT deserialize(JsonObject jsonObject) {
+        var edition = Edition.valueOf(jsonObject.getString("edition", Edition.FIRST.name()));
+
         var players = jsonObject.getJsonArray("players").stream()
                 .map(JsonValue::asJsonObject)
                 .map(Player::deserialize)
@@ -610,15 +624,15 @@ public class GWT implements State {
 
         var railroadTrack = RailroadTrack.deserialize(railsToTheNorth, playerMap, jsonObject.getJsonObject("railroadTrack"));
 
-        var trail = Trail.deserialize(playerMap, jsonObject.getJsonObject("trail"));
+        var trail = Trail.deserialize(edition, playerMap, jsonObject.getJsonObject("trail"));
 
         return builder()
-                .edition(Edition.valueOf(jsonObject.getString("edition", Edition.FIRST.name())))
+                .edition(edition)
                 .mode(Options.Mode.valueOf(jsonObject.getString("mode", Options.Mode.STRATEGIC.name())))
                 .railsToTheNorth(railsToTheNorth)
                 .players(players)
                 .playerOrder(playerOrder)
-                .playerStates(deserializePlayerStates(playerMap, railroadTrack, trail, jsonObject.getJsonObject("playerStates")))
+                .playerStates(deserializePlayerStates(edition, playerMap, railroadTrack, trail, jsonObject.getJsonObject("playerStates")))
                 .currentPlayer(playerMap.get(jsonObject.getString("currentPlayer")))
                 .railroadTrack(railroadTrack)
                 .kansasCitySupply(kansasCitySupply)
@@ -640,9 +654,9 @@ public class GWT implements State {
                 .build();
     }
 
-    private static Map<Player, PlayerState> deserializePlayerStates(Map<String, Player> playerMap, RailroadTrack railroadTrack, Trail trail, JsonObject jsonObject) {
+    private static Map<Player, PlayerState> deserializePlayerStates(GWT.Edition edition, Map<String, Player> playerMap, RailroadTrack railroadTrack, Trail trail, JsonObject jsonObject) {
         return jsonObject.keySet().stream()
-                .collect(Collectors.toMap(playerMap::get, key -> PlayerState.deserialize(playerMap.get(key), railroadTrack, trail,
+                .collect(Collectors.toMap(playerMap::get, key -> PlayerState.deserialize(edition, playerMap.get(key), railroadTrack, trail,
                         jsonObject.getJsonObject(key).asJsonObject())));
     }
 

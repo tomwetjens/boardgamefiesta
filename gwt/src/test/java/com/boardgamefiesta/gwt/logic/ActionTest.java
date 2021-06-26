@@ -272,9 +272,7 @@ class ActionTest {
             when(teepeeLocation.getTeepee()).thenReturn(Optional.of(Teepee.BLUE));
             when(teepeeLocation.getReward()).thenReturn(1);
 
-            when(trail.getTeepeeLocation(1)).thenReturn(teepeeLocation);
-
-            new Action.TradeWithTribes(1).perform(game, new Random(0));
+            new Action.TradeWithTribes(teepeeLocation).perform(game, new Random(0));
 
             verify(currentPlayerState).gainDollars(1);
             verify(currentPlayerState).addTeepee(Teepee.BLUE);
@@ -287,9 +285,7 @@ class ActionTest {
             when(teepeeLocation.getTeepee()).thenReturn(Optional.of(Teepee.BLUE));
             when(teepeeLocation.getReward()).thenReturn(-1);
 
-            when(trail.getTeepeeLocation(-1)).thenReturn(teepeeLocation);
-
-            new Action.TradeWithTribes(-1).perform(game, new Random(0));
+            new Action.TradeWithTribes(teepeeLocation).perform(game, new Random(0));
 
             verify(currentPlayerState).payDollars(1);
             verify(currentPlayerState).addTeepee(Teepee.BLUE);
@@ -302,11 +298,9 @@ class ActionTest {
             when(teepeeLocation.getTeepee()).thenReturn(Optional.of(Teepee.BLUE));
             when(teepeeLocation.getReward()).thenReturn(-1);
 
-            when(trail.getTeepeeLocation(-1)).thenReturn(teepeeLocation);
-
             doThrow(new GWTException(GWTError.NOT_ENOUGH_BALANCE_TO_PAY)).when(currentPlayerState).payDollars(anyInt());
 
-            assertThatThrownBy(() -> new Action.TradeWithTribes(-1).perform(game, new Random(0)))
+            assertThatThrownBy(() -> new Action.TradeWithTribes(teepeeLocation).perform(game, new Random(0)))
                     .isInstanceOf(GWTException.class);
 
             verify(currentPlayerState, never()).addTeepee(any());
@@ -318,9 +312,7 @@ class ActionTest {
             var teepeeLocation = mock(Location.TeepeeLocation.class);
             when(teepeeLocation.getTeepee()).thenReturn(Optional.empty());
 
-            when(trail.getTeepeeLocation(-1)).thenReturn(teepeeLocation);
-
-            assertThatThrownBy(() -> new Action.TradeWithTribes(-1).perform(game, new Random(0)))
+            assertThatThrownBy(() -> new Action.TradeWithTribes(teepeeLocation).perform(game, new Random(0)))
                     .isInstanceOf(GWTException.class);
 
             verifyNoInteractions(currentPlayerState);

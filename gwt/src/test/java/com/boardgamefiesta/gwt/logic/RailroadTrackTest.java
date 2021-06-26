@@ -18,7 +18,7 @@ import static com.boardgamefiesta.gwt.logic.RailroadTrack.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RailroadTrackTest {
@@ -33,7 +33,7 @@ class RailroadTrackTest {
 
     @BeforeEach
     void setUp() {
-        railroadTrack = RailroadTrack.initial(new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC, playerD)), ORIGINAL, new Random(0));
+        railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC, playerD)), ORIGINAL, new Random(0));
     }
 
     @Test
@@ -325,7 +325,7 @@ class RailroadTrackTest {
 
         @Test
         void turnOutAndNormalJumpOverOtherPlayer() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA, playerB), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA, playerB), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("3"), 0, 6);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace("4"), 0, 6);
 
@@ -337,7 +337,7 @@ class RailroadTrackTest {
 
         @Test
         void fromStartAllSpaces() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
 
             assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getStart(), 0, 36)).containsExactlyInAnyOrderElementsOf(
                     Stream.concat(IntStream.rangeClosed(1, 36).mapToObj(Integer::toString).map(railroadTrack::getSpace),
@@ -347,7 +347,7 @@ class RailroadTrackTest {
 
         @Test
         void fromStartToTurnout3() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
 
             assertThat(railroadTrack.reachableSpacesForward(railroadTrack.getStart(), 0, 14))
                     .contains(railroadTrack.getSpace("13.5"));
@@ -359,7 +359,7 @@ class RailroadTrackTest {
 
         @Test
         void exactly1JumpOverOtherPlayer() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA, playerB), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA, playerB), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("16"), 0, 16);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace("15"), 0, 15);
 
@@ -369,7 +369,7 @@ class RailroadTrackTest {
 
         @Test
         void exactly2JumpOverOtherPlayer() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA, playerB), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA, playerB), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("16"), 0, 16);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace("15"), 0, 15);
 
@@ -380,7 +380,7 @@ class RailroadTrackTest {
 
         @Test
         void exactly2FromTurnoutJumpOverOtherPlayer() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA, playerB), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA, playerB), ORIGINAL, new Random(0));
             var from = railroadTrack.getSpace("13.5");
             railroadTrack.moveEngineForward(playerA, from, 0, 14);
             railroadTrack.moveEngineForward(playerB, railroadTrack.getSpace("13"), 0, 13);
@@ -414,7 +414,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween4And5() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("4.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(2);
@@ -422,7 +422,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween7And8() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("7.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(4);
@@ -430,7 +430,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween10And11() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("10.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(6);
@@ -438,7 +438,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween13And14() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("13.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(8);
@@ -446,7 +446,7 @@ class RailroadTrackTest {
 
         @Test
         void atTurnoutBetween16And17() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("16.5"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(10);
@@ -454,7 +454,7 @@ class RailroadTrackTest {
 
         @Test
         void at16() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("16"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(9);
@@ -462,7 +462,7 @@ class RailroadTrackTest {
 
         @Test
         void at17() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("17"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(10);
@@ -470,7 +470,7 @@ class RailroadTrackTest {
 
         @Test
         void at18() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.moveEngineForward(playerA, railroadTrack.getSpace("18"), 0, Integer.MAX_VALUE);
 
             assertThat(railroadTrack.signalsPassed(playerA)).isEqualTo(11);
@@ -496,72 +496,84 @@ class RailroadTrackTest {
 
         @Test
         void kansasCity() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.KANSAS_CITY, game);
             railroadTrack.deliverToCity(playerA, City.KANSAS_CITY, game);
 
-            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(-12);
-            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -12);
+            assertThat(railroadTrack.score(game, playerA, playerState).getTotal()).isEqualTo(-12);
+            assertThat(railroadTrack.score(game, playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -12);
         }
 
         @Test
         void topekaAndWichita() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.TOPEKA, game);
             railroadTrack.deliverToCity(playerA, City.WICHITA, game);
 
-            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(-3);
-            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -3);
+            assertThat(railroadTrack.score(game, playerA, playerState).getTotal()).isEqualTo(-3);
+            assertThat(railroadTrack.score(game, playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -3);
         }
 
         @Test
         void wichitaAndColoradoSprings() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.WICHITA, game);
             railroadTrack.deliverToCity(playerA, City.COLORADO_SPRINGS, game);
 
-            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(-1);
-            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -1);
+            assertThat(railroadTrack.score(game, playerA, playerState).getTotal()).isEqualTo(-1);
+            assertThat(railroadTrack.score(game, playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, -1);
+        }
+
+        @Test
+        void wichitaAndColoradoSprings2ndEdition() {
+            when(game.getEdition()).thenReturn(GWT.Edition.SECOND);
+
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
+            railroadTrack.deliverToCity(playerA, City.WICHITA, game);
+            railroadTrack.deliverToCity(playerA, City.COLORADO_SPRINGS, game);
+
+            assertThat(railroadTrack.score(game, playerA, playerState).getTotal()).isEqualTo(0);
+            assertThat(railroadTrack.score(game, playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 0);
         }
 
         @Test
         void albuquerqueAndElPaso() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.ALBUQUERQUE, game);
             railroadTrack.deliverToCity(playerA, City.EL_PASO, game);
 
-            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(6);
-            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 6);
+            assertThat(railroadTrack.score(game, playerA, playerState).getTotal()).isEqualTo(6);
+            assertThat(railroadTrack.score(game, playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 6);
         }
 
         @Test
         void elPasoAndSanDiego() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.EL_PASO, game);
             railroadTrack.deliverToCity(playerA, City.SAN_DIEGO, game);
 
-            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(8);
-            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 8);
+            assertThat(railroadTrack.score(game, playerA, playerState).getTotal()).isEqualTo(8);
+            assertThat(railroadTrack.score(game, playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 8);
         }
 
         @Test
         void sanDiegoAndSacramento() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.SAN_DIEGO, game);
             railroadTrack.deliverToCity(playerA, City.SACRAMENTO, game);
 
-            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(10);
-            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 10);
+            assertThat(railroadTrack.score(game, playerA, playerState).getTotal()).isEqualTo(10);
+            assertThat(railroadTrack.score(game, playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 10);
         }
 
         @Test
         void sanFrancisco() {
-            RailroadTrack railroadTrack = RailroadTrack.initial(Set.of(playerA), ORIGINAL, new Random(0));
+            RailroadTrack railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA), ORIGINAL, new Random(0));
             railroadTrack.deliverToCity(playerA, City.SAN_FRANCISCO, game);
             railroadTrack.deliverToCity(playerA, City.SAN_FRANCISCO, game);
 
-            assertThat(railroadTrack.score(playerA, playerState).getTotal()).isEqualTo(18);
-            assertThat(railroadTrack.score(playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 18);
+            assertThat(railroadTrack.score(game, playerA, playerState).getTotal()).isEqualTo(18);
+            assertThat(railroadTrack.score(game, playerA, playerState).getCategories()).containsEntry(ScoreCategory.CITIES, 18);
         }
     }
 
@@ -578,17 +590,17 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
 
             game.perform(new Action.UpgradeStation(), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UnlockBlackOrWhite.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UnlockBlackOrWhite.class);
 
             game.perform(new Action.UnlockBlackOrWhite(Unlockable.EXTRA_STEP_POINTS), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("38")), new Random(0));
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(startBalance);
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class);
         }
 
         @Test
@@ -601,14 +613,14 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("38")), new Random(0));
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(startBalance + 3);
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class);
         }
 
         @Test
@@ -621,10 +633,10 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
             assertThatThrownBy(() -> game.skip(new Random(0)))
                     .isInstanceOf(GWTException.class)
@@ -641,13 +653,13 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(3);
         }
 
@@ -661,24 +673,24 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(3);
 
             game.perform(new Action.UpgradeStation(), new Random(0));
             assertThat(game.currentPlayerState().getBalance()).isEqualTo(1);
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UnlockWhite.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UnlockWhite.class);
 
             game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.AppointStationMaster.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.AppointStationMaster.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class);
         }
 
         @Test
@@ -691,16 +703,16 @@ class RailroadTrackTest {
             assertThat(game.possibleActions()).contains(Action.MoveEngineForward.class);
 
             game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace("39")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class);
 
             game.perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(game.getRailroadTrack().getSpace("4.5")), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.UpgradeStation.class);
 
             game.skip(new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.SingleOrDoubleAuxiliaryAction.class);
         }
     }
 
@@ -722,7 +734,7 @@ class RailroadTrackTest {
 
         @BeforeEach
         void setUp() {
-            railroadTrack = RailroadTrack.initial(Set.of(playerA, playerB, playerC, playerD), options, new Random(0));
+            railroadTrack = RailroadTrack.initial(GWT.Edition.FIRST, Set.of(playerA, playerB, playerC, playerD), options, new Random(0));
 
             lenient().when(game.getCurrentPlayer()).thenReturn(playerA);
             lenient().when(game.getRailroadTrack()).thenReturn(railroadTrack);

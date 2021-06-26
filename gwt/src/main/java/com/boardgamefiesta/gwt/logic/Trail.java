@@ -20,7 +20,7 @@ public class Trail {
     private final Location.Start start;
 
     private final Map<HazardType, List<Location.HazardLocation>> hazardLocations;
-    private final Map<Integer, Location.TeepeeLocation> teepeeLocations;
+    private final Map<String, Location.TeepeeLocation> teepeeLocations;
     private final Map<String, Location.BuildingLocation> buildingLocations;
     private final List<Location.BuildingLocation> neutralBuildingLocations;
 
@@ -29,7 +29,7 @@ public class Trail {
 
     private final Map<Player, Location> playerLocations = new HashMap<>();
 
-    Trail() {
+    Trail(@NonNull GWT.Edition edition) {
         kansasCity = new Location.KansasCity();
 
         var g1 = new Location.BuildingLocation("G-1", false, kansasCity);
@@ -51,20 +51,18 @@ public class Trail {
         var e1 = new Location.BuildingLocation("E-1", true, e2);
         var e = new Location.BuildingLocation("E", false, e1, rockfall1);
 
-        var d = new Location.BuildingLocation("D", false, e);
-
         var indianTradeRisk2 = new Location.BuildingLocation("INDIAN-TRADE-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, false, e);
         var indianTradeRisk1 = new Location.BuildingLocation("INDIAN-TRADE-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false, indianTradeRisk2);
-        var teepeeLocation10 = new Location.TeepeeLocation(10, indianTradeRisk1);
-        var teepeeLocation8 = new Location.TeepeeLocation(8, teepeeLocation10);
-        var teepeeLocation6 = new Location.TeepeeLocation(6, teepeeLocation8);
-        var teepeeLocation4 = new Location.TeepeeLocation(4, teepeeLocation6);
-        var teepeeLocation2 = new Location.TeepeeLocation(2, teepeeLocation4);
-        var teepeeLocation1 = new Location.TeepeeLocation(1, teepeeLocation2);
+        var teepeeLocation10 = new Location.TeepeeLocation("TEEPEE-10", 10, indianTradeRisk1);
+        var teepeeLocation8 = new Location.TeepeeLocation("TEEPEE-8", 8, teepeeLocation10);
+        var teepeeLocation6 = new Location.TeepeeLocation("TEEPEE-6", 6, teepeeLocation8);
+        var teepeeLocation4 = new Location.TeepeeLocation("TEEPEE-4", edition == GWT.Edition.FIRST ? 4 : 5, teepeeLocation6);
+        var teepeeLocation2 = new Location.TeepeeLocation("TEEPEE-2", edition == GWT.Edition.FIRST ? 2 : 4, teepeeLocation4);
+        var teepeeLocation1 = new Location.TeepeeLocation("TEEPEE-1", edition == GWT.Edition.FIRST ? 1 : 3, teepeeLocation2);
 
-        var teepeeMin3 = new Location.TeepeeLocation(-3);
-        var teepeeMin2 = new Location.TeepeeLocation(-2);
-        var teepeeMin1 = new Location.TeepeeLocation(-1);
+        var teepeeMin3 = new Location.TeepeeLocation("TEEPEE--3", edition == GWT.Edition.FIRST ? -3 : 2);
+        var teepeeMin2 = new Location.TeepeeLocation("TEEPEE--2", edition == GWT.Edition.FIRST ? -2 : 1);
+        var teepeeMin1 = new Location.TeepeeLocation("TEEPEE--1", edition == GWT.Edition.FIRST ? -1 : 0);
         teepeeLocations = Stream.of(
                 teepeeMin3,
                 teepeeMin2,
@@ -75,13 +73,24 @@ public class Trail {
                 teepeeLocation6,
                 teepeeLocation8,
                 teepeeLocation10
-        ).collect(Collectors.toMap(Location.TeepeeLocation::getReward, Function.identity()));
-
-        var c2 = new Location.BuildingLocation("C-2", false, d, teepeeLocation1);
+        ).collect(Collectors.toMap(Location.TeepeeLocation::getName, Function.identity()));
 
         var c12 = new Location.BuildingLocation("C-1-2", true, e);
         var c11 = new Location.BuildingLocation("C-1-1", true, c12);
-        var c = new Location.BuildingLocation("C", false, c11, c2);
+
+        Location.BuildingLocation d;
+        Location.BuildingLocation d1 = null;
+        Location.BuildingLocation c;
+        Location.BuildingLocation c2 = null;
+        if (edition == GWT.Edition.FIRST) {
+            d = new Location.BuildingLocation("D", false, e);
+            c2 = new Location.BuildingLocation("C-2", false, d, teepeeLocation1);
+            c = new Location.BuildingLocation("C", false, c11, c2);
+        } else {
+            d1 = new Location.BuildingLocation("D-1", false, e);
+            d = new Location.BuildingLocation("D", false, d1, teepeeLocation1);
+            c = new Location.BuildingLocation("C", false, c11, d);
+        }
 
         var droughtRisk1 = new Location.BuildingLocation(HazardType.DROUGHT + "-RISK-1", Action.Discard1CattleCardToGain1Certificate.class, false, c);
         var drought4 = new Location.HazardLocation(HazardType.DROUGHT, 4, droughtRisk1);
@@ -95,7 +104,9 @@ public class Trail {
         var b = new Location.BuildingLocation("B", false, drought1, b1);
 
         var floodRisk2 = new Location.BuildingLocation(HazardType.FLOOD + "-RISK-2", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, true, b);
-        var floodRisk1 = new Location.BuildingLocation(HazardType.FLOOD + "-RISK-1", Action.Discard1JerseyToGain1CertificateAnd2Dollars.class, false, floodRisk2);
+        var floodRisk1 = new Location.BuildingLocation(HazardType.FLOOD + "-RISK-1",
+                edition == GWT.Edition.FIRST ? Action.Discard1JerseyToGain1CertificateAnd2Dollars.class
+                        : Action.Discard1CattleCardToGain1Certificate.class, false, floodRisk2);
         var flood4 = new Location.HazardLocation(HazardType.FLOOD, 4, floodRisk1);
         var flood3 = new Location.HazardLocation(HazardType.FLOOD, 3, flood4);
         var flood2 = new Location.HazardLocation(HazardType.FLOOD, 2, flood3);
@@ -107,7 +118,8 @@ public class Trail {
         var a = new Location.BuildingLocation("A", false, a1, flood1);
 
         neutralBuildingLocations = List.of(a, b, c, d, e, f, g);
-        buildingLocations = Stream.of(a, a1, a2, a3, floodRisk1, floodRisk2, b, b1, b2, b3, droughtRisk1, c, c11, c12, c2, d, e, e1, e2, indianTradeRisk1, indianTradeRisk2, rockfallRisk1, rockfallRisk2, f, f1, f2, g, g1, g2)
+        buildingLocations = Stream.of(a, a1, a2, a3, floodRisk1, floodRisk2, b, b1, b2, b3, droughtRisk1, c, c11, c12, c2, d, d1, e, e1, e2, indianTradeRisk1, indianTradeRisk2, rockfallRisk1, rockfallRisk2, f, f1, f2, g, g1, g2)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toMap(Location::getName, Function.identity()));
         hazardLocations = Stream.of(flood1, flood2, flood3, flood4, drought1, drought2, drought3, drought4, rockfall1, rockfall2, rockfall3, rockfall4)
                 .collect(Collectors.groupingBy(Location.HazardLocation::getType));
@@ -115,8 +127,8 @@ public class Trail {
         start = new Location.Start(a);
     }
 
-    public Trail(boolean beginner, @NonNull Random random) {
-        this();
+    public Trail(GWT.Edition edition, boolean beginner, @NonNull Random random) {
+        this(edition);
 
         var neutralBuildings = new LinkedList<>(createNeutralBuildingSet());
         if (!beginner) {
@@ -152,8 +164,8 @@ public class Trail {
                 .build();
     }
 
-    static Trail deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
-        var trail = new Trail();
+    static Trail deserialize(GWT.Edition edition, Map<String, Player> playerMap, JsonObject jsonObject) {
+        var trail = new Trail(edition);
 
         jsonObject.getJsonObject("playerLocations").forEach((key, value) ->
                 trail.playerLocations.put(playerMap.get(key), trail.getLocation(((JsonString) value).getString())));
@@ -165,7 +177,7 @@ public class Trail {
             if (location != null && location != JsonValue.NULL) {
                 var building = location.asJsonObject().get("building");
                 if (building != null && building != JsonValue.NULL) {
-                    buildingLocation.placeBuilding(Building.deserialize(playerMap, building.asJsonObject()));
+                    buildingLocation.placeBuilding(Building.deserialize(edition, playerMap, building.asJsonObject()));
                 }
             }
         });
@@ -251,7 +263,14 @@ public class Trail {
     }
 
     public Location.TeepeeLocation getTeepeeLocation(int reward) {
-        return Optional.ofNullable(teepeeLocations.get(reward))
+        return teepeeLocations.values().stream()
+                .filter(teepeeLocation -> teepeeLocation.getReward() == reward)
+                .findAny()
+                .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION));
+    }
+
+    public Location.TeepeeLocation getTeepeeLocation(String name) {
+        return Optional.ofNullable(teepeeLocations.get(name))
                 .orElseThrow(() -> new GWTException(GWTError.NO_SUCH_LOCATION));
     }
 

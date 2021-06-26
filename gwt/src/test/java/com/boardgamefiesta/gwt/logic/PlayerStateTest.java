@@ -19,11 +19,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PlayerStateTest {
 
-    static final PlayerBuilding.BuildingSet BUILDING_SET = PlayerBuilding.BuildingSet.from(GWT.Options.builder()
-            .buildings(GWT.Options.Buildings.BEGINNER)
-            .build(), new Random(0));
-
     static final GWT.Options OPTIONS = GWT.Options.builder().build();
+    static final PlayerBuilding.BuildingSet BUILDING_SET = PlayerBuilding.BuildingSet.beginner(GWT.Edition.FIRST, OPTIONS);
 
     private Player player = new Player("A", PlayerColor.WHITE, Player.Type.HUMAN);
 

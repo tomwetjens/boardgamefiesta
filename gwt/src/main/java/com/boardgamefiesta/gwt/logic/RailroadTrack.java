@@ -174,10 +174,10 @@ public class RailroadTrack {
     @Builder.Default
     private final Map<Town, List<Player>> branchlets = new HashMap<>();
 
-    static RailroadTrack initial(@NonNull Set<Player> players, @NonNull GWT.Options options, @NonNull Random random) {
+    static RailroadTrack initial(@NonNull GWT.Edition edition, @NonNull Set<Player> players, @NonNull GWT.Options options, @NonNull Random random) {
         var engines = players.stream().collect(Collectors.toMap(Function.identity(), player -> START));
 
-        var stationMastersPile = createStationMastersPile(options, random);
+        var stationMastersPile = createStationMastersPile(edition, options, random);
         var stationMasters = new HashMap<Station, StationMaster>();
 
         stationMasters.put(STATIONS.get(0), stationMastersPile.poll());
@@ -208,10 +208,15 @@ public class RailroadTrack {
                 new HashMap<>());
     }
 
-    private static Queue<StationMaster> createStationMastersPile(@NonNull GWT.Options options, Random random) {
-        var stationMasters = options.isRailsToTheNorth() ? new LinkedList<>(StationMaster.RAILS_TO_THE_NORTH)
-                : options.isStationMasterPromos() ? new LinkedList<>(StationMaster.WITH_PROMOS)
-                : new LinkedList<>(StationMaster.ORIGINAL);
+    private static Queue<StationMaster> createStationMastersPile(GWT.Edition edition, @NonNull GWT.Options options, Random random) {
+        var stationMasters = new LinkedList<>(StationMaster.ORIGINAL);
+
+        if (options.isRailsToTheNorth() || edition == GWT.Edition.SECOND) {
+            stationMasters.addAll(StationMaster.RTTN_AND_2ND_EDITION);
+        } else if (options.isStationMasterPromos()) {
+            stationMasters.addAll(StationMaster.PROMOS);
+        }
+
         Collections.shuffle(stationMasters, random);
         return stationMasters;
     }
@@ -615,9 +620,12 @@ public class RailroadTrack {
         switch (city) {
             case COLORADO_SPRINGS:
             case ALBUQUERQUE:
+                if (game.getEdition() == GWT.Edition.SECOND && hasMadeDelivery(player, City.WICHITA)) {
+                    immediateActions = ImmediateActions.of(PossibleAction.mandatory(Action.GainExchangeToken.class));
+                }
                 if (hasMadeDelivery(player, City.SANTA_FE) && !game.getObjectiveCards().isEmpty()) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.SANTA_FE.name(), city.name()));
-                    return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
             case SANTA_FE:
@@ -641,7 +649,10 @@ public class RailroadTrack {
             case WICHITA:
                 if (hasMadeDelivery(player, City.TOPEKA) && !game.getObjectiveCards().isEmpty()) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.TOPEKA.name(), city.name()));
-                    return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                    immediateActions = ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                if (game.getEdition() == GWT.Edition.SECOND && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
                 }
                 break;
             case COLUMBIA:
@@ -707,8 +718,8 @@ public class RailroadTrack {
         return (int) SIGNALS.stream().takeWhile(signal -> signal < number).count();
     }
 
-    Score score(Player player, PlayerState playerState) {
-        return new Score(Map.of(ScoreCategory.CITIES, scoreDeliveries(player, playerState),
+    Score score(GWT game, Player player, PlayerState playerState) {
+        return new Score(Map.of(ScoreCategory.CITIES, scoreDeliveries(game, player, playerState),
                 ScoreCategory.STATIONS, scoreStations(player)));
     }
 
@@ -720,7 +731,7 @@ public class RailroadTrack {
                 .sum();
     }
 
-    private int scoreDeliveries(Player player, PlayerState playerState) {
+    private int scoreDeliveries(GWT game, Player player, PlayerState playerState) {
         int result = 0;
 
         result -= numberOfDeliveries(player, City.KANSAS_CITY) * (isRailsToTheNorth() ? 8 : 6);
@@ -729,7 +740,7 @@ public class RailroadTrack {
             result -= 3;
         }
 
-        if (hasMadeDelivery(player, City.WICHITA) && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
+        if (game.getEdition() != GWT.Edition.SECOND && hasMadeDelivery(player, City.WICHITA) && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
             result -= 1;
         }
 

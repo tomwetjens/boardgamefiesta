@@ -277,11 +277,11 @@ public abstract class Location {
     public static class TeepeeLocation extends Location {
 
         @Getter
-        private final int reward;
+        private final int reward; // 0 == exchange token
         private Teepee teepee;
 
-        TeepeeLocation(int reward, Location... next) {
-            super("TEEPEE-" + reward, next);
+        TeepeeLocation(String name, int reward, Location... next) {
+            super(name, next);
             this.reward = reward;
         }
 
@@ -296,6 +296,10 @@ public abstract class Location {
         @Override
         public boolean isEmpty() {
             return teepee == null;
+        }
+
+        public boolean isExchangeToken() {
+            return reward == 0;
         }
 
         public Optional<Teepee> getTeepee() {

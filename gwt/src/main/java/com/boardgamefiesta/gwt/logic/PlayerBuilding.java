@@ -3,7 +3,9 @@ package com.boardgamefiesta.gwt.logic;
 import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,7 +26,7 @@ public abstract class PlayerBuilding extends Building {
         this.points = points;
     }
 
-    static PlayerBuilding forName(String name, Player player) {
+    static PlayerBuilding forName(GWT.Edition edition, String name, Player player) {
         switch (name) {
             case "1a":
                 return new PlayerBuilding.Building1A(player);
@@ -67,7 +69,7 @@ public abstract class PlayerBuilding extends Building {
             case "10b":
                 return new PlayerBuilding.Building10B(player);
             case "11a":
-                return new PlayerBuilding.Building11A(player);
+                return edition == GWT.Edition.SECOND ? new PlayerBuilding.Building11A2ndEdition(player) : new PlayerBuilding.Building11A(player);
             case "11b":
                 return new PlayerBuilding.Building11B(player);
             case "12a":
@@ -75,9 +77,9 @@ public abstract class PlayerBuilding extends Building {
             case "12b":
                 return new PlayerBuilding.Building12B(player);
             case "13a":
-                return new PlayerBuilding.Building13A(player);
+                return edition == GWT.Edition.SECOND ? new PlayerBuilding.Building13A2ndEdition(player) : new PlayerBuilding.Building13A(player);
             case "13b":
-                return new PlayerBuilding.Building13B(player);
+                return edition == GWT.Edition.SECOND ? new PlayerBuilding.Building13B2ndEdition(player) : new PlayerBuilding.Building13B(player);
             default:
                 throw new IllegalArgumentException("Unknown player building: " + name);
         }
@@ -104,51 +106,52 @@ public abstract class PlayerBuilding extends Building {
         public static final Set<Integer> ALL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
         public static final Set<Integer> ORIGINAL = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
+        @NonNull GWT.Edition edition;
         @NonNull Set<String> names;
 
-        public static BuildingSet beginner(@NonNull GWT.Options options) {
-            return new BuildingSet(buildingsForOptions(options).stream()
+        public static BuildingSet beginner(@NonNull GWT.Edition edition, @NonNull GWT.Options options) {
+            return new BuildingSet(edition, buildingsForOptions(edition, options).stream()
                     .map(number -> number + "a")
                     .collect(Collectors.toSet()));
         }
 
-        public static BuildingSet random(@NonNull GWT.Options options, @NonNull Random random) {
-            return new BuildingSet(buildingsForOptions(options).stream()
+        public static BuildingSet random(@NonNull GWT.Edition edition, @NonNull GWT.Options options, @NonNull Random random) {
+            return new BuildingSet(edition, buildingsForOptions(edition, options).stream()
                     .map(number -> number + (random.nextBoolean() ? "a" : "b"))
                     .collect(Collectors.toSet()));
         }
 
-        private static HashSet<Integer> buildingsForOptions(GWT.@NonNull Options options) {
+        private static HashSet<Integer> buildingsForOptions(GWT.Edition edition, GWT.Options options) {
             var numbers = new HashSet<>(ORIGINAL);
 
             if (options.isRailsToTheNorth()) {
                 numbers.add(11);
                 numbers.add(12);
-            } else if (options.isBuilding11()) {
+            } else if (edition == GWT.Edition.SECOND || options.isBuilding11()) {
                 numbers.add(11);
             }
 
-            if (options.isBuilding13()) {
+            if (edition == GWT.Edition.SECOND || options.isBuilding13()) {
                 numbers.add(13);
             }
             return numbers;
         }
 
-        public static BuildingSet from(GWT.Options options, @NonNull Random random) {
+        public static BuildingSet from(@NonNull GWT.Edition edition, @NonNull GWT.Options options, @NonNull Random random) {
             return options.getBuildings() == GWT.Options.Buildings.BEGINNER
-                    ? beginner(options)
-                    : random(options, random);
+                    ? beginner(edition, options)
+                    : random(edition, options, random);
         }
 
         public Set<PlayerBuilding> createBuildings(@NonNull Player player) {
             return names.stream()
-                    .map(name -> PlayerBuilding.forName(name, player))
+                    .map(name -> PlayerBuilding.forName(edition, name, player))
                     .collect(Collectors.toSet());
         }
 
         public Set<PlayerBuilding> createSide(Side side, Player player) {
             return names.stream()
-                    .map(name -> PlayerBuilding.forName(name.replace("a", side.name().toLowerCase()), player))
+                    .map(name -> PlayerBuilding.forName(edition, name.replace("a", side.name().toLowerCase()), player))
                     .collect(Collectors.toSet());
         }
     }
@@ -212,7 +215,11 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(GWT game) {
-            return PossibleAction.any(Action.HireWorkerMinus1.class, Action.MoveEngineForward.class);
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                return PossibleAction.any(Action.DiscardCattleCardToGain7Dollars.class, Action.SingleOrDoubleAuxiliaryAction.class);
+            } else {
+                return PossibleAction.any(Action.HireWorkerMinus1.class, Action.MoveEngineForward.class);
+            }
         }
     }
 
@@ -224,7 +231,11 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(GWT game) {
-            return PossibleAction.any(Action.Discard1HolsteinToGain10Dollars.class, Action.SingleOrDoubleAuxiliaryAction.class);
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                return PossibleAction.any(Action.HireWorkerMinus1.class, Action.MoveEngineForward.class);
+            } else {
+                return PossibleAction.any(Action.Discard1HolsteinToGain10Dollars.class, Action.SingleOrDoubleAuxiliaryAction.class);
+            }
         }
     }
 
@@ -298,7 +309,11 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(GWT game) {
-            return PossibleAction.any(Action.Discard1JerseyToMoveEngine1Forward.class, Action.Discard1DutchBeltToGain3Dollars.class);
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                return PossibleAction.any(Action.Discard1JerseyToGain2Dollars.class, Action.Discard1DutchBeltToMoveEngine2Forward.class);
+            } else {
+                return PossibleAction.any(Action.Discard1JerseyToMoveEngine1Forward.class, Action.Discard1DutchBeltToGain3Dollars.class);
+            }
         }
     }
 
@@ -375,7 +390,11 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(GWT game) {
-            return PossibleAction.optional(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class);
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                return PossibleAction.optional(Action.UseAdjacentBuilding.class);
+            } else {
+                return PossibleAction.optional(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class);
+            }
         }
     }
 
@@ -399,7 +418,11 @@ public abstract class PlayerBuilding extends Building {
 
         @Override
         PossibleAction getPossibleAction(GWT game) {
-            return PossibleAction.optional(Action.UseAdjacentBuilding.class);
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                return PossibleAction.optional(Action.Discard1CattleCardToGain6DollarsAndAdd1ObjectiveCardToHand.class);
+            } else {
+                return PossibleAction.optional(Action.UseAdjacentBuilding.class);
+            }
         }
     }
 
@@ -436,6 +459,18 @@ public abstract class PlayerBuilding extends Building {
         @Override
         PossibleAction getPossibleAction(GWT game) {
             return PossibleAction.optional(Action.RemoveHazardFor2Dollars.class);
+        }
+    }
+
+    static class Building11A2ndEdition extends PlayerBuilding {
+
+        Building11A2ndEdition(Player player) {
+            super(Name.of(11, Side.A), player, Hand.NONE, 12, 20);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(GWT game) {
+            return PossibleAction.repeat(0, 2, Action.RemoveHazardFor2Dollars.class);
         }
     }
 
@@ -491,6 +526,20 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
+    static class Building13A2ndEdition extends PlayerBuilding {
+
+        Building13A2ndEdition(Player player) {
+            super(Name.of(13, Side.A), player, Hand.NONE, 4, 5);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(GWT game) {
+            return PossibleAction.any(
+                    Action.Gain1DollarPerCraftsman.class,
+                    Action.Move1Forward.class);
+        }
+    }
+
     static class Building13B extends PlayerBuilding {
 
         Building13B(Player player) {
@@ -502,6 +551,20 @@ public abstract class PlayerBuilding extends Building {
             return PossibleAction.any(
                     Action.Gain2DollarsPerStation.class,
                     Action.SingleOrDoubleAuxiliaryAction.class);
+        }
+    }
+
+    static class Building13B2ndEdition extends PlayerBuilding {
+
+        Building13B2ndEdition(Player player) {
+            super(Name.of(13, Side.B), player, Hand.NONE, 3, 4);
+        }
+
+        @Override
+        PossibleAction getPossibleAction(GWT game) {
+            return PossibleAction.any(
+                    Action.Gain2DollarsPerStation.class,
+                    Action.GainExchangeToken.class);
         }
     }
 }

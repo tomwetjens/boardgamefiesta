@@ -5,7 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import javax.json.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -19,10 +22,12 @@ public enum ActionType {
     DISCARD_1_BLACK_ANGUS_TO_GAIN_2_DOLLARS(Action.Discard1BlackAngusToGain2Dollars.class),
     DISCARD_CARD(Action.DiscardCard.class),
     DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand.class),
+    DISCARD_1_CATTLE_CARD_TO_GAIN_6_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Discard1CattleCardToGain6DollarsAndAdd1ObjectiveCardToHand.class),
     ADD_1_OBJECTIVE_CARD_TO_HAND(Action.Add1ObjectiveCardToHand.class),
     DISCARD_1_CATTLE_CARD_TO_GAIN_1_CERTIFICATE(Action.Discard1CattleCardToGain1Certificate.class),
     DISCARD_1_DUTCH_BELT_TO_GAIN_2_DOLLARS(Action.Discard1DutchBeltToGain2Dollars.class),
     DISCARD_1_DUTCH_BELT_TO_GAIN_3_DOLLARS(Action.Discard1DutchBeltToGain3Dollars.class),
+    DISCARD_1_DUTCH_BELT_TO_MOVE_ENGINE_2_FORWARD(Action.Discard1DutchBeltToMoveEngine2Forward.class),
     DISCARD_1_GUERNSEY(Action.Discard1Guernsey.class),
     DISCARD_1_HOLSTEIN_TO_GAIN_10_DOLLARS(Action.Discard1HolsteinToGain10Dollars.class),
     DISCARD_1_JERSEY_FOR_SINGLE_AUXILIARY_ACTION(Action.Discard1JerseyForSingleAuxiliaryAction.class),
@@ -66,9 +71,12 @@ public enum ActionType {
     MOVE_4_FORWARD(Action.Move4Forward.class),
     MOVE_5_FORWARD(Action.Move5Forward.class),
     MOVE_ENGINE_1_FORWARD(Action.MoveEngine1Forward.class),
+    MOVE_ENGINE_2_FORWARD(Action.MoveEngine2Forward.class),
     MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS(Action.MoveEngine1BackwardsToGain3Dollars.class),
     MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD(Action.MoveEngine1BackwardsToRemove1Card.class),
+    MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD_AND_GAIN_1_DOLLAR(Action.MoveEngine1BackwardsToRemove1CardAndGain1Dollar.class),
     MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS(Action.MoveEngine2BackwardsToRemove2Cards.class),
+    MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS_AND_GAIN_2_DOLLARS(Action.MoveEngine2BackwardsToRemove2CardsAndGain2Dollars.class),
     MOVE_ENGINE_2_OR_3_FORWARD(Action.MoveEngine2Or3Forward.class),
     MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class),
     MOVE_ENGINE_AT_MOST_2_FORWARD(Action.MoveEngineAtMost2Forward.class),
@@ -85,6 +93,7 @@ public enum ActionType {
     PLACE_CHEAP_BUILDING(Action.PlaceCheapBuilding.class),
     PLAY_OBJECTIVE_CARD(Action.PlayObjectiveCard.class),
     REMOVE_CARD(Action.RemoveCard.class),
+    REMOVE_CARD_AND_GAIN_1_DOLLAR(Action.RemoveCardAndGain1Dollar.class),
     REMOVE_HAZARD(Action.RemoveHazard.class),
     REMOVE_HAZARD_FOR_2_DOLLARS(Action.RemoveHazardFor2Dollars.class),
     REMOVE_HAZARD_FOR_5_DOLLARS(Action.RemoveHazardFor5Dollars.class),
@@ -104,6 +113,7 @@ public enum ActionType {
     DOWNGRADE_STATION(Action.DowngradeStation.class),
     PLACE_BRANCHLET(Action.PlaceBranchlet.class),
     DISCARD_CATTLE_CARD_TO_PLACE_BRANCHLET(Action.DiscardCattleCardToPlaceBranchlet.class),
+    DISCARD_CATTLE_CARD_TO_GAIN_7_DOLLARS(Action.DiscardCattleCardToGain7Dollars.class),
     TAKE_BONUS_STATION_MASTER(Action.TakeBonusStationMaster.class),
     USE_EXCHANGE_TOKEN(Action.UseExchangeToken.class),
     GAIN_EXCHANGE_TOKEN(Action.GainExchangeToken.class),
@@ -148,16 +158,22 @@ public enum ActionType {
                 return new Action.DiscardCard(findCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.CARD)));
             case DISCARD_1_CATTLE_CARD_TO_GAIN_3_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND:
                 return new Action.Discard1CattleCardToGain3DollarsAndAdd1ObjectiveCardToHand(getEnum(jsonObject, JsonProperties.CATTLE_TYPE, CattleType.class));
+            case DISCARD_1_CATTLE_CARD_TO_GAIN_6_DOLLARS_AND_ADD_1_OBJECTIVE_CARD_TO_HAND:
+                return new Action.Discard1CattleCardToGain6DollarsAndAdd1ObjectiveCardToHand(getEnum(jsonObject, JsonProperties.CATTLE_TYPE, CattleType.class));
             case ADD_1_OBJECTIVE_CARD_TO_HAND:
                 return jsonObject.containsKey(JsonProperties.OBJECTIVE_CARD)
                         ? new Action.Add1ObjectiveCardToHand(findObjectiveCard(game, getJsonObject(jsonObject, JsonProperties.OBJECTIVE_CARD)))
                         : new Action.Add1ObjectiveCardToHand();
             case DISCARD_1_CATTLE_CARD_TO_GAIN_1_CERTIFICATE:
                 return new Action.Discard1CattleCardToGain1Certificate(getEnum(jsonObject, JsonProperties.CATTLE_TYPE, CattleType.class));
+            case DISCARD_CATTLE_CARD_TO_GAIN_7_DOLLARS:
+                return new Action.DiscardCattleCardToGain7Dollars(getEnum(jsonObject, JsonProperties.CATTLE_TYPE, CattleType.class));
             case DISCARD_1_DUTCH_BELT_TO_GAIN_2_DOLLARS:
                 return new Action.Discard1DutchBeltToGain2Dollars();
             case DISCARD_1_DUTCH_BELT_TO_GAIN_3_DOLLARS:
                 return new Action.Discard1DutchBeltToGain3Dollars();
+            case DISCARD_1_DUTCH_BELT_TO_MOVE_ENGINE_2_FORWARD:
+                return new Action.Discard1DutchBeltToMoveEngine2Forward();
             case DISCARD_1_GUERNSEY:
                 return new Action.Discard1Guernsey();
             case DISCARD_1_HOLSTEIN_TO_GAIN_10_DOLLARS:
@@ -244,12 +260,18 @@ public enum ActionType {
                 return new Action.Move5Forward(getSteps(jsonObject, game));
             case MOVE_ENGINE_1_FORWARD:
                 return new Action.MoveEngine1Forward(game.getRailroadTrack().getSpace(getString(jsonObject, JsonProperties.TO)));
+            case MOVE_ENGINE_2_FORWARD:
+                return new Action.MoveEngine2Forward(game.getRailroadTrack().getSpace(getString(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_1_BACKWARDS_TO_GAIN_3_DOLLARS:
                 return new Action.MoveEngine1BackwardsToGain3Dollars(game.getRailroadTrack().getSpace(getString(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD:
                 return new Action.MoveEngine1BackwardsToRemove1Card(game.getRailroadTrack().getSpace(getString(jsonObject, JsonProperties.TO)));
+            case MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD_AND_GAIN_1_DOLLAR:
+                return new Action.MoveEngine1BackwardsToRemove1CardAndGain1Dollar(game.getRailroadTrack().getSpace(getString(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS:
                 return new Action.MoveEngine2BackwardsToRemove2Cards(game.getRailroadTrack().getSpace(getString(jsonObject, JsonProperties.TO)));
+            case MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS_AND_GAIN_2_DOLLARS:
+                return new Action.MoveEngine2BackwardsToRemove2CardsAndGain2Dollars(game.getRailroadTrack().getSpace(getString(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_2_OR_3_FORWARD:
                 return new Action.MoveEngine2Or3Forward(game.getRailroadTrack().getSpace(getString(jsonObject, JsonProperties.TO)));
             case MOVE_ENGINE_AT_LEAST_1_BACKWARDS_AND_GAIN_3_DOLLARS:
@@ -282,6 +304,8 @@ public enum ActionType {
                 return new Action.PlayObjectiveCard(findObjectiveCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.OBJECTIVE_CARD)));
             case REMOVE_CARD:
                 return new Action.RemoveCard(findCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.CARD)));
+            case REMOVE_CARD_AND_GAIN_1_DOLLAR:
+                return new Action.RemoveCardAndGain1Dollar(findCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.CARD)));
             case REMOVE_HAZARD:
                 return new Action.RemoveHazard((Location.HazardLocation) game.getTrail().getLocation(getString(jsonObject, JsonProperties.LOCATION)));
             case REMOVE_HAZARD_FOR_2_DOLLARS:
@@ -299,7 +323,10 @@ public enum ActionType {
                         ? new Action.TakeObjectiveCard(findObjectiveCard(game, getJsonObject(jsonObject, JsonProperties.OBJECTIVE_CARD)))
                         : new Action.TakeObjectiveCard();
             case TRADE_WITH_TRIBES:
-                return new Action.TradeWithTribes(getInt(jsonObject, JsonProperties.REWARD));
+                return jsonObject.containsKey(JsonProperties.LOCATION)
+                        ? new Action.TradeWithTribes(game.getTrail().getTeepeeLocation(getString(jsonObject, JsonProperties.LOCATION)))
+                        // For backwards compatiblity with older frontend versions, lookup the teepee location by reward value:
+                        : new Action.TradeWithTribes(game.getTrail().getTeepeeLocation(getInt(jsonObject, JsonProperties.REWARD)));
             case UPGRADE_ANY_STATION_BEHIND_ENGINE:
                 return new Action.UpgradeAnyStationBehindEngine(findStation(game, getInt(jsonObject, JsonProperties.STATION)));
             case UPGRADE_STATION:

@@ -18,12 +18,12 @@ public abstract class Building {
     @Getter
     private final Hand hand;
 
-    static Building deserialize(Map<String, Player> playerMap, JsonObject jsonObject) {
+    static Building deserialize(GWT.Edition edition, Map<String, Player> playerMap, JsonObject jsonObject) {
         var name = jsonObject.getString("name");
         if (name.length() == 1) {
             return NeutralBuilding.forName(name);
         } else {
-            return PlayerBuilding.forName(name, playerMap.get(jsonObject.getString("player")));
+            return PlayerBuilding.forName(edition, name, playerMap.get(jsonObject.getString("player")));
         }
     }
 

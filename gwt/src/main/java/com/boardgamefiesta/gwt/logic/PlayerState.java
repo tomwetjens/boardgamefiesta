@@ -151,7 +151,7 @@ public class PlayerState {
                 .build();
     }
 
-    static PlayerState deserialize(Player player, RailroadTrack railroadTrack, Trail trail, JsonObject jsonObject) {
+    static PlayerState deserialize(GWT.Edition edition, Player player, RailroadTrack railroadTrack, Trail trail, JsonObject jsonObject) {
         return new PlayerState(player,
                 jsonObject.getJsonArray("drawStack").stream()
                         .map(Card::deserialize)
@@ -165,7 +165,7 @@ public class PlayerState {
                 JsonDeserializer.forObject(jsonObject.getJsonObject("workers")).<Worker>asIntegerMap(Worker::valueOf),
                 jsonObject.getJsonArray("buildings")
                         .getValuesAs(JsonString::getString).stream()
-                        .map(name -> PlayerBuilding.forName(name, player))
+                        .map(name -> PlayerBuilding.forName(edition, name, player))
                         .collect(Collectors.toSet()),
                 JsonDeserializer.forObject(jsonObject.getJsonObject("unlocked")).<Unlockable>asIntegerMap(Unlockable::valueOf),
                 jsonObject.getJsonArray("objectives").stream().map(ObjectiveCard::deserialize).collect(Collectors.toSet()),
@@ -528,7 +528,7 @@ public class PlayerState {
         return actions;
     }
 
-    Set<PossibleAction> unlockedSingleOrDoubleAuxiliaryActions(boolean railsToTheNorth) {
+    Set<PossibleAction> unlockedSingleOrDoubleAuxiliaryActions(GWT game) {
         Set<PossibleAction> actions = new HashSet<>();
 
         if (hasUnlocked(Unlockable.AUX_GAIN_DOLLAR)) {
@@ -559,13 +559,21 @@ public class PlayerState {
         }
 
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
-            actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1Card.class));
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1CardAndGain1Dollar.class));
+            } else {
+                actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1Card.class));
+            }
         }
         if (hasAllUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
-            actions.add(PossibleAction.optional(Action.MoveEngine2BackwardsToRemove2Cards.class));
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                actions.add(PossibleAction.optional(Action.MoveEngine2BackwardsToRemove2CardsAndGain2Dollars.class));
+            } else {
+                actions.add(PossibleAction.optional(Action.MoveEngine2BackwardsToRemove2Cards.class));
+            }
         }
 
-        if (railsToTheNorth) {
+        if (game.isRailsToTheNorth()) {
             if (hasAllUnlocked(Unlockable.AUX_DISCARD_CATTLE_CARD_TO_PLACE_BRANCHLET)) {
                 actions.add(PossibleAction.repeat(0, 2, Action.DiscardCattleCardToPlaceBranchlet.class));
             } else {
