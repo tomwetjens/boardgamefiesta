@@ -97,7 +97,7 @@ public class StateView {
 
         jobMarket = new JobMarketView(state.getJobMarket());
 
-        cattleMarket = new CattleMarketView(state.getCattleMarket());
+        cattleMarket = new CattleMarketView(state.getMode(), state.getCattleMarket());
 
         objectiveCards = new ObjectiveCardsView(state.getObjectiveCards());
 

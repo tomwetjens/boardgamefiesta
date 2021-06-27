@@ -117,7 +117,7 @@ public class PlayerStateView {
                 .sorted()
                 .collect(Collectors.toList());
 
-        teepees = playerState.getTeepees();
+        teepees = new ArrayList<>(playerState.getTeepees());
         Collections.sort(teepees);
 
         var objectivesScores = playerState.scoreObjectives(state);

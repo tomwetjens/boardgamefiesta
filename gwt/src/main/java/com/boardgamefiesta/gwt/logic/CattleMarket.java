@@ -111,6 +111,10 @@ public class CattleMarket {
         return drawStack.size();
     }
 
+    public Set<Card.CattleCard> getCardsInDrawStack() {
+        return Collections.unmodifiableSet(new HashSet<>(drawStack));
+    }
+
     @Value
     public static class Cost {
         int dollars;
