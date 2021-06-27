@@ -37,7 +37,7 @@ public class PlayerStateView {
 
     Map<Unlockable, Integer> unlocked;
     List<String> buildings;
-    Set<StationMaster> stationMasters;
+    List<StationMaster> stationMasters;
     List<HazardView> hazards;
     List<Teepee> teepees;
     List<ObjectiveView> objectives;
@@ -98,8 +98,8 @@ public class PlayerStateView {
                         .collect(Collectors.toList());
             }
 
-            // Randomize so player cannot know which cards are coming
-            Collections.shuffle(drawStack);
+            // Sort so player cannot know which cards are coming
+            Collections.sort(drawStack);
         }
 
         unlocked = playerState.getUnlocked();
@@ -109,14 +109,16 @@ public class PlayerStateView {
                 .map(Building::getName)
                 .collect(Collectors.toList());
 
-        // TODO sorting
-        stationMasters = playerState.getStationMasters();
+        stationMasters = new ArrayList<>(playerState.getStationMasters());
+        Collections.sort(stationMasters);
 
-        // TODO sorting
-        hazards = playerState.getHazards().stream().map(HazardView::new).collect(Collectors.toList());
+        hazards = playerState.getHazards().stream()
+                .map(HazardView::new)
+                .sorted()
+                .collect(Collectors.toList());
 
-        // TODO sorting
         teepees = playerState.getTeepees();
+        Collections.sort(teepees);
 
         var objectivesScores = playerState.scoreObjectives(state);
         objectives = (state.isEnded() || state.getMode() == GWT.Options.Mode.STRATEGIC

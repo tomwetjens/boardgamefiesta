@@ -6,7 +6,7 @@ import com.boardgamefiesta.gwt.logic.HazardType;
 import lombok.Value;
 
 @Value
-public class HazardView {
+public class HazardView implements Comparable<HazardView> {
 
     Hand hands;
     int points;
@@ -18,4 +18,15 @@ public class HazardView {
         type = hazard.getType();
     }
 
+    @Override
+    public int compareTo(HazardView o) {
+        var result = type.compareTo(o.type);
+        if (result == 0) {
+            result = Integer.compare(points, o.points);
+        }
+        if (result == 0) {
+            result = hands.compareTo(o.hands);
+        }
+        return result;
+    }
 }
