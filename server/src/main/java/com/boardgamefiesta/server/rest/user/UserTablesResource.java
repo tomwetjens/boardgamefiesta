@@ -48,15 +48,16 @@ public class UserTablesResource {
     CurrentUser currentUser;
 
     @GET
-    public List<TableView> getTables(@PathParam("userId") String userId) {
+    public List<TableView> getTables(@PathParam("userId") String userIdStr) {
         var userMap = new HashMap<User.Id, User>();
         var ratingMap = new HashMap<User.Id, Rating>();
-        var currentUserId = currentUser.getOptionalId();
+        var currentUserId = currentUser.getId();
+        var userId = User.Id.of(userIdStr);
 
-        return tables.findAll(User.Id.of(userId), 10)
-                .filter(table -> FeatureToggle.Id.forGameId(table.getGame().getId())
+        return tables.findAll(userId, 10)
+                .filter(table -> userId.equals(currentUserId) || FeatureToggle.Id.forGameId(table.getGame().getId())
                         .map(featureToggleId -> featureToggles.findById(featureToggleId)
-                                .map(featureToggle -> currentUserId.map(featureToggle::isEnabled).orElse(false))
+                                .map(featureToggle -> featureToggle.isEnabled(currentUserId))
                                 .orElse(false))
                         .orElse(true))
                 .map(table -> new TableView(table, getUserMap(table, userMap), getRatingMap(table, ratingMap), currentUser.getId()))

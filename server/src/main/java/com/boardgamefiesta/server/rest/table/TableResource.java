@@ -74,9 +74,7 @@ public class TableResource {
     public TableView create(@NotNull @Valid CreateTableRequest request) {
         var gameId = Game.Id.of(request.getGame());
 
-        FeatureToggle.Id.forGameId(gameId)
-                .map(featureToggles::get)
-                .ifPresent(featureToggle -> featureToggle.throwIfNotContains(currentUser.getId()));
+        checkFeatureToggle(gameId);
 
         var game = games.get(gameId);
 
@@ -91,13 +89,26 @@ public class TableResource {
         return new TableView(table, getUserMap(table), getRatingMap(table), currentUser.getId());
     }
 
+    private void checkFeatureToggle(Game.Id gameId) {
+        FeatureToggle.Id.forGameId(gameId)
+                .map(featureToggles::get)
+                .ifPresent(featureToggle -> featureToggle.throwIfNotContains(currentUser.getId()));
+    }
+
     @GET
     @Path("/{id}")
     public TableView get(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id))
                 .orElseThrow(NotFoundException::new);
 
-        return new TableView(table, getUserMap(table), getRatingMap(table), currentUser.getId());
+        var currentUserId = currentUser.getId();
+
+        if (determineViewingPlayer(table).isEmpty()) {
+            // Not a player in this table, check if allowed to see it
+            checkFeatureToggle(table.getGame().getId());
+        }
+
+        return new TableView(table, getUserMap(table), getRatingMap(table), currentUserId);
     }
 
     @POST
