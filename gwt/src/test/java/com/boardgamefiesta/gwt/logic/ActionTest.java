@@ -332,13 +332,13 @@ class ActionTest {
             var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
 
             game.perform(new Action.PlayObjectiveCard(objectiveCard), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class);
 
             game.perform(new Action.Move3ForwardWithoutFees(List.of(game.getTrail().getLocation("A"))), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
 
             game.perform(new Action.Move(List.of(game.getTrail().getLocation("B"))), new Random(0));
             assertThat(game.possibleActions()).isNotEmpty();
@@ -356,7 +356,7 @@ class ActionTest {
             var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
 
             game.perform(new Action.Move(List.of(a1)), new Random(0));
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(
@@ -366,10 +366,10 @@ class ActionTest {
                     Action.DrawCard.class);
 
             game.perform(new Action.PlayObjectiveCard(objectiveCard), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class);
 
             game.perform(new Action.Move3ForwardWithoutFees(List.of(a2)), new Random(0));
-            assertThat(game.possibleActions()).containsExactly(Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).isEmpty();
         }
 
         @Test
@@ -379,17 +379,16 @@ class ActionTest {
             var objectiveCard = new ObjectiveCard(ObjectiveCard.Type.MOVE_345);
             game.currentPlayerState().addCardToHand(objectiveCard);
 
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.PlayObjectiveCard.class, Action.Move.class);
 
             game.perform(new Action.Move(List.of(game.getTrail().getLocation("G"))), new Random(0));
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(
                     Action.PlayObjectiveCard.class,
                     Action.MoveEngineForward.class,
-                    Action.SingleOrDoubleAuxiliaryAction.class,
-                    Action.UseExchangeToken.class);
+                    Action.SingleOrDoubleAuxiliaryAction.class);
 
             game.perform(new Action.PlayObjectiveCard(objectiveCard), new Random(0));
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move3ForwardWithoutFees.class);
 
             assertThatThrownBy(() -> game.perform(new Action.Move3ForwardWithoutFees(List.of(game.getTrail().getKansasCity())), new Random(0)))
                     .isInstanceOf(GWTException.class)

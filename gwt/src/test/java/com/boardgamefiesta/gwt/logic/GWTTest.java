@@ -61,7 +61,7 @@ class GWTTest {
             // Player buildings should not be randomized
             assertThat(game.currentPlayerState().getBuildings()).extracting(PlayerBuilding::getClass).containsExactlyInAnyOrder(A_BUILDINGS);
 
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
         }
 
         @Test
@@ -71,7 +71,7 @@ class GWTTest {
             assertThat(game.getStatus()).isEqualTo(GWT.Status.STARTED);
             assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
             assertThat(game.getCurrentPlayer()).isEqualTo(playerA);
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
 
             // Neutral buildings should be randomized
             assertThat(Arrays.asList(
@@ -258,7 +258,7 @@ class GWTTest {
             game.perform(new Action.PlaceBid(new Bid(0, 0)), new Random(0));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerA);
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
         }
 
         @Test
@@ -288,7 +288,7 @@ class GWTTest {
             game.perform(new Action.PlaceBid(new Bid(2, 0)), new Random(0));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerC);
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class, Action.UseExchangeToken.class);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
         }
     }
 }
