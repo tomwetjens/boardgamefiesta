@@ -392,17 +392,22 @@ public class Istanbul implements State {
     private Set<Class<? extends Action>> anyTimeActions() {
         if (!actionQueue.canPerform(Action.DiscardBonusCard.class) // Not during use of the Governor
                 && !actionQueue.canPerform(Action.TakeBonusCardCaravansary.class)) { // Not during use of Caravansary
+
+            var result = new HashSet<Class<? extends Action>>();
+
             if (currentPlayerState().hasBonusCard(BonusCard.TAKE_5_LIRA)) {
-                return Collections.singleton(Action.BonusCardTake5Lira.class);
+                result.add(Action.BonusCardTake5Lira.class);
             }
             if (status != Status.PLAY_LEFTOVER_BONUS_CARDS) {
                 if (currentPlayerState().hasBonusCard(BonusCard.FAMILY_MEMBER_TO_POLICE_STATION)) {
-                    return Collections.singleton(Action.PlaceFamilyMemberOnPoliceStation.class);
+                    result.add(Action.PlaceFamilyMemberOnPoliceStation.class);
                 }
                 if (isFirstPhase() && currentPlayerState().hasBonusCard(BonusCard.RETURN_1_ASSISTANT)) {
-                    return Collections.singleton(Action.BonusCardReturnAssistant.class);
+                    result.add(Action.BonusCardReturnAssistant.class);
                 }
             }
+
+            return result;
         }
         return Collections.emptySet();
     }
