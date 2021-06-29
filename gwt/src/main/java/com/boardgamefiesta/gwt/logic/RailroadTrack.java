@@ -211,8 +211,10 @@ public class RailroadTrack {
     private static Queue<StationMaster> createStationMastersPile(GWT.Edition edition, @NonNull GWT.Options options, Random random) {
         var stationMasters = new LinkedList<>(StationMaster.ORIGINAL);
 
-        if (options.isRailsToTheNorth() || edition == GWT.Edition.SECOND) {
-            stationMasters.addAll(StationMaster.RTTN_AND_2ND_EDITION);
+        if (options.isRailsToTheNorth()) {
+            stationMasters.addAll(StationMaster.RTTN);
+        } else if (edition == GWT.Edition.SECOND) {
+            stationMasters.addAll(StationMaster.SECOND_EDITION);
         } else if (options.isStationMasterPromos()) {
             stationMasters.addAll(StationMaster.PROMOS);
         }

@@ -36,7 +36,14 @@ public enum StationMaster {
             TWELVE_DOLLARS
     );
 
-    static final List<StationMaster> RTTN_AND_2ND_EDITION = List.of(
+    static final List<StationMaster> SECOND_EDITION = List.of(
+            TWO_PERM_CERTS,
+            TWELVE_DOLLARS,
+            PERM_CERT_POINTS_PER_2_STATIONS,
+            GAIN_2_CERTS_POINTS_PER_BUILDING
+    );
+
+    static final List<StationMaster> RTTN = List.of(
             TWO_PERM_CERTS,
             TWELVE_DOLLARS,
             PERM_CERT_POINTS_PER_2_STATIONS,
