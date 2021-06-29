@@ -186,6 +186,8 @@ public class Garth {
         } else if (possibleActions.contains(Action.TakeBonusStationMaster.class)) {
             var bonusStationMasters = new ArrayList<>(game.getRailroadTrack().getBonusStationMasters());
             game.perform(new Action.TakeBonusStationMaster(bonusStationMasters.get(random.nextInt(bonusStationMasters.size()))), random);
+        } else if (possibleActions.contains(Action.GainExchangeToken.class)) {
+            game.perform(new Action.GainExchangeToken(), random);
         } else {
             game.endTurn(player, random);
         }
