@@ -1653,7 +1653,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireActionEvent(GWTEvent.Type.DISCARD_1_DUTCH_BELT_TO_MOVE_ENGINE_2_FORWARD, Collections.emptyList());
 
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(MoveEngine2Forward.class)));
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.optional(MoveEngine2Forward.class)));
         }
     }
 
