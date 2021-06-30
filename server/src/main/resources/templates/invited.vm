@@ -2,13 +2,13 @@
 <head>
     <title>
         $translations.get('email.invited.subject', $translations.get(
-            'game.' + $event.gameId.id + '.name'), $dateTime.format($event.started))
+            'game.' + $event.gameId.id + '.name'), $host.username)
     </title>
 </head>
 <body>
 <p>$translations.get('email.salutation', $user.username)</p><br/>
 <p>$translations.get(
-    'email.invited.body', $translations.get('game.' + $event.gameId.id + '.name'), $dateTime.format($event.started))</p>
+    'email.invited.body', $translations.get('game.' + $event.gameId.id + '.name'), $host.username)</p>
 <p><a href="$url/$event.gameId.id/$event.tableId.id">$translations.get('email.invited.action')</a></p><br/>
     $translations.get('email.greeting')<br/>
 Board Game Fiesta<br/>
