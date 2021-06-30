@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 class EmailTemplatesTest {
 
     static final User.Id USER_ID = User.Id.of("A");
+    static final User.Id OTHER_USER_ID = User.Id.of("B");
     static final Game.Id GAME_ID = Game.Id.of("gwt");
     static final Table.Id TABLE_ID = Table.Id.of("tableId");
 
@@ -117,5 +118,18 @@ class EmailTemplatesTest {
         var message = emailTemplates.createEndedMessage(table, player, userMap);
 
         assertThat(message.subject().data()).isEqualTo("Ranchers Of The Old West has ended at 23/03/21, 17:46");
+    }
+
+    @Test
+    void invited() {
+        when(user.getLocale()).thenReturn(Locale.forLanguageTag("en-US"));
+        when(user.getTimeZone()).thenReturn(ZoneId.of("America/New_York"));
+
+        var host = mock(User.class);
+        when(host.getUsername()).thenReturn("wetgos");
+
+        var message = emailTemplates.createInvitedMessage(new Table.Invited(TABLE_ID, USER_ID, GAME_ID, OTHER_USER_ID), user, host);
+
+        assertThat(message.subject().data()).isEqualTo("You're invited to play Ranchers Of The Old West with wetgos");
     }
 }
