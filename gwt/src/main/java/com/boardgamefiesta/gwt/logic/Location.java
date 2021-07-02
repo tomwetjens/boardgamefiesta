@@ -134,7 +134,7 @@ public abstract class Location {
 
         private boolean canUseBuilding(GWT game, boolean adjacent) {
             return (adjacent || building instanceof NeutralBuilding || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer())
-                    && !game.currentPlayerState().hasUsedBuildingInTurn(building);
+                    && (game.getEdition() == GWT.Edition.FIRST || !game.currentPlayerState().hasUsedBuildingInTurn(building));
         }
 
         @Override
