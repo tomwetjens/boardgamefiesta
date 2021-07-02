@@ -1978,7 +1978,6 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
-    @Value
     @EqualsAndHashCode(callSuper = false)
     public static class Add1ObjectiveCardToHand extends Action {
 
@@ -2001,7 +2000,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 game.getObjectiveCards().remove(objectiveCard);
                 playerState.addCardToHand(objectiveCard);
             } else {
-                playerState.addCardToHand(game.getObjectiveCards().draw());
+                objectiveCard = game.getObjectiveCards().draw();
+                playerState.addCardToHand(objectiveCard);
             }
 
             game.fireActionEvent(GWTEvent.Type.ADD_1_OBJECTIVE_CARD_TO_HAND, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
