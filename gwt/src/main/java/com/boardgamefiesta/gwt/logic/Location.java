@@ -100,9 +100,9 @@ public abstract class Location {
                 throw new GWTException(GWTError.LOCATION_EMPTY);
             }
 
-            game.currentPlayerState().activate(this);
-
             if (canUseBuilding(game, adjacent)) {
+                game.currentPlayerState().activate(this);
+
                 var buildingAction = building.getPossibleAction(game);
 
                 if (riskAction != null) {
@@ -125,14 +125,16 @@ public abstract class Location {
                     }
                 }
             } else {
+                game.currentPlayerState().activate(this);
+
                 // Other player's building, only allowed to use aux action
                 return PossibleAction.optional(Action.SingleAuxiliaryAction.class);
             }
         }
 
         private boolean canUseBuilding(GWT game, boolean adjacent) {
-            return adjacent || building instanceof NeutralBuilding
-                    || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer();
+            return (adjacent || building instanceof NeutralBuilding || ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayer())
+                    && !game.currentPlayerState().hasUsedBuildingInTurn(building);
         }
 
         @Override

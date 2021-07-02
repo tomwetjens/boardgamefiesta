@@ -864,4 +864,11 @@ public class PlayerState {
     public Optional<Garth> getAutomaState() {
         return Optional.ofNullable(automaState);
     }
+
+    public boolean hasUsedBuildingInTurn(Building building) {
+        return locationsActivatedInTurn.stream()
+                .filter(location -> location instanceof Location.BuildingLocation)
+                .flatMap(location -> ((Location.BuildingLocation) location).getBuilding().stream())
+                .anyMatch(usedBuilding -> usedBuilding.getName().equals(building.getName()));
+    }
 }
