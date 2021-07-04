@@ -620,11 +620,31 @@ public class RailroadTrack {
         var immediateActions = ImmediateActions.none();
 
         switch (city) {
-            case COLORADO_SPRINGS:
-            case ALBUQUERQUE:
-                if (game.getEdition() == GWT.Edition.SECOND && hasMadeDelivery(player, City.WICHITA)) {
-                    immediateActions = ImmediateActions.of(PossibleAction.mandatory(Action.GainExchangeToken.class));
+            case TOPEKA:
+                if (hasMadeDelivery(player, City.WICHITA) && !game.getObjectiveCards().isEmpty()) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city.name(), City.WICHITA.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
+                break;
+            case WICHITA:
+                if (hasMadeDelivery(player, City.TOPEKA) && !game.getObjectiveCards().isEmpty()) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.TOPEKA.name(), city.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                if (game.getEdition() == GWT.Edition.SECOND && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
+                }
+                break;
+            case COLORADO_SPRINGS:
+                if (game.getEdition() == GWT.Edition.SECOND && hasMadeDelivery(player, City.WICHITA)) {
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
+                }
+                if (hasMadeDelivery(player, City.SANTA_FE) && !game.getObjectiveCards().isEmpty()) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.SANTA_FE.name(), city.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                break;
+            case ALBUQUERQUE:
                 if (hasMadeDelivery(player, City.SANTA_FE) && !game.getObjectiveCards().isEmpty()) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.SANTA_FE.name(), city.name()));
                     immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
@@ -633,43 +653,26 @@ public class RailroadTrack {
             case SANTA_FE:
                 if (hasMadeDelivery(player, City.COLORADO_SPRINGS) && !game.getObjectiveCards().isEmpty()) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.COLORADO_SPRINGS.name(), city.name()));
-                    immediateActions = ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
-
                 if (hasMadeDelivery(player, City.ALBUQUERQUE) && game.getObjectiveCards().getAvailable().size() > 1) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city.name(), City.ALBUQUERQUE.name()));
                     immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
-
                 return immediateActions;
-            case TOPEKA:
-                if (hasMadeDelivery(player, City.WICHITA) && !game.getObjectiveCards().isEmpty()) {
-                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city.name(), City.WICHITA.name()));
-                    return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
-                }
-                break;
-            case WICHITA:
-                if (hasMadeDelivery(player, City.TOPEKA) && !game.getObjectiveCards().isEmpty()) {
-                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.TOPEKA.name(), city.name()));
-                    immediateActions = ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
-                }
-                if (game.getEdition() == GWT.Edition.SECOND && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
-                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
-                }
-                break;
             case COLUMBIA:
                 if (hasMadeDelivery(player, City.ST_LOUIS)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.GainExchangeToken.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.GainExchangeToken.class));
                 }
                 break;
             case ST_LOUIS:
                 if (hasMadeDelivery(player, City.COLUMBIA)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.GainExchangeToken.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.GainExchangeToken.class));
                 }
                 break;
             case CHICAGO:
                 if (hasMadeDelivery(player, City.DETROIT)) {
-                    return ImmediateActions.of(PossibleAction.optional(Action.GainExchangeToken.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.GainExchangeToken.class));
                 }
                 break;
             case DETROIT:
@@ -683,24 +686,26 @@ public class RailroadTrack {
             case CLEVELAND:
                 if (hasMadeDelivery(player, City.PITTSBURGH) && !game.getObjectiveCards().isEmpty()) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.PITTSBURGH.name(), city.name()));
-                    return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
             case PITTSBURGH:
                 if (hasMadeDelivery(player, City.CLEVELAND) && !game.getObjectiveCards().isEmpty()) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.CLEVELAND.name(), city.name()));
-                    return ImmediateActions.of(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
             case NEW_YORK_CITY:
                 if (!bonusStationMasters.isEmpty()) {
-                    immediateActions = ImmediateActions.of(PossibleAction.optional(Action.TakeBonusStationMaster.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.TakeBonusStationMaster.class));
                 }
                 break;
             case MEMPHIS:
-                return ImmediateActions.of(PossibleAction.any(Action.TakeObjectiveCard.class, Action.Gain2Dollars.class));
+                immediateActions = immediateActions.andThen(PossibleAction.any(Action.TakeObjectiveCard.class, Action.Gain2Dollars.class));
+                break;
             case MILWAUKEE:
-                return ImmediateActions.of(PossibleAction.any(Action.TakeObjectiveCard.class, Action.Gain3Dollars.class));
+                immediateActions = immediateActions.andThen(PossibleAction.any(Action.TakeObjectiveCard.class, Action.Gain3Dollars.class));
+                break;
         }
 
         return immediateActions;
