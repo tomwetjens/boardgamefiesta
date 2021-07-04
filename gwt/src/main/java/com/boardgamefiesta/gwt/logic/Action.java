@@ -340,31 +340,6 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @Value
     @EqualsAndHashCode(callSuper = false)
-    public static class RemoveCardAndGain1Dollar extends Action {
-
-        @NonNull
-        Card card;
-
-        @Override
-        public ActionResult perform(GWT game, Random random) {
-            game.currentPlayerState().removeCards(Collections.singleton(card));
-
-            if (card instanceof Card.CattleCard) {
-                var cattleCard = (Card.CattleCard) this.card;
-                game.fireActionEvent(GWTEvent.Type.REMOVE_CATTLE_CARD_AND_GAIN_1_DOLLAR, List.of(cattleCard.getType().name(), Integer.toString(cattleCard.getPoints())));
-            } else if (card instanceof ObjectiveCard) {
-                var objectiveCard = (ObjectiveCard) this.card;
-                game.fireActionEvent(GWTEvent.Type.REMOVE_OBJECTIVE_CARD_AND_GAIN_2_DOLLARS, List.of(objectiveCard.getType().name(), Integer.toString(objectiveCard.getPoints()), Integer.toString(objectiveCard.getPenalty())));
-            }
-
-            game.currentPlayerState().gainDollars(1);
-
-            return ActionResult.undoAllowed(ImmediateActions.none());
-        }
-    }
-
-    @Value
-    @EqualsAndHashCode(callSuper = false)
     public static class TradeWithTribes extends Action {
 
         @NonNull
@@ -974,13 +949,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(GWT game, Random random) {
+            game.currentPlayerState().gainDollars(2);
+
             var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 2, 2);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_2_BACKWARDS_TO_REMOVE_2_CARDS_AND_GAIN_2_DOLLARS, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move
                     .getImmediateActions()
-                    .andThen(PossibleAction.repeat(2, 2, RemoveCardAndGain1Dollar.class)));
+                    .andThen(PossibleAction.repeat(0, 2, RemoveCard.class)));
         }
     }
 
@@ -1102,13 +1079,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(GWT game, Random random) {
+            game.currentPlayerState().gainDollars(1);
+
             var move = game.getRailroadTrack().moveEngineBackwards(game.getCurrentPlayer(), to, 1, 1);
 
             game.fireActionEvent(GWTEvent.Type.MOVE_ENGINE_1_BACKWARDS_TO_REMOVE_1_CARD_AND_GAIN_1_DOLLAR, List.of(to.getName()));
 
             return ActionResult.undoAllowed(move
                     .getImmediateActions()
-                    .andThen(PossibleAction.mandatory(RemoveCardAndGain1Dollar.class)));
+                    .andThen(PossibleAction.optional(RemoveCard.class)));
         }
     }
 

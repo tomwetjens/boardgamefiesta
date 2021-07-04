@@ -93,7 +93,6 @@ public enum ActionType {
     PLACE_CHEAP_BUILDING(Action.PlaceCheapBuilding.class),
     PLAY_OBJECTIVE_CARD(Action.PlayObjectiveCard.class),
     REMOVE_CARD(Action.RemoveCard.class),
-    REMOVE_CARD_AND_GAIN_1_DOLLAR(Action.RemoveCardAndGain1Dollar.class),
     REMOVE_HAZARD(Action.RemoveHazard.class),
     REMOVE_HAZARD_FOR_2_DOLLARS(Action.RemoveHazardFor2Dollars.class),
     REMOVE_HAZARD_FOR_5_DOLLARS(Action.RemoveHazardFor5Dollars.class),
@@ -304,8 +303,6 @@ public enum ActionType {
                 return new Action.PlayObjectiveCard(findObjectiveCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.OBJECTIVE_CARD)));
             case REMOVE_CARD:
                 return new Action.RemoveCard(findCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.CARD)));
-            case REMOVE_CARD_AND_GAIN_1_DOLLAR:
-                return new Action.RemoveCardAndGain1Dollar(findCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.CARD)));
             case REMOVE_HAZARD:
                 return new Action.RemoveHazard((Location.HazardLocation) game.getTrail().getLocation(getString(jsonObject, JsonProperties.LOCATION)));
             case REMOVE_HAZARD_FOR_2_DOLLARS:
