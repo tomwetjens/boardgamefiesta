@@ -1,5 +1,6 @@
 package com.boardgamefiesta.server.query;
 
+import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
@@ -48,8 +49,8 @@ class StatsResourceTest {
 
     @Test
     void gwt() throws Exception {
-        var from = Instant.parse("2021-04-28T00:00:00.000Z");
-        var response = statsResource.get("gwt", from);
+        var from = Instant.parse("2021-06-09T14:48:16.151625Z");
+        var response = statsResource.get(Game.Id.fromString("gwt"), from);
         var streamingOutput = (StreamingOutput) response.getEntity();
 
         var fileName = extractFileName(response);
