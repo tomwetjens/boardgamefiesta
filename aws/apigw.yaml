@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: API Gateway for Board Game Fiesta
+Parameters:
+  Environment:
+    Type: String
+  Version:
+    Type: String
+Conditions:
+  IsProduction: !Equals [ !Ref Environment, 'prod' ]
+Resources:
+  ApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
+
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      MemorySize: 2048
+      Role: !GetAtt ApiRole.Arn
+      Runtime: java11
+      Timeout: 60
+      Environment:
+        Variables:
+          BGF_SQS_ENABLED: false
+          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+      Code:
+        S3Bucket: boardgamefiesta-builds
+        S3Key: !Sub '${Version}/server.zip'
