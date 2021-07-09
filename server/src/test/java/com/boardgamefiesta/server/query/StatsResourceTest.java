@@ -44,7 +44,7 @@ class StatsResourceTest {
         var users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
         var ratings = new RatingDynamoDbRepositoryV2(dynamoDbClient, config);
 
-        statsResource = new StatsResource(tables, users, ratings);
+        statsResource = new StatsResource(tables, users, ratings, true);
     }
 
     @Test

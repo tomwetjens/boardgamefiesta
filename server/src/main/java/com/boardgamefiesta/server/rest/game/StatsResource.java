@@ -10,6 +10,7 @@ import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -32,19 +33,26 @@ public class StatsResource {
     private final Tables tables;
     private final Users users;
     private final Ratings ratings;
+    private final boolean enabled;
 
     @Inject
     public StatsResource(@NonNull Tables tables,
                          @NonNull Users users,
-                         @NonNull Ratings ratings) {
+                         @NonNull Ratings ratings,
+                         @ConfigProperty(name = "bgf.stats.enabled") boolean enabled) {
         this.tables = tables;
         this.users = users;
         this.ratings = ratings;
+        this.enabled = enabled;
     }
 
     @GET
     @Produces("text/csv")
     public Response get(@PathParam("gameId") Game.Id gameId, @QueryParam("from") Instant from) {
+        if (!enabled) {
+            throw new ForbiddenException("Not enabled");
+        }
+
         if (from == null) {
             throw new BadRequestException("'from' parameter missing");
         }
@@ -52,7 +60,7 @@ public class StatsResource {
         var to = Instant.now();
 
         if (Duration.between(from, to).toDays() > 7) {
-            throw new BadRequestException("You may not request more than 7 days at once");
+            throw new BadRequestException("You may not request data from more than 7 days ago");
         }
 
         var fileName = gameId.getId() + "_"
@@ -73,7 +81,7 @@ public class StatsResource {
         try (PrintWriter writer = new PrintWriter(outputStream)) {
             List<String> keys = new ArrayList<>();
 
-            tables.findEnded(gameId, 200, from, to, false)
+            tables.findEnded(gameId, 999999, from, to, false)
                     .filter(table -> table.getStatus() == Table.Status.ENDED)
                     .filter(table -> !table.hasComputerPlayers())
                     .forEach(table -> table.getPlayers().forEach(player -> {

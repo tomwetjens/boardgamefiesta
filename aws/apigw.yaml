@@ -55,6 +55,7 @@ Resources:
       Environment:
         Variables:
           BGF_SQS_ENABLED: false
+          BGF_STATS_ENABLED: true
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
