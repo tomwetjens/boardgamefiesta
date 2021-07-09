@@ -6,10 +6,7 @@ import com.boardgamefiesta.server.rest.exception.APIException;
 import lombok.NonNull;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminSetUserPasswordRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminUpdateUserAttributesRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AliasExistsException;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -18,13 +15,13 @@ import javax.inject.Inject;
 import java.net.URI;
 
 @ApplicationScoped
-class UserAttributesUpdater {
+class CognitoUserUpdater {
 
     private final CognitoIdentityProviderClient cognitoIdentityProviderClient;
     private final JsonWebToken jsonWebToken;
 
     @Inject
-    public UserAttributesUpdater(
+    public CognitoUserUpdater(
             @NonNull CognitoIdentityProviderClient cognitoIdentityProviderClient,
             @NonNull JsonWebToken jsonWebToken) {
         this.cognitoIdentityProviderClient = cognitoIdentityProviderClient;
@@ -73,6 +70,14 @@ class UserAttributesUpdater {
         } catch (AliasExistsException e) {
             throw APIException.badRequest(APIError.USERNAME_ALREADY_IN_USE);
         }
+    }
+
+    // Observe event during transaction, so if Cognito request fails, we fail the transaction as well
+    void deleted(@Observes(during = TransactionPhase.IN_PROGRESS) User.Deleted event) {
+        cognitoIdentityProviderClient.adminDeleteUser(AdminDeleteUserRequest.builder()
+                .userPoolId(getUserPoolId())
+                .username(event.getCognitoUsername())
+                .build());
     }
 
     String getUserPoolId() {

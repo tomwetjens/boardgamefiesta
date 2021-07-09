@@ -4,6 +4,7 @@ import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.user.view.UserView;
+import lombok.Data;
 import lombok.NonNull;
 
 import javax.annotation.security.RolesAllowed;
@@ -59,4 +60,21 @@ public class UserResource {
         users.update(user);
     }
 
+
+    @POST
+    @Path("/delete")
+    public void delete(DeleteCommand request) {
+        if (request.isConfirm()) {
+            var user = currentUser.get();
+
+            user.markDeleted();
+
+            users.update(user);
+        }
+    }
+
+    @Data
+    public static class DeleteCommand {
+        boolean confirm;
+    }
 }

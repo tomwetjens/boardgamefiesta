@@ -131,6 +131,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
                         .map(Item::of)
                         .map(this::mapToEmailPreferences)
                         .orElseGet(EmailPreferences::new))
+                .deleted(item.getOptionalBoolean("Deleted").orElse(false))
                 .build();
     }
 
@@ -233,28 +234,33 @@ public class UserDynamoDbRepositoryV2 implements Users {
     }
 
     public void put(User user) {
+        var item = new Item()
+                .setString(PK, USER_PREFIX + user.getId().getId())
+                .setString(SK, USER_PREFIX + user.getId().getId())
+                .setInt(VERSION, user.getVersion())
+                .setString("Username", user.getUsername())
+                .setString("CognitoUsername", user.getCognitoUsername())
+                .setString("Email", user.getEmail())
+                .setString("Language", user.getLanguage())
+                .setString("Location", user.getLocation().orElse(null))
+                .setString("TimeZone", user.getTimeZone().getId())
+                .setInstant("Created", user.getCreated())
+                .setInstant("Updated", user.getUpdated())
+                .setBoolean("Deleted", user.isDeleted())
+                .set("EmailPreferences", mapFromEmailPreferences(user.getEmailPreferences()));
+
+        if (!user.isDeleted()) {
+            item.setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
+                    .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
+                    .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
+                    .setString(GSI2SK, USER_PREFIX + user.getEmail().toLowerCase())
+                    .setString(GSI3PK, USER_PREFIX + user.getCognitoUsername())
+                    .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername());
+        }
+
         client.putItem(PutItemRequest.builder()
                 .tableName(config.getTableName())
-                .item(new Item()
-                        .setString(PK, USER_PREFIX + user.getId().getId())
-                        .setString(SK, USER_PREFIX + user.getId().getId())
-                        .setInt(VERSION, user.getVersion())
-                        .setString("Username", user.getUsername())
-                        .setString("CognitoUsername", user.getCognitoUsername())
-                        .setString("Email", user.getEmail())
-                        .setString("Language", user.getLanguage())
-                        .setString("Location", user.getLocation().orElse(null))
-                        .setString("TimeZone", user.getTimeZone().getId())
-                        .setInstant("Created", user.getCreated())
-                        .setInstant("Updated", user.getUpdated())
-                        .set("EmailPreferences", mapFromEmailPreferences(user.getEmailPreferences()))
-                        .setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
-                        .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
-                        .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
-                        .setString(GSI2SK, USER_PREFIX + user.getEmail().toLowerCase())
-                        .setString(GSI3PK, USER_PREFIX + user.getCognitoUsername())
-                        .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername())
-                        .asMap())
+                .item(item.asMap())
                 .build());
     }
 
@@ -274,11 +280,13 @@ public class UserDynamoDbRepositoryV2 implements Users {
 
     @Override
     public void update(User user) throws ConcurrentModificationException {
-        findByEmail(user.getEmail())
-                .filter(existingUser -> !existingUser.getId().equals(user.getId()))
-                .ifPresent(existingUser -> {
-                    throw new EmailAlreadyInUse();
-                });
+        if (!user.isDeleted()) {
+            findByEmail(user.getEmail())
+                    .filter(existingUser -> !existingUser.getId().equals(user.getId()))
+                    .ifPresent(existingUser -> {
+                        throw new EmailAlreadyInUse();
+                    });
+        }
 
         var updateItem = new UpdateItem()
                 .setInt(VERSION, user.getVersion() + 1)
@@ -290,14 +298,20 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .setString("TimeZone", user.getTimeZone().getId())
                 .setInstant("Updated", user.getUpdated())
                 .set("EmailPreferences", mapFromEmailPreferences(user.getEmailPreferences()))
-                .setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
-                .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
-                .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
-                .setString(GSI2SK, USER_PREFIX + user.getEmail().toLowerCase())
-                .setString(GSI3PK, USER_PREFIX + user.getCognitoUsername())
-                .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername());
+                .setBoolean("Deleted", user.isDeleted());
 
         updateItem.expressionAttributeValue(":ExpectedVersion", Item.n(user.getVersion()));
+
+        if (!user.isDeleted()) {
+            updateItem.setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
+                    .setString(GSI1SK, USER_PREFIX + user.getUsername().toLowerCase())
+                    .setString(GSI2PK, USER_PREFIX + user.getEmail().toLowerCase())
+                    .setString(GSI2SK, USER_PREFIX + user.getEmail().toLowerCase())
+                    .setString(GSI3PK, USER_PREFIX + user.getCognitoUsername())
+                    .setString(GSI3SK, USER_PREFIX + user.getCognitoUsername());
+        } else {
+            updateItem.remove(GSI1PK, GSI1SK, GSI2PK, GSI2SK, GSI3PK, GSI3SK);
+        }
 
         try {
             client.updateItem(UpdateItemRequest.builder()

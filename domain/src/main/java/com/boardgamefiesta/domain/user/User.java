@@ -75,6 +75,9 @@ public class User implements AggregateRoot {
     private ZoneId timeZone;
 
     @Getter
+    private boolean deleted;
+
+    @Getter
     @NonNull
     @Builder.Default
     private final EmailPreferences emailPreferences = new EmailPreferences();
@@ -169,6 +172,20 @@ public class User implements AggregateRoot {
         new UsernameChanged(cognitoUsername, username).fire();
     }
 
+    public void markDeleted() {
+        deleted = true;
+        updated = Instant.now();
+
+        new Deleted(cognitoUsername).fire();
+
+        username = "*deleted*";
+        email = "*deleted*";
+        cognitoUsername = "*deleted*";
+        location = null;
+        timeZone = null;
+        language = DEFAULT_LANGUAGE;
+    }
+
     @Value(staticConstructor = "of")
     public static class Id {
         private static final Pattern UUID_PATTERN = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
@@ -215,6 +232,11 @@ public class User implements AggregateRoot {
     public static class UsernameChanged implements DomainEvent {
         String cognitoUsername;
         String username;
+    }
+
+    @Value
+    public static class Deleted implements DomainEvent {
+        String cognitoUsername;
     }
 
     public static final class UsernameTooShort extends InvalidCommandException {
