@@ -8,10 +8,8 @@ import io.quarkus.runtime.StartupEvent;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.context.ManagedExecutor;
-import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.*;
+import software.amazon.awssdk.services.sqs.model.Message;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -20,7 +18,6 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.transaction.Transactional;
 import java.io.StringReader;
-import java.util.concurrent.*;
 
 @ApplicationScoped
 @Slf4j
@@ -35,17 +32,27 @@ class AutomaExecutor {
     @Inject
     AutomaExecutor(@NonNull Tables tables,
                    @NonNull SqsClient sqsClient,
+                   @ConfigProperty(name = "bgf.sqs.enabled") boolean enabled,
                    @ConfigProperty(name = "bgf.sqs.queue-url") String queueUrl) {
         this.tables = tables;
-        this.listener = new SqsListener(sqsClient, queueUrl, this::processMessage);
+
+        if (enabled) {
+            listener = new SqsListener(sqsClient, queueUrl, this::processMessage);
+        } else {
+            listener = null;
+        }
     }
 
     public void init(@Observes StartupEvent event) {
-        listener.start();
+        if (listener != null) {
+            listener.start();
+        }
     }
 
     public void destroy(@Observes ShutdownEvent event) {
-        listener.stop();
+        if (listener != null) {
+            listener.stop();
+        }
     }
 
     private void processMessage(Message message) {

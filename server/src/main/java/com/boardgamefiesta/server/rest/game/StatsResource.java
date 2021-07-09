@@ -13,12 +13,10 @@ import lombok.NonNull;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.Instant;
@@ -27,8 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-// Disabled because it took the server down due to memory issues
-//@Path("/stats/{gameId}")
+@Path("/stats/{gameId}")
 @ApplicationScoped
 public class StatsResource {
 
@@ -47,42 +44,56 @@ public class StatsResource {
 
     @GET
     @Produces("text/csv")
-    public Response get(@PathParam("gameId") String gameId, @QueryParam("from") Instant from) {
+    public Response get(@PathParam("gameId") Game.Id gameId, @QueryParam("from") Instant from) {
+        if (from == null) {
+            throw new BadRequestException("'from' parameter missing");
+        }
+
         var to = Instant.now();
 
-        return Response.ok((StreamingOutput) outputStream -> {
-            var userMap = new HashMap<User.Id, User>();
+        if (Duration.between(from, to).toDays() > 7) {
+            throw new BadRequestException("You may not request more than 7 days at once");
+        }
 
-            try (PrintWriter writer = new PrintWriter(outputStream)) {
-                List<String> keys = new ArrayList<>();
-
-                tables.findEnded(Game.Id.of(gameId), 99999999, from, Tables.MAX_TIMESTAMP, false)
-                        .filter(table -> table.getStatus() == Table.Status.ENDED)
-                        .filter(table -> !table.hasComputerPlayers())
-                        .forEach(table -> table.getPlayers().forEach(player -> {
-                            table.stats(player).ifPresent(stats -> {
-                                if (keys.isEmpty()) {
-                                    keys.addAll(stats.keys());
-                                    Collections.sort(keys);
-
-                                    writeHeader(writer, keys);
-                                }
-
-                                var userId = player.getUserId().get();
-
-                                var user = userMap.computeIfAbsent(userId, k -> users.findById(userId).orElse(null));
-                                var rating = ratings.findByTable(userId, table.getId()).orElse(null);
-
-                                writeRow(writer, keys, table, player, user, stats, rating);
-                            });
-                        }));
-            }
-        }).header("Content-Disposition", "attachment; filename=\""
-                + gameId + "_"
+        var fileName = gameId.getId() + "_"
                 + from.toString().replace(":", "")
                 + "_"
                 + to.toString().replace(":", "")
-                + ".csv\"").build();
+                + ".csv";
+
+        return Response
+                .ok((StreamingOutput) outputStream -> generateCsv(gameId, from, to, outputStream))
+                .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                .build();
+    }
+
+    private void generateCsv(Game.Id gameId, Instant from, Instant to, OutputStream outputStream) {
+        var userMap = new HashMap<User.Id, User>();
+
+        try (PrintWriter writer = new PrintWriter(outputStream)) {
+            List<String> keys = new ArrayList<>();
+
+            tables.findEnded(gameId, 200, from, to, false)
+                    .filter(table -> table.getStatus() == Table.Status.ENDED)
+                    .filter(table -> !table.hasComputerPlayers())
+                    .forEach(table -> table.getPlayers().forEach(player -> {
+                        table.stats(player).ifPresent(stats -> {
+                            if (keys.isEmpty()) {
+                                keys.addAll(stats.keys());
+                                Collections.sort(keys);
+
+                                writeHeader(writer, keys);
+                            }
+
+                            var userId = player.getUserId().get();
+
+                            var user = userMap.computeIfAbsent(userId, k -> users.findById(userId).orElse(null));
+                            var rating = ratings.findByTable(userId, table.getId()).orElse(null);
+
+                            writeRow(writer, keys, table, player, user, stats, rating);
+                        });
+                    }));
+        }
     }
 
     private void writeHeader(PrintWriter writer, List<String> keys) {

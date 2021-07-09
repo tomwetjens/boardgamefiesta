@@ -142,6 +142,9 @@ Resources:
               - Effect: Allow
                 Action:
                   - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminSetUserPassword
+                  - cognito-idp:AdminUpdateUserAttributes
+                  - cognito-idp:AdminDeleteUser
                 Resource:
                   Fn::ImportValue:
                     !Sub 'boardgamefiesta-${Environment}-auth:UserPool'

@@ -50,9 +50,17 @@ public class Game {
         return provider.getTimeLimit(options);
     }
 
-    @Value(staticConstructor = "of")
+    @Value(staticConstructor = "fromString")
     public static class Id {
         String id;
+
+        /**
+         * @deprecated For backwards compatibility. Use {@link #fromString(String)} instead.
+         */
+        @Deprecated
+        public static Id of(String str) {
+            return fromString(str);
+        }
     }
 
 }
