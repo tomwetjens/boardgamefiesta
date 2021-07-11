@@ -3,6 +3,7 @@ package com.boardgamefiesta.api.domain;
 import lombok.Builder;
 import lombok.Singular;
 
+ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -21,4 +22,7 @@ public class Stats {
         return Optional.ofNullable(values.get(key));
     }
 
+    public Map<String, Object> asMap() {
+        return Collections.unmodifiableMap(values);
+    }
 }

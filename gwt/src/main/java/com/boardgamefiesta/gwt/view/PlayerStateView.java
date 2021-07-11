@@ -47,6 +47,8 @@ public class PlayerStateView {
 
     AutomaStateView automaState;
 
+    Map<String, Object> stats;
+
     PlayerStateView(@NonNull GWT state, @NonNull PlayerState playerState, Player viewingPlayer) {
         player = new PlayerView(playerState.getPlayer());
 
@@ -137,5 +139,10 @@ public class PlayerStateView {
         branchlets = playerState.getBranchlets();
 
         automaState = playerState.getAutomaState().map(AutomaStateView::new).orElse(null);
+
+        if (state.isEnded()) {
+            stats = state.stats(playerState.getPlayer()).asMap();
+        }
     }
+
 }
