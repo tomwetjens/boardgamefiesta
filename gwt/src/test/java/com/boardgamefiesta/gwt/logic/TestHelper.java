@@ -31,7 +31,7 @@ public class TestHelper {
     static final Player PLAYER_D = new Player("Player D", PlayerColor.RED, Player.Type.HUMAN);
 
     static GWT givenAGame() {
-        return GWT.start(GWT.Edition.SECOND, Set.of(PLAYER_A, PLAYER_B, PLAYER_C, PLAYER_D), BEGINNER, null, new Random(0));
+        return GWT.start(GWT.Edition.FIRST, Set.of(PLAYER_A, PLAYER_B, PLAYER_C, PLAYER_D), BEGINNER, null, new Random(0));
     }
 
 }

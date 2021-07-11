@@ -49,7 +49,7 @@ class GWTTest {
 
         @Test
         void beginner() {
-            GWT game = GWT.start(GWT.Edition.SECOND, new LinkedHashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
+            GWT game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
 
             assertThat(game.getStatus()).isEqualTo(GWT.Status.STARTED);
             assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
@@ -74,7 +74,7 @@ class GWTTest {
 
         @Test
         void randomized() {
-            GWT game = GWT.start(GWT.Edition.SECOND, new LinkedHashSet<>(Arrays.asList(playerA, playerB)), RANDOMIZED, eventListener, new Random(0));
+            GWT game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB)), RANDOMIZED, eventListener, new Random(0));
 
             assertThat(game.getStatus()).isEqualTo(GWT.Status.STARTED);
             assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB);
@@ -114,7 +114,7 @@ class GWTTest {
 
         @Test
         void serialize() {
-            var game = GWT.start(GWT.Edition.SECOND, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
+            var game = GWT.start(GWT.Edition.FIRST, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
 
             // TODO
         }
@@ -144,21 +144,21 @@ class GWTTest {
 
         @Test
         void needWhite() {
-            GWT game = GWT.start(GWT.Edition.SECOND, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
+            GWT game = GWT.start(GWT.Edition.FIRST, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
 
             assertThat(game.removeDisc(Collections.singletonList(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
         }
 
         @Test
         void needBlackOrWhite() {
-            GWT game = GWT.start(GWT.Edition.SECOND, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
+            GWT game = GWT.start(GWT.Edition.FIRST, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
 
             assertThat(game.removeDisc(Arrays.asList(DiscColor.WHITE, DiscColor.BLACK)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockBlackOrWhite.class);
         }
 
         @Test
         void needWhiteButCanOnlyUnlockBlack() {
-            GWT game = GWT.start(GWT.Edition.SECOND, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
+            GWT game = GWT.start(GWT.Edition.FIRST, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
 
             assertThat(game.removeDisc(Collections.singleton(DiscColor.WHITE)).getActions().get(0).getPossibleActions()).containsExactly(Action.UnlockWhite.class);
 
@@ -181,7 +181,7 @@ class GWTTest {
 
         @Test
         void cannotUnlockButStationsUpgraded() {
-            GWT game = GWT.start(GWT.Edition.SECOND, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
+            GWT game = GWT.start(GWT.Edition.FIRST, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 
@@ -211,7 +211,7 @@ class GWTTest {
 
         @Test
         void cannotUnlockNoStationsUpgraded() {
-            GWT game = GWT.start(GWT.Edition.SECOND, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
+            GWT game = GWT.start(GWT.Edition.FIRST, new HashSet<>(Arrays.asList(playerA, playerB)), BEGINNER, eventListener, new Random(0));
             // Enough money to pay for unlocks
             game.currentPlayerState().gainDollars(10);
 
@@ -246,9 +246,12 @@ class GWTTest {
 
         @Test
         void startWhenAllPositionsUncontested() {
-            var game = GWT.start(GWT.Edition.SECOND, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC)), GWT.Options.builder()
+            var game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC)), GWT.Options.builder()
                     .playerOrder(GWT.Options.PlayerOrder.BIDDING)
                     .build(), eventListener, new Random(0));
+
+
+            assertThat(game.getPlayerOrder()).containsExactly(playerC, playerB, playerA);
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerC);
             assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
@@ -271,7 +274,7 @@ class GWTTest {
 
         @Test
         void skipTurnWhenUncontested() {
-            var game = GWT.start(GWT.Edition.SECOND, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC)), GWT.Options.builder()
+            var game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC)), GWT.Options.builder()
                     .playerOrder(GWT.Options.PlayerOrder.BIDDING)
                     .build(), eventListener, new Random(0));
 

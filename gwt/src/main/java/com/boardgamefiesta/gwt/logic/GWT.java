@@ -405,7 +405,6 @@ public class GWT implements State {
         currentPlayer = getNextPlayer();
 
         if (!currentPlayerState().hasJobMarketToken()) {
-            actionStack.addActions(determineBeginTurnActions());
             beginTurn();
         } else {
             status = Status.ENDED;
