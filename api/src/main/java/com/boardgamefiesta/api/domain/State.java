@@ -45,4 +45,6 @@ public interface State {
     void leave(Player player, Random random);
 
     Stats stats(Player player);
+
+    Optional<Integer> getTurn(Player player);
 }

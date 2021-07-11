@@ -1,6 +1,7 @@
 package com.boardgamefiesta.istanbul;
 
 import com.boardgamefiesta.api.command.ActionMapper;
+import com.boardgamefiesta.api.domain.EventListener;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
@@ -47,9 +48,9 @@ public class IstanbulProvider implements GameProvider<Istanbul> {
     }
 
     @Override
-    public Istanbul start(Set<Player> players, Options options, Random random) {
+    public Istanbul start(Set<Player> players, Options options, EventListener eventListener, Random random) {
         var layoutType = options.getEnum("layoutType", LayoutType.class, LayoutType.RANDOM);
-        return Istanbul.start(players, layoutType, random);
+        return Istanbul.start(players, layoutType, eventListener, random);
     }
 
     @Override

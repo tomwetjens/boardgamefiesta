@@ -1,10 +1,7 @@
 package com.boardgamefiesta.api.spi;
 
 import com.boardgamefiesta.api.command.ActionMapper;
-import com.boardgamefiesta.api.domain.Options;
-import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.domain.PlayerColor;
-import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.query.ViewMapper;
 import com.boardgamefiesta.api.repository.StateDeserializer;
 import com.boardgamefiesta.api.repository.StateSerializer;
@@ -23,7 +20,7 @@ public interface GameProvider<T extends State> {
 
     Set<PlayerColor> getSupportedColors();
 
-    T start(Set<Player> players, Options options, Random random);
+    T start(Set<Player> players, Options options, EventListener eventListener, Random random);
 
     StateSerializer<T> getStateSerializer();
 

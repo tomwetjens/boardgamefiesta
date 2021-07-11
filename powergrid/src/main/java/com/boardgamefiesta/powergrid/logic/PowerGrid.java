@@ -58,7 +58,7 @@ public class PowerGrid implements State {
 
     private Auction auction;
 
-    public static PowerGrid start(@NonNull Set<Player> players, @NonNull NetworkMap map, @NonNull Set<Area> areas, @NonNull Random random) {
+    public static PowerGrid start(@NonNull Set<Player> players, @NonNull NetworkMap map, @NonNull Set<Area> areas, EventListener eventListener, @NonNull Random random) {
         if (players.size() < 2) {
             throw new PowerGridException(PowerGridError.NOT_ENOUGH_PLAYERS);
         }
@@ -78,7 +78,7 @@ public class PowerGrid implements State {
 
         var auctioningPlayers = new ArrayList<>(playerOrder);
 
-        return new PowerGrid(map, areas,
+        var powerGrid = new PowerGrid(map, areas,
                 new ArrayList<>(playerOrder),
                 playerOrder,
                 ResourceMarket.create(),
@@ -92,6 +92,12 @@ public class PowerGrid implements State {
                 auctioningPlayers,
                 null,
                 null);
+
+        if (eventListener != null) {
+            powerGrid.addEventListener(eventListener);
+        }
+
+        return powerGrid;
     }
 
     public static PowerGrid deserialize(JsonValue jsonValue) {
@@ -336,6 +342,12 @@ public class PowerGrid implements State {
     @Override
     public Set<Player> getCurrentPlayers() {
         return phase != Phase.BUREAUCRACY ? Collections.singleton(currentPlayer) : Collections.unmodifiableSet(producingPlayers);
+    }
+
+    @Override
+    public Optional<Integer> getTurn(Player player) {
+        // TODO
+        return Optional.empty();
     }
 
     @Override

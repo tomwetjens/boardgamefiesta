@@ -65,7 +65,7 @@ public class Istanbul implements State {
 
     private List<EventListener> eventListeners;
 
-    public static Istanbul start(@NonNull Set<Player> players, @NonNull LayoutType layoutType, @NonNull Random random) {
+    public static Istanbul start(@NonNull Set<Player> players, @NonNull LayoutType layoutType, EventListener eventListener, @NonNull Random random) {
         var playerOrder = new ArrayList<>(players);
         Collections.shuffle(playerOrder, random);
 
@@ -100,6 +100,10 @@ public class Istanbul implements State {
                 Status.STARTED,
                 false,
                 new ArrayList<>());
+
+        if (eventListener != null) {
+            game.addEventListener(eventListener);
+        }
 
         var fountain = layout.getFountain();
         var policeStation = layout.getPoliceStation();
@@ -581,6 +585,13 @@ public class Istanbul implements State {
 
     public int getMaxRubies() {
         return PlayerState.maxRubies(players.size());
+    }
+
+    @Override
+    public Optional<Integer> getTurn(Player player) {
+        return Optional.ofNullable(playerStates.get(player))
+                .map(PlayerState::getStats)
+                .map(PlayerState.PlayerStats::getTurns);
     }
 
     enum Status {

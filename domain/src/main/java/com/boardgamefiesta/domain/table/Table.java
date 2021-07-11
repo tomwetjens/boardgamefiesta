@@ -161,18 +161,20 @@ public class Table implements AggregateRoot {
         updated = started;
 
         try {
+            log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.START));
+
+            EventListener eventListener = event -> log.add(new LogEntry(this, event));
+
             var state = game.start(players.stream()
                     .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor().orElseThrow(),
                             player.getType() == Player.Type.COMPUTER
                                     ? com.boardgamefiesta.api.domain.Player.Type.COMPUTER
                                     : com.boardgamefiesta.api.domain.Player.Type.HUMAN))
-                    .collect(Collectors.toSet()), options, RANDOM);
+                    .collect(Collectors.toSet()), options, eventListener, RANDOM);
 
             currentState = Lazy.of(Optional.of(CurrentState.initial(state)));
 
             afterStateChange();
-
-            log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.START));
 
             new Started(id).fire();
 
@@ -190,7 +192,12 @@ public class Table implements AggregateRoot {
     private void beginTurn(Player player) {
         player.beginTurn(type == Type.TURN_BASED ? TURN_BASED_TIME_LIMIT : game.getTimeLimit(options));
 
-        log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN));
+        currentState.get()
+                .map(CurrentState::getState)
+                .flatMap(state -> state.getPlayerByName(player.getId().getId())
+                        .flatMap(state::getTurn))
+                .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN_NR, List.of(turns))),
+                        () -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN)));
 
         new BeginTurn(game.getId(), id, type, player.getUserId(), player.getTurnLimit().orElse(null), started).fire();
     }
@@ -199,7 +206,12 @@ public class Table implements AggregateRoot {
         player.endTurn();
 
         if (player.getStatus() != Player.Status.LEFT) {
-            log.add(new LogEntry(player, LogEntry.Type.END_TURN));
+            currentState.get()
+                    .map(CurrentState::getState)
+                    .flatMap(state -> state.getPlayerByName(player.getId().getId())
+                            .flatMap(state::getTurn))
+                    .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.END_TURN_NR, List.of(turns))),
+                            () -> log.add(new LogEntry(player, LogEntry.Type.END_TURN)));
         }
     }
 

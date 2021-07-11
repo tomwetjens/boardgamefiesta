@@ -95,7 +95,9 @@ public class LogEntry {
         JOIN,
         IN_GAME_EVENT,
         BEGIN_TURN,
+        BEGIN_TURN_NR,
         END_TURN,
+        END_TURN_NR,
         SKIP,
         END
     }

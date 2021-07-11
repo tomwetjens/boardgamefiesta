@@ -82,11 +82,11 @@ public class GWT implements State {
     /**
      * For backwards compatbility, starts 1nd edition.
      */
-    public static GWT start(@NonNull Set<Player> players, @NonNull Options options, @NonNull Random random) {
-        return start(Edition.FIRST, players, options, random);
+    public static GWT start(@NonNull Set<Player> players, @NonNull Options options, EventListener eventListener, @NonNull Random random) {
+        return start(Edition.FIRST, players, options, eventListener, random);
     }
 
-    public static GWT start(@NonNull Edition edition, @NonNull Set<Player> players, @NonNull Options options, @NonNull Random random) {
+    public static GWT start(@NonNull Edition edition, @NonNull Set<Player> players, @NonNull Options options, EventListener eventListener, @NonNull Random random) {
         if (players.size() < 2) {
             throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
         }
@@ -129,6 +129,10 @@ public class GWT implements State {
                 .status(Status.BIDDING)
                 .startingObjectiveCards(ObjectiveCards.createStartingObjectiveCardsDrawStack(random, players.size()))
                 .build();
+
+        if (eventListener != null) {
+            game.addEventListener(eventListener);
+        }
 
         game.placeInitialTiles();
 
@@ -216,9 +220,16 @@ public class GWT implements State {
 
     private void beginFirstTurn() {
         currentPlayer = playerOrder.get(0);
+        beginTurn();
+    }
+
+    private void beginTurn() {
         actionStack.addActions(determineBeginTurnActions());
 
-        currentPlayerState().beginTurn();
+        if (status != Status.BIDDING) {
+            var playerState = currentPlayerState();
+            playerState.beginTurn();
+        }
     }
 
     private void placeInitialTiles() {
@@ -245,6 +256,16 @@ public class GWT implements State {
     @Override
     public Set<Player> getCurrentPlayers() {
         return Collections.singleton(currentPlayer);
+    }
+
+    @Override
+    public Optional<Integer> getTurn(Player player) {
+        if (status == Status.BIDDING) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(playerStates.get(player))
+                .map(PlayerState::getTurns)
+                .filter(turn -> turn > 0);
     }
 
     @Override
@@ -385,10 +406,7 @@ public class GWT implements State {
 
         if (!currentPlayerState().hasJobMarketToken()) {
             actionStack.addActions(determineBeginTurnActions());
-
-            if (status != Status.BIDDING) {
-                currentPlayerState().beginTurn();
-            }
+            beginTurn();
         } else {
             status = Status.ENDED;
             fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());

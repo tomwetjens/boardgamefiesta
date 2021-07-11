@@ -1,6 +1,7 @@
 package com.boardgamefiesta.gwt;
 
 import com.boardgamefiesta.api.command.ActionMapper;
+import com.boardgamefiesta.api.domain.EventListener;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
@@ -47,7 +48,7 @@ public class GWTProvider implements GameProvider<GWT> {
     }
 
     @Override
-    public GWT start(Set<Player> players, Options options, Random random) {
+    public GWT start(Set<Player> players, Options options, EventListener eventListener, Random random) {
         return GWT.start(GWT.Edition.FIRST, players, GWT.Options.builder()
                 .mode(options.getEnum("mode", GWT.Options.Mode.class, GWT.Options.Mode.ORIGINAL))
                 .buildings(options.getEnum("buildings", GWT.Options.Buildings.class, GWT.Options.Buildings.RANDOMIZED))
@@ -58,7 +59,7 @@ public class GWTProvider implements GameProvider<GWT> {
                 .building13(options.getBoolean("building13", false))
                 .railsToTheNorth(options.getBoolean("railsToTheNorth", false))
                 .difficulty(options.getEnum("difficulty", Garth.Difficulty.class, Garth.Difficulty.EASY))
-                .build(), random);
+                .build(), eventListener, random);
     }
 
     @Override

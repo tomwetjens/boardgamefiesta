@@ -1,9 +1,6 @@
 package com.boardgamefiesta.domain.game;
 
-import com.boardgamefiesta.api.domain.Options;
-import com.boardgamefiesta.api.domain.Player;
-import com.boardgamefiesta.api.domain.PlayerColor;
-import com.boardgamefiesta.api.domain.State;
+import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.spi.GameProvider;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,8 +31,8 @@ public class Game {
         return provider.getSupportedColors();
     }
 
-    public State start(Set<Player> players, Options options, Random random) {
-        return provider.start(players, options, random);
+    public State start(Set<Player> players, Options options, EventListener eventListener, Random random) {
+        return provider.start(players, options, eventListener, random);
     }
 
     public void executeAutoma(State state, Player player, Random random) {
