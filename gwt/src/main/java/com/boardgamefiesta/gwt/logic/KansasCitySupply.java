@@ -146,6 +146,10 @@ public class KansasCitySupply {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    public int getTilesLeft(int drawPileIndex) {
+        return drawPiles.get(drawPileIndex).size();
+    }
+
     @Getter
     @ToString
     public static final class Tile {
@@ -272,6 +276,10 @@ public class KansasCitySupply {
                         .limit(amount)
                         .collect(Collectors.toList()));
             }
+        }
+
+        public int size() {
+            return tiles.size();
         }
     }
 }

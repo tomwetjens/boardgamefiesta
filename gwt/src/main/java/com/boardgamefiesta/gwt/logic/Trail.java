@@ -371,18 +371,29 @@ public class Trail {
         return Collections.unmodifiableMap(playerLocations);
     }
 
-    void placeHazard(Hazard hazard) {
-        getHazardLocations(hazard.getType()).stream()
+    boolean placeHazard(Hazard hazard) {
+        var hazardLocation = getHazardLocations(hazard.getType()).stream()
                 .filter(Location.HazardLocation::isEmpty)
-                .min(Comparator.comparingInt(Location.HazardLocation::getNumber))
-                .ifPresent(hazardLocation -> hazardLocation.placeHazard(hazard));
+                .min(Comparator.comparingInt(Location.HazardLocation::getNumber));
+        if (hazardLocation.isPresent()) {
+            hazardLocation.get().placeHazard(hazard);
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    void placeTeepee(Teepee teepee) {
-        getTeepeeLocations().stream()
+    boolean placeTeepee(Teepee teepee) {
+        var teepeeLocation
+                = getTeepeeLocations().stream()
                 .filter(Location.TeepeeLocation::isEmpty)
-                .min(Comparator.comparingInt(Location.TeepeeLocation::getReward))
-                .ifPresent(teepeeLocation -> teepeeLocation.placeTeepee(teepee));
+                .min(Comparator.comparingInt(Location.TeepeeLocation::getReward));
+        if (teepeeLocation.isPresent()) {
+            teepeeLocation.get().placeTeepee(teepee);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     void moveToStart(Player player) {

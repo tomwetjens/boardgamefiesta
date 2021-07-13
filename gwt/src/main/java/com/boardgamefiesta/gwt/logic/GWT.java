@@ -233,10 +233,15 @@ public class GWT implements State {
     }
 
     private void placeInitialTiles() {
-        IntStream.range(0, 7)
-                .mapToObj(i -> kansasCitySupply.draw(0))
-                .flatMap(Optional::stream)
-                .forEach(this::placeInitialTile);
+        int oneTilesToBePlaced = 7;
+        while (oneTilesToBePlaced > 0 && kansasCitySupply.getTilesLeft(0) > 0) {
+            var tile = kansasCitySupply
+                    .draw(0)
+                    .orElseThrow(() -> new GWTException(GWTError.NO_TILES_LEFT));
+            if (placeInitialTile(tile)) {
+                oneTilesToBePlaced--;
+            }
+        }
 
         IntStream.range(0, playerOrder.size() == 2 ? 3 : jobMarket.getRowLimit() * 2 - 1)
                 .mapToObj(i -> kansasCitySupply.draw(1))
@@ -245,11 +250,11 @@ public class GWT implements State {
                 .forEach(this.jobMarket::addWorker);
     }
 
-    private void placeInitialTile(KansasCitySupply.Tile tile) {
+    private boolean placeInitialTile(KansasCitySupply.Tile tile) {
         if (tile.getHazard() != null) {
-            trail.placeHazard(tile.getHazard());
+            return trail.placeHazard(tile.getHazard());
         } else {
-            trail.placeTeepee(tile.getTeepee());
+            return trail.placeTeepee(tile.getTeepee());
         }
     }
 
