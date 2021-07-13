@@ -593,9 +593,7 @@ public class PlayerState {
     }
 
     public int getStepLimit(int playerCount) {
-        if (player.getType() == Player.Type.COMPUTER) {
-            return Integer.MAX_VALUE;
-        } else if (playerCount == 2) {
+        if (playerCount == 2) {
             return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
         } else if (playerCount == 3) {
             return 3 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_DOLLARS, 0) * 2 + unlocked.getOrDefault(Unlockable.EXTRA_STEP_POINTS, 0);
