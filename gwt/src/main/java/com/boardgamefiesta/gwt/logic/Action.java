@@ -1269,10 +1269,12 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             }
 
             PlayerState currentPlayerState = game.currentPlayerState();
-            if (atMost == null && game.getCurrentPlayer().getType() != Player.Type.COMPUTER) {
-                var stepLimit = currentPlayerState.getStepLimit(game.getPlayers().size());
-                if (steps.size() > stepLimit) {
-                    throw new GWTException(GWTError.STEPS_EXCEED_LIMIT);
+            if (atMost == null) {
+                if (game.getCurrentPlayer().getType() != Player.Type.COMPUTER) {
+                    var stepLimit = currentPlayerState.getStepLimit(game.getPlayers().size());
+                    if (steps.size() > stepLimit) {
+                        throw new GWTException(GWTError.STEPS_EXCEED_LIMIT);
+                    }
                 }
             } else if (steps.size() > atMost) {
                 throw new GWTException(GWTError.STEPS_EXCEED_LIMIT);
