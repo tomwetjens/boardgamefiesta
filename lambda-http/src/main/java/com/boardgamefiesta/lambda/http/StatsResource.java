@@ -1,4 +1,4 @@
-package com.boardgamefiesta.server.rest.game;
+package com.boardgamefiesta.lambda.http;
 
 import com.boardgamefiesta.api.domain.Stats;
 import com.boardgamefiesta.domain.game.Game;
@@ -10,7 +10,6 @@ import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import lombok.NonNull;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -33,26 +32,19 @@ public class StatsResource {
     private final Tables tables;
     private final Users users;
     private final Ratings ratings;
-    private final boolean enabled;
 
     @Inject
     public StatsResource(@NonNull Tables tables,
                          @NonNull Users users,
-                         @NonNull Ratings ratings,
-                         @ConfigProperty(name = "bgf.stats.enabled") boolean enabled) {
+                         @NonNull Ratings ratings) {
         this.tables = tables;
         this.users = users;
         this.ratings = ratings;
-        this.enabled = enabled;
     }
 
     @GET
     @Produces("text/csv")
     public Response get(@PathParam("gameId") Game.Id gameId, @QueryParam("from") Instant from) {
-        if (!enabled) {
-            throw new ForbiddenException("Not enabled");
-        }
-
         if (from == null) {
             throw new BadRequestException("'from' parameter missing");
         }

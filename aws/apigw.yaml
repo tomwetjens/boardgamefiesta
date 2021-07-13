@@ -59,4 +59,4 @@ Resources:
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/server.zip'
+        S3Key: !Sub '${Version}/lambda-http.zip'

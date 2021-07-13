@@ -23,6 +23,12 @@
         <jakarta.json-api.version>1.1.6</jakarta.json-api.version>
         <jakarta.enterprise.cdi-api.version>2.0.2</jakarta.enterprise.cdi-api.version>
         <jakarta.json.bind-api.version>1.0.2</jakarta.json.bind-api.version>
+        <quarkus-plugin.version>1.9.2.Final</quarkus-plugin.version>
+        <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
+        <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
+        <quarkus.platform.version>1.9.2.Final</quarkus.platform.version>
+        <commons-codec.version>1.14</commons-codec.version>
+        <awssdk.version>2.16.98</awssdk.version>
     </properties>
 
     <modules>
@@ -32,6 +38,7 @@
         <module>dynamodb</module>
         <module>gwt</module>
         <module>istanbul</module>
+        <module>lambda-http</module>
         <module>powergrid</module>
         <module>server</module>
     </modules>
@@ -74,6 +81,25 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>${quarkus.platform.artifact-id}</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>cognitoidentityprovider</artifactId>
+                <version>${awssdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>url-connection-client</artifactId>
+                <version>${awssdk.version}</version>
             </dependency>
 
             <dependency>

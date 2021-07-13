@@ -34,7 +34,7 @@ echo "${ACTION}: $STACK_NAME"
 #  --parameters ParameterKey=Environment,ParameterValue=$ENV
 #
 
-aws s3 cp ../server/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/server.zip
+aws s3 cp ../lambda-http/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-http.zip
 
 aws cloudformation $ACTION --stack-name $STACK_NAME-apigw \
   --template-body file://apigw.yaml \
