@@ -107,7 +107,8 @@ public class PlayerStateView {
         unlocked = playerState.getUnlocked();
 
         buildings = playerState.getBuildings().stream()
-                .sorted(Comparator.comparingInt(PlayerBuilding::getNumber))
+                .sorted(Comparator.comparingInt(PlayerBuilding::getCraftsmen)
+                        .thenComparingInt(PlayerBuilding::getNumber))
                 .map(Building::getName)
                 .collect(Collectors.toList());
 
