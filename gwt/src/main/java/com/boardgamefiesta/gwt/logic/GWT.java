@@ -368,8 +368,6 @@ public class GWT implements State {
 
         if (!actionStack.isEmpty()) {
             actionStack.skip();
-
-            endTurnIfNoMoreActions(random);
         } else {
             endTurn(currentPlayer, random);
         }
