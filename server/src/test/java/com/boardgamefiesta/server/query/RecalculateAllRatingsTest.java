@@ -50,7 +50,7 @@ class RecalculateAllRatingsTest {
 
     @Test
     void run() {
-        tables.findEnded(Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
+        tables.findEndedWithHumanPlayers(Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .forEach(this::recalculate);
     }
 

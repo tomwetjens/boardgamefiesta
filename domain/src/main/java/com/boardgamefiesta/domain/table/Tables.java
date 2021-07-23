@@ -37,9 +37,9 @@ public interface Tables extends Repository {
 
     Stream<Table> findOpen(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, @NonNull Table.Id lastEvaluatedId);
 
-    Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, boolean ascending);
+    Stream<Table> findEndedWithHumanPlayers(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, boolean ascending);
 
-    Stream<Table> findEnded(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, boolean ascending, @NonNull Table.Id lastEvaluatedId);
+    Stream<Table> findEndedWithHumanPlayers(@NonNull Game.Id gameId, int maxResults, @NonNull Instant from, @NonNull Instant to, boolean ascending, @NonNull Table.Id lastEvaluatedId);
 
     Stream<LogEntry> findLogEntries(@NonNull Table.Id tableId, @NonNull Instant since, @NonNull Instant before, int limit);
 

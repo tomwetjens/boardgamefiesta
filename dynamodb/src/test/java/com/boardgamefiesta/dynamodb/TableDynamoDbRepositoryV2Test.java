@@ -79,7 +79,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             assertThat(repository.findActive(userA.getId())).extracting(Table::getId).contains(table.getId());
             assertThat(repository.findAll(userA.getId(), 10)).extracting(Table::getId).contains(table.getId());
             assertThat(repository.findAll(userA.getId(), GAME_ID, 10)).extracting(Table::getId).contains(table.getId());
-            assertThat(repository.findEnded(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
+            assertThat(repository.findEndedWithHumanPlayers(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
         }
     }
 
@@ -104,7 +104,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             assertThat(repository.findActive(userB.getId())).extracting(Table::getId).contains(table.getId());
             assertThat(repository.findAll(userB.getId(), 10)).extracting(Table::getId).contains(table.getId());
             assertThat(repository.findAll(userB.getId(), GAME_ID, 10)).extracting(Table::getId).contains(table.getId());
-            assertThat(repository.findEnded(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
+            assertThat(repository.findEndedWithHumanPlayers(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
         }
 
         @Test
@@ -126,7 +126,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             assertThat(repository.findActive(userB.getId())).extracting(Table::getId).doesNotContain(table.getId());
             assertThat(repository.findAll(userB.getId(), 10)).extracting(Table::getId).doesNotContain(table.getId());
             assertThat(repository.findAll(userB.getId(), GAME_ID, 10)).extracting(Table::getId).doesNotContain(table.getId());
-            assertThat(repository.findEnded(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
+            assertThat(repository.findEndedWithHumanPlayers(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
         }
 
         @Test
@@ -141,7 +141,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             assertThat(repository.findActive(userA.getId())).extracting(Table::getId).doesNotContain(table.getId());
             assertThat(repository.findAll(userA.getId(), 10)).extracting(Table::getId).contains(table.getId());
             assertThat(repository.findAll(userA.getId(), GAME_ID, 10)).extracting(Table::getId).contains(table.getId());
-            assertThat(repository.findEnded(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
+            assertThat(repository.findEndedWithHumanPlayers(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
         }
 
         @Test
@@ -162,7 +162,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             assertThat(repository.findActive(userB.getId())).extracting(Table::getId).contains(table.getId());
             assertThat(repository.findAll(userA.getId(), 10)).extracting(Table::getId).contains(table.getId());
             assertThat(repository.findAll(userA.getId(), GAME_ID, 10)).extracting(Table::getId).contains(table.getId());
-            assertThat(repository.findEnded(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
+            assertThat(repository.findEndedWithHumanPlayers(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).doesNotContain(table.getId());
         }
 
         @Test
@@ -183,7 +183,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             assertThat(repository.findActive(userB.getId())).extracting(Table::getId).doesNotContain(table.getId());
             assertThat(repository.findAll(userA.getId(), 10)).extracting(Table::getId).contains(table.getId());
             assertThat(repository.findAll(userA.getId(), GAME_ID, 10)).extracting(Table::getId).contains(table.getId());
-            assertThat(repository.findEnded(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).contains(table.getId());
+            assertThat(repository.findEndedWithHumanPlayers(GAME_ID, 10, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false)).extracting(Table::getId).contains(table.getId());
         }
 
         // TODO Abandoned tables should only be visible in user's recent tables
@@ -196,7 +196,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             repository.add(table().status(Table.Status.ENDED).ended(Instant.parse("2021-04-21T00:00:00.000Z")).build());
             repository.add(table().status(Table.Status.ENDED).ended(Instant.parse("2021-04-25T00:00:00.000Z")).build());
 
-            var tables = repository.findEnded(GAME_ID, 6, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false).collect(Collectors.toList());
+            var tables = repository.findEndedWithHumanPlayers(GAME_ID, 6, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false).collect(Collectors.toList());
 
             assertThat(tables).hasSize(2);
             assertThat(tables)
@@ -211,7 +211,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             IntStream.range(0, 50).forEach(i ->
                     repository.put(table().status(Table.Status.ENDED).ended(Instant.now()).build()));
 
-            var tables = repository.findEnded(GAME_ID, 100, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false).collect(Collectors.toList());
+            var tables = repository.findEndedWithHumanPlayers(GAME_ID, 100, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false).collect(Collectors.toList());
 
             assertThat(tables).hasSize(50);
         }
@@ -224,7 +224,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
                             .ended(Instant.ofEpochSecond(i))
                             .build()));
 
-            var tables1 = repository.findEnded(GAME_ID, 20, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false).collect(Collectors.toList());
+            var tables1 = repository.findEndedWithHumanPlayers(GAME_ID, 20, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, false).collect(Collectors.toList());
             assertThat(tables1).hasSize(20);
             var firstTable1 = tables1.get(0);
             assertThat(firstTable1.getEnded()).isEqualTo(Instant.ofEpochSecond(44));
@@ -233,7 +233,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
             var tableIds1 = tables1.stream().map(Table::getId).collect(Collectors.toList());
 
-            var tables2 = repository.findEnded(GAME_ID, 20, Instant.ofEpochSecond(0), lastTable1.getEnded(), false, lastTable1.getId()).collect(Collectors.toList());
+            var tables2 = repository.findEndedWithHumanPlayers(GAME_ID, 20, Instant.ofEpochSecond(0), lastTable1.getEnded(), false, lastTable1.getId()).collect(Collectors.toList());
             assertThat(tables2).hasSize(20);
             var firstTable2 = tables2.get(0);
             assertThat(firstTable2.getEnded()).isEqualTo(Instant.ofEpochSecond(24));
@@ -243,7 +243,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
             var tableIds2 = tables2.stream().map(Table::getId).collect(Collectors.toList());
             assertThat(tableIds2).doesNotContainAnyElementsOf(tableIds1);
 
-            var tables3 = repository.findEnded(GAME_ID, 20, Instant.ofEpochSecond(0), lastTable2.getEnded(), false, lastTable2.getId()).collect(Collectors.toList());
+            var tables3 = repository.findEndedWithHumanPlayers(GAME_ID, 20, Instant.ofEpochSecond(0), lastTable2.getEnded(), false, lastTable2.getId()).collect(Collectors.toList());
             assertThat(tables3).hasSize(5);
             var firstTable3 = tables3.get(0);
             assertThat(firstTable3.getEnded()).isEqualTo(Instant.ofEpochSecond(4));

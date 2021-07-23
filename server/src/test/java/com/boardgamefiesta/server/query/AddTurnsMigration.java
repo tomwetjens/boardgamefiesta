@@ -47,7 +47,7 @@ public class AddTurnsMigration {
 
     @Test
     void run() {
-        tables.findEnded(com.boardgamefiesta.domain.game.Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
+        tables.findEndedWithHumanPlayers(com.boardgamefiesta.domain.game.Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .filter(table -> table.getGame().getId().getId().equals(GWTProvider.ID))
 //                .limit(100)
                 .forEach(table -> {

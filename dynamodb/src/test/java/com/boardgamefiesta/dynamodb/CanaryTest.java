@@ -29,7 +29,7 @@ public class CanaryTest {
     void allTablesCanBeOpened() {
         tables = new TableDynamoDbRepositoryV2(games, DynamoDbClient.create(), config);
 
-        var count = tables.findEnded(Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
+        var count = tables.findEndedWithHumanPlayers(Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .filter(table -> table.getStatus() == Table.Status.STARTED || table.getStatus() == Table.Status.ENDED)
                 .peek(table -> {
                     System.out.println(table.getId().getId());

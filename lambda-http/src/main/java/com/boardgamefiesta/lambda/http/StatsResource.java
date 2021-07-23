@@ -73,7 +73,7 @@ public class StatsResource {
         try (PrintWriter writer = new PrintWriter(outputStream)) {
             List<String> keys = new ArrayList<>();
 
-            tables.findEnded(gameId, 999999, from, to, false)
+            tables.findEndedWithHumanPlayers(gameId, 999999, from, to, false)
                     .filter(table -> table.getStatus() == Table.Status.ENDED)
                     .filter(table -> !table.hasComputerPlayers())
                     .forEach(table -> table.getPlayers().forEach(player -> {
