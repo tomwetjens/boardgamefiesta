@@ -10,7 +10,6 @@ import lombok.experimental.FieldDefaults;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
@@ -68,25 +67,15 @@ public class StateView {
             // Other players in play order
             var viewingPlayerIndex = state.getPlayerOrder().indexOf(viewingPlayer);
             var playerCount = state.getPlayerOrder().size();
-            otherPlayers = Stream.concat(
-                    // First players that are still in the game, in order relative to the viewing player
+            otherPlayers =
+                    // In order relative to the viewing player
                     IntStream.range(1, playerCount)
                             .map(i -> (viewingPlayerIndex + i) % playerCount)
-                            .mapToObj(i -> state.getPlayerOrder().get(i)),
-                    // Then the players that are no longer in the game, in a deterministic order
-                    state.getPlayers().stream()
-                            .filter(p -> !state.getPlayerOrder().contains(p))
-                            .sorted(Comparator.comparing(Player::getName)))
-                    .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer))
-                    .collect(Collectors.toList());
+                            .mapToObj(i -> state.getPlayerOrder().get(i))
+                            .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer))
+                            .collect(Collectors.toList());
         } else {
-            otherPlayers = Stream.concat(
-                    // First players that are still in the game, in order relative to the viewing player
-                    state.getPlayerOrder().stream(),
-                    // Then the players that are no longer in the game, in a deterministic order
-                    state.getPlayers().stream()
-                            .filter(p -> !state.getPlayerOrder().contains(p))
-                            .sorted(Comparator.comparing(Player::getName)))
+            otherPlayers = state.getPlayers().stream()
                     .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer))
                     .collect(Collectors.toList());
         }

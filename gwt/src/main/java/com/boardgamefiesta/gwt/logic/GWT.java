@@ -36,7 +36,8 @@ public class GWT implements State {
     @Getter
     private final boolean railsToTheNorth;
 
-    private final Set<Player> players;
+    @Getter
+    private List<Player> players;
 
     private final Map<Player, PlayerState> playerStates;
 
@@ -111,7 +112,7 @@ public class GWT implements State {
                 .edition(edition)
                 .mode(options.getMode())
                 .railsToTheNorth(options.isRailsToTheNorth())
-                .players(players)
+                .players(new ArrayList<>(playerOrder))
                 .playerOrder(playerOrder)
                 .playerStates(playerStates)
                 .currentPlayer(playerOrder.get(0))
@@ -194,6 +195,8 @@ public class GWT implements State {
     }
 
     private void start(Random random) {
+        players = new ArrayList<>(playerOrder);
+
         for (int i = 0; i < playerOrder.size(); i++) {
             var player = playerOrder.get(i);
             var playerState = playerStates.get(player);
@@ -463,11 +466,6 @@ public class GWT implements State {
         return Collections.unmodifiableList(playerOrder);
     }
 
-    @Override
-    public Collection<Player> getPlayers() {
-        return Collections.unmodifiableSet(players);
-    }
-
     public Set<Class<? extends Action>> possibleActions() {
         if (isEnded()) {
             return Collections.emptySet();
@@ -527,7 +525,7 @@ public class GWT implements State {
         var stats = Stats.builder()
                 .value("rttn", railsToTheNorth ? 'Y' : 'N')
                 .value("players", players.size())
-                .value("seat", playerOrder.indexOf(player) + 1)
+                .value("seat", players.indexOf(player) + 1)
                 .value("cowboys", playerState.getNumberOfCowboys())
                 .value("craftsmen", playerState.getNumberOfCraftsmen())
                 .value("engineers", playerState.getNumberOfEngineers())
@@ -605,6 +603,7 @@ public class GWT implements State {
                 .add("mode", mode.name())
                 .add("railsToTheNorth", railsToTheNorth)
                 .add("players", serializer.fromCollection(players, Player::serialize))
+                .add("originalPlayerOrder", serializer.fromStrings(players.stream().map(Player::getName)))
                 .add("playerOrder", serializer.fromStrings(playerOrder.stream().map(Player::getName)))
                 .add("playerStates", serializer.fromMap(playerStates, Player::getName, playerState -> playerState.serialize(factory, railroadTrack)))
                 .add("currentPlayer", currentPlayer.getName())
@@ -638,6 +637,14 @@ public class GWT implements State {
                 .map(playerMap::get)
                 .collect(Collectors.toList());
 
+        var originalPlayerOrder = jsonObject.containsKey("originalPlayerOrder")
+                ? jsonObject.getJsonArray("originalPlayerOrder").stream()
+                .map(jsonValue -> (JsonString) jsonValue)
+                .map(JsonString::getString)
+                .map(playerMap::get)
+                .collect(Collectors.toList())
+                : tryToReconstructOriginalOrder(players, playerOrder);
+
         var kansasCitySupply = KansasCitySupply.deserialize(jsonObject.getJsonObject("kansasCitySupply"));
 
         var railsToTheNorth = jsonObject.getBoolean("railsToTheNorth", false);
@@ -650,7 +657,7 @@ public class GWT implements State {
                 .edition(edition)
                 .mode(Options.Mode.valueOf(jsonObject.getString("mode", Options.Mode.STRATEGIC.name())))
                 .railsToTheNorth(railsToTheNorth)
-                .players(players)
+                .players(originalPlayerOrder)
                 .playerOrder(playerOrder)
                 .playerStates(deserializePlayerStates(edition, playerMap, railroadTrack, trail, jsonObject.getJsonObject("playerStates")))
                 .currentPlayer(playerMap.get(jsonObject.getString("currentPlayer")))
@@ -678,6 +685,26 @@ public class GWT implements State {
         return jsonObject.keySet().stream()
                 .collect(Collectors.toMap(playerMap::get, key -> PlayerState.deserialize(edition, playerMap.get(key), railroadTrack, trail,
                         jsonObject.getJsonObject(key).asJsonObject())));
+    }
+
+    private static List<Player> tryToReconstructOriginalOrder(Collection<Player> players, List<Player> playerOrder) {
+        if (playerOrder.size() == players.size()) {
+            // No players left during the game, so we can use the current player order
+            return new ArrayList<>(playerOrder);
+        } else {
+            // One or more players left during the game
+            var originalPlayerOrder = new ArrayList<>(playerOrder);
+
+            // No way to know what the order was before one or more players left,
+            // so just add them at the end of the list in a non-deterministic way
+            for (Player player : players) {
+                if (!originalPlayerOrder.contains(player)) {
+                    originalPlayerOrder.add(player);
+                }
+            }
+
+            return originalPlayerOrder;
+        }
     }
 
     @Override

@@ -32,7 +32,7 @@ public class Istanbul implements State {
 
     @NonNull
     @Getter
-    private final Set<Player> players;
+    private final List<Player> players;
 
     @NonNull
     private final List<Player> playerOrder;
@@ -43,10 +43,6 @@ public class Istanbul implements State {
     @Getter
     @NonNull
     private final Layout layout;
-
-    @Getter
-    @NonNull
-    private final Player startPlayer;
 
     @NonNull
     private final LinkedList<BonusCard> bonusCards;
@@ -76,8 +72,6 @@ public class Istanbul implements State {
         layout.randomPlace(random).placeGovernor();
         layout.randomPlace(random).placeSmuggler();
 
-        var startPlayer = playerOrder.get(0);
-
         var playerStates = IntStream.range(0, players.size())
                 .boxed()
                 .collect(Collectors.toMap(playerOrder::get, PlayerState::start));
@@ -89,14 +83,13 @@ public class Istanbul implements State {
         actionQueue.addFollowUp(PossibleAction.mandatory(Action.Move.class));
 
         var game = new Istanbul(
-                players,
+                new ArrayList<>(playerOrder),
                 playerOrder,
                 playerStates,
                 layout,
-                startPlayer,
                 bonusCards,
                 actionQueue,
-                startPlayer,
+                playerOrder.get(0),
                 Status.STARTED,
                 false,
                 new ArrayList<>());
@@ -146,7 +139,6 @@ public class Istanbul implements State {
                 .add("playerOrder", serializer.fromStrings(playerOrder.stream().map(Player::getName)))
                 .add("playerStates", serializer.fromMap(playerStates, Player::getName, PlayerState::serialize))
                 .add("layout", layout.serialize(factory))
-                .add("startPlayer", startPlayer.getName())
                 .add("bonusCards", serializer.fromStrings(bonusCards, BonusCard::name))
                 .add("actionQueue", actionQueue.serialize(factory))
                 .add("currentPlayer", currentPlayer.getName())
@@ -156,12 +148,13 @@ public class Istanbul implements State {
     }
 
     public static Istanbul deserialize(JsonObject jsonObject) {
-        var players = jsonObject.getJsonArray("players").stream()
+        var playersPossiblyNotInOriginalOrderIfOlderGame = jsonObject.getJsonArray("players").stream()
                 .map(JsonValue::asJsonObject)
                 .map(Player::deserialize)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
-        var playerMap = players.stream().collect(Collectors.toMap(Player::getName, Function.identity()));
+        var playerMap = playersPossiblyNotInOriginalOrderIfOlderGame.stream()
+                .collect(Collectors.toMap(Player::getName, Function.identity()));
 
         var playerOrder = jsonObject.getJsonArray("playerOrder").stream()
                 .map(jsonValue -> (JsonString) jsonValue)
@@ -169,12 +162,14 @@ public class Istanbul implements State {
                 .map(playerMap::get)
                 .collect(Collectors.toList());
 
+        var players = tryToReconstructOriginalOrder(playersPossiblyNotInOriginalOrderIfOlderGame, playerOrder,
+                jsonObject.containsKey("startPlayer") ? playerMap.get(jsonObject.getString("startPlayer")) : null);
+
         return new Istanbul(
                 players,
                 playerOrder,
                 JsonDeserializer.forObject(jsonObject.getJsonObject("playerStates")).asObjectMap(playerMap::get, PlayerState::deserialize),
                 Layout.deserialize(playerMap, jsonObject.getJsonObject("layout")),
-                playerMap.get(jsonObject.getString("startPlayer")),
                 jsonObject.getJsonArray("bonusCards").stream()
                         .map(jsonValue -> (JsonString) jsonValue)
                         .map(JsonString::getString)
@@ -185,6 +180,35 @@ public class Istanbul implements State {
                 Status.valueOf(jsonObject.getString("status")),
                 jsonObject.getBoolean("canUndo", false),
                 null);
+    }
+
+    private static List<Player> tryToReconstructOriginalOrder(Collection<Player> players, List<Player> playerOrder, Player startPlayer) {
+        if (startPlayer == null) {
+            // Newer game, where the original players are always stored in order
+            return new ArrayList<>(players);
+        } else if (playerOrder.size() == players.size()) {
+            // No players left during the game, so we can use the current player order
+            return new ArrayList<>(playerOrder);
+        } else {
+            // One or more players left during the game
+
+            var originalPlayerOrder = new ArrayList<>(playerOrder);
+            // Because the original start player is known (older games only),
+            // then make sure it is the first in the list
+            if (!players.contains(startPlayer)) {
+                originalPlayerOrder.add(0, startPlayer);
+            }
+
+            // No way to know what the order was before one or more players left,
+            // so just add them at the end of the list in a non-deterministic way
+            for (Player player : players) {
+                if (!originalPlayerOrder.contains(player)) {
+                    originalPlayerOrder.add(player);
+                }
+            }
+
+            return originalPlayerOrder;
+        }
     }
 
     @Override
@@ -317,7 +341,7 @@ public class Istanbul implements State {
         playerStates.get(currentPlayer).beginTurn();
 
         // Status transitions
-        if (this.currentPlayer == startPlayer) {
+        if (this.currentPlayer == playerOrder.get(0)) {
             if (status == Status.LAST_ROUND) {
                 // Finished last round
                 status = Status.PLAY_LEFTOVER_BONUS_CARDS;

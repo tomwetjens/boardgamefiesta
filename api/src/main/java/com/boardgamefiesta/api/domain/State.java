@@ -23,7 +23,7 @@ public interface State {
     /**
      * @return all original players (at start of the game, including that left during the game), in original order
      */
-    Collection<Player> getPlayers();
+    List<Player> getPlayers();
 
     Optional<Integer> score(Player player);
 
