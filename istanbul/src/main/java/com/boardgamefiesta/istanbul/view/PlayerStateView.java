@@ -16,6 +16,7 @@ import java.util.Map;
 public class PlayerStateView {
 
     private final String name;
+    private final boolean startPlayer;
     private final int rubies;
     private final int lira;
     private final int capacity;
@@ -27,8 +28,9 @@ public class PlayerStateView {
 
     private PlayerStatsView stats;
 
-    public PlayerStateView(Player player, PlayerState playerState, boolean self, boolean ended) {
+    public PlayerStateView(Player player, PlayerState playerState, boolean startPlayer, boolean self, boolean ended) {
         this.name = player.getName();
+        this.startPlayer = startPlayer;
         this.rubies = playerState.getRubies();
         this.lira = playerState.getLira();
         this.capacity = playerState.getCapacity();

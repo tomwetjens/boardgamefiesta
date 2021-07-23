@@ -35,7 +35,9 @@ public class IstanbulView {
                 : null;
 
         players = state.getPlayers().stream().collect(Collectors.toMap(Player::getColor, player ->
-                new PlayerStateView(player, state.getPlayerState(player), player == viewer, state.isEnded())));
+                new PlayerStateView(player, state.getPlayerState(player),
+                        player == state.getPlayerOrder().get(0),
+                        player == viewer, state.isEnded())));
 
         bonusCards = state.getBonusCardsSize();
 
