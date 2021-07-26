@@ -1,5 +1,7 @@
 package com.boardgamefiesta.server.rest.table;
 
+import com.boardgamefiesta.domain.featuretoggle.FeatureToggle;
+import com.boardgamefiesta.domain.featuretoggle.FeatureToggles;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
@@ -17,7 +19,10 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,14 +35,17 @@ public class GameTablesResource {
 
     private static final int MAX_RESULTS = 20;
 
+    private final FeatureToggles featureToggles;
     private final Tables tables;
     private final Users users;
     private final CurrentUser currentUser;
 
     @Inject
-    public GameTablesResource(@NonNull Tables tables,
+    public GameTablesResource(@NonNull FeatureToggles featureToggles,
+                              @NonNull Tables tables,
                               @NonNull Users users,
                               @NonNull CurrentUser currentUser) {
+        this.featureToggles = featureToggles;
         this.tables = tables;
         this.users = users;
         this.currentUser = currentUser;
@@ -45,14 +53,16 @@ public class GameTablesResource {
 
     @GET
     @Path("/started")
-    public List<TableView> getStarted(@PathParam("gameId") String gameId,
+    public List<TableView> getStarted(@PathParam("gameId") Game.Id gameId,
                                       @QueryParam("lts") String lts,
                                       @QueryParam("lid") String lid) {
         var currentUserId = currentUser.getId();
 
+        checkFeatureToggle(gameId);
+
         var results = (lts != null && !"".equals(lts.trim()) && lid != null && !"".equals(lid.trim())
-                ? tables.findStarted(Game.Id.of(gameId), MAX_RESULTS, Tables.MIN_TIMESTAMP, Instant.parse(lts.trim()), Table.Id.of(lid.trim()))
-                : tables.findStarted(Game.Id.of(gameId), MAX_RESULTS, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP))
+                ? tables.findStarted(gameId, MAX_RESULTS, Tables.MIN_TIMESTAMP, Instant.parse(lts.trim()), Table.Id.of(lid.trim()))
+                : tables.findStarted(gameId, MAX_RESULTS, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP))
                 .collect(Collectors.toList());
 
         var userMap = users.findByIds(results.stream()
@@ -71,14 +81,16 @@ public class GameTablesResource {
 
     @GET
     @Path("/open")
-    public List<TableView> getOpen(@PathParam("gameId") String gameId,
+    public List<TableView> getOpen(@PathParam("gameId") Game.Id gameId,
                                    @QueryParam("lts") String lts,
                                    @QueryParam("lid") String lid) {
         var currentUserId = currentUser.getId();
 
+        checkFeatureToggle(gameId);
+
         var results = (lts != null && !"".equals(lts.trim()) && lid != null && !"".equals(lid.trim())
-                ? tables.findOpen(Game.Id.of(gameId), MAX_RESULTS, Tables.MIN_TIMESTAMP, Instant.parse(lts.trim()), Table.Id.of(lid.trim()))
-                : tables.findOpen(Game.Id.of(gameId), MAX_RESULTS, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP))
+                ? tables.findOpen(gameId, MAX_RESULTS, Tables.MIN_TIMESTAMP, Instant.parse(lts.trim()), Table.Id.of(lid.trim()))
+                : tables.findOpen(gameId, MAX_RESULTS, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP))
                 .filter(table -> table.canJoin(currentUserId))
                 .collect(Collectors.toList());
 
@@ -96,4 +108,9 @@ public class GameTablesResource {
                 .collect(Collectors.toList());
     }
 
+    private void checkFeatureToggle(Game.Id gameId) {
+        FeatureToggle.Id.forGameId(gameId)
+                .map(featureToggles::get)
+                .ifPresent(featureToggle -> featureToggle.throwIfNotContains(currentUser.getId()));
+    }
 }
