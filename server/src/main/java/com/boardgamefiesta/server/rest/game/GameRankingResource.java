@@ -1,9 +1,12 @@
 package com.boardgamefiesta.server.rest.game;
 
+import com.boardgamefiesta.domain.featuretoggle.FeatureToggle;
+import com.boardgamefiesta.domain.featuretoggle.FeatureToggles;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.domain.rating.Ratings;
 import com.boardgamefiesta.server.auth.Roles;
+import com.boardgamefiesta.server.rest.CurrentUser;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -23,18 +26,32 @@ import java.util.stream.Collectors;
 public class GameRankingResource {
 
     @Inject
+    CurrentUser currentUser;
+
+    @Inject
+    FeatureToggles featureToggles;
+
+    @Inject
     Ratings ratings;
 
     @Inject
     Users users;
 
     @GET
-    public List<RankingView> getRanking(@PathParam("gameId") String gameId) {
-        return ratings.findRanking(Game.Id.of(gameId), 10)
+    public List<RankingView> getRanking(@PathParam("gameId") Game.Id gameId) {
+        checkFeatureToggle(gameId);
+
+        return ratings.findRanking(gameId, 10)
                 .flatMap(ranking -> users.findById(ranking.getUserId())
                         .map(user -> new RankingView(user, ranking.getRating()))
                         .stream())
                 .collect(Collectors.toList());
+    }
+
+    private void checkFeatureToggle(Game.Id gameId) {
+        FeatureToggle.Id.forGameId(gameId)
+                .map(featureToggles::get)
+                .ifPresent(featureToggle -> featureToggle.throwIfNotContains(currentUser.getId()));
     }
 
 }
