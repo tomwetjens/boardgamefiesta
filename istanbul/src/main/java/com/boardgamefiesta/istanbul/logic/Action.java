@@ -141,7 +141,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE_GOVERNOR, Integer.toString(to.getNumber())));
 
-            return ActionResult.followUp(PossibleAction.choice(Set.of(
+            return ActionResult.immediate(PossibleAction.choice(Set.of(
                     PossibleAction.optional(Action.Pay2Lira.class),
                     PossibleAction.optional(Action.DiscardBonusCard.class))), false);
         }
@@ -160,7 +160,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE_SMUGGLER, Integer.toString(to.getNumber())));
 
-            return ActionResult.followUp(PossibleAction.whenThen(takeAnyGood(),
+            return ActionResult.immediate(PossibleAction.whenThen(takeAnyGood(),
                     PossibleAction.choice(Set.of(
                             PossibleAction.optional(Action.Pay2Lira.class),
                             PossibleAction.optional(Action.Pay1Fabric.class),

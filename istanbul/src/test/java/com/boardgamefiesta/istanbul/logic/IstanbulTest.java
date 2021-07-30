@@ -589,4 +589,70 @@ class IstanbulTest {
             assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
         }
     }
+
+    @Test
+    void smugglerThenGovernor() {
+        // Given
+        var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, eventListener, new Random(0));
+        game.getSpiceWarehouse().takeGovernor();
+        game.getPoliceStation().placeGovernor();
+
+
+        // When
+        assertThat(game.getPoliceStation().isGovernor()).isTrue();
+        assertThat(game.getPoliceStation().isSmuggler()).isTrue();
+        game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
+        game.perform(new Action.LeaveAssistant(), new Random(0));
+
+        // Then
+        // Player should perform or skip place action first
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.SendFamilyMember.class);
+        game.skip(new Random(0));
+
+        // Player should be able to use governor or smuggler in any order
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Smuggler.class, Action.Governor.class);
+        // When player uses Smuggler before Governor
+        game.perform(new Action.Smuggler(), new Random(0));
+        // It should first complete all the actions for Smuggler, before using the Governor
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Fabric.class, Action.Take1Fruit.class, Action.Take1Spice.class, Action.Take1Blue.class);
+        game.perform(new Action.Take1Fruit(), new Random(0));
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Pay1Fabric.class, Action.Pay1Fruit.class, Action.Pay1Spice.class, Action.Pay1Blue.class, Action.Pay2Lira.class);
+        game.perform(new Action.Pay2Lira(), new Random(0));
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Governor.class);
+        // Then player can use Governor
+        game.perform(new Action.Governor(), new Random(0));
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Pay2Lira.class, Action.DiscardBonusCard.class);
+    }
+
+    @Test
+    void governorThenSmuggler() {
+        // Given
+        var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, eventListener, new Random(0));
+        game.getSpiceWarehouse().takeGovernor();
+        game.getPoliceStation().placeGovernor();
+
+
+        // When
+        assertThat(game.getPoliceStation().isGovernor()).isTrue();
+        assertThat(game.getPoliceStation().isSmuggler()).isTrue();
+        game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
+        game.perform(new Action.LeaveAssistant(), new Random(0));
+
+        // Then
+        // Player should perform or skip place action first
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.SendFamilyMember.class);
+        game.skip(new Random(0));
+
+        // Player should be able to use governor or smuggler in any order
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Smuggler.class, Action.Governor.class);
+        // When player uses Governor before Smuggler
+        game.perform(new Action.Governor(), new Random(0));
+        // It should first complete all the actions for Governor, before using the Smuggler
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Pay2Lira.class, Action.DiscardBonusCard.class);
+        game.perform(new Action.Pay2Lira(), new Random(0));
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Smuggler.class);
+        // Then player can use Smuggler
+        game.perform(new Action.Smuggler(), new Random(0));
+        assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Fabric.class, Action.Take1Fruit.class, Action.Take1Spice.class, Action.Take1Blue.class);
+    }
 }
