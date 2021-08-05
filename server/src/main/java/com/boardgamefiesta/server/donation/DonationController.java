@@ -35,7 +35,7 @@ public class DonationController {
         update();
 
         return totalAmountReceived != null
-                ? new DonationStatusView(Math.max(0, ESTIMATED_MONTHLY_COST - totalAmountReceived), (double) Math.round((totalAmountReceived / ESTIMATED_MONTHLY_COST) * 100))
+                ? new DonationStatusView(Math.max(0, ESTIMATED_MONTHLY_COST - totalAmountReceived), Math.min(100, (double) Math.round((totalAmountReceived / ESTIMATED_MONTHLY_COST) * 100)))
                 : new DonationStatusView(null, null);
     }
 
