@@ -354,7 +354,7 @@ public class Table implements AggregateRoot {
         afterPlayerLeft(player);
     }
 
-    private void afterPlayerLeft(Player player) {
+    void afterPlayerLeft(Player player) {
         player.getUserId().ifPresent(userId -> {
             if (ownerId.equals(userId)) {
                 // if owner wants to leave, have to appoint a new owner
@@ -365,7 +365,7 @@ public class Table implements AggregateRoot {
             }
         });
 
-        if (status == Status.STARTED) {
+        if (status != Status.NEW) {
             runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
 
             if (players.stream().filter(Player::isPlaying).count() < game.getMinNumberOfPlayers()) {

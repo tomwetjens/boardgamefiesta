@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-@Builder
+@Builder(toBuilder = true)
 public class Player implements Entity {
 
     @Getter
@@ -127,6 +127,10 @@ public class Player implements Entity {
     }
 
     void leave() {
+        if (status == Status.LEFT) {
+            throw new AlreadyLeftException();
+        }
+
         if (status != Status.ACCEPTED && status != Status.PROPOSED_TO_LEAVE && status != Status.AGREED_TO_LEAVE) {
             throw new NotAcceptedException();
         }
@@ -243,6 +247,12 @@ public class Player implements Entity {
     public static final class NotAcceptedException extends AggregateRoot.InvalidCommandException {
         public NotAcceptedException() {
             super("NOT_ACCEPTED");
+        }
+    }
+
+    public static final class AlreadyLeftException extends AggregateRoot.InvalidCommandException {
+        public AlreadyLeftException() {
+            super("ALREADY_LEFT");
         }
     }
 }
