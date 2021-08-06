@@ -372,8 +372,8 @@ public class Table implements AggregateRoot {
         afterPlayerLeft(player);
     }
 
-    void afterPlayerLeft(Player player) {
-        player.getUserId().ifPresent(userId -> {
+    void afterPlayerLeft(Player tablePlayer) {
+        tablePlayer.getUserId().ifPresent(userId -> {
             if (ownerId.equals(userId)) {
                 // if owner wants to leave, have to appoint a new owner
                 otherUsersPlaying(userId)
@@ -384,11 +384,16 @@ public class Table implements AggregateRoot {
         });
 
         if (status != Status.NEW) {
-            runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
+            var player = getState().getPlayerByName(tablePlayer.getId().getId()).orElseThrow();
+
+            runStateChange(state -> state.leave(player, RANDOM));
 
             if (players.stream().filter(Player::isPlaying).count() < game.getMinNumberOfPlayers()) {
                 // Game is cannot continue with one less player
-                if (hasMoreThanOneHumanPlayer()) {
+
+                // If the game is only against computer players, then just abandon
+                // If the player has not played X number of turns yet, then just abandon
+                if (hasMoreThanOneHumanPlayer() && getState().getTurn(player).orElse(0) < 3) {
                     end();
                 } else {
                     abandon();
