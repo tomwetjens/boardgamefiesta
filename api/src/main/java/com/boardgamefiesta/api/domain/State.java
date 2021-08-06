@@ -25,7 +25,7 @@ public interface State {
      */
     List<Player> getPlayers();
 
-    Optional<Integer> score(Player player);
+    int score(Player player);
 
     /**
      * @return players (that haven't left) ranked by their scores. 0=1st place, 1=2nd place, etc. 1st place == winner

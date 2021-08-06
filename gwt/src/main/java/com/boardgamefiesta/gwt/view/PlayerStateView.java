@@ -133,7 +133,9 @@ public class PlayerStateView {
                 .sorted()
                 .collect(Collectors.toList());
 
-        score = state.scoreDetails(playerState.getPlayer()).map(ScoreView::new).orElse(null);
+        if (state.isEnded() || state.getMode() == GWT.Options.Mode.STRATEGIC) {
+            score = new ScoreView(state.scoreDetails(playerState.getPlayer()));
+        }
 
         exchangeTokens = playerState.getExchangeTokens();
 

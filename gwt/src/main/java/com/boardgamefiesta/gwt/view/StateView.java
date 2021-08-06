@@ -65,13 +65,13 @@ public class StateView {
                     .orElse(null);
 
             // Other players in play order
-            var viewingPlayerIndex = state.getPlayerOrder().indexOf(viewingPlayer);
-            var playerCount = state.getPlayerOrder().size();
+            var viewingPlayerIndex = state.getPlayers().indexOf(viewingPlayer);
+            var playerCount = state.getPlayers().size();
             otherPlayers =
                     // In order relative to the viewing player
                     IntStream.range(1, playerCount)
                             .map(i -> (viewingPlayerIndex + i) % playerCount)
-                            .mapToObj(i -> state.getPlayerOrder().get(i))
+                            .mapToObj(i -> state.getPlayers().get(i))
                             .map(p -> new PlayerStateView(state, state.playerState(p), viewingPlayer))
                             .collect(Collectors.toList());
         } else {

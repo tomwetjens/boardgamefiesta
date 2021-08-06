@@ -491,8 +491,8 @@ class IstanbulTest {
         game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
         game.endTurn(new Random(0));
 
-        assertThat(game.score(playerRed)).contains(6);
-        assertThat(game.score(playerGreen)).contains(3);
+        assertThat(game.score(playerRed)).isEqualTo(6);
+        assertThat(game.score(playerGreen)).isEqualTo(3);
     }
 
     @Nested

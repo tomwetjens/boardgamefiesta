@@ -320,8 +320,9 @@ public class PowerGrid implements State {
     }
 
     @Override
-    public Optional<Integer> score(Player player) {
-        return Optional.empty();
+    public int score(Player player) {
+        // TODO
+        return 0;
     }
 
     @Override

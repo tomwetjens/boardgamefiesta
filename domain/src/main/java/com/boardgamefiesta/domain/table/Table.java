@@ -337,14 +337,6 @@ public class Table implements AggregateRoot {
         var player = getPlayerByUserId(userId)
                 .orElseThrow(NotPlayer::new);
 
-        if (ownerId.equals(userId)) {
-            // if owner wants to leave, have to appoint a new owner
-            otherUsersPlaying(userId)
-                    .findAny()
-                    .flatMap(Player::getUserId)
-                    .ifPresentOrElse(this::changeOwner, this::abandon);
-        }
-
         log.add(new LogEntry(player, LogEntry.Type.LEFT));
 
         player.leave();
@@ -353,21 +345,38 @@ public class Table implements AggregateRoot {
             players.remove(player);
         }
 
-        if (status == Status.STARTED) {
-            if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
-                // Game is still able to continue with one less player
-                runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
-            } else {
-                // Game cannot be continued without player
-                abandon();
-            }
-
-            // TODO Deduct karma points if playing with humans
-        }
-
         new Left(id, userId).fire();
 
         updated = Instant.now();
+
+        // TODO Deduct karma points if playing with humans
+
+        afterPlayerLeft(player);
+    }
+
+    private void afterPlayerLeft(Player player) {
+        player.getUserId().ifPresent(userId -> {
+            if (ownerId.equals(userId)) {
+                // if owner wants to leave, have to appoint a new owner
+                otherUsersPlaying(userId)
+                        .findAny()
+                        .flatMap(Player::getUserId)
+                        .ifPresentOrElse(this::changeOwner, this::abandon);
+            }
+        });
+
+        if (status == Status.STARTED) {
+            runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
+
+            if (players.stream().filter(Player::isPlaying).count() < game.getMinNumberOfPlayers()) {
+                // Game is cannot continue with one less player
+                if (hasMoreThanOneHumanPlayer()) {
+                    end();
+                } else {
+                    abandon();
+                }
+            }
+        }
     }
 
     private Stream<Player> otherUsersPlaying(User.Id userId) {
@@ -430,27 +439,37 @@ public class Table implements AggregateRoot {
         var state = getState();
 
         if (state.isEnded()) {
-            status = Status.ENDED;
-            ended = updated;
-
-            var ranking = state.ranking();
-            var winner = ranking.get(0);
-
-            for (Player player : players) {
-                state.getPlayerByName(player.getId().getId())
-                        .flatMap(state::score)
-                        .ifPresent(score ->
-                                player.assignScore(score, winner.getName().equals(player.getId().getId())));
-            }
-
-            log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.END));
-
-            new Ended(id).fire();
+            end();
         } else {
-            for (Player player : players) {
+            assignScores();
+        }
+    }
+
+    private void end() {
+        status = Status.ENDED;
+        ended = updated;
+
+        assignScores();
+
+        log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.END));
+
+        new Ended(id).fire();
+    }
+
+    private void assignScores() {
+        var state = getState();
+
+        var winner = status == Status.ENDED ? state.ranking().get(0) : null;
+
+        for (Player player : players) {
+            if (player.isPlaying()) {
                 state.getPlayerByName(player.getId().getId())
-                        .flatMap(state::score)
-                        .ifPresent(score -> player.assignScore(score, false));
+                        .map(state::score)
+                        .ifPresent(score ->
+                                player.assignScore(score, winner != null && winner.getName().equals(player.getId().getId())));
+            } else {
+                // Player has left during the game, always score 0
+                player.assignScore(0, false);
             }
         }
     }
@@ -594,25 +613,9 @@ public class Table implements AggregateRoot {
             log.add(new LogEntry(kickingPlayer, LogEntry.Type.KICK, List.of(userId.getId())));
 
             new Kicked(this.id, userId).fire();
-
-            if (ownerId.equals(userId)) {
-                // if owner is kicked, have to appoint a new owner
-                otherUsersPlaying(userId)
-                        .findAny()
-                        .flatMap(Player::getUserId)
-                        .ifPresentOrElse(this::changeOwner, this::abandon);
-            }
         });
 
-        if (status == Status.STARTED) {
-            if (players.stream().filter(Player::isPlaying).count() >= game.getMinNumberOfPlayers()) {
-                // Game is still able to continue with one less player
-                runStateChange(state -> state.leave(state.getPlayerByName(player.getId().getId()).orElseThrow(), RANDOM));
-            } else {
-                // Game cannot be continued without player
-                abandon();
-            }
-        }
+        afterPlayerLeft(player);
     }
 
     private void checkOwner(User.Id userId) {

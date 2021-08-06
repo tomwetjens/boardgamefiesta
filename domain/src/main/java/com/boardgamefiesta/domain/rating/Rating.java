@@ -1,6 +1,7 @@
 package com.boardgamefiesta.domain.rating;
 
 import com.boardgamefiesta.domain.game.Game;
+import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import lombok.*;
@@ -9,7 +10,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Value
@@ -18,6 +18,9 @@ import java.util.stream.Collectors;
 public class Rating {
 
     private static final RatingSystem RATING_SYSTEM = new EloRatingSystem();
+    public static final float TIE = 0.5f;
+    public static final float WIN = 1f;
+    public static final float LOSS = 0f;
 
     @NonNull
     User.Id userId;
@@ -49,14 +52,20 @@ public class Rating {
 
     public Rating adjust(Map<User.Id, Rating> currentRatings, Table table) {
         var ranking = table.getUserRanking();
-        var numberOfPlayers = ranking.size();
+        var numberOfPlayers = table.getPlayers().size();
+
+        var player = table.getPlayerByUserId(userId).orElseThrow();
 
         // Assume 1v1 sub matches for now, no teams
         // So each player's score is considered against each other player's score individually
-        var deltas = ranking.stream()
-                .filter(otherUserId -> !userId.equals(otherUserId))
-                .collect(Collectors.toMap(Function.identity(), opponentUserId -> {
-                    var actualScore = actualScore(ranking.indexOf(userId), ranking.indexOf(opponentUserId));
+        var deltas = table.getPlayers().stream()
+                .filter(p -> p != player)
+                .filter(Player::isUser)
+                .collect(Collectors.toMap(opponentPlayer -> opponentPlayer.getUserId().get(), opponentPlayer -> {
+                    var opponentUserId = opponentPlayer.getUserId().get();
+                    var actualScore = player.isPlaying() && !opponentPlayer.isPlaying() ? WIN
+                                    : !player.isPlaying() && opponentPlayer.isPlaying() ? LOSS
+                                    : actualScore(ranking.indexOf(userId), ranking.indexOf(opponentUserId));
                     return RATING_SYSTEM.calculateNewRating(actualScore, this, currentRatings.get(opponentUserId), numberOfPlayers) - rating;
                 }));
 
@@ -66,7 +75,7 @@ public class Rating {
     }
 
     private float actualScore(int rank, int opponentRank) {
-        return rank == opponentRank ? 0.5f : rank < opponentRank ? 1f : 0f;
+        return rank == opponentRank ? TIE : rank < opponentRank ? WIN : LOSS;
     }
 
 }

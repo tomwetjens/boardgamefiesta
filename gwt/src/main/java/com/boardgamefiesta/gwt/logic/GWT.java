@@ -413,9 +413,13 @@ public class GWT implements State {
         if (!currentPlayerState().hasJobMarketToken()) {
             beginTurn();
         } else {
-            status = Status.ENDED;
-            fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());
+            end();
         }
+    }
+
+    private void end() {
+        status = Status.ENDED;
+        fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());
     }
 
     private List<PossibleAction> determineBeginTurnActions() {
@@ -502,20 +506,17 @@ public class GWT implements State {
         return trail.possibleMoves(player, payFees ? playerState(player).getBalance() : 0, atMost, players.size());
     }
 
-    public Optional<Score> scoreDetails(Player player) {
+    public Score scoreDetails(Player player) {
         var playerState = playerState(player);
 
-        if (isEnded() || mode == Options.Mode.STRATEGIC) {
-            return Optional.of(playerState.score(this)
-                    .add(trail.score(player))
-                    .add(railroadTrack.score(this, player, playerState)));
-        }
-        return Optional.empty();
+        return playerState.score(this)
+                .add(trail.score(player))
+                .add(railroadTrack.score(this, player, playerState));
     }
 
     @Override
-    public Optional<Integer> score(Player player) {
-        return scoreDetails(player).map(Score::getTotal);
+    public int score(Player player) {
+        return scoreDetails(player).getTotal();
     }
 
     @Override
@@ -537,9 +538,8 @@ public class GWT implements State {
                 .value("bid", playerState.getBid().map(Bid::getPoints).map(Object::toString).orElse(""))
                 .value("turns", playerState.getTurns());
 
-        scoreDetails(player).ifPresent(score ->
-                score.getCategories().forEach((category, value) ->
-                        stats.value("score." + category.name(), value)));
+        scoreDetails(player).getCategories().forEach((category, value) ->
+                stats.value("score." + category.name(), value));
 
         for (City city : City.values()) {
             var players = railroadTrack.getDeliveries().get(city);
@@ -710,8 +710,7 @@ public class GWT implements State {
     @Override
     public List<Player> ranking() {
         var scores = playerOrder.stream()
-                .collect(Collectors.toMap(Function.identity(), player -> score(player)
-                        .orElseThrow(() -> new GWTException(GWTError.GAME_NOT_ENDED))));
+                .collect(Collectors.toMap(Function.identity(), this::score));
 
         return scores.entrySet().stream()
                 .sorted(Comparator.<Map.Entry<Player, Integer>>comparingInt(Map.Entry::getValue)
@@ -740,6 +739,10 @@ public class GWT implements State {
             }
 
             playerOrder.remove(player);
+
+            if (playerOrder.size() == 1) {
+                end();
+            }
         } else {
             throw new GWTException(GWTError.GAME_ENDED);
         }

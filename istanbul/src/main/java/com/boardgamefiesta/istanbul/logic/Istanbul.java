@@ -234,8 +234,8 @@ public class Istanbul implements State {
     }
 
     @Override
-    public Optional<Integer> score(Player player) {
-        return Optional.of(getPlayerState(player).getRubies());
+    public int score(Player player) {
+        return getPlayerState(player).getRubies();
     }
 
     @Override
