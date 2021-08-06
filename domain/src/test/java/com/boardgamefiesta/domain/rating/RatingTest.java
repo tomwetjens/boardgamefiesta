@@ -1,6 +1,7 @@
 package com.boardgamefiesta.domain.rating;
 
 import com.boardgamefiesta.domain.game.Game;
+import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +14,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +36,39 @@ class RatingTest {
 
     @Mock
     Table table;
+
+    @Mock
+    Player playerA;
+    @Mock
+    Player playerB;
+    @Mock
+    Player playerC;
+    @Mock
+    Player playerD;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(table.getPlayerByUserId(A)).thenReturn(Optional.of(playerA));
+        lenient().when(table.getPlayerByUserId(B)).thenReturn(Optional.of(playerB));
+        lenient().when(table.getPlayerByUserId(C)).thenReturn(Optional.of(playerC));
+        lenient().when(table.getPlayerByUserId(D)).thenReturn(Optional.of(playerD));
+
+        lenient().when(playerA.isPlaying()).thenReturn(true);
+        lenient().when(playerA.isUser()).thenReturn(true);
+        lenient().when(playerA.getUserId()).thenReturn(Optional.of(A));
+
+        lenient().when(playerB.isPlaying()).thenReturn(true);
+        lenient().when(playerB.isUser()).thenReturn(true);
+        lenient().when(playerB.getUserId()).thenReturn(Optional.of(B));
+
+        lenient().when(playerC.isPlaying()).thenReturn(true);
+        lenient().when(playerC.isUser()).thenReturn(true);
+        lenient().when(playerC.getUserId()).thenReturn(Optional.of(C));
+
+        lenient().when(playerD.isPlaying()).thenReturn(true);
+        lenient().when(playerD.isUser()).thenReturn(true);
+        lenient().when(playerD.getUserId()).thenReturn(Optional.of(D));
+    }
 
     @Nested
     class Initial {
@@ -61,6 +98,7 @@ class RatingTest {
 
             var ratings = Map.of(A, a1, B, b1, C, c1);
             when(table.getUserRanking()).thenReturn(List.of(A, B, C));
+            when(table.getPlayers()).thenReturn(Set.of(playerA, playerB, playerC));
 
             var a2 = a1.adjust(ratings, table);
             var b2 = b1.adjust(ratings, table);
@@ -87,9 +125,11 @@ class RatingTest {
             var d1 = Rating.initial(D, GAME_ID, 200);
 
             when(table.getUserRanking()).thenReturn(List.of(A, B));
+            when(table.getPlayers()).thenReturn(Set.of(playerA, playerB));
             var adjustedAfterWinningAgainst1Opponent = a1.adjust(Map.of(A, a1, B, b1), table);
 
             when(table.getUserRanking()).thenReturn(List.of(A, B, C, D));
+            when(table.getPlayers()).thenReturn(Set.of(playerA, playerB, playerC, playerD));
             var adjustedAfterWinningAgainst3Opponents = a1.adjust(Map.of(A, a1, B, b1, C, c1, D, d1), table);
 
             assertThat(adjustedAfterWinningAgainst3Opponents.getRating())
@@ -103,6 +143,7 @@ class RatingTest {
 
             var ratings = Map.of(A, a, B, b);
             when(table.getUserRanking()).thenReturn(List.of(A, B));
+            when(table.getPlayers()).thenReturn(Set.of(playerA, playerB));
 
             assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1016);
             assertThat(b.adjust(ratings, table).getRating()).isEqualTo(984);
@@ -116,6 +157,7 @@ class RatingTest {
 
             var ratings = Map.of(A, a, B, b, C, c);
             when(table.getUserRanking()).thenReturn(List.of(A, B, C));
+            when(table.getPlayers()).thenReturn(Set.of(playerA, playerB, playerC));
 
             assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1022);
             assertThat(b.adjust(ratings, table).getRating()).isEqualTo(1000);
@@ -131,6 +173,7 @@ class RatingTest {
 
             var ratings = Map.of(A, a, B, b, C, c, D, d);
             when(table.getUserRanking()).thenReturn(List.of(A, B, C, D));
+            when(table.getPlayers()).thenReturn(Set.of(playerA, playerB, playerC, playerD));
 
             assertThat(a.adjust(ratings, table).getRating()).isEqualTo(1024);
             assertThat(b.adjust(ratings, table).getRating()).isEqualTo(1008);
