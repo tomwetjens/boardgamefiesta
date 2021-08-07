@@ -48,6 +48,6 @@ public enum MediumTownTile {
     }
 
     ImmediateActions activate(GWT game) {
-        return ImmediateActions.of(possibleAction.clone());
+        return ImmediateActions.of(PossibleAction.optional(possibleAction.clone()));
     }
 }

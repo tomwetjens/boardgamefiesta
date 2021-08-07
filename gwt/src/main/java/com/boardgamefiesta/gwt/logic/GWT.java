@@ -417,6 +417,95 @@ public class GWT implements State {
         afterEndTurn();
     }
 
+    @Override
+    public void forceEndTurn(Player player, @NonNull Random random) {
+        if (isEnded()) {
+            throw new GWTException(GWTError.GAME_ENDED);
+        }
+
+        if (currentPlayer != player) {
+            throw new GWTException(GWTError.NOT_CURRENT_PLAYER);
+        }
+
+        var playerState = playerState(player);
+
+        if (!actionStack.isEmpty()) {
+            var possibleActions = actionStack.getPossibleActions();
+
+            if (possibleActions.contains(Action.PlaceBid.class)) {
+                perform(player, new Action.PlaceBid(lowestBidPossible()), random);
+            } else if (possibleActions.contains(Action.Move.class)) {
+                var steps = trail.calculateMoveToNearestUsingCheapestRoute(player, playerState.getBalance(), players.size());
+                perform(player, new Action.Move(steps), random);
+            } else if (possibleActions.contains(Action.SingleAuxiliaryAction.class)) {
+                perform(player, new Action.SingleAuxiliaryAction(), random);
+                perform(player, new Action.Gain1Dollar(), random);
+            } else if (possibleActions.contains(Action.DeliverToCity.class)) {
+                perform(new Action.DeliverToCity(City.KANSAS_CITY, 0), random);
+            } else if (possibleActions.contains(Action.ChooseForesight1.class)) {
+                perform(new Action.ChooseForesight1(foresights.chooseAnyForesight(0, random)), random);
+            } else if (possibleActions.contains(Action.ChooseForesight2.class)) {
+                perform(new Action.ChooseForesight2(foresights.chooseAnyForesight(1, random)), random);
+            } else if (possibleActions.contains(Action.ChooseForesight3.class)) {
+                perform(new Action.ChooseForesight3(foresights.chooseAnyForesight(2, random)), random);
+            } else if (possibleActions.contains(Action.UnlockWhite.class)) {
+                perform(new Action.UnlockWhite(playerState.chooseAnyWhiteDisc(this)), random);
+            } else if (possibleActions.contains(Action.UnlockBlackOrWhite.class)) {
+                perform(new Action.UnlockBlackOrWhite(playerState.chooseAnyBlackOrWhiteDisc(this)), random);
+            } else if (possibleActions.contains(Action.TakeObjectiveCard.class)) {
+                var available = new ArrayList<>(objectiveCards.getAvailable());
+                var objectiveCard = available.get(random.nextInt(available.size()));
+                perform(new Action.TakeObjectiveCard(objectiveCard), random);
+            } else if (possibleActions.contains(Action.Add1ObjectiveCardToHand.class)) {
+                var available = new ArrayList<>(objectiveCards.getAvailable());
+                var objectiveCard = available.get(random.nextInt(available.size()));
+                perform(new Action.Add1ObjectiveCardToHand(objectiveCard), random);
+            } else if (possibleActions.contains(Action.GainExchangeToken.class)) {
+                perform(new Action.GainExchangeToken(), random);
+            } else if (possibleActions.contains(Action.DiscardCard.class)) {
+                var hand = new ArrayList<>(playerState.getHand());
+                var card = hand.get(random.nextInt(hand.size()));
+                perform(new Action.DiscardCard(card), random);
+            } else if (possibleActions.contains(Action.RemoveCard.class)) {
+                var hand = new ArrayList<>(playerState.getHand());
+                var card = hand.get(random.nextInt(hand.size()));
+                perform(new Action.RemoveCard(card), random);
+            } else if (possibleActions.contains(Action.DowngradeStation.class)) {
+                var station = railroadTrack.getStations().stream()
+                        .filter(s -> railroadTrack.getUpgradedBy(s).contains(player))
+                        .min(Comparator.comparingInt(Station::getPoints))
+                        .orElseThrow(() -> new GWTException(GWTError.STATION_NOT_UPGRADED_BY_PLAYER));
+                perform(new Action.DowngradeStation(station), random);
+            } else if (possibleActions.contains(Action.MoveEngineAtLeast1BackwardsAndGain3Dollars.class)) {
+                var to = railroadTrack.reachableSpacesBackwards(railroadTrack.currentSpace(player), 1, 1)
+                        .stream().findFirst()
+                        .orElseThrow(() -> new GWTException(GWTError.SPACE_NOT_REACHABLE));
+                perform(new Action.MoveEngineAtLeast1BackwardsAndGain3Dollars(to), random);
+            } else if (!actionStack.canSkip()) {
+                throw new GWTException(GWTError.CANNOT_FORCE_END_TURN);
+            }
+        }
+
+        endTurn(player, random);
+    }
+
+    Bid lowestBidPossible() {
+        var bids = players.stream()
+                .map(this::playerState)
+                .map(PlayerState::getBid)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
+
+        return IntStream.range(0, playerOrder.size())
+                .filter(position -> bids.stream().noneMatch(bid -> bid.getPosition() == position))
+                .mapToObj(position -> new Bid(position, 0))
+                .findFirst()
+                .orElseGet(() -> bids.stream()
+                        .max(Comparator.comparingInt(Bid::getPoints))
+                        .map(bid -> new Bid(bid.getPosition(), bid.getPoints() + 1))
+                        .orElse(new Bid(0, 0)));
+    }
+
     private void afterEndTurn() {
         foresights.fillUp(!jobMarket.isClosed());
 
@@ -437,7 +526,6 @@ public class GWT implements State {
 
     private void end() {
         status = Status.ENDED;
-        fireEvent(currentPlayer, GWTEvent.Type.ENDS_GAME, Collections.emptyList());
     }
 
     private List<PossibleAction> determineBeginTurnActions() {

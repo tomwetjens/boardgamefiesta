@@ -343,6 +343,29 @@ public class Istanbul implements State {
         canUndo = false;
     }
 
+    @Override
+    public void forceEndTurn(Player player, @NonNull Random random) {
+        if (isEnded()) {
+            throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
+        }
+
+        if (currentPlayer != player) {
+            throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
+        }
+
+        var playerState = playerStates.get(player);
+
+        if (!actionQueue.isEmpty()) {
+            var possibleActions = actionQueue.getPossibleActions();
+
+            if (possibleActions.contains(Action.Move.class)) {
+
+            }
+        }
+
+        endTurn(player, random);
+    }
+
     private void nextPlayer() {
         if (status == Status.STARTED && currentPlayerState().hasMaxRubies(playerOrder.size())) {
             // Triggers end of game, finish the round

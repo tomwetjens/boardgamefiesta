@@ -29,6 +29,7 @@ import javax.json.JsonValue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Foresights {
@@ -113,4 +114,15 @@ public class Foresights {
             }
         }
     }
+
+    int chooseAnyForesight(int columnIndex, Random random) {
+        // TODO Just pick a random tile now
+        var index = random.nextInt(2);
+        if (spaces[columnIndex][index] != null) {
+            return index;
+        }
+        // Pick the other one (could be empty as well)
+        return (index + 1) % 2;
+    }
+
 }

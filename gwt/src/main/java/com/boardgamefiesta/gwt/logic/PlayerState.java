@@ -887,4 +887,38 @@ public class PlayerState {
                 .flatMap(location -> ((Location.BuildingLocation) location).getBuilding().stream())
                 .anyMatch(usedBuilding -> usedBuilding.getName().equals(building.getName()));
     }
+
+    Unlockable chooseAnyWhiteDisc(GWT game) {
+        if (canUnlock(Unlockable.AUX_GAIN_DOLLAR, game)) {
+            return Unlockable.AUX_GAIN_DOLLAR;
+        }
+        if (canUnlock(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, game)) {
+            return Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD;
+        }
+        if (canUnlock(Unlockable.CERT_LIMIT_4, game)) {
+            return Unlockable.CERT_LIMIT_4;
+        }
+
+        // TODO Just pick any now
+        return Arrays.stream(Unlockable.values())
+                .filter(unlockable -> unlockable.getDiscColor() == DiscColor.WHITE)
+                .filter(unlockable1 -> canUnlock(unlockable1, game))
+                .findAny()
+                .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
+    }
+
+    Unlockable chooseAnyBlackOrWhiteDisc(GWT game) {
+        if (canUnlock(Unlockable.EXTRA_STEP_DOLLARS, game)) {
+            return Unlockable.EXTRA_STEP_DOLLARS;
+        }
+        if (canUnlock(Unlockable.EXTRA_CARD, game)) {
+            return Unlockable.EXTRA_CARD;
+        }
+
+        // TODO Just pick any now
+        return Arrays.stream(Unlockable.values())
+                .filter(unlockable -> canUnlock(unlockable, game))
+                .findAny()
+                .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
+    }
 }

@@ -307,6 +307,16 @@ public class TableResource {
     }
 
     @POST
+    @Path("/{id}/players/{playerId}/force-end-turn")
+    @Transactional
+    public void forceEndTurn(@PathParam("id") String id, @PathParam("playerId") String playerId) {
+        handleConcurrentModification(Table.Id.of(id), table -> {
+            table.forceEndTurn(currentUser.getId(), table.getPlayerById(Player.Id.of(playerId))
+                    .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME)));
+        });
+    }
+
+    @POST
     @Path("/{id}/change-options")
     @Transactional
     public void changeOptions(@PathParam("id") String id, @NotNull @Valid ChangeOptionsRequest request) {

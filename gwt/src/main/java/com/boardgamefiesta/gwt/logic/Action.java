@@ -107,7 +107,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(GWT game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions(game.isRailsToTheNorth())));
+            return ActionResult.undoAllowed(PossibleAction.optional(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions(game.isRailsToTheNorth()))));
         }
     }
 
@@ -141,7 +141,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(GWT game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions(game)));
+            return ActionResult.undoAllowed(PossibleAction.optional(PossibleAction.choice(game.currentPlayerState().unlockedSingleOrDoubleAuxiliaryActions(game))));
         }
     }
 
@@ -1640,7 +1640,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.mandatory(MoveEngine1Forward.class)));
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.optional(MoveEngine1Forward.class)));
         }
     }
 
@@ -2094,7 +2094,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.currentPlayerState().payExchangeTokens(1);
 
-            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.choice(DrawCard.class, Draw2Cards.class)));
+            return ActionResult.undoAllowed(ImmediateActions.of(PossibleAction.optional(PossibleAction.choice(DrawCard.class, Draw2Cards.class))));
         }
     }
 

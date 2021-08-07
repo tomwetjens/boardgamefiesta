@@ -422,4 +422,34 @@ public class Trail {
         return playerLocations.get(player) == kansasCity;
     }
 
+    List<Location> calculateMoveToNearestOwnThenNeutralThenOtherPlayersBuildingUsingCheapestThenShortestRoute(Player player, int balance, int playerCount) {
+        return possibleMoves(player, balance, 1, playerCount).stream()
+                .min(Comparator.comparingInt((PossibleMove possibleMove) ->
+                        possibleMove.getTo() instanceof Location.BuildingLocation
+                                ? ((Location.BuildingLocation) possibleMove.getTo()).getBuilding()
+                                .map(building -> building instanceof PlayerBuilding
+                                        ? ((PlayerBuilding) building).getPlayer() == player ? 0
+                                        : 2 // Other player's building
+                                        : 1) // Neutral building
+                                .orElse(2) // Empty, shouldn't happen
+                                : 2) // Hazard, teepee
+                        .thenComparingInt(PossibleMove::getCost)
+                        .thenComparingInt((PossibleMove possibleMove) -> possibleMove.getSteps().size()))
+                .map(PossibleMove::getSteps)
+                .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
+    }
+
+    List<Location> calculateMoveToNearestUsingCheapestRoute(Player player, int balance, int playerCount) {
+        return possibleMoves(player, balance, 1, playerCount).stream()
+                .min(Comparator.comparingInt((PossibleMove possibleMove) ->
+                        possibleMove.getTo() instanceof Location.BuildingLocation
+                                ? ((Location.BuildingLocation) possibleMove.getTo()).getBuilding()
+                                .map(building -> 1)
+                                .orElse(2) // Empty, shouldn't happen
+                                : 2) // Hazard, teepee
+                        .thenComparingInt(PossibleMove::getCost)
+                        .thenComparingInt((PossibleMove possibleMove) -> possibleMove.getSteps().size()))
+                .map(PossibleMove::getSteps)
+                .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
+    }
 }

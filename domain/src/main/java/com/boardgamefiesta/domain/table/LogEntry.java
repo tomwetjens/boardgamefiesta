@@ -117,6 +117,7 @@ public class LogEntry {
         END_TURN,
         END_TURN_NR,
         SKIP,
-        END
+        END,
+        FORCE_END_TURN
     }
 }

@@ -45,7 +45,10 @@ public class Table implements AggregateRoot {
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(365 * 5, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ABANDONED = Duration.of(1, ChronoUnit.DAYS);
 
-    private static final Duration TURN_BASED_TIME_LIMIT = Duration.of(12, ChronoUnit.HOURS);
+    private static final Duration REALTIME_TURN_LIMIT = Duration.of(10, ChronoUnit.MINUTES);
+    private static final Duration TURN_BASED_TURN_LIMIT = Duration.of(12, ChronoUnit.HOURS);
+
+    private static final int MAX_TURNS_TO_ABANDON = 2;
 
     private static final SecureRandom RANDOM;
 
@@ -208,7 +211,7 @@ public class Table implements AggregateRoot {
     }
 
     private void beginTurn(Player player) {
-        player.beginTurn(type == Type.TURN_BASED ? TURN_BASED_TIME_LIMIT : game.getTimeLimit(options));
+        player.beginTurn(type == Type.TURN_BASED ? TURN_BASED_TURN_LIMIT : REALTIME_TURN_LIMIT);
 
         currentState.get()
                 .map(CurrentState::getState)
@@ -217,7 +220,7 @@ public class Table implements AggregateRoot {
                 .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN_NR, List.of(turns))),
                         () -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN)));
 
-        new BeginTurn(game.getId(), id, type, player.getUserId(), player.getTurnLimit().orElse(null), started).fire();
+        new BeginTurn(game.getId(), id, type, player.getUserId(), player.getTurnLimit().get(), started).fire();
     }
 
     private void endTurnInternal(Player player) {
@@ -251,12 +254,8 @@ public class Table implements AggregateRoot {
 
         checkTurn(player);
 
-        try {
-            runStateChange(state -> state.perform(state.getPlayerByName(player.getId().getId())
-                    .orElseThrow(NotPlayer::new), action, RANDOM));
-        } catch (InGameException e) {
-            throw new InGameError(game.getId(), e);
-        }
+        runStateChange(state -> state.perform(state.getPlayerByName(player.getId().getId())
+                .orElseThrow(NotPlayer::new), action, RANDOM));
     }
 
     public void executeAutoma(Player player) {
@@ -292,6 +291,8 @@ public class Table implements AggregateRoot {
         state.addEventListener(eventListener);
         try {
             change.accept(state);
+        } catch (InGameException e) {
+            throw new InGameError(game.getId(), e);
         } finally {
             state.removeEventListener(eventListener);
         }
@@ -326,21 +327,13 @@ public class Table implements AggregateRoot {
 
         log.add(new LogEntry(player, LogEntry.Type.SKIP));
 
-        try {
-            runStateChange(state -> state.skip(getPlayer(player), RANDOM));
-        } catch (InGameException e) {
-            throw new InGameError(game.getId(), e);
-        }
+        runStateChange(state -> state.skip(getPlayer(player), RANDOM));
     }
 
     public void endTurn(Player player) {
         checkStarted();
 
-        try {
-            runStateChange(state -> state.endTurn(getPlayer(player), RANDOM));
-        } catch (InGameException e) {
-            throw new InGameError(game.getId(), e);
-        }
+        runStateChange(state -> state.endTurn(getPlayer(player), RANDOM));
     }
 
     public void leave(@NonNull User.Id userId) {
@@ -388,12 +381,13 @@ public class Table implements AggregateRoot {
 
             runStateChange(state -> state.leave(player, RANDOM));
 
-            if (players.stream().filter(Player::isPlaying).count() < game.getMinNumberOfPlayers()) {
+            if (status != Status.ENDED /* not automatically ended by state change */
+                    && players.stream().filter(Player::isPlaying).count() < game.getMinNumberOfPlayers()) {
                 // Game is cannot continue with one less player
 
                 // If the game is only against computer players, then just abandon
                 // If the player has not played X number of turns yet, then just abandon
-                if (hasMoreThanOneHumanPlayer() && getState().getTurn(player).orElse(0) < 3) {
+                if (hasMoreThanOneHumanPlayer() && getState().getTurn(player).orElse(0) > MAX_TURNS_TO_ABANDON) {
                     end();
                 } else {
                     abandon();
@@ -600,17 +594,7 @@ public class Table implements AggregateRoot {
     }
 
     public void kick(@NonNull User.Id currentUserId, @NonNull Player player) {
-        if (status == Status.ENDED) {
-            throw new AlreadyEnded();
-        }
-
-        if (status == Status.ABANDONED) {
-            throw new AlreadyAbandoned();
-        }
-
-        if (!players.contains(player)) {
-            throw new NotPlayer();
-        }
+        checkPlayer(player);
 
         var kickingPlayer = getPlayerByUserId(currentUserId)
                 .filter(Player::isActive)
@@ -623,12 +607,8 @@ public class Table implements AggregateRoot {
         } else {
             checkStarted();
 
-            //  With enough time passed, or votes, a player can be removed after the game has started
-            if (player.getTurnLimit().orElse(Instant.MAX).isAfter(Instant.now())) {
-                throw new KickNotAllowed();
-            }
+            player.kick();
 
-            player.leave();
             // TODO Deduct karma points if playing with humans
         }
 
@@ -639,6 +619,33 @@ public class Table implements AggregateRoot {
         });
 
         afterPlayerLeft(player);
+    }
+
+    public void forceEndTurn(@NonNull User.Id currentUserId, @NonNull Player player) {
+        checkStarted();
+        checkPlayer(player);
+
+        var forcingPlayer = getPlayerByUserId(currentUserId)
+                .filter(Player::isActive)
+                .orElseThrow(NotPlayer::new);
+
+        var userId = player.getUserId().orElseThrow();
+
+        player.forceEndTurn();
+
+        log.add(new LogEntry(forcingPlayer, LogEntry.Type.FORCE_END_TURN, List.of(userId.getId())));
+
+        runStateChange(state -> state.forceEndTurn(getPlayer(player), RANDOM));
+
+        new ForcedEndTurn(id, userId).fire();
+
+        // TODO Deduct karma points if playing with humans
+    }
+
+    private void checkPlayer(Player player) {
+        if (!players.contains(player)) {
+            throw new NotPlayer();
+        }
     }
 
     private void checkOwner(User.Id userId) {
@@ -914,6 +921,12 @@ public class Table implements AggregateRoot {
     }
 
     @Value
+    public static class ForcedEndTurn implements DomainEvent {
+        Table.Id tableId;
+        User.Id userId;
+    }
+
+    @Value
     public static class Accepted implements DomainEvent {
         Table.Id tableId;
         User.Id userId;
@@ -1153,12 +1166,6 @@ public class Table implements AggregateRoot {
     public static final class UndoNotAllowed extends NotAllowedException {
         private UndoNotAllowed() {
             super("CANNOT_UNDO");
-        }
-    }
-
-    public static final class KickNotAllowed extends NotAllowedException {
-        private KickNotAllowed() {
-            super("CANNOT_KICK");
         }
     }
 

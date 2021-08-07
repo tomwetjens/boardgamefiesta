@@ -39,6 +39,7 @@ public class PlayerView {
     Player.Status status;
     Integer rating;
     Instant turnLimit;
+    boolean canKickAfterTurnLimit;
     Integer score;
     Boolean winner;
     PlayerColor color;
@@ -55,6 +56,7 @@ public class PlayerView {
                         new UserView(userId, userFunction.apply(userId), null))
                 .orElse(null);
         turnLimit = player.getTurnLimit().orElse(null);
+        canKickAfterTurnLimit = player.canKickAfterTurnLimit();
         score = player.getScore().orElse(null);
         winner = player.getWinner().orElse(null);
         color = player.getColor().orElse(null);

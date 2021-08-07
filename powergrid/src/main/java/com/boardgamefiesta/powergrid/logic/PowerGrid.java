@@ -338,6 +338,11 @@ public class PowerGrid implements State {
     }
 
     @Override
+    public void forceEndTurn(Player player, @NonNull Random random) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int score(Player player) {
         // TODO
         return 0;

@@ -54,6 +54,7 @@ public class LogEntryView {
         switch (logEntry.getType()) {
             case INVITE:
             case KICK:
+            case FORCE_END_TURN:
                 var otherUserId = User.Id.of(logEntry.getParameters().get(0));
                 otherUser = new UserSummaryView(userFunction.apply(otherUserId));
                 break;

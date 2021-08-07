@@ -20,9 +20,9 @@ package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.domain.Player;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Random;
 
 public class Automa {
 
@@ -35,7 +35,7 @@ public class Automa {
             if (game.canSkip()) {
                 game.skip(random);
             } else {
-                game.perform(new Action.PlaceBid(lowestBidPossible(game)), random);
+                game.perform(new Action.PlaceBid(game.lowestBidPossible()), random);
             }
         } else if (possibleActions.contains(Action.Move.class)) {
             game.perform(new Action.Move(calculateMove(game, player)), random);
@@ -52,11 +52,11 @@ public class Automa {
         } else if (possibleActions.contains(Action.Move5Forward.class)) {
             game.perform(new Action.Move5Forward(calculateMove(game, player)), random);
         } else if (possibleActions.contains(Action.ChooseForesight1.class)) {
-            game.perform(new Action.ChooseForesight1(chooseForesight(game.getForesights().choices(0), random)), random);
+            game.perform(new Action.ChooseForesight1(game.getForesights().chooseAnyForesight(0, random)), random);
         } else if (possibleActions.contains(Action.ChooseForesight2.class)) {
-            game.perform(new Action.ChooseForesight2(chooseForesight(game.getForesights().choices(1), random)), random);
+            game.perform(new Action.ChooseForesight2(game.getForesights().chooseAnyForesight(1, random)), random);
         } else if (possibleActions.contains(Action.ChooseForesight3.class)) {
-            game.perform(new Action.ChooseForesight3(chooseForesight(game.getForesights().choices(2), random)), random);
+            game.perform(new Action.ChooseForesight3(game.getForesights().chooseAnyForesight(2, random)), random);
         } else if (possibleActions.contains(Action.DeliverToCity.class)) {
             // TODO Pick highest possible city for now
             var possibleDeliveries = game.possibleDeliveries(player);
@@ -88,39 +88,10 @@ public class Automa {
         }
     }
 
-    private Bid lowestBidPossible(GWT game) {
-        var bids = game.getPlayers().stream()
-                .map(game::playerState)
-                .map(PlayerState::getBid)
-                .flatMap(Optional::stream)
-                .collect(Collectors.toSet());
-
-        return IntStream.range(0, game.getPlayerOrder().size())
-                .filter(position -> bids.stream().noneMatch(bid -> bid.getPosition() == position))
-                .mapToObj(position -> new Bid(position, 0))
-                .findFirst()
-                .orElseGet(() -> bids.stream()
-                        .max(Comparator.comparingInt(Bid::getPoints))
-                        .map(bid -> new Bid(bid.getPosition(), bid.getPoints() + 1))
-                        .orElse(new Bid(0, 0)));
-    }
 
     private List<Location> calculateMove(GWT game, Player player) {
         // TODO For now just go to the nearest own player/neutral building, using the cheapest route
-        return game.possibleMoves(player).stream()
-                .min(Comparator.comparingInt((PossibleMove possibleMove) ->
-                        possibleMove.getTo() instanceof Location.BuildingLocation
-                                ? ((Location.BuildingLocation) possibleMove.getTo()).getBuilding()
-                                .map(building -> building instanceof PlayerBuilding
-                                        ? ((PlayerBuilding) building).getPlayer() == game.getCurrentPlayers() ? 0
-                                        : 2 // Other player's building
-                                        : 1) // Neutral building
-                                .orElse(2) // Empty, shouldn't happen
-                                : 2) // Hazard, teepee
-                        .thenComparingInt(PossibleMove::getCost)
-                        .thenComparingInt((PossibleMove possibleMove) -> possibleMove.getSteps().size()))
-                .map(PossibleMove::getSteps)
-                .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
+        return game.getTrail().calculateMoveToNearestOwnThenNeutralThenOtherPlayersBuildingUsingCheapestThenShortestRoute(player, game.playerState(player).getBalance(), game.getPlayers().size());
     }
 
     private List<Location> calculateMoveWithoutFees(GWT game, Player player) {
@@ -133,48 +104,11 @@ public class Automa {
     }
 
     private Unlockable chooseWhiteDisc(PlayerState playerState, GWT game) {
-        if (playerState.canUnlock(Unlockable.AUX_GAIN_DOLLAR, game)) {
-            return Unlockable.AUX_GAIN_DOLLAR;
-        }
-        if (playerState.canUnlock(Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD, game)) {
-            return Unlockable.AUX_DRAW_CARD_TO_DISCARD_CARD;
-        }
-        if (playerState.canUnlock(Unlockable.CERT_LIMIT_4, game)) {
-            return Unlockable.CERT_LIMIT_4;
-        }
-
-        // TODO Just pick any now
-        return Arrays.stream(Unlockable.values())
-                .filter(unlockable -> unlockable.getDiscColor() == DiscColor.WHITE)
-                .filter(unlockable1 -> playerState.canUnlock(unlockable1, game))
-                .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
+        return playerState.chooseAnyWhiteDisc(game);
     }
 
     private Unlockable chooseBlackOrWhiteDisc(PlayerState playerState, GWT game) {
-        if (playerState.canUnlock(Unlockable.EXTRA_STEP_DOLLARS, game)) {
-            return Unlockable.EXTRA_STEP_DOLLARS;
-        }
-        if (playerState.canUnlock(Unlockable.EXTRA_CARD, game)) {
-            return Unlockable.EXTRA_CARD;
-        }
-
-        // TODO Just pick any now
-        return Arrays.stream(Unlockable.values())
-                .filter(unlockable -> playerState.canUnlock(unlockable, game))
-                .findAny()
-                .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
+        return playerState.chooseAnyBlackOrWhiteDisc(game);
     }
-
-    private int chooseForesight(List<KansasCitySupply.Tile> choices, Random random) {
-        // TODO Just pick a random tile now
-        var index = random.nextInt(choices.size());
-        if (choices.get(index) != null) {
-            return index;
-        }
-        // Pick the other one (could be empty as well)
-        return (index + 1) % 2;
-    }
-
 
 }

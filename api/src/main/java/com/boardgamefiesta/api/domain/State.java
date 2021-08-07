@@ -33,6 +33,8 @@ public interface State {
 
     void endTurn(Player player, Random random);
 
+    void forceEndTurn(Player player, @NonNull Random random);
+
     /**
      * @return players in order (that are still playing, not including players that left)
      */

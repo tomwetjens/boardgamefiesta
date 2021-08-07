@@ -750,6 +750,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         map.put("Updated", Item.s(player.getUpdated()));
         map.put("Turn", AttributeValue.builder().bool(player.isTurn()).build());
         map.put("TurnLimit", player.getTurnLimit().map(Item::s).orElse(null));
+        map.put("ForceEndTurns", AttributeValue.builder().n(Integer.toString(player.getForceEndTurns())).build());
         return AttributeValue.builder().m(map).build();
     }
 
@@ -941,6 +942,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .updated(Instant.parse(map.get("Updated").s()))
                 .turn(map.containsKey("Turn") ? map.get("Turn").bool() : false)
                 .turnLimit(map.containsKey("TurnLimit") ? Instant.parse(map.get("TurnLimit").s()) : null)
+                .forceEndTurns(map.containsKey("ForceEndTurns") ? Integer.parseInt(map.get("ForceEndTurns").n()) : 0)
                 .build();
     }
 

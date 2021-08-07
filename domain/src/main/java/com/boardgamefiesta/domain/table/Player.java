@@ -23,7 +23,10 @@ import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.Entity;
 import com.boardgamefiesta.domain.exception.DomainException;
 import com.boardgamefiesta.domain.user.User;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Value;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,6 +35,8 @@ import java.util.UUID;
 
 @Builder(toBuilder = true)
 public class Player implements Entity {
+
+    private static final int MIN_FORCE_END_TURNS_TO_KICK = 3;
 
     @Getter
     @NonNull
@@ -58,10 +63,12 @@ public class Player implements Entity {
     private PlayerColor color;
 
     @Getter
-    @Setter(AccessLevel.PACKAGE)
     private boolean turn;
 
     private Instant turnLimit;
+
+    @Getter
+    private int forceEndTurns;
 
     private Integer score;
 
@@ -211,6 +218,40 @@ public class Player implements Entity {
         this.updated = Instant.now();
     }
 
+    public void forceEndTurn() {
+        if (!canForceEndTurn()) {
+            throw new CannotForceEndTurn();
+        }
+
+        forceEndTurns++;
+
+        endTurn();
+    }
+
+    private boolean canForceEndTurn() {
+        return isAfterTurnLimit();
+    }
+
+    public void kick() {
+        if (!canKick()) {
+            throw new CannotKick();
+        }
+
+        leave();
+    }
+
+    public boolean canKick() {
+        return canKickAfterTurnLimit() && isAfterTurnLimit();
+    }
+
+    public boolean canKickAfterTurnLimit() {
+        return forceEndTurns >= MIN_FORCE_END_TURNS_TO_KICK;
+    }
+
+    public boolean isAfterTurnLimit() {
+        return turnLimit != null && !turnLimit.isAfter(Instant.now());
+    }
+
     public Optional<User.Id> getUserId() {
         return Optional.ofNullable(userId);
     }
@@ -271,6 +312,18 @@ public class Player implements Entity {
     public static final class AlreadyLeftException extends AggregateRoot.InvalidCommandException {
         public AlreadyLeftException() {
             super("ALREADY_LEFT");
+        }
+    }
+
+    public static final class CannotForceEndTurn extends AggregateRoot.InvalidCommandException {
+        public CannotForceEndTurn() {
+            super("CANNOT_FORCE_END_TURN");
+        }
+    }
+
+    public static final class CannotKick extends AggregateRoot.InvalidCommandException {
+        public CannotKick() {
+            super("CANNOT_KICK");
         }
     }
 }
