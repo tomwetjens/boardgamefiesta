@@ -21,6 +21,7 @@ package com.boardgamefiesta.domain.user;
 import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.DomainEvent;
 import com.boardgamefiesta.domain.ResourceLoader;
+import com.boardgamefiesta.domain.game.Game;
 import lombok.*;
 import org.apache.commons.codec.binary.Hex;
 
@@ -204,7 +205,7 @@ public class User implements AggregateRoot {
         language = DEFAULT_LANGUAGE;
     }
 
-    @Value(staticConstructor = "of")
+    @Value(staticConstructor = "fromString")
     public static class Id {
         private static final Pattern UUID_PATTERN = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
 
@@ -215,7 +216,15 @@ public class User implements AggregateRoot {
         }
 
         public static Id generate() {
-            return of(UUID.randomUUID().toString());
+            return fromString(UUID.randomUUID().toString());
+        }
+
+        /**
+         * @deprecated For backwards compatibility. Use {@link #fromString(String)} instead.
+         */
+        @Deprecated
+        public static User.Id of(String str) {
+            return fromString(str);
         }
     }
 

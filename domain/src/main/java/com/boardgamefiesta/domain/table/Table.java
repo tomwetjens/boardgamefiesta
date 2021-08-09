@@ -233,6 +233,8 @@ public class Table implements AggregateRoot {
                             .flatMap(state::getTurn))
                     .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.END_TURN_NR, List.of(turns))),
                             () -> log.add(new LogEntry(player, LogEntry.Type.END_TURN)));
+
+            new EndTurn(id, player.getUserId(), Instant.now()).fire();
         }
     }
 
@@ -356,11 +358,9 @@ public class Table implements AggregateRoot {
             players.remove(player);
         }
 
-        new Left(id, userId).fire();
+        new Left(id, userId, Instant.now()).fire();
 
         updated = Instant.now();
-
-        // TODO Deduct karma points if playing with humans
 
         afterPlayerLeft(player);
     }
@@ -464,13 +464,13 @@ public class Table implements AggregateRoot {
 
     private void end() {
         status = Status.ENDED;
-        ended = updated;
+        ended = Instant.now();
 
         assignScores();
 
         log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.END));
 
-        new Ended(id).fire();
+        new Ended(id, ended).fire();
     }
 
     private void assignScores() {
@@ -608,14 +608,12 @@ public class Table implements AggregateRoot {
             checkStarted();
 
             player.kick();
-
-            // TODO Deduct karma points if playing with humans
         }
 
         player.getUserId().ifPresent(userId -> {
             log.add(new LogEntry(kickingPlayer, LogEntry.Type.KICK, List.of(userId.getId())));
 
-            new Kicked(this.id, userId).fire();
+            new Kicked(this.id, userId, Instant.now()).fire();
         });
 
         afterPlayerLeft(player);
@@ -637,9 +635,7 @@ public class Table implements AggregateRoot {
 
         runStateChange(state -> state.forceEndTurn(getPlayer(player), RANDOM));
 
-        new ForcedEndTurn(id, userId).fire();
-
-        // TODO Deduct karma points if playing with humans
+        new ForcedEndTurn(id, userId, Instant.now()).fire();
     }
 
     private void checkPlayer(Player player) {
@@ -916,14 +912,16 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class Kicked implements DomainEvent {
-        Table.Id tableId;
-        User.Id userId;
+        @NonNull Table.Id tableId;
+        @NonNull User.Id userId;
+        @NonNull Instant timestamp;
     }
 
     @Value
     public static class ForcedEndTurn implements DomainEvent {
-        Table.Id tableId;
-        User.Id userId;
+        @NonNull Table.Id tableId;
+        @NonNull User.Id userId;
+        @NonNull Instant timestamp;
     }
 
     @Value
@@ -945,7 +943,8 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class Ended implements DomainEvent {
-        Table.Id tableId;
+        @NonNull Table.Id tableId;
+        @NonNull Instant timestamp;
     }
 
     @Value
@@ -974,6 +973,7 @@ public class Table implements AggregateRoot {
     public static class Left implements DomainEvent {
         @NonNull Table.Id tableId;
         @NonNull User.Id userId;
+        @NonNull Instant timestamp;
     }
 
     @Value
@@ -1011,6 +1011,13 @@ public class Table implements AggregateRoot {
         @NonNull Optional<User.Id> userId;
         @NonNull Instant limit;
         @NonNull Instant started;
+    }
+
+    @Value
+    public static class EndTurn implements DomainEvent {
+        @NonNull Table.Id tableId;
+        @NonNull Optional<User.Id> userId;
+        @NonNull Instant timestamp;
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
