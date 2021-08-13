@@ -26,10 +26,7 @@ import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
-import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
-import com.boardgamefiesta.dynamodb.KarmaDynamoDbRepository;
-import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
-import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
+import com.boardgamefiesta.dynamodb.*;
 import com.boardgamefiesta.gwt.GWT2Provider;
 import com.boardgamefiesta.gwt.GWTProvider;
 import com.boardgamefiesta.istanbul.IstanbulProvider;
@@ -42,15 +39,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
@@ -96,63 +88,35 @@ public class RetroactivelySetKarmaTest {
     }
 
     @Test
-    void getLogs() throws IOException {
-        try (var writer = new PrintWriter(Files.newOutputStream(Paths.get("logEntries_" + Instant.now().toString() + ".csv")))) {
-            writer.print("TableId");
-            writer.print(",");
-            writer.print("Timestamp");
-            writer.print(",");
-            writer.print("Type");
-            writer.print(",");
-            writer.print("PlayerId");
-            writer.print(",");
-            writer.print("UserId");
-            writer.print(",");
-            writer.print("OtherUserId");
-            writer.println();
-
-            dynamoDbClient.scanPaginator(ScanRequest.builder()
-                    .tableName("boardgamefiesta-prod")
-                    .filterExpression("begins_with(PK,:PK) AND begins_with(SK,:SK) AND (#Type=:LEFT OR #Type=:KICK OR #Type=:FORCE_END_TURN OR #Type=:END)")
-                    .expressionAttributeNames(Map.of(
-                            "#Type", "Type"
-                    ))
-                    .expressionAttributeValues(Map.of(
-                            ":PK", AttributeValue.builder().s("Table#").build(),
-                            ":SK", AttributeValue.builder().s("Log#").build(),
-                            ":LEFT", AttributeValue.builder().s(LogEntry.Type.LEFT.name()).build(),
-                            ":KICK", AttributeValue.builder().s(LogEntry.Type.KICK.name()).build(),
-                            ":FORCE_END_TURN", AttributeValue.builder().s(LogEntry.Type.FORCE_END_TURN.name()).build(),
-                            ":END", AttributeValue.builder().s(LogEntry.Type.END.name()).build()
-                    ))
-                    .build())
-                    .items().forEach(item -> {
-                System.out.println(item.get("PK").s() + " " + item.get("SK").s() + " " + item.get("Type").s());
-
-                var type = LogEntry.Type.valueOf(item.get("Type").s());
-
-                writer.print(item.get("PK").s().replace("Table#", ""));
-                writer.print(",");
-                writer.print(item.get("SK").s().replace("Log#", ""));
-                writer.print(",");
-                writer.print(type.name());
-                writer.print(",");
-                writer.print(item.get("PlayerId").s());
-                writer.print(",");
-                writer.print(item.get("UserId").s());
-                writer.print(",");
-                writer.print(type == LogEntry.Type.FORCE_END_TURN ? item.get("Parameters").l().get(0).s() : "");
-                writer.println();
-
-                writer.flush();
-            });
-        }
+    void deleteAllKarma() {
+        Chunked.stream(dynamoDbClient.scanPaginator(ScanRequest.builder()
+                .tableName(config.getTableName())
+                .filterExpression("begins_with(PK,:PK) AND begins_with(SK,:SK)")
+                .expressionAttributeValues(Map.of(
+                        ":PK", AttributeValue.builder().s("User#").build(),
+                        ":SK", AttributeValue.builder().s("Karma#").build()
+                ))
+                .build())
+                .items().stream(), 100)
+                .forEach(items -> {
+                    dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
+                            .requestItems(Map.of(config.getTableName(), items
+                                    .map(item -> WriteRequest.builder()
+                                            .deleteRequest(DeleteRequest.builder()
+                                                    .key(Map.of(
+                                                            "PK", item.get("PK"),
+                                                            "SK", item.get("SK")
+                                                    ))
+                                                    .build())
+                                            .build())
+                                    .collect(Collectors.toList())))
+                            .build());
+                });
     }
 
     @Test
     void listTables() {
         // Assumption: abandoned tables are probably already gone from the DB, so no need to check those
-        // Assumption: no need to check if LEFT was result of KICK. Just assume LEFT for now
         var min = Instant.parse("2020-06-01T00:00:00.000Z");
         var period = Duration.ofDays(7);
         var gameIds = Stream.of(GWTProvider.ID, IstanbulProvider.ID, GWT2Provider.ID).map(Game.Id::fromString).collect(Collectors.toList());
@@ -173,18 +137,25 @@ public class RetroactivelySetKarmaTest {
                                                             .map(logEntry -> new KarmaEvent(logEntry.getUserId().get(), logEntry.getTimestamp(), Karma.Event.LEFT, karma -> karma.left(logEntry.getTimestamp(), table.getId())))
                                                             : Optional.<KarmaEvent>empty();
 
+                                                    var kicked = player.getStatus() == Player.Status.LEFT ? table.getLog().stream()
+                                                            .filter(logEntry -> logEntry.getType() == LogEntry.Type.KICK)
+                                                            .filter(logEntry -> player.getUserId().get().equals(logEntry.getUserId().get()))
+                                                            .findFirst()
+                                                            .map(logEntry -> new KarmaEvent(logEntry.getUserId().get(), logEntry.getTimestamp(), Karma.Event.KICKED, karma -> karma.left(logEntry.getTimestamp(), table.getId())))
+                                                            : Optional.<KarmaEvent>empty();
+
                                                     var forceEndTurns = player.getForceEndTurns() > 0 ? table.getLog().stream()
                                                             .filter(logEntry -> logEntry.getType() == LogEntry.Type.FORCE_END_TURN)
                                                             .filter(logEntry -> player.getUserId().get().equals(User.Id.fromString(logEntry.getParameters().get(0))))
-                                                            .map(logEntry -> new KarmaEvent(User.Id.fromString(logEntry.getParameters().get(0)), logEntry.getTimestamp(),Karma.Event.FORCE_END_TURN, karma -> karma.forcedEndTurn(logEntry.getTimestamp(), table.getId())))
+                                                            .map(logEntry -> new KarmaEvent(User.Id.fromString(logEntry.getParameters().get(0)), logEntry.getTimestamp(), Karma.Event.FORCE_END_TURN, karma -> karma.forcedEndTurn(logEntry.getTimestamp(), table.getId())))
                                                             : Stream.<KarmaEvent>empty();
 
                                                     var finishGame = table.getStatus() == Table.Status.ENDED && player.getStatus() != Player.Status.LEFT
                                                             ? Stream.of(new KarmaEvent(player.getUserId().get(), table.getEnded(), Karma.Event.FINISH_GAME, karma -> karma.finishedGame(table.getEnded(), table.getId())))
                                                             : Stream.<KarmaEvent>empty();
                                                     return Stream.of(
-//                                                            playTurns,
                                                             left.stream(),
+                                                            kicked.stream(),
                                                             forceEndTurns,
                                                             finishGame
                                                     ).flatMap(Function.identity());
@@ -205,35 +176,4 @@ public class RetroactivelySetKarmaTest {
         Function<Karma, Karma> fn;
     }
 
-    //    @Test
-//    void processLogs() throws IOException {
-//        try (var reader = Files.newBufferedReader(Paths.get("logEntries_.csv"))) {
-//            reader.lines()
-//                    .skip(1) // header
-//                    .map(line -> line.split(","))
-//                    .sorted(Comparator.comparing(values -> values[1]))
-//                    .forEach(values -> {
-//                        var type = LogEntry.Type.valueOf(values[2]);
-//
-//
-//
-//                        switch (type) {
-//                            case END:
-//
-//                                break;
-//                            case FORCE_END_TURN:
-//                                break;
-//                            case LEFT:
-//                                tables.findById(Table.Id.of(values[0]))
-//                                        .filter(table -> table.getStatus() != Table.Status.ENDED) // else handled by END case
-//                                        .ifPresent(table -> {
-//
-//                                        });
-//                                break;
-//                            case KICK:
-//                                break;
-//                        }
-//                    });
-//        }
-//    }
 }

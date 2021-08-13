@@ -98,9 +98,9 @@ public class Karma {
     public enum Event {
         INITIAL(0),
         UNKNOWN(0),
-        FINISH_GAME(10),
-        LEFT(-20),
-        KICKED(-25),
+        FINISH_GAME(5),
+        LEFT(-25),
+        KICKED(-20),
         FORCE_END_TURN(-10);
 
         @Getter
