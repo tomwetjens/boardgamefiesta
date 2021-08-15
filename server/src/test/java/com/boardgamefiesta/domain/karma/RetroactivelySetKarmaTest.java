@@ -89,28 +89,47 @@ public class RetroactivelySetKarmaTest {
 
     @Test
     void deleteAllKarma() {
-        Chunked.stream(dynamoDbClient.scanPaginator(ScanRequest.builder()
+        dynamoDbClient.scanPaginator(ScanRequest.builder()
                 .tableName(config.getTableName())
-                .filterExpression("begins_with(PK,:PK) AND begins_with(SK,:SK)")
+                .indexName("GSI1")
+                .filterExpression("begins_with(GSI1PK,:GSI1PK) AND begins_with(PK,:PK)")
                 .expressionAttributeValues(Map.of(
-                        ":PK", AttributeValue.builder().s("User#").build(),
-                        ":SK", AttributeValue.builder().s("Karma#").build()
+                        ":GSI1PK", AttributeValue.builder().s("User#").build(),
+                        ":PK", AttributeValue.builder().s("User#").build()
                 ))
                 .build())
-                .items().stream(), 100)
-                .forEach(items -> {
-                    dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
-                            .requestItems(Map.of(config.getTableName(), items
-                                    .map(item -> WriteRequest.builder()
-                                            .deleteRequest(DeleteRequest.builder()
-                                                    .key(Map.of(
-                                                            "PK", item.get("PK"),
-                                                            "SK", item.get("SK")
-                                                    ))
-                                                    .build())
-                                            .build())
-                                    .collect(Collectors.toList())))
-                            .build());
+                .items().stream()
+                .map(item -> item.get("PK"))
+                .forEach(userPk -> {
+                    System.out.println(userPk.s());
+
+                    Chunked.stream(dynamoDbClient.queryPaginator(QueryRequest.builder()
+                            .tableName(config.getTableName())
+                            .keyConditionExpression("PK=:PK AND begins_with(SK,:SK)")
+                            .expressionAttributeValues(Map.of(
+                                    ":PK", userPk,
+                                    ":SK", AttributeValue.builder().s("Karma#").build()
+                            ))
+                            .build())
+                            .items().stream(), 25)
+                            .forEach(items -> {
+                                var writeRequests = items
+                                        .map(item -> WriteRequest.builder()
+                                                .deleteRequest(DeleteRequest.builder()
+                                                        .key(Map.of(
+                                                                "PK", item.get("PK"),
+                                                                "SK", item.get("SK")
+                                                        ))
+                                                        .build())
+                                                .build())
+                                        .collect(Collectors.toList());
+
+                                System.out.println("Delete " + writeRequests.size() + " items");
+
+                                dynamoDbClient.batchWriteItem(BatchWriteItemRequest.builder()
+                                        .requestItems(Map.of(config.getTableName(), writeRequests))
+                                        .build());
+                            });
                 });
     }
 
