@@ -382,14 +382,14 @@ public class Table implements AggregateRoot {
             }
         });
 
-        if (status != Status.NEW) {
+        if (status == Status.STARTED) {
             var player = getState().getPlayerByName(tablePlayer.getId().getId()).orElseThrow();
 
             runStateChange(state -> state.leave(player, RANDOM));
 
             if (status != Status.ENDED /* not automatically ended by state change */
                     && players.stream().filter(Player::isPlaying).count() < game.getMinNumberOfPlayers()) {
-                // Game is cannot continue with one less player
+                // Game cannot continue with one less player
 
                 // If the game is only against computer players, then just abandon
                 // If the player has not played X number of turns yet, then just abandon
