@@ -18,10 +18,8 @@
 
 package com.boardgamefiesta.dynamodb;
 
-import com.boardgamefiesta.domain.user.EmailPreferences;
-import com.boardgamefiesta.domain.user.TurnBasedPreferences;
-import com.boardgamefiesta.domain.user.User;
-import com.boardgamefiesta.domain.user.Users;
+import com.boardgamefiesta.api.domain.PlayerColor;
+import com.boardgamefiesta.domain.user.*;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -149,6 +147,10 @@ public class UserDynamoDbRepositoryV2 implements Users {
                         .map(Item::of)
                         .map(this::mapToEmailPreferences)
                         .orElseGet(EmailPreferences::new))
+                .colorPreferences(item.getOptionalMap("ColorPreferences")
+                        .map(Item::of)
+                        .map(this::mapToColorPreferences)
+                        .orElseGet(ColorPreferences::new))
                 .deleted(item.getOptionalBoolean("Deleted").orElse(false))
                 .build();
     }
@@ -164,6 +166,14 @@ public class UserDynamoDbRepositoryV2 implements Users {
         return TurnBasedPreferences.builder()
                 .sendTurnEmail(attributeValue.getBoolean("SendTurnEmail"))
                 .sendEndedEmail(attributeValue.getBoolean("SendEndedEmail"))
+                .build();
+    }
+
+    private ColorPreferences mapToColorPreferences(Item attributeValue) {
+        return ColorPreferences.builder()
+                .color1(attributeValue.getOptionalEnum("Color1", PlayerColor.class).orElse(null))
+                .color2(attributeValue.getOptionalEnum("Color2", PlayerColor.class).orElse(null))
+                .color3(attributeValue.getOptionalEnum("Color3", PlayerColor.class).orElse(null))
                 .build();
     }
 
@@ -265,7 +275,8 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .setInstant("Created", user.getCreated())
                 .setInstant("Updated", user.getUpdated())
                 .setBoolean("Deleted", user.isDeleted())
-                .set("EmailPreferences", mapFromEmailPreferences(user.getEmailPreferences()));
+                .set("EmailPreferences", mapFromEmailPreferences(user.getEmailPreferences()))
+                .set("ColorPreferences", mapFromColorPreferences(user.getColorPreferences()));
 
         if (!user.isDeleted()) {
             item.setString(GSI1PK, USER_PREFIX + user.getUsername().substring(0, 3).toLowerCase())
@@ -296,6 +307,14 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .asAttributeValue();
     }
 
+    private AttributeValue mapFromColorPreferences(ColorPreferences colorPreferences) {
+        var item = new Item();
+        colorPreferences.getColor1().ifPresent(color1 -> item.setEnum("Color1", color1));
+        colorPreferences.getColor2().ifPresent(color2 -> item.setEnum("Color2", color2));
+        colorPreferences.getColor3().ifPresent(color3 -> item.setEnum("Color3", color3));
+        return item.asAttributeValue();
+    }
+
     @Override
     public void update(User user) throws ConcurrentModificationException {
         if (!user.isDeleted()) {
@@ -316,6 +335,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
                 .setString("TimeZone", user.getTimeZone().getId())
                 .setInstant("Updated", user.getUpdated())
                 .set("EmailPreferences", mapFromEmailPreferences(user.getEmailPreferences()))
+                .set("ColorPreferences", mapFromColorPreferences(user.getColorPreferences()))
                 .setBoolean("Deleted", user.isDeleted());
 
         updateItem.expressionAttributeValue(":ExpectedVersion", Item.n(user.getVersion()));

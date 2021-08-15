@@ -99,7 +99,7 @@ public class TableResource {
         Table table = Table.create(
                 game,
                 request.getMode(),
-                currentUser.getId(),
+                currentUser.get(),
                 new Options(request.getOptions() != null ? request.getOptions() : Collections.emptyMap()));
 
         tables.add(table);

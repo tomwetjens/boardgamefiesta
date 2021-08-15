@@ -78,6 +78,18 @@ public class UserResource {
         users.update(user);
     }
 
+    @POST
+    @Path("/change-color-preferences")
+    public void changeColorPreferences(@NonNull ChangeColorPreferences changeColorPreferences) {
+        var user = currentUser.get();
+
+        user.getColorPreferences().changeColors(
+                changeColorPreferences.getColor1(),
+                changeColorPreferences.getColor2(),
+                changeColorPreferences.getColor3());
+
+        users.update(user);
+    }
 
     @POST
     @Path("/delete")

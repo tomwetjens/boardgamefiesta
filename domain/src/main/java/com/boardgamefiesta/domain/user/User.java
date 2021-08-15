@@ -21,7 +21,6 @@ package com.boardgamefiesta.domain.user;
 import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.DomainEvent;
 import com.boardgamefiesta.domain.ResourceLoader;
-import com.boardgamefiesta.domain.game.Game;
 import lombok.*;
 import org.apache.commons.codec.binary.Hex;
 
@@ -30,10 +29,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.DateTimeException;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -100,6 +97,11 @@ public class User implements AggregateRoot {
     @NonNull
     @Builder.Default
     private final EmailPreferences emailPreferences = new EmailPreferences();
+
+    @Getter
+    @NonNull
+    @Builder.Default
+    private final ColorPreferences colorPreferences = new ColorPreferences();
 
     public static User createAutomatically(@NonNull String cognitoUsername, @NonNull String email) {
         var created = Instant.now();
@@ -289,4 +291,5 @@ public class User implements AggregateRoot {
             super("USERNAME_FORBIDDEN", message);
         }
     }
+
 }

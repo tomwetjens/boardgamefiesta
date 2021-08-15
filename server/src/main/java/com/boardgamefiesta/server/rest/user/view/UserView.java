@@ -18,7 +18,6 @@
 
 package com.boardgamefiesta.server.rest.user.view;
 
-import com.boardgamefiesta.domain.user.EmailPreferences;
 import com.boardgamefiesta.domain.user.User;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,6 +35,7 @@ public class UserView {
     String location;
     String timeZone;
     EmailPreferencesView emailPreferences;
+    ColorPreferencesView colorPreferences;
 
     public UserView(User user) {
         this(user.getId(), user, null);
@@ -55,6 +55,7 @@ public class UserView {
                 this.email = user.getEmail();
 
                 this.emailPreferences = new EmailPreferencesView(user.getEmailPreferences());
+                this.colorPreferences = new ColorPreferencesView(user.getColorPreferences());
             }
         }
     }

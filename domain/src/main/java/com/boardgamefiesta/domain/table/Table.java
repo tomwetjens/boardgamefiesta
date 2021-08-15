@@ -131,9 +131,11 @@ public class Table implements AggregateRoot {
 
     public static Table create(@NonNull Game game,
                                @NonNull Mode mode,
-                               @NonNull User.Id ownerId,
+                               @NonNull User owner,
                                @NonNull Options options) {
-        var player = Player.accepted(ownerId);
+        var player = Player.accepted(owner.getId());
+
+        player.assignColor(owner.getColorPreferences().pickColor(game.getSupportedColors(), RANDOM));
 
         var created = Instant.now();
         Table table = Table.builder()
@@ -147,7 +149,7 @@ public class Table implements AggregateRoot {
                 .options(options)
                 .created(created)
                 .updated(created)
-                .ownerId(ownerId)
+                .ownerId(owner.getId())
                 .players(new HashSet<>(Collections.singleton(player)))
                 .log(new Log())
                 .currentState(Lazy.of(Optional.empty()))
@@ -172,10 +174,14 @@ public class Table implements AggregateRoot {
             throw new NotEnoughPlayers();
         }
 
-        var randomColors = new ArrayList<>(game.getSupportedColors());
+        var randomColors = new ArrayList<>(getAvailableColors());
         Collections.shuffle(randomColors, RANDOM);
 
-        players.forEach(player -> player.assignColor(randomColors.remove(randomColors.size() - 1)));
+        players.forEach(player -> {
+            if (player.getColor().isEmpty()) {
+                player.assignColor(randomColors.remove(randomColors.size() - 1));
+            }
+        });
 
         status = Status.STARTED;
         started = Instant.now();
@@ -574,6 +580,14 @@ public class Table implements AggregateRoot {
                 .findAny();
     }
 
+    public Set<PlayerColor> getAvailableColors() {
+        var colors = new HashSet<>(game.getSupportedColors());
+
+        players.forEach(player -> player.getColor().ifPresent(colors::remove));
+
+        return Collections.unmodifiableSet(colors);
+    }
+
     public void invite(User user) {
         checkNew();
 
@@ -587,6 +601,8 @@ public class Table implements AggregateRoot {
 
         var player = Player.invite(user.getId());
         players.add(player);
+
+        player.assignColor(user.getColorPreferences().pickColor(getAvailableColors(), RANDOM));
 
         log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getId().getId())));
 
@@ -795,6 +811,24 @@ public class Table implements AggregateRoot {
         this.type = type;
 
         new OptionsChanged(id).fire();
+    }
+
+    public void changeColor(@NonNull Player player, PlayerColor color) {
+        checkPlayer(player);
+
+        player.getColor()
+                .filter(currentColor -> currentColor != color)
+                .ifPresent(currentDifferentColor -> {
+                    if (color != null) {
+                        var availableColors = getAvailableColors();
+
+                        if (!availableColors.contains(color)) {
+                            throw new ColorNotAvailable();
+                        }
+                    }
+
+                    player.assignColor(color);
+                });
     }
 
     public List<User.Id> getUserRanking() {
@@ -1185,6 +1219,12 @@ public class Table implements AggregateRoot {
     public static final class MaxNumberOfPlayers extends NotAllowedException {
         private MaxNumberOfPlayers() {
             super("MAX_NUMBER_OF_PLAYERS");
+        }
+    }
+
+    public static final class ColorNotAvailable extends InvalidCommandException {
+        private ColorNotAvailable() {
+            super("COLOR_NOT_AVAILABLE");
         }
     }
 
