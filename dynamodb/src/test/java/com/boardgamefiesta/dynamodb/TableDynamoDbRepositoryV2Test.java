@@ -169,7 +169,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
             table = repository.findById(table.getId()).orElseThrow();
             table.invite(userB);
-            table.acceptInvite(userB.getId());
+            table.acceptInvite(userB);
             repository.update(table);
 
             table = repository.findById(table.getId()).orElseThrow();
@@ -190,7 +190,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
             table = repository.findById(table.getId()).orElseThrow();
             table.invite(userB);
-            table.acceptInvite(userB.getId());
+            table.acceptInvite(userB);
             table.start();
             repository.update(table = table.toBuilder()
                     .status(Table.Status.ENDED)

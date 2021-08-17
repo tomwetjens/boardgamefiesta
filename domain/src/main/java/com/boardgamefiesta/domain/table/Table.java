@@ -135,7 +135,8 @@ public class Table implements AggregateRoot {
                                @NonNull Options options) {
         var player = Player.accepted(owner.getId());
 
-        player.assignColor(owner.getColorPreferences().pickColor(game.getSupportedColors(), RANDOM));
+        owner.getColorPreferences().pickPreferredColor(game.getSupportedColors())
+                .ifPresent(player::assignColor);
 
         var created = Instant.now();
         Table table = Table.builder()
@@ -497,18 +498,21 @@ public class Table implements AggregateRoot {
         }
     }
 
-    public void acceptInvite(@NonNull User.Id userId) {
+    public void acceptInvite(@NonNull User user) {
         checkNew();
 
         var player = players.stream()
-                .filter(p -> userId.equals(p.getUserId().orElse(null)))
+                .filter(p -> user.getId().equals(p.getUserId().orElse(null)))
                 .findAny()
                 .orElseThrow(NotPlayer::new);
 
         player.accept();
-        new Accepted(id, userId).fire();
+        new Accepted(id, user.getId()).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
+
+        user.getColorPreferences().pickPreferredColor(game.getSupportedColors())
+                .ifPresent(player::assignColor);
 
         updated = Instant.now();
 
@@ -602,8 +606,6 @@ public class Table implements AggregateRoot {
         var player = Player.invite(user.getId());
         players.add(player);
 
-        player.assignColor(user.getColorPreferences().pickColor(getAvailableColors(), RANDOM));
-
         log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getId().getId())));
 
         new Invited(id, user.getId(), game.getId(), ownerId).fire();
@@ -666,7 +668,7 @@ public class Table implements AggregateRoot {
         }
     }
 
-    public void join(@NonNull User.Id userId) {
+    public void join(@NonNull User user) {
         checkNew();
 
         if (visibility != Visibility.PUBLIC) {
@@ -677,16 +679,19 @@ public class Table implements AggregateRoot {
             throw new ExceedsMaxPlayers();
         }
 
-        if (isPlayer(userId)) {
+        if (isPlayer(user.getId())) {
             throw new AlreadyInvited();
         }
 
-        var player = Player.accepted(userId);
+        var player = Player.accepted(user.getId());
         players.add(player);
 
-        log.add(new LogEntry(player, LogEntry.Type.JOIN, List.of(userId)));
+        user.getColorPreferences().pickPreferredColor(game.getSupportedColors())
+                .ifPresent(player::assignColor);
 
-        new Joined(id, userId).fire();
+        log.add(new LogEntry(player, LogEntry.Type.JOIN, List.of(user.getId())));
+
+        new Joined(id, user.getId()).fire();
 
         autoStartIfPossible();
     }

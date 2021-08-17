@@ -146,7 +146,7 @@ public class TableResource {
     @Transactional
     public void accept(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
-                table.acceptInvite(currentUser.getId()));
+                table.acceptInvite(currentUser.get()));
     }
 
     @POST
@@ -162,7 +162,7 @@ public class TableResource {
     @Transactional
     public void join(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table ->
-                table.join(currentUser.getId()));
+                table.join(currentUser.get()));
     }
 
     @POST

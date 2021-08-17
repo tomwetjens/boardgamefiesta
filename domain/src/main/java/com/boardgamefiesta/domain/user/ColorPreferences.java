@@ -58,18 +58,15 @@ public class ColorPreferences {
         this.color3 = color3;
     }
 
-    public PlayerColor pickColor(Set<PlayerColor> availableColors, Random random) {
-        if (availableColors.contains(color1)) {
-            return color1;
-        } else if (availableColors.contains(color2)) {
-            return color2;
-        } else if (availableColors.contains(color3)) {
-            return color3;
+    public Optional<PlayerColor> pickPreferredColor(Set<PlayerColor> availableColors) {
+        if (color1 != null && availableColors.contains(color1)) {
+            return Optional.of(color1);
+        } else if (color2 != null && availableColors.contains(color2)) {
+            return Optional.of(color2);
+        } else if (color3 != null && availableColors.contains(color3)) {
+            return Optional.of(color3);
         } else {
-            return availableColors.stream()
-                    .skip(random.nextInt(availableColors.size()))
-                    .findAny()
-                    .orElseThrow(NoSuchElementException::new);
+            return Optional.empty();
         }
     }
 
