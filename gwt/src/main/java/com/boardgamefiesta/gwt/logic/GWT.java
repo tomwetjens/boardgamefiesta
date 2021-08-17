@@ -429,7 +429,7 @@ public class GWT implements State {
 
         var playerState = playerState(player);
 
-        if (!actionStack.isEmpty()) {
+        while (!actionStack.isEmpty() && !actionStack.canSkip()) {
             var possibleActions = actionStack.getPossibleActions();
 
             if (possibleActions.contains(Action.PlaceBid.class)) {
