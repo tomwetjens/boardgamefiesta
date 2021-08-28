@@ -253,6 +253,8 @@ public class PlayerState {
         Set<Card.CattleCard> cattleCards = hand.stream().filter(card -> card instanceof Card.CattleCard)
                 .map(card -> (Card.CattleCard) card)
                 .filter(cattleCard -> cattleCard.getType() == type)
+                // Assume lowest value cards for now
+                .sorted(Comparator.comparingInt(Card.CattleCard::getValue))
                 .limit(amount)
                 .collect(Collectors.toSet());
 
@@ -395,6 +397,12 @@ public class PlayerState {
         hand.removeAll(cards);
     }
 
+    void removeCard(Card card) {
+        if (!hand.remove(card)) {
+            throw new GWTException(GWTError.CARD_NOT_IN_HAND);
+        }
+    }
+
     void addHazard(Hazard hazard) {
         if (!hazards.add(hazard)) {
             throw new GWTException(GWTError.ALREADY_HAS_HAZARD);
@@ -497,13 +505,20 @@ public class PlayerState {
         return jobMarketToken;
     }
 
+    /**
+     * "best" because player may have multiple of the same type with different breeding values.
+     * This methods determine the maximum breeding value.
+     */
     public int handValue() {
         return hand.stream()
                 .filter(card -> card instanceof Card.CattleCard)
                 .map(card -> (Card.CattleCard) card)
-                .map(Card.CattleCard::getType)
-                .distinct()
-                .mapToInt(CattleType::getValue)
+                .collect(Collectors.toMap(Card.CattleCard::getType, Card.CattleCard::getValue,
+                        // In case more than 1 card of the same type is encountered, take the higher value
+                        Integer::max))
+                .values()
+                .stream()
+                .mapToInt(Integer::intValue)
                 .sum();
     }
 
@@ -628,10 +643,10 @@ public class PlayerState {
         return hand.stream().anyMatch(card -> card instanceof ObjectiveCard);
     }
 
-    int numberOfCattleCards(int breedingValue) {
+    int numberOfCattleCards(Set<CattleType> cattleTypes) {
         return (int) getCattleCards()
                 .stream()
-                .filter(card -> card.getType().getValue() == breedingValue)
+                .filter(card -> cattleTypes.contains(card.getType()))
                 .count();
     }
 
@@ -755,20 +770,20 @@ public class PlayerState {
 
     private static List<Card> createStartingDeck() {
         return new ArrayList<>(Arrays.asList(
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.JERSEY, 0),
-                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
-                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
-                new Card.CattleCard(CattleType.DUTCH_BELT, 0),
-                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
-                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
-                new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
-                new Card.CattleCard(CattleType.GUERNSEY, 0),
-                new Card.CattleCard(CattleType.GUERNSEY, 0),
-                new Card.CattleCard(CattleType.GUERNSEY, 0)));
+                new Card.CattleCard(CattleType.JERSEY, 0, 1),
+                new Card.CattleCard(CattleType.JERSEY, 0, 1),
+                new Card.CattleCard(CattleType.JERSEY, 0, 1),
+                new Card.CattleCard(CattleType.JERSEY, 0, 1),
+                new Card.CattleCard(CattleType.JERSEY, 0, 1),
+                new Card.CattleCard(CattleType.DUTCH_BELT, 0, 2),
+                new Card.CattleCard(CattleType.DUTCH_BELT, 0, 2),
+                new Card.CattleCard(CattleType.DUTCH_BELT, 0, 2),
+                new Card.CattleCard(CattleType.BLACK_ANGUS, 0, 2),
+                new Card.CattleCard(CattleType.BLACK_ANGUS, 0, 2),
+                new Card.CattleCard(CattleType.BLACK_ANGUS, 0, 2),
+                new Card.CattleCard(CattleType.GUERNSEY, 0, 2),
+                new Card.CattleCard(CattleType.GUERNSEY, 0, 2),
+                new Card.CattleCard(CattleType.GUERNSEY, 0, 2)));
     }
 
     boolean canRemoveDisc(Collection<DiscColor> discColors, GWT game) {
@@ -920,5 +935,21 @@ public class PlayerState {
                 .filter(unlockable -> canUnlock(unlockable, game))
                 .findAny()
                 .orElseThrow(() -> new GWTException(GWTError.NO_ACTIONS));
+    }
+
+    void endTurn(GWT game, Random random) {
+        if (game.getTrail().atKansasCity(player)) {
+            for (var card : hand) {
+                Action.DiscardCard.fireEvent(game, card);
+            }
+            discardHand();
+
+            game.getTrail().moveToStart(game.getCurrentPlayer());
+        }
+
+        drawUpToHandLimit(random);
+
+        numberOfCowboysUsedInTurn = 0;
+        locationsActivatedInTurn.clear();
     }
 }

@@ -39,7 +39,7 @@ public class CattleCardView extends CardView {
 
     CattleCardView(Card.CattleCard cattleCard) {
         type = cattleCard.getType();
-        breedingValue = cattleCard.getType().getValue();
+        breedingValue = cattleCard.getValue();
         points = cattleCard.getPoints();
     }
 

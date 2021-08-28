@@ -258,9 +258,9 @@ public class ObjectiveCard extends Card {
                 blueTeepees,
                 playerState.numberOfHazards(),
                 game.getRailroadTrack().numberOfUpgradedStations(player),
-                playerState.numberOfCattleCards(3),
-                playerState.numberOfCattleCards(4),
-                playerState.numberOfCattleCards(5),
+                playerState.numberOfCattleCards(EnumSet.of(CattleType.AYRSHIRE, CattleType.BROWN_SWISS, CattleType.HOLSTEIN)),
+                playerState.numberOfCattleCards(EnumSet.of(CattleType.WEST_HIGHLAND)),
+                playerState.numberOfCattleCards(EnumSet.of(CattleType.TEXAS_LONGHORN)),
                 game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO));
     }
 

@@ -148,7 +148,7 @@ class PlayerStateTest {
 
         @Test
         void gainCard() {
-            Card.CattleCard card = new Card.CattleCard(CattleType.TEXAS_LONGHORN, 6);
+            Card.CattleCard card = new Card.CattleCard(CattleType.TEXAS_LONGHORN, 6, 5);
 
             playerState.gainCard(card);
 
@@ -164,28 +164,44 @@ class PlayerStateTest {
         void handValue() {
             PlayerState playerState = PlayerState.builder()
                     .hand(new HashSet<>(asList(
-                            new Card.CattleCard(CattleType.JERSEY, 0),
-                            new Card.CattleCard(CattleType.JERSEY, 0),
-                            new Card.CattleCard(CattleType.GUERNSEY, 0),
-                            new Card.CattleCard(CattleType.GUERNSEY, 0),
-                            new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
-                            new Card.CattleCard(CattleType.BLACK_ANGUS, 0),
-                            new Card.CattleCard(CattleType.HOLSTEIN, 3),
-                            new Card.CattleCard(CattleType.HOLSTEIN, 3),
-                            new Card.CattleCard(CattleType.DUTCH_BELT, 3),
-                            new Card.CattleCard(CattleType.DUTCH_BELT, 3),
-                            new Card.CattleCard(CattleType.AYRSHIRE, 3),
-                            new Card.CattleCard(CattleType.AYRSHIRE, 3),
-                            new Card.CattleCard(CattleType.BROWN_SWISS, 3),
-                            new Card.CattleCard(CattleType.BROWN_SWISS, 3),
-                            new Card.CattleCard(CattleType.WEST_HIGHLAND, 4),
-                            new Card.CattleCard(CattleType.WEST_HIGHLAND, 4),
-                            new Card.CattleCard(CattleType.TEXAS_LONGHORN, 5),
-                            new Card.CattleCard(CattleType.TEXAS_LONGHORN, 7)
+                            new Card.CattleCard(CattleType.JERSEY, 0, 1),
+                            new Card.CattleCard(CattleType.JERSEY, 0, 1),
+                            new Card.CattleCard(CattleType.GUERNSEY, 0, 2),
+                            new Card.CattleCard(CattleType.GUERNSEY, 0, 2),
+                            new Card.CattleCard(CattleType.BLACK_ANGUS, 0, 2),
+                            new Card.CattleCard(CattleType.BLACK_ANGUS, 0, 2),
+                            new Card.CattleCard(CattleType.DUTCH_BELT, 0, 2),
+                            new Card.CattleCard(CattleType.DUTCH_BELT, 0, 2),
+                            new Card.CattleCard(CattleType.HOLSTEIN, 3, 3),
+                            new Card.CattleCard(CattleType.HOLSTEIN, 3, 3),
+                            new Card.CattleCard(CattleType.AYRSHIRE, 3, 3),
+                            new Card.CattleCard(CattleType.AYRSHIRE, 3, 3),
+                            new Card.CattleCard(CattleType.BROWN_SWISS, 3, 3),
+                            new Card.CattleCard(CattleType.BROWN_SWISS, 3, 3),
+                            new Card.CattleCard(CattleType.WEST_HIGHLAND, 4, 4),
+                            new Card.CattleCard(CattleType.WEST_HIGHLAND, 4, 4),
+                            new Card.CattleCard(CattleType.TEXAS_LONGHORN, 5, 5),
+                            new Card.CattleCard(CattleType.TEXAS_LONGHORN, 7, 5)
                     )))
                     .build();
 
             assertThat(playerState.handValue()).isEqualTo(25);
+        }
+
+        @Test
+        void multipleSimmental() {
+            PlayerState playerState = PlayerState.builder()
+                    .hand(new HashSet<>(asList(
+                            new Card.CattleCard(CattleType.SIMMENTAL, 3, 2),
+                            new Card.CattleCard(CattleType.SIMMENTAL, 4, 4),
+                            new Card.CattleCard(CattleType.SIMMENTAL, 4, 4),
+                            new Card.CattleCard(CattleType.SIMMENTAL, 5, 5),
+                            new Card.CattleCard(CattleType.WEST_HIGHLAND, 4, 4),
+                            new Card.CattleCard(CattleType.WEST_HIGHLAND, 4, 4)
+                    )))
+                    .build();
+
+            assertThat(playerState.handValue()).isEqualTo(9);
         }
 
     }

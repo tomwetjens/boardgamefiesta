@@ -46,19 +46,23 @@ public abstract class Card {
 
         CattleType type;
         int points;
+        int value;
 
         @Override
         JsonObject serialize(JsonBuilderFactory factory) {
             return factory.createObjectBuilder()
                     .add("type", type.name())
                     .add("points", points)
+                    .add("value", value)
                     .build();
         }
 
         static CattleCard deserialize(JsonObject jsonObject) {
+            var cattleType = CattleType.valueOf(jsonObject.getString("type"));
             return new CattleCard(
-                    CattleType.valueOf(jsonObject.getString("type")),
-                    jsonObject.getInt("points"));
+                    cattleType,
+                    jsonObject.getInt("points"),
+                    jsonObject.getInt("value", cattleType.getDefaultValue()));
         }
     }
 }

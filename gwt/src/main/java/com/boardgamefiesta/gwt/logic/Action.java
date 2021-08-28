@@ -22,10 +22,7 @@ import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 import lombok.experimental.NonFinal;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Action implements com.boardgamefiesta.api.domain.Action {
@@ -405,7 +402,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
 
-        private static void fireEvent(GWT game, Card card) {
+        static void fireEvent(GWT game, Card card) {
             if (card instanceof Card.CattleCard) {
                 var cattleCard = (Card.CattleCard) card;
                 game.fireActionEvent(GWTEvent.Type.DISCARD_CATTLE_CARD, List.of(cattleCard.getType().name(), Integer.toString(cattleCard.getPoints())));
@@ -852,14 +849,19 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             currentPlayerState.gainDollars(payout);
 
             fireEvent(game, payout, certificates);
+
             var immediateActions = game.deliverToCity(city);
 
-            for (var card : currentPlayerState.getHand()) {
-                DiscardCard.fireEvent(game, card);
+            var simmentalsToUpgrade = (int) currentPlayerState.getHand()
+                    .stream()
+                    .filter(card -> card instanceof Card.CattleCard)
+                    .map(card -> (Card.CattleCard) card)
+                    .filter(card -> card.getType() == CattleType.SIMMENTAL)
+                    .filter(card -> card.getValue() < 5)
+                    .count();
+            if (simmentalsToUpgrade > 0) {
+                immediateActions = immediateActions.andThen(PossibleAction.repeat(0, simmentalsToUpgrade, Action.UpgradeSimmental.class));
             }
-            currentPlayerState.discardHand();
-
-            game.getTrail().moveToStart(game.getCurrentPlayer());
 
             return immediateActions;
         }
@@ -1941,6 +1943,12 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class DiscardCattleCardToGain7Dollars extends Action {
 
+        private static final EnumSet<CattleType> ALLOWED_TYPES = EnumSet.of(
+                CattleType.AYRSHIRE,
+                CattleType.BROWN_SWISS,
+                CattleType.HOLSTEIN
+        );
+
         @NonNull
         CattleType cattleType;
 
@@ -1948,7 +1956,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(GWT game, Random random) {
             game.fireActionEvent(this, List.of(cattleType.name()));
 
-            if (cattleType.getValue() != 3) {
+            if (!ALLOWED_TYPES.contains(cattleType)) {
                 throw new GWTException(GWTError.INVALID_CATTLE_TYPE);
             }
 
@@ -2048,6 +2056,12 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @EqualsAndHashCode(callSuper = false)
     public static class DiscardCattleCardToPlaceBranchlet extends Action {
 
+        private static final EnumSet<CattleType> ALLOWED_TYPES = EnumSet.of(
+                CattleType.GUERNSEY,
+                CattleType.BLACK_ANGUS,
+                CattleType.DUTCH_BELT
+        );
+
         @NonNull
         CattleType cattleType;
 
@@ -2055,7 +2069,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(@NonNull GWT game, @NonNull Random random) {
             game.fireActionEvent(this, List.of(cattleType.name()));
 
-            if (cattleType.getValue() != 2) {
+            if (!ALLOWED_TYPES.contains(cattleType)) {
                 throw new GWTException(GWTError.INVALID_CATTLE_TYPE);
             }
 
@@ -2116,4 +2130,43 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class UpgradeSimmental extends Action {
+
+        @NonNull
+        Card.CattleCard cattleCard;
+
+        @Override
+        ActionResult perform(@NonNull GWT game, @NonNull Random random) {
+            if (cattleCard.getType() != CattleType.SIMMENTAL) {
+                throw new GWTException(GWTError.INVALID_CATTLE_TYPE);
+            }
+
+            Card.CattleCard newCard;
+            switch (cattleCard.getValue()) {
+                case 2:
+                    newCard = new Card.CattleCard(CattleType.SIMMENTAL, 4, 4);
+                    break;
+                case 4:
+                    newCard = new Card.CattleCard(CattleType.SIMMENTAL, 5, 5);
+                    break;
+                default:
+                    throw new GWTException(GWTError.CANNOT_UPGRADE_SIMMENTAL);
+            }
+
+            var playerState = game.currentPlayerState();
+
+            playerState.removeCard(cattleCard);
+            playerState.gainCard(newCard);
+
+            game.fireActionEvent(this, List.of(
+                    Integer.toString(cattleCard.getValue()),
+                    Integer.toString(cattleCard.getPoints()),
+                    Integer.toString(newCard.getValue()),
+                    Integer.toString(newCard.getPoints())));
+
+            return ActionResult.undoAllowed(ImmediateActions.none());
+        }
+    }
 }

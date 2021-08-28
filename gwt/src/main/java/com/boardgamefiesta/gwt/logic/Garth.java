@@ -492,12 +492,12 @@ public class Garth {
 
     private Optional<Buy> bestCattleCards(GWT game, CattleMarket.PossibleBuy possibleBuy) {
         return game.getCattleMarket().getMarket().stream()
-                .filter(cattleCard -> cattleCard.getType().getValue() == possibleBuy.getBreedingValue())
+                .filter(cattleCard -> cattleCard.getValue() == possibleBuy.getBreedingValue())
                 .max(Comparator.comparingInt(Card.CattleCard::getPoints))
                 .map(card -> possibleBuy.isPair()
                         ? game.getCattleMarket().getMarket().stream()
                         .filter(cattleCard -> cattleCard != card)
-                        .filter(cattleCard -> cattleCard.getType().getValue() == possibleBuy.getBreedingValue())
+                        .filter(cattleCard -> cattleCard.getValue() == possibleBuy.getBreedingValue())
                         .max(Comparator.comparingInt(Card.CattleCard::getPoints))
                         .map(secondCard -> new Buy(card, secondCard, card.getPoints() + secondCard.getPoints(), possibleBuy.getCowboys(), possibleBuy.getDollars()))
                         .orElseThrow()

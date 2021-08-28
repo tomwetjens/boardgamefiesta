@@ -30,12 +30,13 @@ public enum CattleType {
     BROWN_SWISS(3),
     AYRSHIRE(3),
     WEST_HIGHLAND(4),
-    TEXAS_LONGHORN(5);
+    TEXAS_LONGHORN(5),
+    SIMMENTAL(0/*not used*/);
 
     @Getter
-    private final int value;
+    private final int defaultValue;
 
-    CattleType(int value) {
-        this.value = value;
+    CattleType(int defaultValue) {
+        this.defaultValue = defaultValue;
     }
 }

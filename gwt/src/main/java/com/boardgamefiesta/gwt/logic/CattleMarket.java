@@ -38,8 +38,13 @@ public class CattleMarket {
 
     private final Queue<Card.CattleCard> drawStack;
     private final Set<Card.CattleCard> market;
+    private final boolean simmental;
 
     private static final Map<Integer, Set<Cost>> COSTS = Map.of(
+            2, Set.of(
+                    Cost.single(8, 1),
+                    Cost.single(5, 2)
+            ),
             3, Set.of(
                     Cost.single(6, 1),
                     Cost.single(3, 2),
@@ -66,16 +71,16 @@ public class CattleMarket {
                     Cost.pair(24, 4)
             ));
 
-    static CattleMarket original(int playerCount, Random random) {
-        return forDrawStack(playerCount, createDrawStack(4, random));
+    static CattleMarket original(int playerCount, boolean simmental, Random random) {
+        return forDrawStack(playerCount, createDrawStack(4, simmental, random), simmental);
     }
 
-    static CattleMarket balanced(int playerCount, Random random) {
-        return forDrawStack(playerCount, createDrawStack(playerCount, random));
+    static CattleMarket balanced(int playerCount, boolean simmental, Random random) {
+        return forDrawStack(playerCount, createDrawStack(playerCount, simmental, random), simmental);
     }
 
-    private static CattleMarket forDrawStack(int playerCount, Queue<Card.CattleCard> drawStack) {
-        var cattleMarket = new CattleMarket(drawStack, new HashSet<>());
+    private static CattleMarket forDrawStack(int playerCount, Queue<Card.CattleCard> drawStack, boolean simmental) {
+        var cattleMarket = new CattleMarket(drawStack, new HashSet<>(), simmental);
 
         cattleMarket.fillUp(playerCount);
 
@@ -87,6 +92,7 @@ public class CattleMarket {
         return factory.createObjectBuilder()
                 .add("drawStack", serializer.fromCollection(drawStack, Card.CattleCard::serialize))
                 .add("market", serializer.fromCollection(market, Card.CattleCard::serialize))
+                .add("simmental", simmental)
                 .build();
     }
 
@@ -99,7 +105,8 @@ public class CattleMarket {
                 jsonObject.getJsonArray("market").stream()
                         .map(JsonValue::asJsonObject)
                         .map(Card.CattleCard::deserialize)
-                        .collect(Collectors.toSet()));
+                        .collect(Collectors.toSet()),
+                jsonObject.getBoolean("simmental", false));
     }
 
     public Set<Card.CattleCard> getMarket() {
@@ -112,8 +119,7 @@ public class CattleMarket {
         }
 
         return market.stream()
-                .map(Card.CattleCard::getType)
-                .mapToInt(CattleType::getValue)
+                .mapToInt(Card.CattleCard::getValue)
                 .boxed()
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                 .entrySet().stream()
@@ -149,11 +155,11 @@ public class CattleMarket {
     }
 
     Cost buy(@NonNull Card.CattleCard card, Card.CattleCard secondCard, int cowboys, int dollars) {
-        if (secondCard != null && (secondCard == card || secondCard.getType().getValue() != card.getType().getValue())) {
+        if (secondCard != null && (secondCard == card || secondCard.getValue() != card.getValue())) {
             throw new GWTException(GWTError.NOT_PAIR);
         }
 
-        var result = COSTS.get(card.getType().getValue()).stream()
+        var result = COSTS.get(card.getValue()).stream()
                 .filter(cost -> cost.isPair() == (secondCard != null))
                 .filter(cost -> cost.getCowboys() == cowboys)
                 .filter(cost -> cost.getDollars() == dollars)
@@ -176,7 +182,9 @@ public class CattleMarket {
     }
 
     void fillUp(int playerCount) {
-        var limit = playerCount == 2 ? 7 : playerCount == 3 ? 10 : 13;
+        var limit = simmental
+                ? playerCount == 2 ? 9 : playerCount == 3 ? 12 : 15
+                : playerCount == 2 ? 7 : playerCount == 3 ? 10 : 13;
         while (market.size() < limit && !drawStack.isEmpty()) {
             draw();
         }
@@ -188,15 +196,15 @@ public class CattleMarket {
         }
     }
 
-    private static Queue<Card.CattleCard> createDrawStack(int playerCount, Random random) {
-        List<Card.CattleCard> cards = createSet(playerCount);
+    private static Queue<Card.CattleCard> createDrawStack(int playerCount, boolean simmental, Random random) {
+        List<Card.CattleCard> cards = createSet(playerCount, simmental);
 
         Collections.shuffle(cards, random);
 
         return new LinkedList<>(cards);
     }
 
-    private static List<Card.CattleCard> createSet(int playerCount) {
+    private static List<Card.CattleCard> createSet(int playerCount, boolean simmental) {
         List<Card.CattleCard> cards = new ArrayList<>(36);
 
         // 2/3p variant to approximate ratios of 4P game, courtesy of Fernando Moritz
@@ -205,22 +213,27 @@ public class CattleMarket {
         // 2P: remove 3 of each
         // 3P: remove 2 of each
         var a = playerCount == 4 ? 7 : playerCount == 3 ? 5 : 4;
-        IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.HOLSTEIN, 1)).forEach(cards::add);
-        IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.BROWN_SWISS, 2)).forEach(cards::add);
-        IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.AYRSHIRE, 3)).forEach(cards::add);
+        IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.HOLSTEIN, 1, 3)).forEach(cards::add);
+        IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.BROWN_SWISS, 2, 3)).forEach(cards::add);
+        IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.AYRSHIRE, 3, 3)).forEach(cards::add);
 
         // 2P: remove 3+3+5+5
         // 3P: remove 3+5
         var b = playerCount == 4 ? 3 : playerCount == 3 ? 2 : 1;
-        IntStream.range(0, b).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 3)).forEach(cards::add);
-        IntStream.range(0, 3).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 4)).forEach(cards::add);
-        IntStream.range(0, b).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 5)).forEach(cards::add);
+        IntStream.range(0, b).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 3, 4)).forEach(cards::add);
+        IntStream.range(0, 3).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 4, 4)).forEach(cards::add);
+        IntStream.range(0, b).mapToObj(i -> new Card.CattleCard(CattleType.WEST_HIGHLAND, 5, 4)).forEach(cards::add);
 
         // 2P: remove 5+7
         // 3P: remove 6
-        IntStream.range(0, playerCount == 2 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 5)).forEach(cards::add);
-        IntStream.range(0, playerCount == 3 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 6)).forEach(cards::add);
-        IntStream.range(0, playerCount == 2 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 7)).forEach(cards::add);
+        IntStream.range(0, playerCount == 2 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 5, 5)).forEach(cards::add);
+        IntStream.range(0, playerCount == 3 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 6, 5)).forEach(cards::add);
+        IntStream.range(0, playerCount == 2 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 7, 5)).forEach(cards::add);
+
+        if (simmental) {
+            // TODO How many Simmental to add?
+            IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.SIMMENTAL, 3, 2)).forEach(cards::add);
+        }
 
         return cards;
     }

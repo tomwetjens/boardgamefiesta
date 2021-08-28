@@ -140,8 +140,8 @@ public class GWT implements State {
                 .jobMarket(new JobMarket(players.size()))
                 .foresights(new Foresights(kansasCitySupply))
                 .cattleMarket(options.getVariant() == Options.Variant.BALANCED
-                        ? CattleMarket.balanced(players.size(), random)
-                        : CattleMarket.original(players.size(), random))
+                        ? CattleMarket.balanced(players.size(), edition == Edition.SECOND && options.isSimmental(), random)
+                        : CattleMarket.original(players.size(), edition == Edition.SECOND && options.isSimmental(), random))
                 .objectiveCards(new ObjectiveCards(random))
                 .actionStack(ActionStack.initial(Collections.emptyList()))
                 .canUndo(false)
@@ -411,7 +411,7 @@ public class GWT implements State {
 
         actionStack.skipAll();
 
-        currentPlayerState().drawUpToHandLimit(random);
+        currentPlayerState().endTurn(this, random);
         canUndo = false;
 
         afterEndTurn();
@@ -971,6 +971,10 @@ public class GWT implements State {
         @NonNull
         @Builder.Default
         Variant variant = Variant.ORIGINAL;
+
+        @NonNull
+        @Builder.Default
+        boolean simmental = false;
 
         @NonNull
         @Builder.Default

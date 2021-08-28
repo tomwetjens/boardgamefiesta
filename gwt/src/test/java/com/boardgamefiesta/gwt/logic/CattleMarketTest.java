@@ -29,8 +29,8 @@ class CattleMarketTest {
 
     @Test
     void fillUpDrawStackEmpty() {
-        var lastCattleCard = new Card.CattleCard(CattleType.AYRSHIRE, 3);
-        var cattleMarket = new CattleMarket(new LinkedList<>(List.of(lastCattleCard)), new HashSet<>());
+        var lastCattleCard = new Card.CattleCard(CattleType.AYRSHIRE, 3, 3);
+        var cattleMarket = new CattleMarket(new LinkedList<>(List.of(lastCattleCard)), new HashSet<>(), false);
 
         cattleMarket.fillUp(2);
 
@@ -40,7 +40,7 @@ class CattleMarketTest {
 
     @Test
     void drawDrawStackEmpty() {
-        var cattleMarket = new CattleMarket(new LinkedList<>(), new HashSet<>());
+        var cattleMarket = new CattleMarket(new LinkedList<>(), new HashSet<>(), false);
 
         cattleMarket.draw();
 
@@ -50,7 +50,7 @@ class CattleMarketTest {
 
     @Test
     void serializeDrawStackEmpty() {
-        var cattleMarket = new CattleMarket(new LinkedList<>(), Set.of(new Card.CattleCard(CattleType.AYRSHIRE, 3)));
+        var cattleMarket = new CattleMarket(new LinkedList<>(), Set.of(new Card.CattleCard(CattleType.AYRSHIRE, 3, 3)), false);
 
         var jsonObject = cattleMarket.serialize(Json.createBuilderFactory(Collections.emptyMap()));
 
@@ -60,7 +60,7 @@ class CattleMarketTest {
 
     @Test
     void serializeMarketEmpty() {
-        var cattleMarket = new CattleMarket(new LinkedList<>(), Collections.emptySet());
+        var cattleMarket = new CattleMarket(new LinkedList<>(), Collections.emptySet(), false);
 
         var jsonObject = cattleMarket.serialize(Json.createBuilderFactory(Collections.emptyMap()));
 
@@ -70,13 +70,39 @@ class CattleMarketTest {
 
     @Test
     void buy2WestHighlandAsCheapAsPossible() {
-        var westHighland1 = new Card.CattleCard(CattleType.WEST_HIGHLAND, 4);
-        var westHighland2 = new Card.CattleCard(CattleType.WEST_HIGHLAND, 4);
+        var westHighland1 = new Card.CattleCard(CattleType.WEST_HIGHLAND, 4, 4);
+        var westHighland2 = new Card.CattleCard(CattleType.WEST_HIGHLAND, 4, 4);
         var cattleMarket = new CattleMarket(new LinkedList<>(), new HashSet<>(Set.of(
                 westHighland1,
                 westHighland2
-        )));
+        )), false);
 
         cattleMarket.buy(westHighland1, westHighland2, 6, 12);
+    }
+
+    @Test
+    void buySimmentalFor8() {
+        var simmental = new Card.CattleCard(CattleType.SIMMENTAL, 3, 2);
+        var cattleMarket = new CattleMarket(new LinkedList<>(), new HashSet<>(Set.of(
+                simmental
+        )), false);
+
+        var cost = cattleMarket.buy(simmental, null, 1, 8);
+
+        assertThat(cost.getCowboys()).isEqualTo(1);
+        assertThat(cost.getDollars()).isEqualTo(8);
+    }
+
+    @Test
+    void buySimmentalFor5() {
+        var simmental = new Card.CattleCard(CattleType.SIMMENTAL, 3, 2);
+        var cattleMarket = new CattleMarket(new LinkedList<>(), new HashSet<>(Set.of(
+                simmental
+        )), false);
+
+        var cost = cattleMarket.buy(simmental, null, 2, 5);
+
+        assertThat(cost.getCowboys()).isEqualTo(2);
+        assertThat(cost.getDollars()).isEqualTo(5);
     }
 }

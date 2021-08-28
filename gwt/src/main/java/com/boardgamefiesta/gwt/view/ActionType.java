@@ -141,7 +141,8 @@ public enum ActionType {
     GAIN_5_DOLLARS(Action.Gain5Dollars.class),
     UPGRADE_STATION_TOWN(Action.UpgradeStationTown.class),
     PLACE_BUILDING_FOR_FREE(Action.PlaceBuildingForFree.class),
-    TAKE_BREEDING_VALUE_3_CATTLE_CARD(Action.TakeBreedingValue3CattleCard.class);
+    TAKE_BREEDING_VALUE_3_CATTLE_CARD(Action.TakeBreedingValue3CattleCard.class),
+    UPGRADE_SIMMENTAL(Action.UpgradeSimmental.class);
 
     @Getter
     Class<? extends Action> action;
@@ -391,6 +392,8 @@ public enum ActionType {
             case TAKE_BREEDING_VALUE_3_CATTLE_CARD:
                 return new Action.TakeBreedingValue3CattleCard(findCattleCard(game.getCattleMarket().getMarket(),
                         getJsonObject(jsonObject, JsonProperties.CATTLE_CARD)));
+            case UPGRADE_SIMMENTAL:
+                return new Action.UpgradeSimmental(findCattleCardInHand(game.currentPlayerState().getHand(), getJsonObject(jsonObject, JsonProperties.CARD)));
             default:
                 return null;
         }

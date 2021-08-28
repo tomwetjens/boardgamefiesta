@@ -83,7 +83,7 @@ class PlayerBuildingTest {
             // Given
             var game = TestHelper.givenAGame();
             var player = game.getCurrentPlayer();
-            game.playerState(player).addCardToHand(new Card.CattleCard(CattleType.JERSEY, 0));
+            game.playerState(player).addCardToHand(new Card.CattleCard(CattleType.JERSEY, 0, 1));
 
             var floodRisk1 = game.getTrail().getBuildingLocation("FLOOD-RISK-1").get();
             var floodRisk2 = game.getTrail().getBuildingLocation("FLOOD-RISK-2").get();
