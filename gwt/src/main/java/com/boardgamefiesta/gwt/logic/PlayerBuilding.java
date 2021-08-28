@@ -307,7 +307,7 @@ public abstract class PlayerBuilding extends Building {
         }
     }
 
-    private static class Building1B extends PlayerBuilding {
+    public static class Building1B extends PlayerBuilding {
 
         Building1B(Player player) {
             super(Name.of(1, Side.B), player, Hand.GREEN, 1, 1);

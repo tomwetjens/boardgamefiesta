@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -154,5 +153,29 @@ class TrailTest {
         assertThat(possibleMoves).containsExactlyInAnyOrder(
                 new PossibleMove(from, asList(trail.getLocation("A-1"), trail.getLocation("A-2"), trail.getLocation("A-3"), to), 1, Map.of(playerB, 1)),
                 new PossibleMove(from, asList(trail.getLocation("FLOOD-1"), trail.getLocation("FLOOD-2"), trail.getLocation("FLOOD-3"), to), 1, Collections.emptyMap()));
+    }
+
+    @Test
+    void gerben18aug2021() {
+        var trail = new Trail(GWT.Edition.FIRST);
+
+        ((Location.BuildingLocation) trail.getLocation("E")).placeBuilding(new NeutralBuilding.E());
+        ((Location.BuildingLocation) trail.getLocation("F")).placeBuilding(new NeutralBuilding.F());
+        ((Location.BuildingLocation) trail.getLocation("G")).placeBuilding(new NeutralBuilding.G());
+        ((Location.BuildingLocation) trail.getLocation("E-1")).placeBuilding(new PlayerBuilding.Building3A(playerA));
+        ((Location.BuildingLocation) trail.getLocation("E-2")).placeBuilding(new PlayerBuilding.Building2A(playerA));
+        ((Location.BuildingLocation) trail.getLocation("F-2")).placeBuilding(new PlayerBuilding.Building4B(playerA));
+
+        ((Location.BuildingLocation) trail.getLocation("G-1")).placeBuilding(new PlayerBuilding.Building1B(playerB));
+
+        ((Location.HazardLocation) trail.getLocation("ROCKFALL-3")).placeHazard(new Hazard(HazardType.ROCKFALL, Hand.GREEN, 3));
+
+        Location from = trail.getLocation("E");
+        Location to = trail.getKansasCity();
+
+        var possibleMoves = trail.possibleMoves(from, to, playerC, 23, 7, 4);
+
+        assertThat(possibleMoves).containsExactlyInAnyOrder(
+                new PossibleMove(from, asList(trail.getLocation("E-1"), trail.getLocation("E-2"), trail.getLocation("F"), trail.getLocation("G"), to), 0, Collections.emptyMap()));
     }
 }
