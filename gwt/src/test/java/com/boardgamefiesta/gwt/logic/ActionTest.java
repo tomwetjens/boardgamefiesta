@@ -113,8 +113,8 @@ class ActionTest {
             deliverToCity.perform(game, new Random(0));
 
             verify(currentPlayerState).gainDollars(12);
-            verify(currentPlayerState).discardHand();
-            verify(trail).moveToStart(currentPlayer);
+            verify(currentPlayerState, never()).discardHand(); // discarded on endTurn()
+            verify(trail, never()).moveToStart(currentPlayer); // done on endTurn
         }
 
         @Test
