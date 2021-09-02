@@ -511,7 +511,7 @@ public class Table implements AggregateRoot {
 
         log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
 
-        user.getColorPreferences().pickPreferredColor(game.getSupportedColors())
+        user.getColorPreferences().pickPreferredColor(this.getAvailableColors())
                 .ifPresent(player::assignColor);
 
         updated = Instant.now();
@@ -686,7 +686,7 @@ public class Table implements AggregateRoot {
         var player = Player.accepted(user.getId());
         players.add(player);
 
-        user.getColorPreferences().pickPreferredColor(game.getSupportedColors())
+        user.getColorPreferences().pickPreferredColor(this.getAvailableColors())
                 .ifPresent(player::assignColor);
 
         log.add(new LogEntry(player, LogEntry.Type.JOIN, List.of(user.getId())));
