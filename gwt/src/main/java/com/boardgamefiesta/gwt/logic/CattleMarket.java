@@ -231,8 +231,7 @@ public class CattleMarket {
         IntStream.range(0, playerCount == 2 ? 1 : 2).mapToObj(i -> new Card.CattleCard(CattleType.TEXAS_LONGHORN, 7, 5)).forEach(cards::add);
 
         if (simmental) {
-            // TODO How many Simmental to add?
-            IntStream.range(0, a).mapToObj(i -> new Card.CattleCard(CattleType.SIMMENTAL, 3, 2)).forEach(cards::add);
+            IntStream.range(0, playerCount == 4 ? 8 : playerCount == 3 ? 6 : 5).mapToObj(i -> new Card.CattleCard(CattleType.SIMMENTAL, 3, 2)).forEach(cards::add);
         }
 
         return cards;
