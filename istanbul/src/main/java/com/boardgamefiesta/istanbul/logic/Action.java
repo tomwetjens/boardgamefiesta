@@ -130,7 +130,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                         () -> {
                             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.PAY_LIRA, Integer.toString(amount)));
 
-                            var to = game.randomPlace(random);
+                            var to = game.getLayout().randomPlace(random);
                             game.moveMerchant(otherMerchant, to, 0, 4);
 
                             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE_DUMMY, otherMerchant.getColor().name(), Integer.toString(to.getNumber())));
@@ -154,7 +154,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.takeBonusCard(random);
 
             game.place(Place::isGovernor).takeGovernor();
-            var to = game.randomPlace(random);
+            var to = game.getLayout().randomPlace(random);
             to.placeGovernor();
 
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE_GOVERNOR, Integer.toString(to.getNumber())));
@@ -173,7 +173,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.currentPlayerState().getStats().usedSmuggler();
 
             game.place(Place::isSmuggler).takeSmuggler();
-            var to = game.randomPlace(random);
+            var to = game.getLayout().randomPlace(random);
             to.placeSmuggler();
 
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE_SMUGGLER, Integer.toString(to.getNumber())));

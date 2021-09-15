@@ -68,9 +68,8 @@ public class Layout {
     }
 
     Place randomPlace(@NonNull Random random) {
-        var x = random.nextInt(layout.length);
-        var y = random.nextInt(layout[x].length);
-        return layout[x][y];
+        int number = 2 + random.nextInt(6) + random.nextInt(6);
+        return place(p -> p.getNumber() == number);
     }
 
     public Place place(int x, int y) {

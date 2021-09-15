@@ -533,10 +533,6 @@ public class Istanbul implements State {
         }
     }
 
-    Place randomPlace(@NonNull Random random) {
-        return layout.randomPlace(random);
-    }
-
     public Place place(int x, int y) {
         return layout.place(x, y);
     }
