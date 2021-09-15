@@ -73,7 +73,7 @@ public class GWT2Provider implements GameProvider<GWT> {
                 .playerOrder(options.getEnum("playerOrder", GWT.Options.PlayerOrder.class, GWT.Options.PlayerOrder.RANDOMIZED))
                 .variant(options.getEnum("variant", GWT.Options.Variant.class, GWT.Options.Variant.ORIGINAL))
                 .railsToTheNorth(options.getBoolean("railsToTheNorth", false))
-                .simmental(options.getBoolean("simmental", true))
+                .simmental(options.getBoolean("simmental", false))
                 .difficulty(options.getEnum("difficulty", Garth.Difficulty.class, Garth.Difficulty.EASY))
                 .build(), eventListener, random);
     }

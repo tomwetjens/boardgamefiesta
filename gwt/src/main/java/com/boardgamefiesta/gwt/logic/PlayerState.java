@@ -269,7 +269,11 @@ public class PlayerState {
         return Collections.unmodifiableSet(cattleCards);
     }
 
-    void discardHand() {
+    void discardHand(GWT game) {
+        for (var card : hand) {
+            Action.DiscardCard.fireEvent(game, card);
+        }
+
         discardPile.addAll(0, hand);
         hand.clear();
     }
@@ -938,18 +942,19 @@ public class PlayerState {
     }
 
     void endTurn(GWT game, Random random) {
-        if (game.getTrail().atKansasCity(player)) {
-            for (var card : hand) {
-                Action.DiscardCard.fireEvent(game, card);
-            }
-            discardHand();
-
-            game.getTrail().moveToStart(game.getCurrentPlayer());
-        }
-
         drawUpToHandLimit(random);
 
         numberOfCowboysUsedInTurn = 0;
         locationsActivatedInTurn.clear();
+    }
+
+    int simmentalsToUpgrade() {
+        return (int) hand
+                .stream()
+                .filter(card -> card instanceof Card.CattleCard)
+                .map(card -> (Card.CattleCard) card)
+                .filter(card -> card.getType() == CattleType.SIMMENTAL)
+                .filter(card -> card.getValue() < 5)
+                .count();
     }
 }

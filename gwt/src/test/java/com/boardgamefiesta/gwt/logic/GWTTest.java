@@ -21,6 +21,7 @@ package com.boardgamefiesta.gwt.logic;
 import com.boardgamefiesta.api.domain.EventListener;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -318,6 +319,118 @@ class GWTTest {
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerC);
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
+        }
+    }
+
+    @Nested
+    class UpgradeSimmentalTest {
+
+        GWT game;
+
+        @BeforeEach
+        void setUp() {
+            game = GWT.start(GWT.Edition.SECOND, new LinkedHashSet<>(Arrays.asList(playerA, playerB)), GWT.Options.builder()
+                    .simmental(true)
+                    .build(), eventListener, new Random(0));
+
+            game.perform(new Action.Move(List.of(game.getTrail().getLocation("G"))), new Random(0));
+            game.endTurn(game.getCurrentPlayer(), new Random(0));
+            game.perform(new Action.DiscardCard(game.currentPlayerState().getHand().iterator().next()), new Random(0));
+            game.perform(new Action.Move(List.of(game.getTrail().getLocation("G"))), new Random(0));
+            game.endTurn(game.getCurrentPlayer(), new Random(0));
+        }
+
+        @Test
+        void shouldDiscardCardsImmediatelyWhenNoSimmentalInHand() {
+            // Make sure the hand does not have a Simmental for this test case
+            assertThat(game.currentPlayerState().simmentalsToUpgrade()).isEqualTo(0);
+
+            // When
+            game.perform(new Action.Move(List.of(game.getTrail().getKansasCity())), new Random(0));
+            game.perform(new Action.ChooseForesight1(0), new Random(0));
+            game.perform(new Action.ChooseForesight2(0), new Random(0));
+            game.perform(new Action.ChooseForesight3(0), new Random(0));
+            game.perform(new Action.DeliverToCity(City.KANSAS_CITY, 0), new Random(0));
+
+            // Then
+            assertThat(game.currentPlayerState().getHand()).isEmpty();
+        }
+
+        @Test
+        void shouldDiscardCardsImmediatelyWhenNoSimmentalInHandToUpgrade() {
+            // Put a fully upgraded Simmental in the hand of the player
+            var simmentalCard = new Card.CattleCard(CattleType.SIMMENTAL, 5, 5);
+            game.currentPlayerState().addCardToHand(simmentalCard);
+
+            // When
+            game.perform(new Action.Move(List.of(game.getTrail().getKansasCity())), new Random(0));
+            game.perform(new Action.ChooseForesight1(0), new Random(0));
+            game.perform(new Action.ChooseForesight2(0), new Random(0));
+            game.perform(new Action.ChooseForesight3(0), new Random(0));
+            game.perform(new Action.DeliverToCity(City.KANSAS_CITY, 0), new Random(0));
+
+            // Then
+            assertThat(game.currentPlayerState().getHand()).isEmpty();
+        }
+
+        @Test
+        void shouldDiscardCardsAfterUpgrading() {
+            // Put a Simmental in the hand of the player
+            var simmentalCard = new Card.CattleCard(CattleType.SIMMENTAL, 3, 2);
+            game.currentPlayerState().addCardToHand(simmentalCard);
+
+            // When
+            game.perform(new Action.Move(List.of(game.getTrail().getKansasCity())), new Random(0));
+            game.perform(new Action.ChooseForesight1(0), new Random(0));
+            game.perform(new Action.ChooseForesight2(0), new Random(0));
+            game.perform(new Action.ChooseForesight3(0), new Random(0));
+            game.perform(new Action.DeliverToCity(City.KANSAS_CITY, 0), new Random(0));
+            game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
+            game.perform(new Action.UpgradeSimmental(simmentalCard), new Random(0));
+
+            // Then
+            assertThat(game.currentPlayerState().getHand()).isEmpty();
+        }
+
+        @Test
+        void shouldDiscardCardsAfterUpgradingMultiple() {
+            // Put multiple Simmentals in the hand of the player
+            var simmentalCard1 = new Card.CattleCard(CattleType.SIMMENTAL, 3, 2);
+            game.currentPlayerState().addCardToHand(simmentalCard1);
+            var simmentalCard2 = new Card.CattleCard(CattleType.SIMMENTAL, 3, 2);
+            game.currentPlayerState().addCardToHand(simmentalCard2);
+
+            // When
+            game.perform(new Action.Move(List.of(game.getTrail().getKansasCity())), new Random(0));
+            game.perform(new Action.ChooseForesight1(0), new Random(0));
+            game.perform(new Action.ChooseForesight2(0), new Random(0));
+            game.perform(new Action.ChooseForesight3(0), new Random(0));
+            game.perform(new Action.DeliverToCity(City.KANSAS_CITY, 0), new Random(0));
+            game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
+            game.perform(new Action.UpgradeSimmental(simmentalCard1), new Random(0));
+            game.perform(new Action.UpgradeSimmental(simmentalCard2), new Random(0));
+
+            // Then
+            assertThat(game.currentPlayerState().getHand()).isEmpty();
+        }
+
+        @Test
+        void shouldDiscardCardsAfterSkip() {
+            // Put a Simmental in the hand of the player
+            var simmentalCard = new Card.CattleCard(CattleType.SIMMENTAL, 3, 2);
+            game.currentPlayerState().addCardToHand(simmentalCard);
+
+            // When
+            game.perform(new Action.Move(List.of(game.getTrail().getKansasCity())), new Random(0));
+            game.perform(new Action.ChooseForesight1(0), new Random(0));
+            game.perform(new Action.ChooseForesight2(0), new Random(0));
+            game.perform(new Action.ChooseForesight3(0), new Random(0));
+            game.perform(new Action.DeliverToCity(City.KANSAS_CITY, 0), new Random(0));
+            game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
+            game.skip(new Random(0));
+
+            // Then
+            assertThat(game.currentPlayerState().getHand()).isEmpty();
         }
     }
 }

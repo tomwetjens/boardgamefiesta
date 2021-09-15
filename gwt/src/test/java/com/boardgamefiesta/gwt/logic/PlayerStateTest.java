@@ -70,6 +70,9 @@ class PlayerStateTest {
     @Nested
     class Cards {
 
+        @Mock
+        GWT game;
+
         private PlayerState playerState;
 
         @BeforeEach
@@ -80,7 +83,7 @@ class PlayerStateTest {
         @Test
         void discardAllCards() {
             HashSet<Card> hand = new HashSet<>(playerState.getHand());
-            playerState.discardHand();
+            playerState.discardHand(game);
 
             assertThat(playerState.getHand()).isEmpty();
             assertThat(playerState.getDiscardPile()).containsAnyElementsOf(hand);

@@ -852,15 +852,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             var immediateActions = game.deliverToCity(city);
 
-            var simmentalsToUpgrade = (int) currentPlayerState.getHand()
-                    .stream()
-                    .filter(card -> card instanceof Card.CattleCard)
-                    .map(card -> (Card.CattleCard) card)
-                    .filter(card -> card.getType() == CattleType.SIMMENTAL)
-                    .filter(card -> card.getValue() < 5)
-                    .count();
+            var simmentalsToUpgrade = currentPlayerState.simmentalsToUpgrade();
             if (simmentalsToUpgrade > 0) {
                 immediateActions = immediateActions.andThen(PossibleAction.repeat(0, simmentalsToUpgrade, Action.UpgradeSimmental.class));
+            } else {
+                currentPlayerState.discardHand(game);
             }
 
             return immediateActions;
@@ -2165,6 +2161,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                     Integer.toString(cattleCard.getPoints()),
                     Integer.toString(newCard.getValue()),
                     Integer.toString(newCard.getPoints())));
+
+            if (playerState.simmentalsToUpgrade() == 0) {
+                playerState.discardHand(game);
+            }
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }

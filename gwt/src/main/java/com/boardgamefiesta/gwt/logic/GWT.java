@@ -387,11 +387,11 @@ public class GWT implements State {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
-        if (!actionStack.isEmpty()) {
-            actionStack.skip();
-        } else {
-            endTurn(currentPlayer, random);
+        if (actionStack.canPerform(Action.UpgradeSimmental.class)) {
+            currentPlayerState().discardHand(this);
         }
+
+        actionStack.skip();
     }
 
     @Override
@@ -411,7 +411,13 @@ public class GWT implements State {
 
         actionStack.skipAll();
 
-        currentPlayerState().endTurn(this, random);
+        var playerState = playerState(player);
+        playerState.endTurn(this, random);
+
+        if (trail.atKansasCity(player)) {
+            trail.moveToStart(player);
+        }
+
         canUndo = false;
 
         afterEndTurn();
