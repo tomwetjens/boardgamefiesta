@@ -462,10 +462,6 @@ public class GWT implements State {
                 var available = new ArrayList<>(objectiveCards.getAvailable());
                 var objectiveCard = available.get(random.nextInt(available.size()));
                 perform(new Action.TakeObjectiveCard(objectiveCard), random);
-            } else if (possibleActions.contains(Action.Add1ObjectiveCardToHand.class)) {
-                var available = new ArrayList<>(objectiveCards.getAvailable());
-                var objectiveCard = available.get(random.nextInt(available.size()));
-                perform(new Action.Add1ObjectiveCardToHand(objectiveCard), random);
             } else if (possibleActions.contains(Action.GainExchangeToken.class)) {
                 perform(new Action.GainExchangeToken(), random);
             } else if (possibleActions.contains(Action.DiscardCard.class)) {

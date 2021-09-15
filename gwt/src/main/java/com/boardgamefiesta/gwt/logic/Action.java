@@ -1746,7 +1746,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             return ActionResult.undoAllowed(
                     !game.getObjectiveCards().isEmpty()
-                            ? ImmediateActions.of(PossibleAction.mandatory(Add1ObjectiveCardToHand.class))
+                            ? ImmediateActions.of(PossibleAction.optional(Add1ObjectiveCardToHand.class))
                             : ImmediateActions.none());
         }
     }
@@ -1768,7 +1768,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             return ActionResult.undoAllowed(
                     !game.getObjectiveCards().isEmpty()
-                            ? ImmediateActions.of(PossibleAction.mandatory(Add1ObjectiveCardToHand.class))
+                            ? ImmediateActions.of(PossibleAction.optional(Add1ObjectiveCardToHand.class))
                             : ImmediateActions.none());
         }
     }
