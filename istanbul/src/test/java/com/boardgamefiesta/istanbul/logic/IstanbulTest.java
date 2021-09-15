@@ -131,9 +131,9 @@ class IstanbulTest {
         void smugglerAfterPerformSendFamilyMember() {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, eventListener, new Random(0));
-            game.getPoliceStation().takeSmuggler();
+            game.getLayout().place(Place::isSmuggler).takeSmuggler();
             game.getSpiceWarehouse().placeSmuggler();
-            game.getSpiceWarehouse().takeGovernor();
+            game.getLayout().place(Place::isGovernor).takeGovernor();
             game.getLargeMarket().placeGovernor();
 
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
@@ -187,9 +187,9 @@ class IstanbulTest {
         void sendFamilyMemberToPlaceWithGovernor() {
             // Given
             var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, eventListener, new Random(0));
-            game.getPoliceStation().takeSmuggler();
+            game.getLayout().place(Place::isSmuggler).takeSmuggler();
             game.getSpiceWarehouse().placeSmuggler();
-            game.getSpiceWarehouse().takeGovernor();
+            game.getLayout().place(Place::isGovernor).takeGovernor();
             game.getLargeMarket().placeGovernor();
 
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
@@ -612,7 +612,7 @@ class IstanbulTest {
     void smugglerThenGovernor() {
         // Given
         var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, eventListener, new Random(0));
-        game.getSpiceWarehouse().takeGovernor();
+        game.getLayout().place(Place::isGovernor).takeGovernor();
         game.getPoliceStation().placeGovernor();
 
 
@@ -646,7 +646,7 @@ class IstanbulTest {
     void governorThenSmuggler() {
         // Given
         var game = Istanbul.start(new LinkedHashSet<>(List.of(playerRed, playerGreen)), LayoutType.SHORT_PATHS, eventListener, new Random(0));
-        game.getSpiceWarehouse().takeGovernor();
+        game.getLayout().place(Place::isGovernor).takeGovernor();
         game.getPoliceStation().placeGovernor();
 
 
