@@ -946,6 +946,9 @@ public class PlayerState {
 
         numberOfCowboysUsedInTurn = 0;
         locationsActivatedInTurn.clear();
+        lastUpgradedStation = Optional.empty();
+        lastPlacedBranchlet = Optional.empty();
+        lastEngineMove = 0;
     }
 
     int simmentalsToUpgrade() {

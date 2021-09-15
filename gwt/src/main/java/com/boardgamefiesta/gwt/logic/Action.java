@@ -689,6 +689,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         ActionResult perform(GWT game, Random random) {
+            // Must not be the same station as the one just upgraded
+            game.currentPlayerState().getLastUpgradedStation()
+                    .filter(lastUpgradedStation -> lastUpgradedStation.equals(station))
+                    .ifPresent(lastUpgradedStation -> {
+                        throw new GWTException(GWTError.STATION_MUST_BE_DIFFERENT);
+                    });
+
             game.getRailroadTrack().downgradeStation(game, station);
 
             game.fireActionEvent(GWTEvent.Type.DOWNGRADE_STATION, List.of(Integer.toString(station.getPoints()), Integer.toString(station.getCost())));

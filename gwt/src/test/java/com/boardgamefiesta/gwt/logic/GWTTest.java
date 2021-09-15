@@ -29,8 +29,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(MockitoExtension.class)
 class GWTTest {
@@ -432,5 +434,88 @@ class GWTTest {
             // Then
             assertThat(game.currentPlayerState().getHand()).isEmpty();
         }
+    }
+
+
+    @Nested
+    class DowngradeStationTest {
+
+        GWT game;
+
+        @BeforeEach
+        void setUp() {
+            game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB)), GWT.Options.builder()
+                    .buildings(GWT.Options.Buildings.BEGINNER)
+                    .build(), eventListener, new Random(0));
+
+            var currentPlayerState = game.currentPlayerState();
+
+            // Simulate that player has maxed out on engineers to be able to reach the first station
+            IntStream.range(0, 5).forEach(i -> currentPlayerState.gainWorker(Worker.ENGINEER, game));
+
+            game.perform(new Action.Move(List.of(game.getTrail().getLocation("C"))), new Random(0));
+        }
+
+        void removedAllDiscs(PlayerState currentPlayerState) {
+            // Simulate that player as removed all discs from the player board
+            Arrays.stream(Unlockable.values()).forEach(unlockable -> {
+                while (currentPlayerState.canUnlock(unlockable, game)) {
+                    currentPlayerState.unlock(unlockable);
+                }
+            });
+        }
+
+        @Test
+        void downgradeStationWhenUpgradingStation() {
+            // Given
+            removedAllDiscs(game.currentPlayerState());
+            game.getRailroadTrack().upgradeStation(game, RailroadTrack.STATION2);
+
+            // When
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(RailroadTrack.STATION1)), new Random(0));
+            game.perform(new Action.UpgradeStation(), new Random(0));
+            game.perform(new Action.DowngradeStation(RailroadTrack.STATION2), new Random(0));
+
+            // Then
+            assertThat(game.getRailroadTrack().getUpgradedBy(RailroadTrack.STATION1)).containsExactly(game.getCurrentPlayer());
+            assertThat(game.getRailroadTrack().getUpgradedBy(RailroadTrack.STATION2)).isEmpty();
+        }
+
+        @Test
+        void mustDowngradeDifferentStationFromLastUpgradedInSameTurn() {
+            // Given
+            removedAllDiscs(game.currentPlayerState());
+
+            // When
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(RailroadTrack.STATION1)), new Random(0));
+            game.perform(new Action.UpgradeStation(), new Random(0));
+
+            assertThatThrownBy(() -> new Action.DowngradeStation(RailroadTrack.STATION1).perform(game, new Random(0)))
+                    .isInstanceOf(GWTException.class)
+                    .hasMessage(GWTError.STATION_MUST_BE_DIFFERENT.name());
+        }
+
+        @Test
+        void mayDowngradeStationUpgradedInPreviousTurn() {
+            // Given
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(RailroadTrack.STATION1)), new Random(0));
+            game.perform(new Action.UpgradeStation(), new Random(0));
+            game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
+            removedAllDiscs(game.currentPlayerState());
+            game.endTurn(game.getCurrentPlayer(), new Random(0));
+
+            game.perform(new Action.Move(List.of(game.getTrail().getLocation("A"))), new Random(0));
+            game.endTurn(game.getCurrentPlayer(), new Random(0));
+
+            // When
+            game.perform(new Action.Move(List.of(
+                    game.getTrail().getLocation("E"),
+                    game.getTrail().getLocation("F"),
+                    game.getTrail().getLocation("G"))), new Random(0));
+            game.perform(new Action.MoveEngineForward(game.getRailroadTrack().getSpace(RailroadTrack.STATION2)), new Random(0));
+            game.perform(new Action.UpgradeStation(), new Random(0));
+            game.perform(new Action.DowngradeStation(RailroadTrack.STATION1), new Random(0));
+        }
+
     }
 }

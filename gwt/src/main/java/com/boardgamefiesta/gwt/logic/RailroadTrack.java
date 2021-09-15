@@ -41,21 +41,36 @@ public class RailroadTrack {
      */
     private static final List<Integer> SIGNALS = List.of(3, 4, 5, 7, 9, 10, 11, 13, 15, 16, 17);
 
+    public static final Station STATION1 = new Station(2, 1, EnumSet.of(DiscColor.WHITE));
+    public static final Station STATION2 = new Station(2, 1, EnumSet.of(DiscColor.WHITE));
+    public static final Station STATION3 = new Station(4, 2, EnumSet.of(DiscColor.WHITE));
+    public static final Station STATION4 = new Station(4, 2, EnumSet.of(DiscColor.WHITE));
+    public static final Station STATION5 = new Station(6, 3, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK));
+    public static final Station STATION6 = new Station(8, 5, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK));
+    public static final Station STATION7 = new Station(7, 6, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK));
+    public static final Station STATION8 = new Station(6, 7, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK));
+    public static final Station STATION9 = new Station(5, 8, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK));
+    public static final Station STATION10 = new Station(3, 9, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK));
+
+    // RttN:
+    public static final Station STATION_GREEN = new Station(7, 6, EnumSet.of(DiscColor.WHITE));
+    public static final Station STATION_RED = new Station(15, 8, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK));
+
     private static final List<Station> STATIONS = List.of(
-            new Station(2, 1, EnumSet.of(DiscColor.WHITE)), // 4.5
-            new Station(2, 1, EnumSet.of(DiscColor.WHITE)), // 7.5
-            new Station(4, 2, EnumSet.of(DiscColor.WHITE)), // 10.5
-            new Station(4, 2, EnumSet.of(DiscColor.WHITE)), // 13.5
-            new Station(6, 3, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 16.5
-            new Station(8, 5, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 21.5
-            new Station(7, 6, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 25.5
-            new Station(6, 7, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 29.5
-            new Station(5, 8, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 33.5
-            new Station(3, 9, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)), // 39
+            STATION1, // 4.5
+            STATION2, // 7.5
+            STATION3, // 10.5
+            STATION4, // 13.5
+            STATION5, // 16.5
+            STATION6, // 21.5
+            STATION7, // 25.5
+            STATION8, // 29.5
+            STATION9, // 33.5
+            STATION10, // 39
 
             // Rails To The North expansion:
-            new Station(7, 6, EnumSet.of(DiscColor.WHITE)), // green
-            new Station(15, 8, EnumSet.of(DiscColor.WHITE, DiscColor.BLACK)) // red
+            STATION_GREEN, // green
+            STATION_RED // red
     );
 
     private static final int MAX_SPACE = 39;

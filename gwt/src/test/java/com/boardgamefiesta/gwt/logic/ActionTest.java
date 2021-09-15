@@ -413,4 +413,5 @@ class ActionTest {
                     .hasMessage(GWTError.CANNOT_PERFORM_ACTION.name());
         }
     }
+
 }
