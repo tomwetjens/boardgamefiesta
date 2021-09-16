@@ -18,8 +18,6 @@
 
 package com.boardgamefiesta.server.rest.user;
 
-import com.boardgamefiesta.domain.featuretoggle.FeatureToggle;
-import com.boardgamefiesta.domain.featuretoggle.FeatureToggles;
 import com.boardgamefiesta.domain.rating.Rating;
 import com.boardgamefiesta.domain.rating.Ratings;
 import com.boardgamefiesta.domain.table.Table;
@@ -51,9 +49,6 @@ import java.util.stream.Collectors;
 public class UserTablesResource {
 
     @Inject
-    FeatureToggles featureToggles;
-
-    @Inject
     Tables tables;
 
     @Inject
@@ -69,15 +64,9 @@ public class UserTablesResource {
     public List<TableView> getTables(@PathParam("userId") String userIdStr) {
         var userMap = new HashMap<User.Id, User>();
         var ratingMap = new HashMap<User.Id, Rating>();
-        var currentUserId = currentUser.getId();
         var userId = User.Id.of(userIdStr);
 
         return tables.findAll(userId, 10)
-                .filter(table -> userId.equals(currentUserId) || FeatureToggle.Id.forGameId(table.getGame().getId())
-                        .map(featureToggleId -> featureToggles.findById(featureToggleId)
-                                .map(featureToggle -> featureToggle.isEnabled(currentUserId))
-                                .orElse(false))
-                        .orElse(true))
                 .map(table -> new TableView(table, getUserMap(table, userMap), getRatingMap(table, ratingMap), currentUser.getId()))
                 .collect(Collectors.toList());
     }

@@ -18,10 +18,7 @@
 
 package com.boardgamefiesta.server.rest.game;
 
-import com.boardgamefiesta.domain.featuretoggle.FeatureToggle;
-import com.boardgamefiesta.domain.featuretoggle.FeatureToggles;
 import com.boardgamefiesta.domain.game.Games;
-import com.boardgamefiesta.server.rest.CurrentUser;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -41,22 +38,9 @@ public class GamesResource {
     @Inject
     Games games;
 
-    @Inject
-    FeatureToggles featureToggles;
-
-    @Inject
-    CurrentUser currentUser;
-
     @GET
     public List<GameView> get() {
-        var currentUserId = currentUser.getOptionalId();
-
         return games.list()
-                .filter(game -> FeatureToggle.Id.forGameId(game.getId())
-                        .map(featureToggleId -> featureToggles.findById(featureToggleId)
-                                .map(featureToggle -> currentUserId.map(featureToggle::isEnabled).orElse(false))
-                                .orElse(false))
-                        .orElse(true))
                 .sorted(Comparator.comparing(game -> game.getId().getId()))
                 .map(GameView::new)
                 .collect(Collectors.toList());

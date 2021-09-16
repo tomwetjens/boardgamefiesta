@@ -19,8 +19,6 @@
 package com.boardgamefiesta.server.rest.table;
 
 import com.boardgamefiesta.api.domain.Options;
-import com.boardgamefiesta.domain.featuretoggle.FeatureToggle;
-import com.boardgamefiesta.domain.featuretoggle.FeatureToggles;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.Rating;
@@ -60,9 +58,6 @@ import java.util.stream.Collectors;
 public class TableResource {
 
     @Inject
-    FeatureToggles featureToggles;
-
-    @Inject
     Games games;
 
     @Inject
@@ -92,8 +87,6 @@ public class TableResource {
     public TableView create(@NotNull @Valid CreateTableRequest request) {
         var gameId = Game.Id.of(request.getGame());
 
-        checkFeatureToggle(gameId);
-
         var game = games.get(gameId);
 
         Table table = Table.create(
@@ -107,26 +100,13 @@ public class TableResource {
         return new TableView(table, getUserMap(table), getRatingMap(table), currentUser.getId());
     }
 
-    private void checkFeatureToggle(Game.Id gameId) {
-        FeatureToggle.Id.forGameId(gameId)
-                .map(featureToggles::get)
-                .ifPresent(featureToggle -> featureToggle.throwIfNotContains(currentUser.getId()));
-    }
-
     @GET
     @Path("/{id}")
     public TableView get(@PathParam("id") String id) {
         var table = tables.findById(Table.Id.of(id))
                 .orElseThrow(NotFoundException::new);
 
-        var currentUserId = currentUser.getId();
-
-        if (determineViewingPlayer(table).isEmpty()) {
-            // Not a player in this table, check if allowed to see it
-            checkFeatureToggle(table.getGame().getId());
-        }
-
-        return new TableView(table, getUserMap(table), getRatingMap(table), currentUserId);
+        return new TableView(table, getUserMap(table), getRatingMap(table), currentUser.getId());
     }
 
     @POST
