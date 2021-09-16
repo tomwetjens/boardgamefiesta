@@ -23,8 +23,6 @@ import com.boardgamefiesta.gwt.logic.ObjectiveCard;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
-@Value
-@NonFinal
 public abstract class CardView implements Comparable<CardView> {
 
     public static CardView of(Card card) {

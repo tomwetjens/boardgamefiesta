@@ -26,12 +26,12 @@ public enum CattleType {
     GUERNSEY(2),
     BLACK_ANGUS(2),
     DUTCH_BELT(2),
+    SIMMENTAL(0/*not used*/),
     HOLSTEIN(3),
     BROWN_SWISS(3),
     AYRSHIRE(3),
     WEST_HIGHLAND(4),
-    TEXAS_LONGHORN(5),
-    SIMMENTAL(0/*not used*/);
+    TEXAS_LONGHORN(5);
 
     @Getter
     private final int defaultValue;

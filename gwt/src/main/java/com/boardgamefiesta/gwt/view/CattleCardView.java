@@ -26,11 +26,13 @@ import java.util.Comparator;
 
 @Value
 @Builder
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 public class CattleCardView extends CardView {
 
-    private static final Comparator<CattleCardView> COMPARATOR = Comparator.comparing(CattleCardView::getType)
+    private static final Comparator<CattleCardView> COMPARATOR = Comparator
+            .comparing(CattleCardView::getType)
+            .thenComparing(CattleCardView::getBreedingValue)
             .thenComparingInt(CattleCardView::getPoints);
 
     CattleType type;
