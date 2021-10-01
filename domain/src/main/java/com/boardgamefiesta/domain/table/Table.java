@@ -130,6 +130,7 @@ public class Table implements AggregateRoot {
     private boolean autoStart;
 
     public static Table create(@NonNull Game game,
+                               @NonNull Type type,
                                @NonNull Mode mode,
                                @NonNull User owner,
                                @NonNull Options options) {
@@ -143,7 +144,7 @@ public class Table implements AggregateRoot {
                 .id(Id.generate())
                 .version(1)
                 .game(game)
-                .type(Type.REALTIME)
+                .type(type)
                 .mode(mode)
                 .visibility(Visibility.PRIVATE)
                 .status(Status.NEW)

@@ -85,7 +85,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
     class Add {
         @Test
         void created() {
-            var table = Table.create(game, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
+            var table = Table.create(game, Table.Type.REALTIME, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
             repository.add(table);
 
             var actual = repository.findById(table.getId()).orElseThrow();
@@ -106,7 +106,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
         @Test
         void playerAdded() {
-            var table = Table.create(game, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
+            var table = Table.create(game, Table.Type.REALTIME, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
             repository.add(table);
 
             table = repository.findById(table.getId()).orElseThrow();
@@ -127,7 +127,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
         @Test
         void playerRemoved() {
-            var table = Table.create(game, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
+            var table = Table.create(game, Table.Type.REALTIME, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
             table.invite(userB);
             repository.add(table);
 
@@ -149,7 +149,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
         @Test
         void abandoned() {
-            var table = Table.create(game, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
+            var table = Table.create(game, Table.Type.REALTIME, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
             repository.add(table);
 
             table = repository.findById(table.getId()).orElseThrow();
@@ -164,7 +164,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
         @Test
         void started() {
-            var table = Table.create(game, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
+            var table = Table.create(game, Table.Type.REALTIME, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
             repository.add(table);
 
             table = repository.findById(table.getId()).orElseThrow();
@@ -185,7 +185,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
         @Test
         void ended() {
-            var table = Table.create(game, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
+            var table = Table.create(game, Table.Type.REALTIME, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
             repository.add(table);
 
             table = repository.findById(table.getId()).orElseThrow();
@@ -367,7 +367,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
     }
 
     private Table.TableBuilder table() {
-        var table = Table.create(game, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
+        var table = Table.create(game, Table.Type.REALTIME, Table.Mode.NORMAL, userA, new Options(Collections.emptyMap()));
         table.invite(userB);
         return table.toBuilder();
     }
