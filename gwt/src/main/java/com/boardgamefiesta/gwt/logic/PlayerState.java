@@ -29,6 +29,7 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @Builder(access = AccessLevel.PACKAGE)
@@ -216,7 +217,7 @@ public class PlayerState {
         this.bid = bid;
     }
 
-    void drawCard(Random random) {
+    Optional<Card> drawCard(Random random) {
         if (drawStack.isEmpty()) {
             Collections.shuffle(discardPile, random);
             drawStack.addAll(discardPile);
@@ -224,14 +225,19 @@ public class PlayerState {
         }
 
         if (!drawStack.isEmpty()) {
-            hand.add(drawStack.poll());
+            var card = drawStack.poll();
+            hand.add(card);
+            return Optional.of(card);
         }
+
+        return Optional.empty();
     }
 
-    void drawCards(int count, Random random) {
-        for (int n = 0; n < count; n++) {
-            drawCard(random);
-        }
+    int drawCards(int count, Random random) {
+        return (int) IntStream.range(0, count)
+                .mapToObj(i -> drawCard(random))
+                .flatMap(Optional::stream)
+                .count();
     }
 
     void drawUpToHandLimit(Random random) {

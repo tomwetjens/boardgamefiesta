@@ -164,7 +164,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(GWT game, Random random) {
-            game.currentPlayerState().drawCard(random);
+            game.currentPlayerState().drawCard(random)
+                    .orElseThrow(() -> new GWTException(GWTError.NOT_ENOUGH_CARDS));
 
             game.fireActionEvent(this, Collections.emptyList());
 
@@ -176,11 +177,20 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(GWT game, Random random) {
-            game.currentPlayerState().drawCards(2, random);
+            var actual = game.currentPlayerState().drawCards(2, random);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            switch (actual) {
+                case 0:
+                    throw new GWTException(GWTError.NOT_ENOUGH_CARDS);
+                case 1:
+                    game.fireActionEvent(DrawCard.class, Collections.emptyList());
+                    break;
+                default:
+                    game.fireActionEvent(this, Collections.emptyList());
+                    break;
+            }
 
-            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(2, 2, Action.DiscardCard.class)));
+            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(actual, actual, Action.DiscardCard.class)));
         }
     }
 
@@ -188,11 +198,23 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(GWT game, Random random) {
-            game.currentPlayerState().drawCards(3, random);
+            var actual = game.currentPlayerState().drawCards(3, random);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            switch (actual) {
+                case 0:
+                    throw new GWTException(GWTError.NOT_ENOUGH_CARDS);
+                case 1:
+                    game.fireActionEvent(DrawCard.class, Collections.emptyList());
+                    break;
+                case 2:
+                    game.fireActionEvent(Draw2Cards.class, Collections.emptyList());
+                    break;
+                default:
+                    game.fireActionEvent(this, Collections.emptyList());
+                    break;
+            }
 
-            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(3, 3, Action.DiscardCard.class)));
+            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(actual, actual, Action.DiscardCard.class)));
         }
     }
 
@@ -200,11 +222,26 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(GWT game, Random random) {
-            game.currentPlayerState().drawCards(4, random);
+            var actual = game.currentPlayerState().drawCards(4, random);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            switch (actual) {
+                case 0:
+                    throw new GWTException(GWTError.NOT_ENOUGH_CARDS);
+                case 1:
+                    game.fireActionEvent(DrawCard.class, Collections.emptyList());
+                    break;
+                case 2:
+                    game.fireActionEvent(Draw2Cards.class, Collections.emptyList());
+                    break;
+                case 3:
+                    game.fireActionEvent(Draw3Cards.class, Collections.emptyList());
+                    break;
+                default:
+                    game.fireActionEvent(this, Collections.emptyList());
+                    break;
+            }
 
-            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(4, 4, Action.DiscardCard.class)));
+            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(actual, actual, Action.DiscardCard.class)));
         }
     }
 
@@ -212,11 +249,29 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(GWT game, Random random) {
-            game.currentPlayerState().drawCards(5, random);
+            var actual = game.currentPlayerState().drawCards(5, random);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            switch (actual) {
+                case 0:
+                    throw new GWTException(GWTError.NOT_ENOUGH_CARDS);
+                case 1:
+                    game.fireActionEvent(DrawCard.class, Collections.emptyList());
+                    break;
+                case 2:
+                    game.fireActionEvent(Draw2Cards.class, Collections.emptyList());
+                    break;
+                case 3:
+                    game.fireActionEvent(Draw3Cards.class, Collections.emptyList());
+                    break;
+                case 4:
+                    game.fireActionEvent(Draw4Cards.class, Collections.emptyList());
+                    break;
+                default:
+                    game.fireActionEvent(this, Collections.emptyList());
+                    break;
+            }
 
-            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(5, 5, Action.DiscardCard.class)));
+            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(actual, actual, Action.DiscardCard.class)));
         }
     }
 
@@ -224,11 +279,32 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         public ActionResult perform(GWT game, Random random) {
-            game.currentPlayerState().drawCards(6, random);
+            var actual = game.currentPlayerState().drawCards(6, random);
 
-            game.fireActionEvent(this, Collections.emptyList());
+            switch (actual) {
+                case 0:
+                    throw new GWTException(GWTError.NOT_ENOUGH_CARDS);
+                case 1:
+                    game.fireActionEvent(DrawCard.class, Collections.emptyList());
+                    break;
+                case 2:
+                    game.fireActionEvent(Draw2Cards.class, Collections.emptyList());
+                    break;
+                case 3:
+                    game.fireActionEvent(Draw3Cards.class, Collections.emptyList());
+                    break;
+                case 4:
+                    game.fireActionEvent(Draw4Cards.class, Collections.emptyList());
+                    break;
+                case 5:
+                    game.fireActionEvent(Draw5Cards.class, Collections.emptyList());
+                    break;
+                default:
+                    game.fireActionEvent(this, Collections.emptyList());
+                    break;
+            }
 
-            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(6, 6, Action.DiscardCard.class)));
+            return ActionResult.undoNotAllowed(ImmediateActions.of(PossibleAction.repeat(actual, actual, Action.DiscardCard.class)));
         }
     }
 
