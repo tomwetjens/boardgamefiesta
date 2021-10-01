@@ -190,10 +190,13 @@ public class CattleMarket {
         }
     }
 
-    void draw() {
+    Optional<Card.CattleCard> draw() {
         if (!drawStack.isEmpty()) {
-            market.add(drawStack.poll());
+            var card = drawStack.poll();
+            market.add(card);
+            return Optional.of(card);
         }
+        return Optional.empty();
     }
 
     private static Queue<Card.CattleCard> createDrawStack(int playerCount, boolean simmental, Random random) {
