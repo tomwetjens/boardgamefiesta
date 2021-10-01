@@ -35,6 +35,7 @@ public class PlayerStateView {
     int bid;
     int balance;
     int cowboys;
+    int cowboysRemaining;
     int craftsmen;
     int engineers;
     int tempCertificates;
@@ -72,6 +73,7 @@ public class PlayerStateView {
 
         balance = playerState.getBalance();
         cowboys = playerState.getNumberOfCowboys();
+        cowboysRemaining = playerState.getNumberOfCowboys() - playerState.getNumberOfCowboysUsedInTurn();
         craftsmen = playerState.getNumberOfCraftsmen();
         engineers = playerState.getNumberOfEngineers();
         tempCertificates = playerState.getTempCertificates();
