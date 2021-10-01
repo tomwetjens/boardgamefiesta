@@ -2033,17 +2033,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         ActionResult perform(GWT game, Random random) {
-            game.fireActionEvent(this, List.of(cattleType.name()));
-
             if (!ALLOWED_TYPES.contains(cattleType)) {
                 throw new GWTException(GWTError.INVALID_CATTLE_TYPE);
             }
 
             var currentPlayerState = game.currentPlayerState();
-            currentPlayerState.discardCattleCards(cattleType, 1);
+            var cattleCard = currentPlayerState.discardCattleCards(cattleType, 1).iterator().next();
             currentPlayerState.gainDollars(7);
 
-            game.fireActionEvent(GWTEvent.Type.DISCARD_CATTLE_CARD_TO_GAIN_7_DOLLARS, List.of(cattleType.name()));
+            game.fireActionEvent(GWTEvent.Type.DISCARD_CATTLE_CARD_TO_GAIN_7_DOLLARS, List.of(cattleType.name(), Integer.toString(cattleCard.getPoints())));
 
             return ActionResult.undoAllowed(ImmediateActions.none());
         }
