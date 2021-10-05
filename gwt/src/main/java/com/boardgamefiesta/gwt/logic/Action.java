@@ -1303,7 +1303,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         @Override
         public ActionResult perform(GWT game, Random random) {
             game.getCattleMarket().draw().orElseThrow(() -> new GWTException(GWTError.NOT_ENOUGH_CARDS));
-            game.getCattleMarket().draw().orElseThrow(() -> new GWTException(GWTError.NOT_ENOUGH_CARDS));
+            game.getCattleMarket().draw();
 
             game.currentPlayerState().useCowboys(1);
 
