@@ -695,25 +695,25 @@ public class RailroadTrack {
                 return immediateActions;
             case COLUMBIA:
                 if (hasMadeDelivery(player, City.ST_LOUIS)) {
-                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.GainExchangeToken.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
                 }
                 break;
             case ST_LOUIS:
                 if (hasMadeDelivery(player, City.COLUMBIA)) {
-                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.GainExchangeToken.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
                 }
                 break;
             case CHICAGO:
                 if (hasMadeDelivery(player, City.DETROIT)) {
-                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.GainExchangeToken.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
                 }
                 break;
             case DETROIT:
                 if (hasMadeDelivery(player, City.CHICAGO)) {
-                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.GainExchangeToken.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
                 }
                 if (!game.getObjectiveCards().isEmpty()) {
-                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.TakeObjectiveCard.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 break;
             case CLEVELAND:
@@ -730,14 +730,18 @@ public class RailroadTrack {
                 break;
             case NEW_YORK_CITY:
                 if (!bonusStationMasters.isEmpty()) {
-                    immediateActions = immediateActions.andThen(PossibleAction.optional(Action.TakeBonusStationMaster.class));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeBonusStationMaster.class));
                 }
                 break;
             case MEMPHIS:
-                immediateActions = immediateActions.andThen(PossibleAction.any(Action.TakeObjectiveCard.class, Action.Gain2Dollars.class));
+                game.currentPlayerState().gainDollars(2);
+                game.fireActionEvent(Action.Gain2Dollars.class, Collections.emptyList());
+                immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 break;
             case MILWAUKEE:
-                immediateActions = immediateActions.andThen(PossibleAction.any(Action.TakeObjectiveCard.class, Action.Gain3Dollars.class));
+                game.currentPlayerState().gainDollars(2);
+                game.fireActionEvent(Action.Gain3Dollars.class, Collections.emptyList());
+                immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 break;
         }
 
