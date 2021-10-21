@@ -139,15 +139,12 @@ class IstanbulTest {
             game.perform(new Action.Move(game.getPoliceStation()), new Random(0));
             game.perform(new Action.LeaveAssistant(), new Random(0));
             game.perform(new Action.SendFamilyMember(game.getSpiceWarehouse()), new Random(0));
-            game.perform(new Action.MaxSpice(), new Random(0));
 
             // When
-            assertThat(game.getPossibleActions()).containsExactly(Action.Smuggler.class);
-            game.perform(new Action.Smuggler(), new Random(0));
+            game.perform(new Action.MaxSpice(), new Random(0));
 
             // Then
-            assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Take1Fruit.class,
-                    Action.Take1Spice.class, Action.Take1Fabric.class, Action.Take1Blue.class);
+            assertThat(game.getPossibleActions()).isEmpty();
         }
 
         @Test
@@ -200,7 +197,7 @@ class IstanbulTest {
             game.skip(new Random(0));
 
             // Then
-            assertThat(game.getPossibleActions()).containsExactly(Action.Governor.class);
+            assertThat(game.getPossibleActions()).doesNotContain(Action.Governor.class, Action.Smuggler.class);
         }
 
         @Test

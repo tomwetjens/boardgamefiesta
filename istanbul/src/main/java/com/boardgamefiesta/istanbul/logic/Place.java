@@ -130,7 +130,9 @@ public abstract class Place {
         playerState.getStats().placedFamilyMember();
         playerState.getStats().placeUsed(this);
 
-        return placeActions(game);
+        return getPossibleAction(game)
+                .map(possibleAction -> ActionResult.followUp(possibleAction, true))
+                .orElse(ActionResult.none(true));
     }
 
     ActionResult placeActions(Istanbul game) {
