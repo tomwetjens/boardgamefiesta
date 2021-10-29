@@ -172,19 +172,17 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.USE_SMUGGLER));
             game.currentPlayerState().getStats().usedSmuggler();
 
-            game.place(Place::isSmuggler).takeSmuggler();
-            var to = game.getLayout().randomPlace(random);
-            to.placeSmuggler();
+            return ActionResult.immediate(PossibleAction.whenThen(takeAnyGood(), pay2LiraOrAnyGood(), 0, 1), true)
+                    .andThen(ActionResult.followUp(PossibleAction.mandatory(Action.MoveSmuggler.class), true));
+        }
 
-            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE_SMUGGLER, Integer.toString(to.getNumber())));
-
-            return ActionResult.immediate(PossibleAction.whenThen(takeAnyGood(),
-                    PossibleAction.choice(Set.of(
-                            PossibleAction.optional(Action.Pay2Lira.class),
-                            PossibleAction.optional(Action.Pay1Fabric.class),
-                            PossibleAction.optional(Action.Pay1Fruit.class),
-                            PossibleAction.optional(Action.Pay1Spice.class),
-                            PossibleAction.optional(Action.Pay1Blue.class))), 0, 1), true);
+        private PossibleAction pay2LiraOrAnyGood() {
+            return PossibleAction.choice(Set.of(
+                    PossibleAction.optional(Pay2Lira.class),
+                    PossibleAction.optional(Pay1Fabric.class),
+                    PossibleAction.optional(Pay1Fruit.class),
+                    PossibleAction.optional(Pay1Spice.class),
+                    PossibleAction.optional(Pay1Blue.class)));
         }
 
         private static PossibleAction takeAnyGood() {
@@ -193,6 +191,19 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                     PossibleAction.optional(Take1Spice.class),
                     PossibleAction.optional(Take1Fruit.class),
                     PossibleAction.optional(Take1Blue.class)));
+        }
+    }
+
+    public static class MoveSmuggler extends Action {
+        @Override
+        ActionResult perform(Istanbul game, Random random) {
+            game.place(Place::isSmuggler).takeSmuggler();
+            var to = game.getLayout().randomPlace(random);
+            to.placeSmuggler();
+
+            game.fireEvent(IstanbulEvent.create(game.getCurrentPlayer(), IstanbulEvent.Type.MOVE_SMUGGLER, Integer.toString(to.getNumber())));
+
+            return ActionResult.none(false);
         }
     }
 

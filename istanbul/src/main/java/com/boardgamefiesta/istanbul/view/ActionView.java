@@ -46,6 +46,7 @@ public enum ActionView {
     MAX_FRUIT(Action.MaxFruit.class, (jsonObject, game) -> new Action.MaxFruit()),
     MAX_SPICE(Action.MaxSpice.class, (jsonObject, game) -> new Action.MaxSpice()),
     MOVE(Action.Move.class, (jsonObject, game) -> new Action.Move(place(jsonObject, game), getBonusCard(jsonObject))),
+    MOVE_SMUGGLER(Action.MoveSmuggler.class, (jsonObject, game) -> new Action.MoveSmuggler()),
     PAY_1_FABRIC(Action.Pay1Fabric.class, (jsonObject, game) -> new Action.Pay1Fabric()),
     PAY_1_FRUIT(Action.Pay1Fruit.class, (jsonObject, game) -> new Action.Pay1Fruit()),
     PAY_1_SPICE(Action.Pay1Spice.class, (jsonObject, game) -> new Action.Pay1Spice()),
@@ -90,8 +91,8 @@ public enum ActionView {
     }
 
     private static Place place(JsonObject jsonObject, Istanbul game) {
-        var x = getInt(jsonObject,"x");
-        var y = getInt(jsonObject,"y");
+        var x = getInt(jsonObject, "x");
+        var y = getInt(jsonObject, "y");
         return game.place(x, y);
     }
 

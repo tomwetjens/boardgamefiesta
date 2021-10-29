@@ -633,6 +633,7 @@ class IstanbulTest {
         game.perform(new Action.Take1Fruit(), new Random(0));
         assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Pay1Fabric.class, Action.Pay1Fruit.class, Action.Pay1Spice.class, Action.Pay1Blue.class, Action.Pay2Lira.class);
         game.perform(new Action.Pay2Lira(), new Random(0));
+        game.perform(new Action.MoveSmuggler(), new Random(0));
         assertThat(game.getPossibleActions()).containsExactlyInAnyOrder(Action.Governor.class);
         // Then player can use Governor
         game.perform(new Action.Governor(), new Random(0));
