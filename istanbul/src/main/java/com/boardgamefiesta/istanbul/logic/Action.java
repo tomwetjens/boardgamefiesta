@@ -545,7 +545,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 market.sellDemandGoods(game, goods);
             }
 
-            return ActionResult.none(true);
+            return ActionResult.none(false);
         }
     }
 
