@@ -409,9 +409,14 @@ public class GWT implements State {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
+        var playerState = playerState(player);
+
+        if (actionStack.canPerform(Action.UpgradeSimmental.class)) {
+            playerState.discardHand(this);
+        }
+
         actionStack.skipAll();
 
-        var playerState = playerState(player);
         playerState.endTurn(this, random);
 
         if (trail.atKansasCity(player)) {

@@ -434,6 +434,27 @@ class GWTTest {
             // Then
             assertThat(game.currentPlayerState().getHand()).isEmpty();
         }
+
+        @Test
+        void shouldDiscardCardsWhenEndTurn() {
+            // Put a Simmental in the hand of the player
+            var player = game.getCurrentPlayer();
+            var simmentalCard = new Card.CattleCard(CattleType.SIMMENTAL, 3, 2);
+            game.playerState(player).addCardToHand(simmentalCard);
+
+            // When
+            game.perform(new Action.Move(List.of(game.getTrail().getKansasCity())), new Random(0));
+            game.perform(new Action.ChooseForesight1(0), new Random(0));
+            game.perform(new Action.ChooseForesight2(0), new Random(0));
+            game.perform(new Action.ChooseForesight3(0), new Random(0));
+            game.perform(new Action.DeliverToCity(City.KANSAS_CITY, 0), new Random(0));
+            game.perform(new Action.UnlockWhite(Unlockable.AUX_GAIN_DOLLAR), new Random(0));
+            assertThat(game.possibleActions()).contains(Action.UpgradeSimmental.class);
+            game.endTurn(player, new Random(0));
+
+            // Then
+            assertThat(game.playerState(player).getHand()).doesNotContain(simmentalCard);
+        }
     }
 
 
