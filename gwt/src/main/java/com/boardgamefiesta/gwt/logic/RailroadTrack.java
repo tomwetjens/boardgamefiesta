@@ -298,7 +298,9 @@ public class RailroadTrack {
         var cityStrip = getCityStrip(edition, railsToTheNorth);
 
         var deliveries = JsonDeserializer.forObject(jsonObject.getJsonObject("cities"))
-                .asMap(key -> migrateCityTo2ndEditionStripIfNecessary(cityStrip, City.valueOf(key)), jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
+                .asMap(key -> edition == GWT.Edition.SECOND && !railsToTheNorth
+                        ? migrateCityTo2ndEditionStripIfNecessary(cityStrip, City.valueOf(key))
+                        : City.valueOf(key), jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
                         .map(playerMap::get).collect(Collectors.toList()));
 
         Map<Town, List<Player>> branchlets = new HashMap<>();
