@@ -40,6 +40,18 @@ public enum City {
     SACRAMENTO(16, EnumSet.of(DiscColor.BLACK, DiscColor.WHITE)),
     SAN_FRANCISCO(18, EnumSet.of(DiscColor.BLACK, DiscColor.WHITE)),
 
+    // 2nd edition:
+    // KANSAS_CITY,
+    FULTON(1, EnumSet.of(DiscColor.WHITE)),
+    // ST_LOUIS,
+    BLOOMINGTON(6, EnumSet.of(DiscColor.WHITE)),
+    PEORIA(8, EnumSet.of(DiscColor.WHITE)),
+    CHICAGO_2(10, EnumSet.of(DiscColor.BLACK, DiscColor.WHITE)),
+    TOLEDO(12, EnumSet.of(DiscColor.BLACK, DiscColor.WHITE)),
+    PITTSBURGH_2(14, EnumSet.of(DiscColor.WHITE)),
+    PHILADELPHIA(16, EnumSet.of(DiscColor.BLACK, DiscColor.WHITE)),
+    // NEW_YORK_CITY
+
     // Rails to the North expansion:
     COLUMBIA(1, EnumSet.of(DiscColor.WHITE)),
     ST_LOUIS(4, EnumSet.of(DiscColor.WHITE)),

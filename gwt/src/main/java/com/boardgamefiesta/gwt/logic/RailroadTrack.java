@@ -177,6 +177,18 @@ public class RailroadTrack {
             City.SACRAMENTO,
             City.SAN_FRANCISCO);
 
+    private static final EnumSet<City> SECOND_EDITION_CITY_STRIP = EnumSet.of(
+            City.KANSAS_CITY,
+            City.FULTON,
+            City.ST_LOUIS,
+            City.BLOOMINGTON,
+            City.PEORIA,
+            City.CHICAGO_2,
+            City.TOLEDO,
+            City.PITTSBURGH_2,
+            City.PHILADELPHIA,
+            City.NEW_YORK_CITY);
+
     private static final EnumSet<City> RTTN_CITY_STRIP = EnumSet.of(
             City.KANSAS_CITY,
             City.COLUMBIA,
@@ -230,7 +242,7 @@ public class RailroadTrack {
                 .collect(Collectors.toMap(Function.identity(), mediumTown -> mediumTownTilesPile.poll()));
 
         return new RailroadTrack(
-                options.isRailsToTheNorth() ? RTTN_CITY_STRIP : ORIGINAL_CITY_STRIP,
+                getCityStrip(edition, options.isRailsToTheNorth()),
                 engines,
                 new EnumMap<>(City.class),
                 stationMasters,
@@ -239,6 +251,12 @@ public class RailroadTrack {
                 new HashMap<>(),
                 mediumTownTiles,
                 new HashMap<>());
+    }
+
+    private static EnumSet<City> getCityStrip(@NonNull GWT.Edition edition, boolean railsToTheNorth) {
+        return railsToTheNorth ? RTTN_CITY_STRIP
+                : edition == GWT.Edition.SECOND ? SECOND_EDITION_CITY_STRIP
+                : ORIGINAL_CITY_STRIP;
     }
 
     private static Queue<StationMaster> createStationMastersPile(GWT.Edition edition, @NonNull GWT.Options options, Random random) {
@@ -273,7 +291,7 @@ public class RailroadTrack {
                 .build();
     }
 
-    static RailroadTrack deserialize(boolean railsToTheNorth, Map<String, Player> playerMap, JsonObject jsonObject) {
+    static RailroadTrack deserialize(GWT.Edition edition, boolean railsToTheNorth, Map<String, Player> playerMap, JsonObject jsonObject) {
         var engines = JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces"))
                 .asStringMap(playerMap::get, SPACES::get);
 
@@ -327,7 +345,7 @@ public class RailroadTrack {
         }
 
         return new RailroadTrack(
-                railsToTheNorth ? RTTN_CITY_STRIP : ORIGINAL_CITY_STRIP,
+                getCityStrip(edition, railsToTheNorth),
                 engines,
                 deliveries,
                 stationMasters,

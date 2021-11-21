@@ -762,7 +762,7 @@ public class GWT implements State {
 
         var railsToTheNorth = jsonObject.getBoolean("railsToTheNorth", false);
 
-        var railroadTrack = RailroadTrack.deserialize(railsToTheNorth, playerMap, jsonObject.getJsonObject("railroadTrack"));
+        var railroadTrack = RailroadTrack.deserialize(edition, railsToTheNorth, playerMap, jsonObject.getJsonObject("railroadTrack"));
 
         var trail = Trail.deserialize(edition, playerMap, jsonObject.getJsonObject("trail"));
 
