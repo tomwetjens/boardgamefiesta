@@ -78,6 +78,6 @@ public enum City {
     }
 
     public boolean isMultipleDeliveries() {
-        return this == KANSAS_CITY || this == SAN_FRANCISCO;
+        return this == KANSAS_CITY || this == SAN_FRANCISCO || this == NEW_YORK_CITY;
     }
 }

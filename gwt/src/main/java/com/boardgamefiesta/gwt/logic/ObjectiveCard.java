@@ -22,7 +22,10 @@ import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.json.*;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -261,7 +264,7 @@ public class ObjectiveCard extends Card {
                 playerState.numberOfCattleCards(EnumSet.of(CattleType.AYRSHIRE, CattleType.BROWN_SWISS, CattleType.HOLSTEIN)),
                 playerState.numberOfCattleCards(EnumSet.of(CattleType.WEST_HIGHLAND)),
                 playerState.numberOfCattleCards(EnumSet.of(CattleType.TEXAS_LONGHORN)),
-                game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO));
+                game.getRailroadTrack().numberOfDeliveries(player, game.getEdition() == GWT.Edition.SECOND ? City.NEW_YORK_CITY : City.SAN_FRANCISCO));
     }
 
     @AllArgsConstructor

@@ -56,7 +56,7 @@ public class Garth {
                         .mapToInt(ObjectiveCard::getPoints)
                         .sum())
                 .set(ScoreCategory.CITIES, score.getCategories().getOrDefault(ScoreCategory.CITIES, 0) - game.getRailroadTrack().scoreSanFrancisco(player, playerState)
-                        + game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO) * 6);
+                        + game.getRailroadTrack().numberOfDeliveries(player, game.getEdition() == GWT.Edition.SECOND ? City.NEW_YORK_CITY : City.SAN_FRANCISCO) * 6);
     }
 
     void start(GWT game, Random random) {
@@ -225,7 +225,7 @@ public class Garth {
                         .min(Comparator.comparingInt(City::getValue)
                                 // Both SF and NYC are 18, so first do NYC and then do SF
                                 .thenComparing(city -> city == City.NEW_YORK_CITY ? 1 : 0))
-                        .orElse(City.SAN_FRANCISCO));
+                        .orElse(game.getEdition() == GWT.Edition.SECOND ? City.NEW_YORK_CITY : City.SAN_FRANCISCO));
     }
 
     private ObjectiveCard randomObjectiveCard(GWT game, Random random) {
