@@ -165,7 +165,7 @@ public class RailroadTrack {
             .next(Space.numbered("38"))
             .next(Space.turnout("39", STATIONS.get(9)));
 
-    private static final EnumSet<City> ORIGINAL_CITY_STRIP = EnumSet.of(
+    private static final List<City> ORIGINAL_CITY_STRIP = List.of(
             City.KANSAS_CITY,
             City.TOPEKA,
             City.WICHITA,
@@ -177,7 +177,7 @@ public class RailroadTrack {
             City.SACRAMENTO,
             City.SAN_FRANCISCO);
 
-    private static final EnumSet<City> SECOND_EDITION_CITY_STRIP = EnumSet.of(
+    private static final List<City> SECOND_EDITION_CITY_STRIP = List.of(
             City.KANSAS_CITY,
             City.FULTON,
             City.ST_LOUIS,
@@ -189,7 +189,7 @@ public class RailroadTrack {
             City.PHILADELPHIA,
             City.NEW_YORK_CITY);
 
-    private static final EnumSet<City> RTTN_CITY_STRIP = EnumSet.of(
+    private static final List<City> RTTN_CITY_STRIP = List.of(
             City.KANSAS_CITY,
             City.COLUMBIA,
             City.ST_LOUIS,
@@ -200,7 +200,7 @@ public class RailroadTrack {
             City.NEW_YORK_CITY);
 
     @Builder.Default
-    private final Set<City> cityStrip = ORIGINAL_CITY_STRIP;
+    private final List<City> cityStrip = ORIGINAL_CITY_STRIP;
     @Builder.Default
     private final Map<Player, Space> engines = new HashMap<>();
     @Builder.Default
@@ -253,7 +253,7 @@ public class RailroadTrack {
                 new HashMap<>());
     }
 
-    private static EnumSet<City> getCityStrip(@NonNull GWT.Edition edition, boolean railsToTheNorth) {
+    private static List<City> getCityStrip(@NonNull GWT.Edition edition, boolean railsToTheNorth) {
         return railsToTheNorth ? RTTN_CITY_STRIP
                 : edition == GWT.Edition.SECOND ? SECOND_EDITION_CITY_STRIP
                 : ORIGINAL_CITY_STRIP;
@@ -295,8 +295,10 @@ public class RailroadTrack {
         var engines = JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces"))
                 .asStringMap(playerMap::get, SPACES::get);
 
+        var cityStrip = getCityStrip(edition, railsToTheNorth);
+
         var deliveries = JsonDeserializer.forObject(jsonObject.getJsonObject("cities"))
-                .asMap(City::valueOf, jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
+                .asMap(key -> migrateCityTo2ndEditionStripIfNecessary(cityStrip, City.valueOf(key)), jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
                         .map(playerMap::get).collect(Collectors.toList()));
 
         Map<Town, List<Player>> branchlets = new HashMap<>();
@@ -345,7 +347,7 @@ public class RailroadTrack {
         }
 
         return new RailroadTrack(
-                getCityStrip(edition, railsToTheNorth),
+                cityStrip,
                 engines,
                 deliveries,
                 stationMasters,
@@ -354,6 +356,18 @@ public class RailroadTrack {
                 upgrades,
                 mediumTownTiles,
                 branchlets);
+    }
+
+    private static City migrateCityTo2ndEditionStripIfNecessary(List<City> cityStrip, City input) {
+        // Some 2nd edition games were started with the original city strip instead of the 2nd edition city strip
+        // Deliveries to cities in those games need to be migrated to the 2nd edition city strip
+        // Note that games with RttN have a different city strip and also has deliveries to non-city strip cities
+        if (!cityStrip.contains(input) && ORIGINAL_CITY_STRIP.contains(input)) {
+            return cityStrip.get(ORIGINAL_CITY_STRIP.indexOf(input));
+        } else {
+            // no mapping needed
+            return input;
+        }
     }
 
     Optional<Station> getStation(Town town) {
