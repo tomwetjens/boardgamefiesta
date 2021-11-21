@@ -25,6 +25,7 @@ import lombok.*;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -283,12 +284,24 @@ public class RailroadTrack {
                                 .add("stationMaster", Optional.ofNullable(stationMasters.get(station)).map(StationMaster::name).orElse(null))
                                 .add("worker", Optional.ofNullable(workers.get(station)).map(Worker::name).orElse(null))
                                 .build()))
-                .add("cities", serializer.fromMap(deliveries, City::name, players -> serializer.fromStrings(players, Player::getName)))
+                .add("cities", serializerDeliveries(factory))
                 .add("branchlets", serializer.fromMap(branchlets, Space::getName, players -> serializer.fromStrings(players, Player::getName)))
                 .add("mediumTownTiles", serializer.fromStringMap(mediumTownTiles, MediumTown::getName, MediumTownTile::name))
                 .add("currentSpaces", serializer.fromStringMap(engines, Player::getName, Space::getName))
                 .add("bonusStationMasters", serializer.fromStrings(bonusStationMasters, StationMaster::name))
                 .build();
+    }
+
+    private JsonObjectBuilder serializerDeliveries(JsonBuilderFactory jsonBuilderFactory) {
+        var serializer = JsonSerializer.forFactory(jsonBuilderFactory);
+
+        var builder = jsonBuilderFactory.createObjectBuilder();
+        deliveries.entrySet()
+                .stream()
+                .filter(entry -> !entry.getValue().isEmpty())
+                .forEach(entry -> builder.add(entry.getKey().name(), serializer.fromStrings(entry.getValue(), Player::getName)));
+
+        return builder;
     }
 
     static RailroadTrack deserialize(GWT.Edition edition, boolean railsToTheNorth, Map<String, Player> playerMap, JsonObject jsonObject) {
@@ -297,11 +310,7 @@ public class RailroadTrack {
 
         var cityStrip = getCityStrip(edition, railsToTheNorth);
 
-        var deliveries = JsonDeserializer.forObject(jsonObject.getJsonObject("cities"))
-                .asMap(key -> edition == GWT.Edition.SECOND && !railsToTheNorth
-                        ? migrateCityTo2ndEditionStripIfNecessary(cityStrip, City.valueOf(key))
-                        : City.valueOf(key), jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
-                        .map(playerMap::get).collect(Collectors.toList()));
+        var deliveries = deserializeDeliveries(edition, railsToTheNorth, playerMap, cityStrip, jsonObject.getJsonObject("cities"));
 
         Map<Town, List<Player>> branchlets = new HashMap<>();
         if (jsonObject.containsKey("branchlets")) {
@@ -358,6 +367,17 @@ public class RailroadTrack {
                 upgrades,
                 mediumTownTiles,
                 branchlets);
+    }
+
+    private static Map<City, List<Player>> deserializeDeliveries(GWT.Edition edition, boolean railsToTheNorth, Map<String, Player> playerMap, List<City> cityStrip, JsonObject jsonObject) {
+        return jsonObject.keySet().stream()
+                .filter(key -> !jsonObject.getJsonArray(key).isEmpty())
+                .collect(Collectors.toMap(
+                        key -> edition == GWT.Edition.SECOND && !railsToTheNorth
+                                ? migrateCityTo2ndEditionStripIfNecessary(cityStrip, City.valueOf(key))
+                                : City.valueOf(key),
+                        key -> jsonObject.getJsonArray(key).getValuesAs(JsonString::getString).stream()
+                                .map(playerMap::get).collect(Collectors.toList())));
     }
 
     private static City migrateCityTo2ndEditionStripIfNecessary(List<City> cityStrip, City input) {
