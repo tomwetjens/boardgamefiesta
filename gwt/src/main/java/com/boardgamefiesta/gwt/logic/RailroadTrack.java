@@ -201,6 +201,7 @@ public class RailroadTrack {
             City.NEW_YORK_CITY);
 
     @Builder.Default
+    @Getter
     private final List<City> cityStrip = ORIGINAL_CITY_STRIP;
     @Builder.Default
     private final Map<Player, Space> engines = new HashMap<>();
@@ -674,7 +675,7 @@ public class RailroadTrack {
                 && (!hasMadeDelivery(player, city) || city.isMultipleDeliveries());
     }
 
-    private boolean isAccessible(Player player, City city) {
+    boolean isAccessible(Player player, City city) {
         return cityStrip.contains(city) || hasBranchlet(BIG_TOWNS.get(city), player)
                 || (city == City.SAN_FRANCISCO && player.getType() == Player.Type.COMPUTER);
     }
@@ -704,6 +705,18 @@ public class RailroadTrack {
 
         deliveries.computeIfAbsent(city, k -> new LinkedList<>()).add(player);
 
+        if (!isRailsToTheNorth()) {
+            if (game.getEdition() == GWT.Edition.FIRST) {
+                return deliveryActionsFirstEdition(player, city, game);
+            } else {
+                return deliveryActionsSecondEdition(player, city, game);
+            }
+        } else {
+            return deliveryActionsRailsToTheNorth(player, city, game);
+        }
+    }
+
+    private ImmediateActions deliveryActionsFirstEdition(Player player, City city, GWT game) {
         var immediateActions = ImmediateActions.none();
 
         switch (city) {
@@ -718,19 +731,8 @@ public class RailroadTrack {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.TOPEKA.name(), city.name()));
                     immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
-                if (game.getEdition() == GWT.Edition.SECOND && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
-                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
-                }
                 break;
             case COLORADO_SPRINGS:
-                if (game.getEdition() == GWT.Edition.SECOND && hasMadeDelivery(player, City.WICHITA)) {
-                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
-                }
-                if (hasMadeDelivery(player, City.SANTA_FE) && !game.getObjectiveCards().isEmpty()) {
-                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.SANTA_FE.name(), city.name()));
-                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
-                }
-                break;
             case ALBUQUERQUE:
                 if (hasMadeDelivery(player, City.SANTA_FE) && !game.getObjectiveCards().isEmpty()) {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.SANTA_FE.name(), city.name()));
@@ -747,6 +749,64 @@ public class RailroadTrack {
                     immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
                 return immediateActions;
+        }
+
+        return immediateActions;
+    }
+
+    private ImmediateActions deliveryActionsSecondEdition(Player player, City city, GWT game) {
+        var immediateActions = ImmediateActions.none();
+
+        switch (city) {
+            case FULTON:
+                if (hasMadeDelivery(player, City.ST_LOUIS) && !game.getObjectiveCards().isEmpty()) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city.name(), City.ST_LOUIS.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                break;
+            case ST_LOUIS:
+                if (hasMadeDelivery(player, City.FULTON) && !game.getObjectiveCards().isEmpty()) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.FULTON.name(), city.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                if (hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
+                }
+                break;
+            case BLOOMINGTON:
+                if (hasMadeDelivery(player, City.ST_LOUIS)) {
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
+                }
+                if (hasMadeDelivery(player, City.PEORIA) && !game.getObjectiveCards().isEmpty()) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.PEORIA.name(), city.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                break;
+            case CHICAGO_2:
+                if (hasMadeDelivery(player, City.PEORIA) && !game.getObjectiveCards().isEmpty()) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.PEORIA.name(), city.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                break;
+            case PEORIA:
+                if (hasMadeDelivery(player, City.BLOOMINGTON) && !game.getObjectiveCards().isEmpty()) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.BLOOMINGTON.name(), city.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                if (hasMadeDelivery(player, City.CHICAGO_2) && game.getObjectiveCards().getAvailable().size() > 1) {
+                    game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(city.name(), City.CHICAGO_2.name()));
+                    immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
+                }
+                return immediateActions;
+        }
+
+        return immediateActions;
+    }
+
+    private ImmediateActions deliveryActionsRailsToTheNorth(Player player, City city, GWT game) {
+        var immediateActions = ImmediateActions.none();
+
+        switch (city) {
             case COLUMBIA:
                 if (hasMadeDelivery(player, City.ST_LOUIS)) {
                     immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
@@ -830,15 +890,28 @@ public class RailroadTrack {
     }
 
     private int scoreDeliveries(GWT game, Player player, PlayerState playerState) {
+        if (!isRailsToTheNorth()) {
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                return scoreDeliveriesSecondEdition(game, player, playerState);
+            } else {
+                return scoreDeliveriesFirstEdition(game, player, playerState);
+            }
+        } else {
+            // RttN
+            return scoreDeliveriesRailsToTheNorth(player, playerState);
+        }
+    }
+
+    private int scoreDeliveriesFirstEdition(GWT game, Player player, PlayerState playerState) {
         int result = 0;
 
-        result -= numberOfDeliveries(player, City.KANSAS_CITY) * (isRailsToTheNorth() ? 8 : 6);
+        result -= numberOfDeliveries(player, City.KANSAS_CITY) * 6;
 
         if (hasMadeDelivery(player, City.TOPEKA) && hasMadeDelivery(player, City.WICHITA)) {
             result -= 3;
         }
 
-        if (game.getEdition() != GWT.Edition.SECOND && hasMadeDelivery(player, City.WICHITA) && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
+        if (hasMadeDelivery(player, City.WICHITA) && hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
             result -= 1;
         }
 
@@ -859,6 +932,44 @@ public class RailroadTrack {
         }
 
         result += scoreSanFrancisco(player, playerState);
+
+        return result;
+    }
+
+    private int scoreDeliveriesSecondEdition(GWT game, Player player, PlayerState playerState) {
+        int result = 0;
+
+        result -= numberOfDeliveries(player, City.KANSAS_CITY) * 6;
+
+        if (hasMadeDelivery(player, City.FULTON) && hasMadeDelivery(player, City.ST_LOUIS)) {
+            result -= 3;
+        }
+
+        if (hasMadeDelivery(player, City.CHICAGO_2) && hasMadeDelivery(player, City.TOLEDO)) {
+            result += 6;
+        }
+
+        if (hasMadeDelivery(player, City.TOLEDO) && hasMadeDelivery(player, City.PITTSBURGH_2)) {
+            result += 8;
+        }
+
+        if (hasMadeDelivery(player, City.PITTSBURGH_2) && hasMadeDelivery(player, City.PHILADELPHIA)) {
+            result += 4;
+        }
+
+        if (hasMadeDelivery(player, City.PHILADELPHIA)) {
+            result += 6;
+        }
+
+        result += numberOfDeliveries(player, City.NEW_YORK_CITY) * 9;
+
+        return result;
+    }
+
+    private int scoreDeliveriesRailsToTheNorth(Player player, PlayerState playerState) {
+        int result = 0;
+
+        result -= numberOfDeliveries(player, City.KANSAS_CITY) * 8;
 
         if (hasMadeDelivery(player, City.COLUMBIA) && hasMadeDelivery(player, City.ST_LOUIS)) {
             result -= 5;
@@ -895,6 +1006,8 @@ public class RailroadTrack {
         if (hasMadeDelivery(player, City.MONTREAL)) {
             result += 15;
         }
+
+        result += scoreSanFrancisco(player, playerState);
 
         return result;
     }

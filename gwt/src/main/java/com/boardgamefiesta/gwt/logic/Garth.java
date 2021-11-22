@@ -56,7 +56,7 @@ public class Garth {
                         .mapToInt(ObjectiveCard::getPoints)
                         .sum())
                 .set(ScoreCategory.CITIES, score.getCategories().getOrDefault(ScoreCategory.CITIES, 0) - game.getRailroadTrack().scoreSanFrancisco(player, playerState)
-                        + game.getRailroadTrack().numberOfDeliveries(player, game.getEdition() == GWT.Edition.SECOND ? City.NEW_YORK_CITY : City.SAN_FRANCISCO) * 6);
+                        + game.getRailroadTrack().numberOfDeliveries(player, City.SAN_FRANCISCO) * 6);
     }
 
     void start(GWT game, Random random) {
@@ -96,10 +96,10 @@ public class Garth {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Difficulty {
 
-        EASY(List.of(City.WICHITA), List.of(City.CHICAGO)),
-        MEDIUM(List.of(City.COLORADO_SPRINGS), List.of(City.CHICAGO, City.CLEVELAND)),
-        HARD(List.of(City.ALBUQUERQUE), List.of(City.CLEVELAND)),
-        VERY_HARD(List.of(City.ALBUQUERQUE), List.of(City.CLEVELAND));
+        EASY(List.of(City.WICHITA, City.ST_LOUIS), List.of(City.CHICAGO)),
+        MEDIUM(List.of(City.COLORADO_SPRINGS, City.BLOOMINGTON), List.of(City.CHICAGO, City.CLEVELAND)),
+        HARD(List.of(City.ALBUQUERQUE, City.CHICAGO_2), List.of(City.CLEVELAND)),
+        VERY_HARD(List.of(City.ALBUQUERQUE, City.CHICAGO_2), List.of(City.CLEVELAND));
 
         List<City> startCities;
         List<City> startCitiesRailsToTheNorth;
@@ -217,6 +217,7 @@ public class Garth {
 
         return startCities.stream()
                 .filter(city -> !game.getRailroadTrack().hasMadeDelivery(player, city))
+                .filter(city -> game.getRailroadTrack().isAccessible(player, city))
                 .findFirst()
                 .orElseGet(() -> game.getRailroadTrack().possibleDeliveries(player, Integer.MAX_VALUE, 0)
                         .stream()
