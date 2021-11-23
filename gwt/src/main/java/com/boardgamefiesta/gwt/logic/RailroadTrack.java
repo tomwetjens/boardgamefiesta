@@ -378,7 +378,12 @@ public class RailroadTrack {
                                 ? migrateCityTo2ndEditionStripIfNecessary(cityStrip, City.valueOf(key))
                                 : City.valueOf(key),
                         key -> jsonObject.getJsonArray(key).getValuesAs(JsonString::getString).stream()
-                                .map(playerMap::get).collect(Collectors.toList())));
+                                .map(playerMap::get).collect(Collectors.toList()), (a, b) -> {
+                            var merged = new ArrayList<Player>(a.size() + b.size());
+                            merged.addAll(a);
+                            merged.addAll(b);
+                            return merged;
+                        }));
     }
 
     private static City migrateCityTo2ndEditionStripIfNecessary(List<City> cityStrip, City input) {
