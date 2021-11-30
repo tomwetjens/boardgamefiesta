@@ -1008,4 +1008,55 @@ class RailroadTrackTest {
         }
     }
 
+    @Nested
+    class SecondEdition {
+
+        @Mock
+        GWT game;
+
+        @Mock
+        PlayerState currentPlayerState;
+
+        @Mock
+        ObjectiveCards objectiveCards;
+
+        GWT.Options options = GWT.Options.builder().railsToTheNorth(false).build();
+
+        RailroadTrack railroadTrack;
+
+        @BeforeEach
+        void setUp() {
+            railroadTrack = RailroadTrack.initial(GWT.Edition.SECOND, Set.of(playerA, playerB, playerC, playerD), options, new Random(0));
+
+            lenient().when(game.getCurrentPlayer()).thenReturn(playerA);
+            lenient().when(game.getRailroadTrack()).thenReturn(railroadTrack);
+            lenient().when(game.currentPlayerState()).thenReturn(currentPlayerState);
+            lenient().when(game.getObjectiveCards()).thenReturn(objectiveCards);
+        }
+
+        @Nested
+        class DeliverToCity {
+            @Test
+            void gainExchangeTokenBetweenStLouisAndBloomington() {
+                railroadTrack.deliverToCity(playerA, City.ST_LOUIS, game);
+
+                var immediateActions = railroadTrack.deliverToCity(playerA, City.BLOOMINGTON, game);
+                assertThat(immediateActions.getActions()).hasSize(1);
+                var possibleAction = immediateActions.getActions().get(0);
+                assertThat(possibleAction.canPerform(Action.GainExchangeToken.class)).isTrue();
+            }
+
+            @Test
+            void gainExchangeTokenBetweenBloomingtonAndStLouis() {
+                railroadTrack.deliverToCity(playerA, City.BLOOMINGTON, game);
+
+                var immediateActions = railroadTrack.deliverToCity(playerA, City.ST_LOUIS, game);
+                assertThat(immediateActions.getActions()).hasSize(1);
+                var possibleAction = immediateActions.getActions().get(0);
+                assertThat(possibleAction.canPerform(Action.GainExchangeToken.class)).isTrue();
+            }
+        }
+
+    }
+
 }

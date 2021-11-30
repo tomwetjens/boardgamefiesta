@@ -774,7 +774,7 @@ public class RailroadTrack {
                     game.fireEvent(player, GWTEvent.Type.MUST_TAKE_OBJECTIVE_CARD, List.of(City.FULTON.name(), city.name()));
                     immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 }
-                if (hasMadeDelivery(player, City.COLORADO_SPRINGS)) {
+                if (hasMadeDelivery(player, City.BLOOMINGTON)) {
                     immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.GainExchangeToken.class));
                 }
                 break;
