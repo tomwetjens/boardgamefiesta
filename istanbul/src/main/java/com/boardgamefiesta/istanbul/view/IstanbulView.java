@@ -34,6 +34,10 @@ public class IstanbulView {
     private final List<List<PlaceView>> layout;
     private final List<ActionView> actions;
     private final Map<PlayerColor, PlayerStateView> players;
+    /**
+     * Other players, in player order, relative to the viewer.
+     */
+    private final List<PlayerColor> otherPlayers;
     private final int bonusCards;
     private final int maxRubies;
 
@@ -52,10 +56,28 @@ public class IstanbulView {
                 .collect(Collectors.toList())
                 : null;
 
+        var startPlayer = state.getPlayerOrder().get(0);
         players = state.getPlayers().stream().collect(Collectors.toMap(Player::getColor, player ->
                 new PlayerStateView(player, state.getPlayerState(player),
-                        player == state.getPlayerOrder().get(0),
+                        player == startPlayer,
                         player == viewer, state.isEnded())));
+
+        if (viewer != null) {
+            // Other players in play order
+            var viewingPlayerIndex = state.getPlayers().indexOf(viewer);
+            var playerCount = state.getPlayers().size();
+            otherPlayers =
+                    // In order relative to the viewing player
+                    IntStream.range(1, playerCount)
+                            .map(i -> (viewingPlayerIndex + i) % playerCount)
+                            .mapToObj(i -> state.getPlayers().get(i))
+                            .map(Player::getColor)
+                            .collect(Collectors.toList());
+        } else {
+            otherPlayers = state.getPlayers().stream()
+                    .map(Player::getColor)
+                    .collect(Collectors.toList());
+        }
 
         bonusCards = state.getBonusCardsSize();
 
