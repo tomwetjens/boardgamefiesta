@@ -1020,54 +1020,85 @@ class RailroadTrackTest {
         @Mock
         ObjectiveCards objectiveCards;
 
-        GWT.Options options = GWT.Options.builder().railsToTheNorth(false).build();
+        @Nested
+        class Original {
 
-        RailroadTrack railroadTrack;
+            GWT.Options options = GWT.Options.builder().railsToTheNorth(false).build();
 
-        @BeforeEach
-        void setUp() {
-            railroadTrack = RailroadTrack.initial(GWT.Edition.SECOND, Set.of(playerA, playerB, playerC, playerD), options, new Random(0));
+            RailroadTrack railroadTrack;
 
-            lenient().when(game.getCurrentPlayer()).thenReturn(playerA);
-            lenient().when(game.getRailroadTrack()).thenReturn(railroadTrack);
-            lenient().when(game.currentPlayerState()).thenReturn(currentPlayerState);
-            lenient().when(game.getObjectiveCards()).thenReturn(objectiveCards);
+            @BeforeEach
+            void setUp() {
+                railroadTrack = RailroadTrack.initial(GWT.Edition.SECOND, Set.of(playerA, playerB, playerC, playerD), options, new Random(0));
+
+                lenient().when(game.getCurrentPlayer()).thenReturn(playerA);
+                lenient().when(game.getRailroadTrack()).thenReturn(railroadTrack);
+                lenient().when(game.currentPlayerState()).thenReturn(currentPlayerState);
+                lenient().when(game.getObjectiveCards()).thenReturn(objectiveCards);
+            }
+
+            @Nested
+            class DeliverToCity {
+                @Test
+                void gainExchangeTokenBetweenStLouisAndBloomington() {
+                    railroadTrack.deliverToCity(playerA, City.ST_LOUIS, game);
+
+                    var immediateActions = railroadTrack.deliverToCity(playerA, City.BLOOMINGTON, game);
+                    assertThat(immediateActions.getActions()).hasSize(1);
+                    var possibleAction = immediateActions.getActions().get(0);
+                    assertThat(possibleAction.canPerform(Action.GainExchangeToken.class)).isTrue();
+                }
+
+                @Test
+                void gainExchangeTokenBetweenBloomingtonAndStLouis() {
+                    railroadTrack.deliverToCity(playerA, City.BLOOMINGTON, game);
+
+                    var immediateActions = railroadTrack.deliverToCity(playerA, City.ST_LOUIS, game);
+                    assertThat(immediateActions.getActions()).hasSize(1);
+                    var possibleAction = immediateActions.getActions().get(0);
+                    assertThat(possibleAction.canPerform(Action.GainExchangeToken.class)).isTrue();
+                }
+
+                @Test
+                void multipleDeliveriesToNewYork() {
+                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                    railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
+
+                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                    railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
+
+                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                }
+            }
         }
 
         @Nested
-        class DeliverToCity {
-            @Test
-            void gainExchangeTokenBetweenStLouisAndBloomington() {
-                railroadTrack.deliverToCity(playerA, City.ST_LOUIS, game);
+        class RailsToTheNorth {
 
-                var immediateActions = railroadTrack.deliverToCity(playerA, City.BLOOMINGTON, game);
-                assertThat(immediateActions.getActions()).hasSize(1);
-                var possibleAction = immediateActions.getActions().get(0);
-                assertThat(possibleAction.canPerform(Action.GainExchangeToken.class)).isTrue();
+            GWT.Options options = GWT.Options.builder().railsToTheNorth(true).build();
+
+            RailroadTrack railroadTrack;
+
+            @BeforeEach
+            void setUp() {
+                railroadTrack = RailroadTrack.initial(GWT.Edition.SECOND, Set.of(playerA, playerB, playerC, playerD), options, new Random(0));
+
+                lenient().when(game.getCurrentPlayer()).thenReturn(playerA);
+                lenient().when(game.getRailroadTrack()).thenReturn(railroadTrack);
+                lenient().when(game.currentPlayerState()).thenReturn(currentPlayerState);
+                lenient().when(game.getObjectiveCards()).thenReturn(objectiveCards);
             }
 
             @Test
-            void gainExchangeTokenBetweenBloomingtonAndStLouis() {
-                railroadTrack.deliverToCity(playerA, City.BLOOMINGTON, game);
-
-                var immediateActions = railroadTrack.deliverToCity(playerA, City.ST_LOUIS, game);
-                assertThat(immediateActions.getActions()).hasSize(1);
-                var possibleAction = immediateActions.getActions().get(0);
-                assertThat(possibleAction.canPerform(Action.GainExchangeToken.class)).isTrue();
-            }
-
-            @Test
-            void multipleDeliveriesToNewYork() {
+            void noMultipleDeliveriesToNewYork() {
                 assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
                 railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
 
-                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
-                railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
-
-                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).doesNotContain(City.NEW_YORK_CITY);
+                assertThatThrownBy(() -> railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game))
+                        .hasMessage(GWTError.ALREADY_DELIVERED_TO_CITY.name());
             }
         }
-
     }
 
 }

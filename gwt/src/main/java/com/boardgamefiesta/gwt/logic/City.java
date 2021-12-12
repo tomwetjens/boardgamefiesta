@@ -77,7 +77,4 @@ public enum City {
         return Collections.unmodifiableSet(discColors);
     }
 
-    public boolean isMultipleDeliveries() {
-        return this == KANSAS_CITY || this == SAN_FRANCISCO || this == NEW_YORK_CITY;
-    }
 }

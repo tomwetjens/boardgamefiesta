@@ -67,4 +67,10 @@ public interface State {
     Stats stats(Player player);
 
     Optional<Integer> getTurn(Player player);
+
+    /**
+     * Estimated progress.
+     * @return 0-100 percent
+     */
+    int getProgress();
 }

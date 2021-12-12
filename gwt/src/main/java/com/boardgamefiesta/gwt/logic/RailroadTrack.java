@@ -687,7 +687,13 @@ public class RailroadTrack {
 
     private boolean canDeliver(Player player, City city) {
         return isAccessible(player, city)
-                && (!hasMadeDelivery(player, city) || city.isMultipleDeliveries());
+                && (!hasMadeDelivery(player, city) || isMultipleDeliveries(city));
+    }
+
+    private boolean isMultipleDeliveries(City city) {
+        return city == City.KANSAS_CITY ||
+                isRailsToTheNorth() ? city == City.SAN_FRANCISCO
+                : city == City.NEW_YORK_CITY && cityStrip == SECOND_EDITION_CITY_STRIP;
     }
 
     boolean isAccessible(Player player, City city) {
