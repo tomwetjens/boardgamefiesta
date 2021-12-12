@@ -375,6 +375,12 @@ public class PowerGrid implements State {
     }
 
     @Override
+    public int getProgress() {
+        // TODO
+        return 0;
+    }
+
+    @Override
     public void leave(Player player, Random random) {
 
     }

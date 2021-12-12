@@ -41,6 +41,7 @@ public class TableView {
     Table.Mode mode;
     Table.Visibility visibility;
     Table.Status status;
+    int progress;
     Instant created;
     Instant started;
     Instant ended;
@@ -88,6 +89,7 @@ public class TableView {
         mode = table.getMode();
         visibility = table.getVisibility();
         status = table.getStatus();
+        progress = table.getProgress();
         owner = new UserView(table.getOwnerId(), userMap.get(table.getOwnerId()), currentUserId);
         options = table.getOptions().asMap();
 

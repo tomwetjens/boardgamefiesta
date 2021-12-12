@@ -145,6 +145,14 @@ public class JobMarket {
         return row.getCost();
     }
 
+    public int getProgress() {
+        var workersPlacedBeforeCurrentRow = (currentRowIndex - 1) * rowLimit;
+        var workersPlacedCurrentRow = currentRowIndex < rows.size() ? rows.get(currentRowIndex).getWorkers().size() : 0;
+        var totalWorkersPlaced = workersPlacedBeforeCurrentRow + workersPlacedCurrentRow;
+        var totalWorkersCapacity = rows.size() * rowLimit;
+        return Math.min(100, Math.round(((float) totalWorkersPlaced / (float) totalWorkersCapacity) * 100));
+    }
+
     @Builder(access = AccessLevel.PRIVATE)
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class Row {

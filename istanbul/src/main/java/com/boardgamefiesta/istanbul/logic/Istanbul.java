@@ -655,6 +655,14 @@ public class Istanbul implements State {
                 .map(PlayerState.PlayerStats::getTurns);
     }
 
+    @Override
+    public int getProgress() {
+        return Math.min(100, Math.round((float)playerStates.values().stream()
+                .mapToInt(PlayerState::getRubies)
+                .max()
+                .orElse(0) / (float)getMaxRubies()));
+    }
+
     enum Status {
         STARTED,
         LAST_ROUND,
