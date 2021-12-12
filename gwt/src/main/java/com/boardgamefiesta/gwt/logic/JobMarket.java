@@ -146,7 +146,7 @@ public class JobMarket {
     }
 
     public int getProgress() {
-        var workersPlacedBeforeCurrentRow = (currentRowIndex - 1) * rowLimit;
+        var workersPlacedBeforeCurrentRow = currentRowIndex * rowLimit;
         var workersPlacedCurrentRow = currentRowIndex < rows.size() ? rows.get(currentRowIndex).getWorkers().size() : 0;
         var totalWorkersPlaced = workersPlacedBeforeCurrentRow + workersPlacedCurrentRow;
         var totalWorkersCapacity = rows.size() * rowLimit;
