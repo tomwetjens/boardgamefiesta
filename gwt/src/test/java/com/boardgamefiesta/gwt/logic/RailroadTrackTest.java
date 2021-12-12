@@ -1055,6 +1055,17 @@ class RailroadTrackTest {
                 var possibleAction = immediateActions.getActions().get(0);
                 assertThat(possibleAction.canPerform(Action.GainExchangeToken.class)).isTrue();
             }
+
+            @Test
+            void multipleDeliveriesToNewYork() {
+                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
+
+                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
+
+                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+            }
         }
 
     }
