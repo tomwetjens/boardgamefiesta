@@ -306,8 +306,7 @@ public class RailroadTrack {
     }
 
     static RailroadTrack deserialize(GWT.Edition edition, boolean railsToTheNorth, Map<String, Player> playerMap, JsonObject jsonObject) {
-        var engines = JsonDeserializer.forObject(jsonObject.getJsonObject("currentSpaces"))
-                .asStringMap(playerMap::get, SPACES::get);
+        var engines = deserializeEngines(playerMap, jsonObject.getJsonObject("currentSpaces"));
 
         var cityStrip = getCityStrip(edition, railsToTheNorth);
 
@@ -317,7 +316,9 @@ public class RailroadTrack {
         if (jsonObject.containsKey("branchlets")) {
             branchlets = JsonDeserializer.forObject(jsonObject.getJsonObject("branchlets"))
                     .asMap(TOWNS::get, jsonValue -> jsonValue.asJsonArray().getValuesAs(JsonString::getString).stream()
-                            .map(playerMap::get).collect(Collectors.toList()));
+                            .map(playerMap::get)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList()));
         }
 
         var upgrades = new HashMap<Station, List<Player>>();
@@ -333,6 +334,7 @@ public class RailroadTrack {
                     .map(JsonString.class::cast)
                     .map(JsonString::getString)
                     .map(playerMap::get)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(LinkedList::new)));
 
             if (obj.getString("stationMaster") != null) {
@@ -370,6 +372,12 @@ public class RailroadTrack {
                 branchlets);
     }
 
+    private static Map<Player, Space> deserializeEngines(Map<String, Player> playerMap, JsonObject jsonObject) {
+        return jsonObject.keySet().stream()
+                .filter(playerMap::containsKey)
+                .collect(Collectors.toMap(playerMap::get, key -> SPACES.get(jsonObject.getString(key))));
+    }
+
     private static Map<City, List<Player>> deserializeDeliveries(GWT.Edition edition, boolean railsToTheNorth, Map<String, Player> playerMap, List<City> cityStrip, JsonObject jsonObject) {
         return jsonObject.keySet().stream()
                 .filter(key -> !jsonObject.getJsonArray(key).isEmpty())
@@ -378,7 +386,9 @@ public class RailroadTrack {
                                 ? migrateCityTo2ndEditionStripIfNecessary(cityStrip, City.valueOf(key))
                                 : City.valueOf(key),
                         key -> jsonObject.getJsonArray(key).getValuesAs(JsonString::getString).stream()
-                                .map(playerMap::get).collect(Collectors.toList()), (a, b) -> {
+                                .map(playerMap::get)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toList()), (a, b) -> {
                             var merged = new ArrayList<Player>(a.size() + b.size());
                             merged.addAll(a);
                             merged.addAll(b);

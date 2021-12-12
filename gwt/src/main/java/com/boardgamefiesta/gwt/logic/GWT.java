@@ -748,6 +748,7 @@ public class GWT implements State {
                 .map(jsonValue -> (JsonString) jsonValue)
                 .map(JsonString::getString)
                 .map(playerMap::get)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         var originalPlayerOrder = jsonObject.containsKey("originalPlayerOrder")
@@ -755,6 +756,7 @@ public class GWT implements State {
                 .map(jsonValue -> (JsonString) jsonValue)
                 .map(JsonString::getString)
                 .map(playerMap::get)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList())
                 : tryToReconstructOriginalOrder(players, playerOrder);
 
@@ -796,6 +798,7 @@ public class GWT implements State {
 
     private static Map<Player, PlayerState> deserializePlayerStates(GWT.Edition edition, Map<String, Player> playerMap, RailroadTrack railroadTrack, Trail trail, JsonObject jsonObject) {
         return jsonObject.keySet().stream()
+                .filter(playerMap::containsKey)
                 .collect(Collectors.toMap(playerMap::get, key -> PlayerState.deserialize(edition, playerMap.get(key), railroadTrack, trail,
                         jsonObject.getJsonObject(key).asJsonObject())));
     }
