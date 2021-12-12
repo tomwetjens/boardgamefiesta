@@ -67,6 +67,10 @@ public class JobMarket {
         this.currentRowIndex = 0;
     }
 
+    public static int getInitialWorkerCount(int playerCount) {
+        return playerCount == 2 ? 3 : playerCount * 2 - 1;
+    }
+
     JsonObject serialize(JsonBuilderFactory factory) {
         return factory.createObjectBuilder()
                 .add("currentRowIndex", currentRowIndex)
@@ -146,11 +150,10 @@ public class JobMarket {
     }
 
     public int getProgress() {
-        var workersPlacedBeforeCurrentRow = currentRowIndex * rowLimit;
-        var workersPlacedCurrentRow = currentRowIndex < rows.size() ? rows.get(currentRowIndex).getWorkers().size() : 0;
-        var totalWorkersPlaced = workersPlacedBeforeCurrentRow + workersPlacedCurrentRow;
-        var totalWorkersCapacity = rows.size() * rowLimit;
-        return Math.min(100, Math.round(((float) totalWorkersPlaced / (float) totalWorkersCapacity) * 100));
+        var initial = getInitialWorkerCount(rowLimit);
+        var placed = (currentRowIndex * rowLimit + (currentRowIndex < rows.size() ? rows.get(currentRowIndex).getWorkers().size() : 0)) - initial;
+        var total = rows.size() * rowLimit - initial;
+        return Math.min(100, Math.round(((float) placed / (float) total) * 100));
     }
 
     @Builder(access = AccessLevel.PRIVATE)

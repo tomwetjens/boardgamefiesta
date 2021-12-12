@@ -264,7 +264,7 @@ public class GWT implements State {
             }
         }
 
-        IntStream.range(0, playerOrder.size() == 2 ? 3 : jobMarket.getRowLimit() * 2 - 1)
+        IntStream.range(0, JobMarket.getInitialWorkerCount(playerOrder.size()))
                 .mapToObj(i -> kansasCitySupply.draw(1))
                 .flatMap(Optional::stream)
                 .map(KansasCitySupply.Tile::getWorker)
