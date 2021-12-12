@@ -1061,13 +1061,13 @@ class RailroadTrackTest {
 
                 @Test
                 void multipleDeliveriesToNewYork() {
-                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY, City.KANSAS_CITY);
                     railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
 
-                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY, City.KANSAS_CITY);
                     railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
 
-                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                    assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY, City.KANSAS_CITY);
                 }
             }
         }
@@ -1091,10 +1091,12 @@ class RailroadTrackTest {
 
             @Test
             void noMultipleDeliveriesToNewYork() {
-                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.NEW_YORK_CITY);
+                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).contains(City.KANSAS_CITY, City.NEW_YORK_CITY);
                 railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game);
 
-                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity).doesNotContain(City.NEW_YORK_CITY);
+                assertThat(railroadTrack.possibleDeliveries(playerA, 18, 0)).extracting(PossibleDelivery::getCity)
+                        .contains(City.KANSAS_CITY)
+                        .doesNotContain(City.NEW_YORK_CITY);
                 assertThatThrownBy(() -> railroadTrack.deliverToCity(playerA, City.NEW_YORK_CITY, game))
                         .hasMessage(GWTError.ALREADY_DELIVERED_TO_CITY.name());
             }

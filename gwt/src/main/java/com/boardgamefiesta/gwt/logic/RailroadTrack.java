@@ -692,8 +692,9 @@ public class RailroadTrack {
 
     private boolean isMultipleDeliveries(City city) {
         return city == City.KANSAS_CITY ||
-                isRailsToTheNorth() ? city == City.SAN_FRANCISCO
-                : city == City.NEW_YORK_CITY && cityStrip == SECOND_EDITION_CITY_STRIP;
+                (isRailsToTheNorth() || cityStrip == ORIGINAL_CITY_STRIP
+                        ? city == City.SAN_FRANCISCO
+                        : city == City.NEW_YORK_CITY);
     }
 
     boolean isAccessible(Player player, City city) {
