@@ -322,6 +322,36 @@ class GWTTest {
             assertThat(game.getCurrentPlayer()).isSameAs(playerC);
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
         }
+
+        @Test
+        void forceEndTurnDuringBidding() {
+            var game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC)), GWT.Options.builder()
+                    .playerOrder(GWT.Options.PlayerOrder.BIDDING)
+                    .build(), eventListener, new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerC);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.forceEndTurn(playerC, new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+        }
+
+        @Test
+        void leaveDuringBidding() {
+            var game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC)), GWT.Options.builder()
+                    .playerOrder(GWT.Options.PlayerOrder.BIDDING)
+                    .build(), eventListener, new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerC);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.leave(playerC, new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+        }
     }
 
     @Nested

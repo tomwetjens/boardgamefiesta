@@ -445,7 +445,7 @@ public class GWT implements State {
 
         var playerState = playerState(player);
 
-        while (!actionStack.isEmpty() && !actionStack.canSkip()) {
+        while (currentPlayer == player && !actionStack.isEmpty() && !actionStack.canSkip()) {
             var possibleActions = actionStack.getPossibleActions();
 
             if (possibleActions.contains(Action.PlaceBid.class)) {
@@ -498,7 +498,9 @@ public class GWT implements State {
             }
         }
 
-        endTurn(player, random);
+        if (currentPlayer == player) {
+            endTurn(player, random);
+        }
     }
 
     Bid lowestBidPossible() {
