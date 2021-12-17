@@ -19,18 +19,19 @@
 package com.boardgamefiesta.server.event;
 
 import com.boardgamefiesta.domain.table.Table;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.event.TransactionPhase;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+import java.io.UncheckedIOException;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class TableEventsEndpoint {
 
-    private static final Jsonb JSONB = JsonbBuilder.create();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final Map<Table.Id, Set<Session>> SESSIONS = new ConcurrentHashMap<>();
 
@@ -150,9 +151,14 @@ public class TableEventsEndpoint {
         var sessions = SESSIONS.get(tableId);
 
         if (sessions != null) {
-            var data = JSONB.toJson(event);
+            try {
+                var data = OBJECT_MAPPER.writeValueAsString(event);
 
-            sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
+                sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
+            } catch (JsonProcessingException e) {
+                // TODO Wrap in better exception
+                throw new UncheckedIOException(e);
+            }
         }
     }
 

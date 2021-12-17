@@ -19,6 +19,7 @@
 package com.boardgamefiesta.server.rest.game;
 
 import com.boardgamefiesta.domain.game.Games;
+import javax.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -30,6 +31,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 @Path("/games")
 @Produces(MediaType.APPLICATION_JSON)
 @Slf4j

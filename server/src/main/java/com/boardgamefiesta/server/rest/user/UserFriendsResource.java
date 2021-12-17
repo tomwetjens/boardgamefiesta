@@ -25,6 +25,8 @@ import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.user.view.UserView;
 
 import javax.annotation.security.RolesAllowed;
+
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -34,6 +36,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 @Path("/users/{userId}/friends")
 @Produces(MediaType.APPLICATION_JSON)
 @RolesAllowed(Roles.USER)

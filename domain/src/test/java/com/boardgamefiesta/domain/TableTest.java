@@ -28,6 +28,8 @@ import com.boardgamefiesta.domain.table.Log;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,8 +37,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -104,12 +104,10 @@ class TableTest {
                 .build();
 
         @Mock
-        com.boardgamefiesta.api.domain.Player currentPlayer;
+        com.boardgamefiesta.api.domain.Player currentPlayer = new com.boardgamefiesta.api.domain.Player("playerA", PlayerColor.RED, com.boardgamefiesta.api.domain.Player.Type.HUMAN);
 
         @Test
         void undo() {
-            when(currentPlayer.getName()).thenReturn("playerA");
-
             when(currentState.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentState.canUndo()).thenReturn(true);
 

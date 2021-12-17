@@ -25,6 +25,7 @@ import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.user.view.UserView;
+import javax.enterprise.context.ApplicationScoped;
 import lombok.Data;
 
 import javax.annotation.security.RolesAllowed;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 @Path("/friends")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)

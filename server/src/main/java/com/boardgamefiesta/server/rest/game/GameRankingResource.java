@@ -22,6 +22,7 @@ import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.rating.Ratings;
 import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.auth.Roles;
+import javax.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 @Path("/games/{gameId}/ranking")
 @Produces(MediaType.APPLICATION_JSON)
 @RolesAllowed(Roles.USER)

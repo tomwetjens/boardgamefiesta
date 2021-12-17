@@ -18,6 +18,7 @@
 
 package com.boardgamefiesta.server.rest;
 
+import javax.enterprise.context.ApplicationScoped;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ import javax.ws.rs.core.Context;
 import java.security.Principal;
 import java.util.Optional;
 
+@ApplicationScoped
 @Path("/errors")
 @PermitAll
 @Slf4j

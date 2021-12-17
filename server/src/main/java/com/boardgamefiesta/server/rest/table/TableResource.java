@@ -38,18 +38,23 @@ import com.boardgamefiesta.server.rest.table.view.TableView;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.json.Json;
+import javax.json.JsonException;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 @Path("/tables")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -171,12 +176,19 @@ public class TableResource {
     @POST
     @Path("/{id}/perform")
     @Transactional
-    public void perform(@PathParam("id") String id, ActionRequest request) {
+    public void perform(@PathParam("id") String id, InputStream requestBody) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             var player = determinePlayer(table);
             checkTurn(table, player);
 
-            table.perform(player, request.toAction(table.getGame(), table.getState()));
+            try {
+                var jsonObject = Json.createReader(requestBody).readObject();
+                var action = table.getGame().getProvider().getActionMapper().toAction(jsonObject, table.getState());
+
+                table.perform(player, action);
+            } catch (JsonException e) {
+                throw APIException.badRequest(APIError.INVALID_ACTION);
+            }
         });
     }
 

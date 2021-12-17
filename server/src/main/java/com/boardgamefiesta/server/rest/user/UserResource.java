@@ -22,6 +22,7 @@ import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.user.view.UserView;
+import javax.enterprise.context.ApplicationScoped;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -30,17 +31,22 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
+@ApplicationScoped
 @Path("/user")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @RolesAllowed(Roles.USER)
 public class UserResource {
 
-    @Inject
-    CurrentUser currentUser;
+    private final CurrentUser currentUser;
+    private final Users users;
 
     @Inject
-    Users users;
+    public UserResource(@NonNull CurrentUser currentUser,
+                        @NonNull Users users) {
+        this.currentUser = currentUser;
+        this.users = users;
+    }
 
     @GET
     public UserView get() {

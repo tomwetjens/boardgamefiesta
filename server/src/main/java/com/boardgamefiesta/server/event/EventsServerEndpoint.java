@@ -18,27 +18,31 @@
 
 package com.boardgamefiesta.server.event;
 
+import com.boardgamefiesta.domain.event.WebSocketConnection;
+import com.boardgamefiesta.domain.event.WebSocketConnections;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Friend;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
-import com.boardgamefiesta.domain.event.WebSocketConnection;
-import com.boardgamefiesta.domain.event.WebSocketConnections;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.event.TransactionPhase;
 import javax.inject.Inject;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
+import java.io.UncheckedIOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
@@ -46,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class EventsServerEndpoint {
 
-    private static final Jsonb JSONB = JsonbBuilder.create();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final Map<User.Id, Set<Session>> USER_SESSIONS = new ConcurrentHashMap<>();
 
@@ -98,8 +102,8 @@ public class EventsServerEndpoint {
     }
 
     @OnMessage
-    public void onMessage(Session session, String data) {
-        var clientEvent = JSONB.fromJson(data, ClientEvent.class);
+    public void onMessage(Session session, String data) throws JsonProcessingException {
+        var clientEvent = OBJECT_MAPPER.readValue(data, ClientEvent.class);
 
         switch (clientEvent.getType()) {
             case ACTIVE:
@@ -200,7 +204,13 @@ public class EventsServerEndpoint {
     private void notifyUser(User.Id userId, Event event) {
         var sessions = USER_SESSIONS.get(userId);
         if (sessions != null) {
-            sessions.forEach(session -> session.getAsyncRemote().sendObject(JSONB.toJson(event)));
+            try {
+                var data = OBJECT_MAPPER.writeValueAsString(event);
+                sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
+            } catch (JsonProcessingException e) {
+                // TODO Wrap in better exception
+                throw new UncheckedIOException(e);
+            }
         }
     }
 

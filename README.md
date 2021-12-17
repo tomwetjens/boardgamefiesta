@@ -2,17 +2,17 @@
 
 # Build
 ```
-mvn package
+./mvnw package
 ```
 
 # Run
 ```
-cd server
-mvn quarkus:dev
+./mvnw compile 
+./mvnw quarkus:dev -pl server
 ```
 
 # Documentation
 ```
-mvn generate-resources
+./mvnw generate-resources
 ```
 Open `target/generated-docs/index.html` in a browser.

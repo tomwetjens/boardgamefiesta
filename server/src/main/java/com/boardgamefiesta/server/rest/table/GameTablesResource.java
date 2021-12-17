@@ -27,6 +27,7 @@ import com.boardgamefiesta.domain.user.Users;
 import com.boardgamefiesta.server.auth.Roles;
 import com.boardgamefiesta.server.rest.CurrentUser;
 import com.boardgamefiesta.server.rest.table.view.TableView;
+import javax.enterprise.context.ApplicationScoped;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +43,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 @Path("/games/{gameId}")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -51,18 +53,14 @@ public class GameTablesResource {
 
     private static final int MAX_RESULTS = 20;
 
-    private final Tables tables;
-    private final Users users;
-    private final CurrentUser currentUser;
+    @Inject
+    Tables tables;
 
     @Inject
-    public GameTablesResource(@NonNull Tables tables,
-                              @NonNull Users users,
-                              @NonNull CurrentUser currentUser) {
-        this.tables = tables;
-        this.users = users;
-        this.currentUser = currentUser;
-    }
+    Users users;
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Path("/started")

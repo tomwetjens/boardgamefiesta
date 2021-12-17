@@ -49,8 +49,8 @@ public class EventsAuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
-        HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
+        var httpServletRequest = (HttpServletRequest) servletRequest;
+        var httpServletResponse = (HttpServletResponse) servletResponse;
 
         var token = httpServletRequest.getParameter("token");
 
@@ -60,8 +60,8 @@ public class EventsAuthFilter implements Filter {
         }
 
         try {
-            IdTokenCredential idTokenCredential = new IdTokenCredential(token, routingContext);
-            TokenAuthenticationRequest tokenAuthenticationRequest = new TokenAuthenticationRequest(idTokenCredential);
+            var idTokenCredential = new IdTokenCredential(token, routingContext);
+            var tokenAuthenticationRequest = new TokenAuthenticationRequest(idTokenCredential);
 
             SecurityIdentity securityIdentity = oidcIdentityProvider.authenticate(tokenAuthenticationRequest, function -> Uni.createFrom().item(function.get()))
                     .await()
