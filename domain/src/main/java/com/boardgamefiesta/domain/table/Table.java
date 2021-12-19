@@ -258,7 +258,7 @@ public class Table implements AggregateRoot {
                 return Optional.of(ended.plus(RETENTION_AFTER_ENDED));
             case ABANDONED:
                 return getProgress() >= MIN_PROGRESS_TO_KEEP_WHEN_ABANDONED
-                        ? Optional.of(ended.plus(RETENTION_AFTER_ENDED))
+                        ? Optional.of(updated.plus(RETENTION_AFTER_ENDED))
                         : Optional.of(updated.plus(RETENTION_AFTER_ABANDONED));
             default:
                 return Optional.empty();
