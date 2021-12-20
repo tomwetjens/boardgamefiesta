@@ -41,7 +41,7 @@ Resources:
     Properties:
       HealthCheckEnabled: True
       HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /health
+      HealthCheckPath: /q/health/ready
       HealthCheckPort: 8080
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 20
