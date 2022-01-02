@@ -205,6 +205,7 @@ public class GWT implements State {
             actionStack.clear();
 
             playerOrder = playerOrderFromBids();
+            players = new ArrayList<>(playerOrder);
 
             start(random);
         }
@@ -841,7 +842,7 @@ public class GWT implements State {
         return scores.entrySet().stream()
                 .sorted(Comparator.<Map.Entry<Player, Integer>>comparingInt(Map.Entry::getValue)
                         .thenComparingInt(entry -> playerStates.get(entry.getKey()).getBalance())
-                        .thenComparing(entry -> originalPlayerOrder.indexOf(entry.getKey()))
+                        .thenComparing(entry -> players.indexOf(entry.getKey()))
                         .reversed())
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
