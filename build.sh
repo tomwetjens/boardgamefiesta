@@ -21,7 +21,7 @@
 # Fail on first error
 set -e
 
-mvn -B package
+./mvnw -B package
 
 pushd server
 docker build -f src/main/docker/Dockerfile.jvm -t gwt .
