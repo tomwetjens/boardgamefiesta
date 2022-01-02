@@ -569,4 +569,87 @@ class GWTTest {
         }
 
     }
+
+    @Nested
+    class Leave {
+
+        GWT game;
+
+        @BeforeEach
+        void setUp() {
+            game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC)), GWT.Options.builder()
+                    .buildings(GWT.Options.Buildings.BEGINNER)
+                    .build(), eventListener, new Random(0));
+
+            var currentPlayerState = game.currentPlayerState();
+
+            // Simulate that job market is closed and player has taken job market token
+            while (!game.getJobMarket().isClosed()) {
+                game.getJobMarket().addWorker(Worker.COWBOY);
+            }
+            currentPlayerState.gainJobMarketToken();
+        }
+
+        @Test
+        void leaveAfterGainingJobMarketTokenBeforeEndTurn() {
+            assertThat(game.getPlayerOrder()).containsExactly(playerC, playerB, playerA);
+            assertThat(game.getCurrentPlayer()).isEqualTo(playerC);
+
+            game.leave(playerC, new Random(0));
+
+            assertThat(game.getPlayerOrder()).containsExactly(playerB, playerA);
+            assertThat(game.getCurrentPlayer()).isEqualTo(playerB);
+
+            // Then other players complete last turns as usual
+            game.perform(playerB, new Action.Move(List.of(game.getTrail().getLocation("A"))), new Random(0));
+            game.endTurn(playerB, new Random(0));
+
+            game.perform(playerA, new Action.Move(List.of(game.getTrail().getLocation("A"))), new Random(0));
+            game.endTurn(playerA, new Random(0));
+
+            // It should be ended now
+            assertThat(game.isEnded()).isTrue();
+        }
+
+        @Test
+        void leaveAfterGainingJobMarketTokenAfterEndTurn() {
+            assertThat(game.getPlayerOrder()).containsExactly(playerC, playerB, playerA);
+            assertThat(game.getCurrentPlayer()).isEqualTo(playerC);
+
+            game.perform(playerC, new Action.Move(List.of(game.getTrail().getLocation("A"))), new Random(0));
+            game.endTurn(playerC, new Random(0));
+            game.leave(playerC, new Random(0));
+
+            assertThat(game.getPlayerOrder()).containsExactly(playerB, playerA);
+            assertThat(game.getCurrentPlayer()).isEqualTo(playerB);
+
+            // Then other players complete last turns as usual
+            game.perform(new Action.Move(List.of(game.getTrail().getLocation("A"))), new Random(0));
+            game.endTurn(playerB, new Random(0));
+
+            game.perform(new Action.Move(List.of(game.getTrail().getLocation("A"))), new Random(0));
+            game.endTurn(playerA, new Random(0));
+
+            // It should be ended now
+            assertThat(game.isEnded()).isTrue();
+        }
+
+        @Test
+        void leaveOnLastTurn() {
+            assertThat(game.getPlayerOrder()).containsExactly(playerC, playerB, playerA);
+            assertThat(game.getCurrentPlayer()).isEqualTo(playerC);
+
+            // Players - expect last - complete last turns as usual
+            game.perform(playerC, new Action.Move(List.of(game.getTrail().getLocation("A"))), new Random(0));
+            game.endTurn(playerC, new Random(0));
+            game.perform(playerB, new Action.Move(List.of(game.getTrail().getLocation("A"))), new Random(0));
+            game.endTurn(playerB, new Random(0));
+
+            // Leave during last turn of the game
+            game.leave(playerA, new Random(0));
+
+            // It should be ended now
+            assertThat(game.isEnded()).isTrue();
+        }
+    }
 }
