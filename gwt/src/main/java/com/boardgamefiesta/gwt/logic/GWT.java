@@ -190,8 +190,6 @@ public class GWT implements State {
         }
 
         playerState.placeBid(bid);
-
-        endBiddingIfCompleted(random);
     }
 
     private void endBiddingIfCompleted(Random random) {
@@ -336,10 +334,6 @@ public class GWT implements State {
         actionStack.addActions(actionResult.getNewActions());
 
         canUndo = actionResult.canUndo();
-
-        if (!canUndo && status == Status.BIDDING) {
-            endTurnIfNoMoreActions(random);
-        }
     }
 
     private static boolean isAnytimeAction(Action action) {
@@ -379,14 +373,6 @@ public class GWT implements State {
         fireEvent(currentPlayer, type, params);
     }
 
-    private void endTurnIfNoMoreActions(@NonNull Random random) {
-        if (actionStack.isEmpty() && !canPlayObjectiveCard()) {
-            // Can only automatically end turn when no actions remaining,
-            // and player cannot (optionally) play an objective card
-            endTurn(currentPlayer, random);
-        }
-    }
-
     public void skip(@NonNull Random random) {
         if (isEnded()) {
             throw new GWTException(GWTError.GAME_ENDED);
@@ -414,6 +400,10 @@ public class GWT implements State {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
+        if (currentPlayer != player) {
+            throw new GWTException(GWTError.NOT_CURRENT_PLAYER);
+        }
+
         var playerState = playerState(player);
 
         if (actionStack.canPerform(Action.UpgradeSimmental.class)) {
@@ -430,7 +420,7 @@ public class GWT implements State {
 
         canUndo = false;
 
-        afterEndTurn();
+        afterEndTurn(random);
     }
 
     @Override
@@ -520,7 +510,15 @@ public class GWT implements State {
                         .orElse(new Bid(0, 0)));
     }
 
-    private void afterEndTurn() {
+    private void afterEndTurn(Random random) {
+        if (status == Status.BIDDING) {
+            endBiddingIfCompleted(random);
+
+            if (status == Status.STARTED) {
+                return;
+            }
+        }
+
         foresights.fillUp(!jobMarket.isClosed());
 
         if (currentPlayerState().hasJobMarketToken()) {
@@ -854,16 +852,14 @@ public class GWT implements State {
         if (status == Status.BIDDING) {
             playerOrder.remove(player);
 
-            endBiddingIfCompleted(random);
-
             if (currentPlayer == player && status != Status.STARTED) {
-                afterEndTurn();
+                afterEndTurn(random);
             }
         } else if (status == Status.STARTED) {
             if (currentPlayer == player) {
                 actionStack.clear();
 
-                afterEndTurn();
+                afterEndTurn(random);
             }
 
             playerOrder.remove(player);

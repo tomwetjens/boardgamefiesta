@@ -271,26 +271,50 @@ class GWTTest {
                     .playerOrder(GWT.Options.PlayerOrder.BIDDING)
                     .build(), eventListener, new Random(0));
 
+            assertThat(game.getPlayerOrder()).containsExactly(playerC, playerB, playerA);
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerC);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(playerC, new Action.PlaceBid(new Bid(2, 0)), new Random(0));
+            game.endTurn(playerC, new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(playerB, new Action.PlaceBid(new Bid(1, 0)), new Random(0));
+            game.endTurn(playerB, new Random(0));
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+
+            game.perform(playerA, new Action.PlaceBid(new Bid(0, 0)), new Random(0));
+            game.endTurn(playerA, new Random(0));
+
+            assertThat(game.getStatus()).isEqualTo(GWT.Status.STARTED);
+            assertThat(game.getPlayerOrder()).containsExactly(playerA, playerB, playerC);
+            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
+            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
+        }
+
+        @Test
+        void canUndoBid() {
+            var game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC)), GWT.Options.builder()
+                    .playerOrder(GWT.Options.PlayerOrder.BIDDING)
+                    .build(), eventListener, new Random(0));
 
             assertThat(game.getPlayerOrder()).containsExactly(playerC, playerB, playerA);
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerC);
             assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
 
-            game.perform(new Action.PlaceBid(new Bid(2, 0)), new Random(0));
+            game.perform(playerC, new Action.PlaceBid(new Bid(2, 0)), new Random(0));
 
-            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
-            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+            assertThat(game.canUndo()).isTrue();
 
-            game.perform(new Action.PlaceBid(new Bid(1, 0)), new Random(0));
+            game.endTurn(playerC, new Random(0));
 
-            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
-            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
-
-            game.perform(new Action.PlaceBid(new Bid(0, 0)), new Random(0));
-
-            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
-            assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
+            assertThat(game.canUndo()).isFalse();
         }
 
         @Test
@@ -302,22 +326,26 @@ class GWTTest {
             assertThat(game.getCurrentPlayer()).isSameAs(playerC);
             assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
 
-            game.perform(new Action.PlaceBid(new Bid(0, 0)), new Random(0));
+            game.perform(playerC, new Action.PlaceBid(new Bid(0, 0)), new Random(0));
+            game.endTurn(playerC, new Random(0));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerB);
             assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
 
-            game.perform(new Action.PlaceBid(new Bid(1, 0)), new Random(0));
+            game.perform(playerB, new Action.PlaceBid(new Bid(1, 0)), new Random(0));
+            game.endTurn(playerB, new Random(0));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerA);
             assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
 
-            game.perform(new Action.PlaceBid(new Bid(1, 1)), new Random(0));
+            game.perform(playerA, new Action.PlaceBid(new Bid(1, 1)), new Random(0));
+            game.endTurn(playerA, new Random(0));
 
             assertThat(game.getCurrentPlayer()).describedAs("should skip player C, since bid is uncontested").isSameAs(playerB);
             assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
 
-            game.perform(new Action.PlaceBid(new Bid(2, 0)), new Random(0));
+            game.perform(playerB, new Action.PlaceBid(new Bid(2, 0)), new Random(0));
+            game.endTurn(playerB, new Random(0));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerC);
             assertThat(game.possibleActions()).containsExactlyInAnyOrder(Action.Move.class);
