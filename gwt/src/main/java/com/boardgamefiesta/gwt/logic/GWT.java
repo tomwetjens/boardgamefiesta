@@ -835,13 +835,13 @@ public class GWT implements State {
 
     @Override
     public List<Player> ranking() {
-        var scores = playerOrder.stream()
+        var scores = players.stream()
                 .collect(Collectors.toMap(Function.identity(), this::score));
 
         return scores.entrySet().stream()
                 .sorted(Comparator.<Map.Entry<Player, Integer>>comparingInt(Map.Entry::getValue)
                         .thenComparingInt(entry -> playerStates.get(entry.getKey()).getBalance())
-                        .thenComparing(entry -> playerOrder.indexOf(entry.getKey()))
+                        .thenComparing(entry -> originalPlayerOrder.indexOf(entry.getKey()))
                         .reversed())
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
