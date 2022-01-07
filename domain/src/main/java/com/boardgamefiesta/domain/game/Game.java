@@ -61,10 +61,6 @@ public class Game {
         return provider.hasAutoma();
     }
 
-    public Duration getTimeLimit(Options options) {
-        return provider.getTimeLimit(options);
-    }
-
     @Value(staticConstructor = "fromString")
     public static class Id {
         String id;

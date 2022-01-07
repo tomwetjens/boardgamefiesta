@@ -100,8 +100,4 @@ public class PowerGridProvider implements GameProvider<PowerGrid> {
         return true;
     }
 
-    @Override
-    public Duration getTimeLimit(Options options) {
-        return DEFAULT_TIME_LIMIT;
-    }
 }

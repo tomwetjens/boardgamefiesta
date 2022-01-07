@@ -97,11 +97,6 @@ public class IstanbulProvider implements GameProvider<Istanbul> {
     }
 
     @Override
-    public Duration getTimeLimit(Options options) {
-        return DEFAULT_TIME_LIMIT;
-    }
-
-    @Override
     public ActionMapper<Istanbul> getActionMapper() {
         return this::toAction;
     }

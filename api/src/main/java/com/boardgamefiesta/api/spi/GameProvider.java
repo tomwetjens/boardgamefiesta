@@ -52,7 +52,5 @@ public interface GameProvider<T extends State> {
 
     boolean hasAutoma();
 
-    Duration getTimeLimit(Options options);
-
 
 }

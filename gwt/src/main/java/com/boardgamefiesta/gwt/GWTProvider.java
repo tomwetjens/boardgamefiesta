@@ -116,8 +116,4 @@ public class GWTProvider implements GameProvider<GWT> {
         return true;
     }
 
-    @Override
-    public Duration getTimeLimit(Options options) {
-        return DEFAULT_TIME_LIMIT;
-    }
 }
