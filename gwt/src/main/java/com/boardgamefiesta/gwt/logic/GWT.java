@@ -527,14 +527,16 @@ public class GWT implements State {
             fireEvent(currentPlayer, GWTEvent.Type.EVERY_OTHER_PLAYER_HAS_1_TURN, Collections.emptyList());
         }
 
+        // next player
+        var playerThatEndedTurn = currentPlayer;
+        currentPlayer = getNextPlayer();
+
         if (jobMarket.isClosed()) {
             // player ended his last turn, remove from player order
-            playerOrder.remove(currentPlayer);
+            playerOrder.remove(playerThatEndedTurn);
         }
 
         if (!playerOrder.isEmpty()) {
-            // next player
-            currentPlayer = getNextPlayer();
             beginTurn();
         } else {
             // all last turns have been taken
