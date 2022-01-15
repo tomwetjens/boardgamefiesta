@@ -48,6 +48,8 @@
         <javax.enterprise.cdi-api.version>2.0</javax.enterprise.cdi-api.version>
         <commons-codec.version>1.15</commons-codec.version>
         <awssdk.version>2.17.0</awssdk.version>
+        <javax.json.bind-api.version>1.0</javax.json.bind-api.version>
+        <yasson.version>1.0.10</yasson.version>
     </properties>
 
     <modules>
@@ -60,6 +62,7 @@
         <module>lambda-http</module>
         <module>powergrid</module>
         <module>server</module>
+        <module>dominant-species</module>
     </modules>
 
     <dependencyManagement>
@@ -77,6 +80,11 @@
             <dependency>
                 <groupId>com.boardgamefiesta</groupId>
                 <artifactId>dynamodb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>dominant-species</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -100,6 +108,11 @@
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.eclipse</groupId>
+                <artifactId>yasson</artifactId>
+                <version>${yasson.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -121,6 +134,11 @@
                 <artifactId>javax.json-api</artifactId>
                 <version>${javax.json-api.version}</version>
                 <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>javax.json.bind</groupId>
+                <artifactId>javax.json.bind-api</artifactId>
+                <version>${javax.json.bind-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.enterprise</groupId>

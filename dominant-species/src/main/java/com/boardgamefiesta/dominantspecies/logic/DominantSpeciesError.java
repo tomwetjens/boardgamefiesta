@@ -1,0 +1,78 @@
+/*
+ * Board Game Fiesta
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.boardgamefiesta.dominantspecies.logic;
+
+public enum DominantSpeciesError {
+    ACTION_DISPLAY_EMPTY,
+    ACTION_SPACE_EMPTY,
+    ACTION_SPACE_NOT_ALLOWED,
+    ACTION_SPACE_NOT_EMPTY,
+    ALREADY_ELEMENT_AT_CORNER,
+    ALREADY_TUNDRA,
+    ANIMAL_NOT_FOUND,
+    CANNOT_PERFORM_ACTION,
+    CANNOT_REMOVE_ELEMENT,
+    CANNOT_SKIP_ACTION,
+    CARD_NOT_AVAILABLE,
+    DUPLICATE_TILES,
+    ELEMENT_NOT_AVAILABLE,
+    ELEMENT_NOT_FOUND,
+    ELEMENT_NOT_IN_DEPLETION_BOX,
+    ELEMENT_NOT_IN_DRAW_BAG,
+    ELEMENT_NOT_IN_REGRESSION_BOX,
+    INVALID_ACTION_SPACE,
+    INVALID_ELEMENT_TYPE,
+    INVALID_TILE,
+    MAX_4_SPECIES_ALLOWED,
+    MAX_5_ELIMINATED_SPECIES_ALLOWED,
+    MAX_ELEMENTS_REACHED,
+    MAX_SPECIES_EXCEEDED,
+    MUST_BE_ADJACENT_TO_ELEMENT,
+    MUST_BE_ADJACENT_TO_TUNDRA_TILE,
+    MUST_HAVE_1_COMMON_HEX,
+    MUST_MOVE_ALL_SPECIES_ON_TILE,
+    MUST_SELECT_1_TILE,
+    MUST_SELECT_ADJACENT_TILES,
+    MUST_SELECT_ALL_ADJACENT_TILES,
+    MUST_SELECT_ALL_AFFECTED_TILES,
+    MUST_SELECT_ALL_BUT_1_ELEMENT_ON_TILE,
+    MUST_SELECT_ALL_TILES_OCCUPIED_BY_PLAYER,
+    MUST_SELECT_ANIMAL_FOR_EACH_TILE,
+    MUST_SELECT_AT_LEAST_1_TILE,
+    MUST_SELECT_DIFFERENT_PLAYERS,
+    MUST_SELECT_MORE_ELEMENTS_TO_REMOVE,
+    MUST_SELECT_OPPOSING_SPECIES,
+    MUST_SELECT_UP_TO_2_TILES,
+    MUST_SELECT_UP_TO_3_TILES,
+    MUST_SPECIFY_SPECIES_FOR_EACH_TILE,
+    NOT_CURRENT_PLAYER,
+    NOT_ENOUGH_ELIMINATED_SPECIES,
+    NOT_ENOUGH_SPECIES_IN_GENE_POOL,
+    NOT_ENOUGH_SPECIES_ON_TILE,
+    NO_ACTION_PAWN,
+    NO_ACTION_TO_SKIP,
+    NO_AUTOMA_ACTION,
+    NO_ELEMENTS_IN_DRAW_BAG,
+    NO_ELEMENT_AT_CORNER,
+    NO_TILE_SCORED,
+    NO_TUNDRA_TILE_AVAILABLE,
+    TILE_ALREADY_SCORED,
+    TILE_NOT_FOUND,
+    ALREADY_TILE_AT_HEX, MUST_BE_ADJACENT_TO_TILE, NO_TILE_SELECTED, NO_TILE_AVAILABLE, TILE_NOT_OCCUPIED_BY_PLAYER
+}

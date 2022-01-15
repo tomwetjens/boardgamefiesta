@@ -18,9 +18,7 @@
 
 package com.boardgamefiesta.api.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -29,6 +27,9 @@ import javax.json.JsonValue;
 @Getter
 @ToString
 @AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization frameworks
+@Setter // For deserialization frameworks
+@EqualsAndHashCode
 public class Player {
 
     String name;
