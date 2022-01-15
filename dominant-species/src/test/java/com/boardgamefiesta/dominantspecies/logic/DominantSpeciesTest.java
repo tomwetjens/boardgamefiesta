@@ -447,15 +447,16 @@ class DominantSpeciesTest {
                 ds.getAnimal(AnimalType.ARACHNIDS).addElement(ElementType.GRASS);
 
                 // Both animals do not place any AP at regression (reptiles get 1 free AP there)
-                placeAllRemainingActionPawns(ds, ActionType.REGRESSION, ActionType.ADAPTATION);
+                placeAllRemainingActionPawns(ds, ActionType.INITIATIVE, ActionType.REGRESSION, ActionType.ADAPTATION);
 
                 // Then we expect Regression to have executed automatically
                 // Reptiles should have kept their element because of the free AP
                 assertThat(ds.getAnimal(AnimalType.REPTILES).getElements()).containsExactly(ElementType.SUN, ElementType.SUN, ElementType.GRASS);
                 // Arachnids should have removed their element
                 assertThat(ds.getAnimal(AnimalType.ARACHNIDS).getElements()).containsExactly(ElementType.GRUB, ElementType.GRUB);
-                // Execution should not continue with next after Regression
+                // Game should continue with next AP
                 assertThat(ds.possibleActions()).containsExactly(Action.Abundance.class);
+                assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.ARACHNIDS);
             }
 
             @Test
@@ -476,11 +477,12 @@ class DominantSpeciesTest {
                 ds.getAnimal(AnimalType.ARACHNIDS).addElement(ElementType.MEAT);
 
                 // Both animals do not place any(more) APs at Regression (Reptiles get 1 free AP there)
-                placeAllRemainingActionPawns(ds, ActionType.REGRESSION, ActionType.ADAPTATION);
+                placeAllRemainingActionPawns(ds, ActionType.INITIATIVE, ActionType.REGRESSION, ActionType.ADAPTATION);
+                assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
                 // Reptiles can skip 1 element, but should decide which 1 element is removed
-                assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
                 assertThat(ds.possibleActions()).containsExactly(Action.Regression.class);
+                assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
                 ds.perform(new Action.Regression(List.of(ElementType.MEAT)), new Random(0));
                 ds.endTurn();
 
