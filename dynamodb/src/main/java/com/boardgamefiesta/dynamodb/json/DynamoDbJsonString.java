@@ -20,26 +20,20 @@ package com.boardgamefiesta.dynamodb.json;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import javax.json.JsonString;
 
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class DynamoDbJsonString extends DynamoDbJsonValue implements JsonString {
 
     @Getter(value = AccessLevel.PACKAGE)
     private final AttributeValue attributeValue;
 
-    @Getter(value = AccessLevel.PACKAGE)
-    private final String value;
-
-    DynamoDbJsonString(AttributeValue attributeValue) {
-        this.attributeValue = attributeValue;
-        this.value = attributeValue.s();
-    }
-
     @Override
     public String getString() {
-        return value;
+        return attributeValue.s();
     }
 
     @Override
@@ -50,5 +44,22 @@ class DynamoDbJsonString extends DynamoDbJsonValue implements JsonString {
     @Override
     public ValueType getValueType() {
         return ValueType.STRING;
+    }
+
+    @Override
+    public String toString() {
+        return getString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        return attributeValue.s().equals(((DynamoDbJsonString) o).attributeValue.s());
+    }
+
+    @Override
+    public int hashCode() {
+        return attributeValue.s().hashCode();
     }
 }

@@ -34,9 +34,14 @@ import java.util.List;
  * {@link JsonArrayBuilder} that builds into a {@link AttributeValue}.
  */
 @Slf4j
-class DynamoDbJsonArrayBuilder implements JsonArrayBuilder {
+class DynamoDbJsonArrayBuilder implements JsonArrayBuilder, DynamoDbJsonStructureBuilder {
 
     private final List<AttributeValue> attributeValues = new ArrayList<>();
+
+    @Override
+    public boolean isObject() {
+        return false;
+    }
 
     @Override
     public JsonArrayBuilder add(JsonValue value) {
@@ -94,18 +99,21 @@ class DynamoDbJsonArrayBuilder implements JsonArrayBuilder {
 
     @Override
     public JsonArrayBuilder add(JsonObjectBuilder jsonObjectBuilder) {
-        attributeValues.add(((DynamoDbJsonObject) jsonObjectBuilder.build()).getAttributeValue());
-        return this;
+        return add((DynamoDbJsonStructureBuilder) jsonObjectBuilder);
     }
 
     @Override
     public JsonArrayBuilder add(JsonArrayBuilder jsonArrayBuilder) {
-        attributeValues.add(((DynamoDbJsonArray) jsonArrayBuilder.build()).getAttributeValue());
+        return add((DynamoDbJsonStructureBuilder) jsonArrayBuilder);
+    }
+
+    JsonArrayBuilder add(DynamoDbJsonStructureBuilder jsonStructureBuilder) {
+        attributeValues.add(jsonStructureBuilder.build().getAttributeValue());
         return this;
     }
 
     @Override
-    public JsonArray build() {
+    public DynamoDbJsonArray build() {
         return new DynamoDbJsonArray(AttributeValue.builder().l(attributeValues).build());
     }
 }

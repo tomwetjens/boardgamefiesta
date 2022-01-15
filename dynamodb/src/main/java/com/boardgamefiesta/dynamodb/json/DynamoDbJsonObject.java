@@ -22,6 +22,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.w3c.dom.Attr;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import javax.json.*;
@@ -31,7 +32,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-class DynamoDbJsonObject extends DynamoDbJsonValue implements JsonObject {
+class DynamoDbJsonObject extends DynamoDbJsonStructure implements JsonObject {
 
     @Getter(value = AccessLevel.PACKAGE)
     private final AttributeValue attributeValue;

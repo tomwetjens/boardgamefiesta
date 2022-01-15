@@ -20,33 +20,27 @@ package com.boardgamefiesta.dynamodb.json;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import javax.json.JsonNumber;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class DynamoDbJsonNumber extends DynamoDbJsonValue implements JsonNumber {
 
     @Getter(value = AccessLevel.PACKAGE)
     private final AttributeValue attributeValue;
 
-    @Getter(value = AccessLevel.PACKAGE)
-    private final String value;
-
-    DynamoDbJsonNumber(AttributeValue attributeValue) {
-        this.attributeValue = attributeValue;
-        this.value = attributeValue.n();
-    }
-
     @Override
     public boolean isIntegral() {
-        return value.contains(".");
+        return attributeValue.n().contains(".");
     }
 
     @Override
     public int intValue() {
-        return Integer.parseInt(value);
+        return Integer.parseInt(attributeValue.n());
     }
 
     @Override
@@ -56,7 +50,7 @@ class DynamoDbJsonNumber extends DynamoDbJsonValue implements JsonNumber {
 
     @Override
     public long longValue() {
-        return Long.parseLong(value);
+        return Long.parseLong(attributeValue.n());
     }
 
     @Override
@@ -66,7 +60,7 @@ class DynamoDbJsonNumber extends DynamoDbJsonValue implements JsonNumber {
 
     @Override
     public BigInteger bigIntegerValue() {
-        return new BigInteger(value);
+        return new BigInteger(attributeValue.n());
     }
 
     @Override
@@ -76,16 +70,33 @@ class DynamoDbJsonNumber extends DynamoDbJsonValue implements JsonNumber {
 
     @Override
     public double doubleValue() {
-        return Double.parseDouble(value);
+        return Double.parseDouble(attributeValue.n());
     }
 
     @Override
     public BigDecimal bigDecimalValue() {
-        return new BigDecimal(value);
+        return new BigDecimal(attributeValue.n());
     }
 
     @Override
     public ValueType getValueType() {
         return ValueType.NUMBER;
+    }
+
+    @Override
+    public String toString() {
+        return attributeValue.n();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        return attributeValue.n().equals(((DynamoDbJsonNumber) o).attributeValue.n());
+    }
+
+    @Override
+    public int hashCode() {
+        return attributeValue.n().hashCode();
     }
 }

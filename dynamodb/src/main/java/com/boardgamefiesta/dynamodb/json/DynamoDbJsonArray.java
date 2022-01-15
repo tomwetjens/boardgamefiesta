@@ -32,7 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-class DynamoDbJsonArray extends DynamoDbJsonValue implements JsonArray {
+class DynamoDbJsonArray extends DynamoDbJsonStructure implements JsonArray {
 
     @Getter(AccessLevel.PACKAGE)
     private final AttributeValue attributeValue;
@@ -137,7 +137,6 @@ class DynamoDbJsonArray extends DynamoDbJsonValue implements JsonArray {
         return attributeValue.l().contains(((DynamoDbJsonValue) o).getAttributeValue());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Iterator<JsonValue> iterator() {
         return attributeValue.l().stream().map(DynamoDbJsonValue::of).iterator();

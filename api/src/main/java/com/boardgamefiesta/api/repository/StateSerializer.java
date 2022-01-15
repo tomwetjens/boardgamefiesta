@@ -22,7 +22,20 @@ import com.boardgamefiesta.api.domain.State;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.json.stream.JsonGenerator;
 
 public interface StateSerializer<T extends State> {
+    /**
+     * @deprecated Implement and use {@link #serialize(State, JsonGenerator)} instead.
+     */
+    @Deprecated
     JsonObject serialize(T state, JsonBuilderFactory factory);
+
+    default boolean isJsonGeneratorSupported() {
+        return false;
+    }
+
+    default void serialize(T state, JsonGenerator jsonGenerator) {
+        throw new UnsupportedOperationException();
+    }
 }

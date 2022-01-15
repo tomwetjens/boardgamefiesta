@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,25 +18,24 @@
 
 package com.boardgamefiesta.dynamodb.json;
 
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-import java.util.Map;
+import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-final class DynamoDbJsonBuilderFactory implements JsonBuilderFactory {
+import static org.assertj.core.api.Assertions.assertThat;
 
-    @Override
-    public JsonObjectBuilder createObjectBuilder() {
-        return new DynamoDbJsonObjectBuilder();
+class DynamoDbJsonNumberTest {
+
+    @Test
+    void testToString() {
+        var dynamoDbJsonNumber = new DynamoDbJsonNumber(AttributeValue.builder().n("1337").build());
+        assertThat(dynamoDbJsonNumber.toString()).isEqualTo("1337");
     }
 
-    @Override
-    public JsonArrayBuilder createArrayBuilder() {
-        return new DynamoDbJsonArrayBuilder();
+    @Test
+    void testEquals() {
+        var a = new DynamoDbJsonNumber(AttributeValue.builder().n("1337").build());
+        var b = new DynamoDbJsonNumber(AttributeValue.builder().n("1337").build());
+        assertThat(a.equals(b)).isTrue();
     }
 
-    @Override
-    public Map<String, ?> getConfigInUse() {
-        throw new UnsupportedOperationException();
-    }
 }

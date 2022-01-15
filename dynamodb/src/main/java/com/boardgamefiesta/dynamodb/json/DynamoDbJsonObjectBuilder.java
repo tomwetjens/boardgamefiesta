@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 import java.math.BigDecimal;
@@ -36,9 +35,14 @@ import static com.boardgamefiesta.dynamodb.json.DynamoDbJsonValue.NUL;
  * {@link JsonObjectBuilder} that builds into a {@link AttributeValue}.
  */
 @Slf4j
-class DynamoDbJsonObjectBuilder implements JsonObjectBuilder {
+class DynamoDbJsonObjectBuilder implements JsonObjectBuilder, DynamoDbJsonStructureBuilder {
 
     private final Map<String, AttributeValue> attributeValues = new HashMap<>();
+
+    @Override
+    public boolean isObject() {
+        return true;
+    }
 
     @Override
     public JsonObjectBuilder add(String key, JsonValue value) {
@@ -96,18 +100,21 @@ class DynamoDbJsonObjectBuilder implements JsonObjectBuilder {
 
     @Override
     public JsonObjectBuilder add(String key, JsonObjectBuilder jsonObjectBuilder) {
-        attributeValues.put(key, jsonObjectBuilder != null ? ((DynamoDbJsonObject) jsonObjectBuilder.build()).getAttributeValue() : NUL);
-        return this;
+        return add(key, (DynamoDbJsonStructureBuilder) jsonObjectBuilder);
     }
 
     @Override
     public JsonObjectBuilder add(String key, JsonArrayBuilder jsonArrayBuilder) {
-        attributeValues.put(key, jsonArrayBuilder != null ? ((DynamoDbJsonArray) jsonArrayBuilder.build()).getAttributeValue() : NUL);
+        return add(key, (DynamoDbJsonStructureBuilder) jsonArrayBuilder);
+    }
+
+    JsonObjectBuilder add(String key, DynamoDbJsonStructureBuilder jsonStructureBuilder) {
+        attributeValues.put(key, jsonStructureBuilder != null ? jsonStructureBuilder.build().getAttributeValue() : NUL);
         return this;
     }
 
     @Override
-    public JsonObject build() {
+    public DynamoDbJsonObject build() {
         return new DynamoDbJsonObject(AttributeValue.builder().m(attributeValues).build());
     }
 }

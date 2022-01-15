@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,25 +18,18 @@
 
 package com.boardgamefiesta.dynamodb.json;
 
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-import java.util.Map;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-final class DynamoDbJsonBuilderFactory implements JsonBuilderFactory {
+abstract class DynamoDbJsonStructure extends DynamoDbJsonValue {
 
-    @Override
-    public JsonObjectBuilder createObjectBuilder() {
-        return new DynamoDbJsonObjectBuilder();
+    public static DynamoDbJsonStructure of(AttributeValue attributeValue) {
+        if (attributeValue.hasM()) {
+            return new DynamoDbJsonObject(attributeValue);
+        } else if (attributeValue.hasL()) {
+            return new DynamoDbJsonArray(attributeValue);
+        } else {
+            throw new IllegalArgumentException("Attribute value is not a JSON structure: " + attributeValue);
+        }
     }
 
-    @Override
-    public JsonArrayBuilder createArrayBuilder() {
-        return new DynamoDbJsonArrayBuilder();
-    }
-
-    @Override
-    public Map<String, ?> getConfigInUse() {
-        throw new UnsupportedOperationException();
-    }
 }

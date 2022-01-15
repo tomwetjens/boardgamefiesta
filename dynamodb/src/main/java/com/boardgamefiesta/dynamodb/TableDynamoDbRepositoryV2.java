@@ -27,6 +27,7 @@ import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.table.*;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.dynamodb.json.DynamoDbJson;
+import com.boardgamefiesta.dynamodb.json.DynamoDbJsonGenerator;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -718,8 +719,15 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                                                          Game game, State state, Instant timestamp,
                                                          Optional<Instant> previousTimestamp) {
         var stateSerializer = game.getProvider().getStateSerializer();
-        var serialized = DynamoDbJson.toJson(jsonBuilderFactory ->
-                stateSerializer.serialize(state, jsonBuilderFactory));
+
+        AttributeValue serialized;
+        if (stateSerializer.isJsonGeneratorSupported()) {
+            var jsonGenerator = new DynamoDbJsonGenerator();
+            stateSerializer.serialize(state, jsonGenerator);
+            serialized = jsonGenerator.getAttributeValue();
+        } else {
+            serialized = DynamoDbJson.toJson(jsonBuilderFactory -> stateSerializer.serialize(state, jsonBuilderFactory));
+        }
 
         return mapItemFromState(tableId, timestamp, previousTimestamp, serialized);
     }
