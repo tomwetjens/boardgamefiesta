@@ -79,7 +79,7 @@ class DominantSpeciesTest {
 
             ds.perform(new Action.PlaceActionPawn(ActionType.INITIATIVE, 0), new Random(0));
             assertThat(ds.possibleActions()).isEmpty();
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getActionDisplay().getActionPawns().get(ActionType.INITIATIVE)).containsExactly(AnimalType.ARACHNIDS);
             assertThat(ds.getAnimals().get(AnimalType.ARACHNIDS).getActionPawns()).isEqualTo(5);
@@ -89,7 +89,7 @@ class DominantSpeciesTest {
 
             ds.perform(new Action.PlaceActionPawn(ActionType.ADAPTATION, 0), new Random(0));
             assertThat(ds.possibleActions()).isEmpty();
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getActionDisplay().getActionPawns().get(ActionType.ADAPTATION)).containsExactly(AnimalType.BIRDS, null, null);
             assertThat(ds.getAnimals().get(AnimalType.BIRDS).getActionPawns()).isEqualTo(5);
@@ -99,7 +99,7 @@ class DominantSpeciesTest {
 
             ds.perform(new Action.PlaceActionPawn(ActionType.REGRESSION, 0), new Random(0));
             assertThat(ds.possibleActions()).isEmpty();
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getActionDisplay().getActionPawns().get(ActionType.REGRESSION)).containsExactly(AnimalType.REPTILES, null, AnimalType.REPTILES);
             assertThat(ds.getAnimals().get(AnimalType.REPTILES).getActionPawns()).isEqualTo(5);
@@ -114,7 +114,7 @@ class DominantSpeciesTest {
                         .orElseThrow(() -> new AssertionError("No available action space"));
 
                 ds.perform(new Action.PlaceActionPawn(placement.getActionType(), placement.getIndex()), new Random(0));
-                ds.endTurn();
+                ds.endTurn(new Random(0));
             }
 
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
@@ -150,7 +150,7 @@ class DominantSpeciesTest {
 
                 ds.perform(new Action.PlaceActionPawn(placement.getActionType(), placement.getIndex()), new Random(0));
                 assertThat(ds.possibleActions()).isEmpty();
-                ds.endTurn();
+                ds.endTurn(new Random(0));
             }
 
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
@@ -191,7 +191,7 @@ class DominantSpeciesTest {
                     .drawBag(drawBag)
                     .wanderlustTiles(WanderlustTiles.initial(new Random(0)))
                     .actionDisplay(ActionDisplay.initial(Set.of(AnimalType.ARACHNIDS, AnimalType.REPTILES, AnimalType.MAMMALS), drawBag, new Random(0))
-                            .reset(Set.of(AnimalType.ARACHNIDS, AnimalType.REPTILES, AnimalType.MAMMALS))
+                            .resetFreeActionPawns(Set.of(AnimalType.ARACHNIDS, AnimalType.REPTILES, AnimalType.MAMMALS))
                             .placeActionPawn(AnimalType.MAMMALS, ActionType.INITIATIVE, 0)
                             .placeActionPawn(AnimalType.ARACHNIDS, ActionType.ADAPTATION, 0)
                             .placeActionPawn(AnimalType.REPTILES, ActionType.ADAPTATION, 1)
@@ -212,8 +212,8 @@ class DominantSpeciesTest {
                             .placeActionPawn(AnimalType.MAMMALS, ActionType.SPECIATION, 1)
                             .placeActionPawn(AnimalType.REPTILES, ActionType.WANDERLUST, 0)
                             .addElement(ActionType.WANDERLUST, ElementType.GRASS)
-                            .placeActionPawn(AnimalType.ARACHNIDS, ActionType.MIGRATION, 0)
-                            .placeActionPawn(AnimalType.REPTILES, ActionType.COMPETITION, 1)
+                            .placeActionPawn(AnimalType.REPTILES, ActionType.MIGRATION, 0)
+                            .placeActionPawn(AnimalType.MAMMALS, ActionType.COMPETITION, 1)
                             .placeActionPawn(AnimalType.ARACHNIDS, ActionType.DOMINATION, 0)
                             .placeActionPawn(AnimalType.REPTILES, ActionType.DOMINATION, 1)
                             .placeActionPawn(AnimalType.MAMMALS, ActionType.DOMINATION, 2)
@@ -222,7 +222,7 @@ class DominantSpeciesTest {
                     .availableTundraTiles(11)
                     .build();
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
@@ -237,7 +237,7 @@ class DominantSpeciesTest {
             assertThat(ds.getAnimals().get(AnimalType.MAMMALS).getActionPawns()).isEqualTo(0);
 
             ds.perform(new Action.PlaceActionPawn(ActionType.ABUNDANCE, 1), new Random(0));
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getAnimals().get(AnimalType.MAMMALS).getActionPawns()).isEqualTo(0);
 
@@ -248,7 +248,7 @@ class DominantSpeciesTest {
 
             var adaptationArachnids = ElementType.GRASS;
             ds.perform(new Action.Adaptation(adaptationArachnids), new Random(0));
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getAnimals().get(AnimalType.ARACHNIDS).getElements()).containsExactly(ElementType.GRUB, ElementType.GRUB, adaptationArachnids);
 
@@ -257,7 +257,7 @@ class DominantSpeciesTest {
 
             var adaptationReptiles = ds.getActionDisplay().getElements().get(ActionType.ADAPTATION).get(0);
             ds.perform(new Action.Adaptation(adaptationReptiles), new Random(0));
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getAnimals().get(AnimalType.REPTILES).getElements()).containsExactly(ElementType.SUN, ElementType.SUN, adaptationReptiles);
 
@@ -266,7 +266,7 @@ class DominantSpeciesTest {
 
             var adaptationMammals = ds.getActionDisplay().getElements().get(ActionType.ADAPTATION).get(0);
             ds.perform(new Action.Adaptation(adaptationMammals), new Random(0));
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getAnimals().get(AnimalType.MAMMALS).getActionPawns()).isEqualTo(1);
             assertThat(ds.getAnimals().get(AnimalType.MAMMALS).getElements()).containsExactly(ElementType.MEAT, ElementType.MEAT, adaptationMammals);
@@ -283,7 +283,7 @@ class DominantSpeciesTest {
             assertThat(ds.getAnimals().get(AnimalType.REPTILES).getElements()).containsExactlyInAnyOrder(ElementType.SUN, ElementType.SUN);
             assertThat(ds.getAnimals().get(AnimalType.REPTILES).getActionPawns()).isEqualTo(1); // Not returned the 'free AP'
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.possibleActions()).containsExactly(Action.Regression.class);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.ARACHNIDS);
@@ -293,7 +293,7 @@ class DominantSpeciesTest {
             assertThat(ds.getAnimals().get(AnimalType.ARACHNIDS).getActionPawns()).isEqualTo(2);
             assertThat(ds.getAnimals().get(AnimalType.ARACHNIDS).getElements()).containsExactlyInAnyOrder(ElementType.GRUB, ElementType.GRUB);
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             // == Abundance
 
@@ -302,7 +302,7 @@ class DominantSpeciesTest {
 
             var abundanceCorner1 = new Corner(DominantSpecies.INITIAL_FOREST, new Hex(-2, 1), new Hex(-2, 2));
             ds.perform(new Action.Abundance(ElementType.SEED, abundanceCorner1), new Random(0));
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getElements()).hasSize(13);
             assertThat(ds.getElements()).containsEntry(abundanceCorner1, ElementType.SEED);
@@ -312,7 +312,7 @@ class DominantSpeciesTest {
 
             var abundanceCorner2 = new Corner(DominantSpecies.INITIAL_JUNGLE, new Hex(-2, 0), new Hex(-2, 1));
             ds.perform(new Action.Abundance(ElementType.MEAT, abundanceCorner2), new Random(0));
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.getElements()).hasSize(14);
             assertThat(ds.getElements()).containsEntry(abundanceCorner2, ElementType.MEAT);
@@ -324,7 +324,7 @@ class DominantSpeciesTest {
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
 
             ds.perform(new Action.Wasteland(ElementType.GRASS), new Random(0));
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             // Wasteland element(s) should be removed from tundra tiles
             assertThat(ds.getAdjacentElements(DominantSpecies.INITIAL_SEA))
@@ -343,7 +343,7 @@ class DominantSpeciesTest {
             assertThat(ds.getElement(depletionCorner)).isEmpty();
             assertThat(ds.getDrawBag().count(ElementType.SEED)).isEqualTo(18);
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             // == Glaciation
 
@@ -356,7 +356,7 @@ class DominantSpeciesTest {
             // Other APs are still on Glaciation
             assertThat(ds.getActionDisplay().getActionPawns().get(ActionType.GLACIATION)).containsExactly(null, AnimalType.REPTILES, AnimalType.MAMMALS, null);
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             // == Speciation
 
@@ -370,7 +370,7 @@ class DominantSpeciesTest {
             assertThat(ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().getSpecies(AnimalType.REPTILES)).isEqualTo(2);
             assertThat(ds.getTile(DominantSpecies.INITIAL_DESERT).get().getSpecies(AnimalType.REPTILES)).isEqualTo(2);
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.possibleActions()).containsExactly(Action.Speciation.class);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.MAMMALS);
@@ -381,7 +381,7 @@ class DominantSpeciesTest {
 
             assertThat(ds.getTile(DominantSpecies.INITIAL_DESERT).get().getSpecies(AnimalType.MAMMALS)).isEqualTo(2);
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             // == Wanderlust
 
@@ -400,19 +400,67 @@ class DominantSpeciesTest {
             assertThat(ds.getTile(wanderlustHex).get().getTotalSpecies()).isEqualTo(0);
             assertThat(ds.getElement(wanderlustCorner).get()).isEqualTo(wanderlustElementType);
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.possibleActions()).containsExactly(Action.WanderlustMove.class);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.MAMMALS);
 
-            // TODO
+            ds.perform(new Action.WanderlustMove(List.of(
+                    new Action.WanderlustMove.Move(DominantSpecies.INITIAL_DESERT, 2)
+            )), new Random(0));
 
-            ds.endTurn();
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.getTile(wanderlustHex).get().getSpecies(AnimalType.MAMMALS)).isEqualTo(2);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_DESERT).get().getSpecies(AnimalType.MAMMALS)).isEqualTo(0);
 
             assertThat(ds.possibleActions()).containsExactly(Action.WanderlustMove.class);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
 
+            ds.perform(new Action.WanderlustMove(List.of(
+                    new Action.WanderlustMove.Move(DominantSpecies.INITIAL_MOUNTAIN, 2),
+                    new Action.WanderlustMove.Move(DominantSpecies.INITIAL_DESERT, 1)
+            )), new Random(0));
+
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.getTile(wanderlustHex).get().getSpecies(AnimalType.REPTILES)).isEqualTo(3);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().getSpecies(AnimalType.REPTILES)).isEqualTo(0);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_DESERT).get().getSpecies(AnimalType.REPTILES)).isEqualTo(1);
+
+            // == Migration
+
+            assertThat(ds.possibleActions()).containsExactly(Action.Migration.class);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
+
+            ds.perform(new Action.Migration(List.of(
+                    new Action.Migration.Move(DominantSpecies.INITIAL_DESERT, DominantSpecies.INITIAL_SAVANNAH, 1)
+            )), new Random(0));
+
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.getTile(DominantSpecies.INITIAL_SAVANNAH).get().getSpecies(AnimalType.REPTILES)).isEqualTo(1);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_DESERT).get().getSpecies(AnimalType.REPTILES)).isEqualTo(0);
+
+            // == Competition
+
+            assertThat(ds.possibleActions()).containsExactly(Action.Competition.class);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.ARACHNIDS); // Free AP
+
+            ds.endTurn(new Random(0)); // Skip
+
+            assertThat(ds.possibleActions()).containsExactly(Action.Competition.class);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.MAMMALS);
+
+            // TODO Skipped for now, as there are no tiles that qualify
+            ds.endTurn(new Random(0));
+
+            // == Domination
+
             // TODO
+
+            assertThat(ds.possibleActions()).containsExactly(Action.Domination.class);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.ARACHNIDS);
         }
 
         @Test
@@ -484,7 +532,7 @@ class DominantSpeciesTest {
                 assertThat(ds.possibleActions()).containsExactly(Action.Regression.class);
                 assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
                 ds.perform(new Action.Regression(List.of(ElementType.MEAT)), new Random(0));
-                ds.endTurn();
+                ds.endTurn(new Random(0));
 
                 assertThat(ds.getAnimal(AnimalType.REPTILES).getElements()).containsExactly(ElementType.SUN, ElementType.SUN, ElementType.GRASS);
             }
@@ -520,7 +568,7 @@ class DominantSpeciesTest {
                     .orElseThrow(() -> new AssertionError("No available action space"));
 
             ds.perform(new Action.PlaceActionPawn(placement.getActionType(), placement.getIndex()), new Random(0));
-            ds.endTurn();
+            ds.endTurn(new Random(0));
         }
     }
 }

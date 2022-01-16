@@ -377,6 +377,8 @@ public enum Card {
         return new LinkedList<>(deck);
     }
 
+    static final int INITIAL_DECK_SIZE = 26;
+
     abstract ActionResult perform(DominantSpecies game, Random random);
 
 }

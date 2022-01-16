@@ -18,23 +18,68 @@
 
 package com.boardgamefiesta.dominantspecies.view;
 
-import com.boardgamefiesta.dominantspecies.logic.Action;
-import com.boardgamefiesta.dominantspecies.logic.DominantSpecies;
+import com.boardgamefiesta.dominantspecies.logic.*;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Data
 public class DominantSpeciesView {
 
-    DominantSpecies state; // TODO Replace with individual fields and hide the face down Wanderlust tiles
+    int round;
+    Phase phase;
+    Map<AnimalType, Animal> animals;
+    List<AnimalType> initiativeTrack;
+    Map<Hex, Tile> tiles;
+    Map<Corner, ElementType> elements;
+    ActionDisplay actionDisplay;
+    DrawBag drawBag;
+    AnimalType currentAnimal;
+    ActionQueue actionQueue;
+    int deckSize;
+    Set<Card> availableCards;
+    int availableTundraTiles;
+    List<StackView> wanderlustTiles;
+
+    boolean canUndo;
     List<String> actions;
 
     public DominantSpeciesView(DominantSpecies state) {
-        this.state = state;
+        this.round = state.getRound();
+        this.phase = state.getPhase();
+        this.animals = state.getAnimals();
+        this.initiativeTrack = state.getInitiativeTrack();
+        this.tiles = state.getTiles();
+        this.elements = state.getElements();
+        this.actionDisplay = state.getActionDisplay();
+        this.drawBag = state.getDrawBag();
+        this.currentAnimal = state.getCurrentAnimal();
+        this.deckSize = state.getDeckSize();
+        this.availableCards = state.getAvailableCards();
+        this.availableTundraTiles = state.getAvailableTundraTiles();
+        this.wanderlustTiles = IntStream.range(0, 3)
+                .mapToObj(i -> new StackView(state.getWanderlustTiles().getStack(i)))
+                .collect(Collectors.toList());
+
+        this.canUndo = state.canUndo();
         this.actions = state.possibleActions().stream()
                 .map(Action::getName)
                 .collect(Collectors.toList());
+    }
+
+    @Data
+    public static class StackView {
+
+        TileType faceUp;
+        int size;
+
+        public StackView(WanderlustTiles.Stack stack) {
+            this.faceUp = stack.getFaceUp().orElse(null);
+            this.size = stack.size();
+        }
     }
 }

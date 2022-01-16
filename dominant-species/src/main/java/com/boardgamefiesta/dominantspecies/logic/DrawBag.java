@@ -64,6 +64,10 @@ public class DrawBag {
         elements.compute(elementType, (k, v) -> v + 1);
     }
 
+    void addAll(List<ElementType> elements) {
+        elements.forEach(this::add);
+    }
+
     void remove(ElementType elementType) {
         var count = elements.get(elementType);
 
@@ -85,4 +89,5 @@ public class DrawBag {
     int count(ElementType elementType) {
         return elements.getOrDefault(elementType, 0);
     }
+
 }

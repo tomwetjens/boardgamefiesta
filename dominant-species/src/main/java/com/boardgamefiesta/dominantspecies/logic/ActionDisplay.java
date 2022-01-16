@@ -44,22 +44,29 @@ public class ActionDisplay {
                 .collect(Collectors.toMap(Function.identity(), type -> new AnimalType[type.getCapacity()]));
 
         var elements = Map.of(
-                ActionType.ADAPTATION, drawBag.draw(4, random),
+                ActionType.ADAPTATION, new ArrayList<ElementType>(4),
                 ActionType.REGRESSION, new ArrayList<ElementType>(4),
-                ActionType.ABUNDANCE, drawBag.draw(4, random),
+                ActionType.ABUNDANCE, new ArrayList<ElementType>(4),
                 ActionType.WASTELAND, new ArrayList<ElementType>(4),
                 ActionType.DEPLETION, new ArrayList<ElementType>(4),
-                ActionType.WANDERLUST, drawBag.draw(4, random)
+                ActionType.WANDERLUST, (List<ElementType>) new ArrayList<ElementType>(4)
         );
 
         var actionDisplay = new ActionDisplay(actionPawns, elements, null);
 
-        actionDisplay.reset(playingAnimals);
+        actionDisplay.drawElements(drawBag, random);
+        actionDisplay.resetFreeActionPawns(playingAnimals);
 
         return actionDisplay;
     }
 
-    ActionDisplay reset(Set<AnimalType> playingAnimals) {
+    void drawElements(DrawBag drawBag, Random random) {
+        elements.get(ActionType.ADAPTATION).addAll(drawBag.draw(4, random));
+        elements.get(ActionType.ABUNDANCE).addAll(drawBag.draw(4, random));
+        elements.get(ActionType.WANDERLUST).addAll(drawBag.draw(4, random));
+    }
+
+    ActionDisplay resetFreeActionPawns(Set<AnimalType> playingAnimals) {
         for (var actionType : ActionType.values()) {
             var pawns = actionPawns.get(actionType);
 
@@ -81,6 +88,10 @@ public class ActionDisplay {
                 .filter(index -> pawns[index] != null)
                 .mapToObj(index -> new ActionPawn(pawns[index], actionType, index))
                 .findFirst();
+    }
+
+    Optional<ActionPawn> getLeftMostExecutableActionPawn() {
+        return getLeftMostExecutableActionPawn(executing);
     }
 
     ActionDisplay placeActionPawn(AnimalType animalType, ActionType actionType, int index) {
@@ -113,6 +124,10 @@ public class ActionDisplay {
         }
 
         throw new DominantSpeciesException(DominantSpeciesError.ACTION_SPACE_EMPTY);
+    }
+
+    boolean removeLeftMostActionPawn() {
+        return removeLeftMostActionPawn(executing);
     }
 
     /**
@@ -206,6 +221,39 @@ public class ActionDisplay {
                 .count();
     }
 
+    void slideGlaciationActionPawnsLeft() {
+        var actionPawns = this.actionPawns.get(ActionType.GLACIATION);
+
+        for (var i = 0; i < actionPawns.length - 1; i++) {
+            if (actionPawns[i] == null) {
+                actionPawns[i] = actionPawns[i + 1];
+                actionPawns[i + 1] = null;
+            }
+        }
+    }
+
+    List<ElementType> removeAllElements(ActionType actionType) {
+        var removed = List.copyOf(elements.get(actionType));
+        elements.get(actionType).clear();
+        return removed;
+    }
+
+    void slideElementsDown() {
+        var wastelandBox = elements.get(ActionType.WASTELAND);
+        var depletionBox = elements.get(ActionType.DEPLETION);
+        depletionBox.addAll(wastelandBox);
+        wastelandBox.clear();
+
+        var abundanceBox = elements.get(ActionType.ABUNDANCE);
+        wastelandBox.addAll(abundanceBox);
+        abundanceBox.clear();
+
+        var adaptationBox = elements.get(ActionType.ADAPTATION);
+        var regressionBox = elements.get(ActionType.REGRESSION);
+        regressionBox.addAll(adaptationBox);
+        adaptationBox.clear();
+    }
+
     @Value
     public static class PossibleSpace {
         ActionType actionType;
@@ -219,7 +267,7 @@ public class ActionDisplay {
         int index;
 
         FollowUpActions toFollowUpActions() {
-            return FollowUpActions.of(List.of(PossibleAction.mandatory(animalType, actionType.getAction())));
+            return FollowUpActions.of(List.of(PossibleAction.optional(animalType, actionType.getAction())));
         }
 
         boolean isFree() {

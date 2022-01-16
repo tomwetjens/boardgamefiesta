@@ -56,6 +56,12 @@ public class WanderlustTiles {
             return tileType;
         }
 
+        void flipTopFaceUp() {
+            if (faceUp == null && !faceDown.isEmpty()) {
+                faceUp = faceDown.poll();
+            }
+        }
+
         public Optional<TileType> getFaceUp() {
             return Optional.ofNullable(faceUp);
         }
@@ -63,6 +69,7 @@ public class WanderlustTiles {
         public int size() {
             return faceDown.size() + (faceUp != null ? 1 : 0);
         }
+
     }
 
     static WanderlustTiles initial(Random random) {
@@ -76,6 +83,12 @@ public class WanderlustTiles {
 
     public Stack getStack(int index) {
         return stacks[index];
+    }
+
+    void flipTopFaceUp() {
+        for (var stack : stacks) {
+            stack.flipTopFaceUp();
+        }
     }
 
     private static List<TileType> createInitialDeck(Random random) {

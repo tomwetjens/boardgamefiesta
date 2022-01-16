@@ -51,12 +51,14 @@ public class ActionQueue {
         actions.remove(possibleAction);
     }
 
-    void skip() {
+    PossibleAction skip() {
         var possibleAction = getNextPossibleAction()
                 .filter(PossibleAction::canSkip)
                 .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.CANNOT_SKIP_ACTION));
 
         actions.remove(possibleAction);
+
+        return possibleAction;
     }
 
     Optional<PossibleAction> getNextPossibleAction() {
@@ -79,7 +81,7 @@ public class ActionQueue {
         actions.addAll(possibleActions);
     }
 
-    private boolean hasActions(AnimalType animalType) {
+    boolean hasActions(AnimalType animalType) {
         return getNextPossibleAction()
                 .filter(possibleAction -> possibleAction.canBePerformedBy(animalType))
                 .isPresent();
@@ -89,9 +91,4 @@ public class ActionQueue {
         return actions.isEmpty();
     }
 
-    void skipAll(AnimalType animalType) {
-        while (hasActions(animalType)) {
-            skip();
-        }
-    }
 }

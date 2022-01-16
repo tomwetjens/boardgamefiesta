@@ -102,7 +102,7 @@ public class Tile implements Cloneable {
 
         this.dominant = null;
 
-        if (max > 0) { // Not endangered
+        if (!isEndangered(max)) {
             var maxAnimals = matches.entrySet().stream()
                     .filter(entry -> max.equals(entry.getValue()))
                     .map(Map.Entry::getKey)
@@ -112,6 +112,10 @@ public class Tile implements Cloneable {
                 this.dominant = maxAnimals.get(0);
             }
         }
+    }
+
+    static boolean isEndangered(int matchingElements) {
+        return matchingElements == 0;
     }
 
     Map<AnimalType, Integer> score() {
@@ -132,5 +136,26 @@ public class Tile implements Cloneable {
             throw new DominantSpeciesException(DominantSpeciesError.ALREADY_TUNDRA);
         }
         tundra = true;
+    }
+
+    int removeEndangeredSpecies(Animal animal, List<ElementType> adjacentElements) {
+        var species = getSpecies(animal.getType());
+
+        if (species > 0) {
+            var matching = animal.matchElements(adjacentElements);
+
+            if (isEndangered(matching)) {
+                if (animal.getType() == AnimalType.MAMMALS) {
+                    species--;
+                }
+
+                if (species > 0) {
+                    removeSpecies(animal.getType(), species);
+                    return species;
+                }
+            }
+        }
+
+        return 0;
     }
 }

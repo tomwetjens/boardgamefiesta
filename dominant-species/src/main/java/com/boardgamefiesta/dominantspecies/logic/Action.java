@@ -469,29 +469,146 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     }
 
     @AllArgsConstructor
+    @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
     public static final class Migration extends Action {
-        int species;
 
-        @NonNull
-        Hex from;
+        private static final int[] MAX_SPECIES_TO_MOVE = new int[]{7, 6, 5, 4, 3, 2};
 
-        @NonNull
-        Hex to;
+        @AllArgsConstructor
+        @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
+        @Getter
+        public static final class Move {
+            Hex from;
+            Hex to;
+            int species;
+        }
+
+        List<Move> moves;
 
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            throw new UnsupportedOperationException();
+            var actionPawn = game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.MIGRATION)
+                    .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
+
+            var maxSpecies = MAX_SPECIES_TO_MOVE[actionPawn.getIndex()];
+            var maxDistance = game.getCurrentAnimal() == AnimalType.BIRDS ? 2 : 1;
+
+            if (moves.stream().mapToInt(Move::getSpecies).sum() > maxSpecies) {
+                throw new DominantSpeciesException(DominantSpeciesError.MAX_SPECIES_EXCEEDED);
+            }
+
+            if (moves.stream().anyMatch(move -> move.from.distance(move.to) > maxDistance)) {
+                throw new DominantSpeciesException(DominantSpeciesError.MAX_DISTANCE_EXCEEDED);
+            }
+
+            moves.forEach(move -> {
+                var from = game.getTile(move.from)
+                        .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.TILE_NOT_FOUND));
+                var to = game.getTile(move.to)
+                        .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.TILE_NOT_FOUND));
+
+                from.removeSpecies(game.getCurrentAnimal(), move.species);
+                to.addSpecies(game.getCurrentAnimal(), move.species);
+            });
+
+            game.getActionDisplay().removeLeftMostActionPawn(ActionType.MIGRATION);
+
+            return ActionResult.undoAllowed();
         }
+
     }
 
     @AllArgsConstructor
     public static final class Competition extends Action {
+
         @NonNull
-        Hex tile;
+        List<Hex> tiles;
+
+        @NonNull
+        List<AnimalType> animals;
 
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            throw new UnsupportedOperationException();
+            if (tiles.size() != animals.size()) {
+                throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_ANIMAL_FOR_EACH_TILE);
+            }
+
+            var opposingSpecies = getOpposingSpecies(game);
+
+            if (!opposingSpecies.containsAll(animals)) {
+                throw new DominantSpeciesException(DominantSpeciesError.NOT_OPPOSING_SPECIES);
+            }
+
+            var possibleTiles = getPossibleTiles(game, opposingSpecies).collect(Collectors.toSet());
+
+            if (!possibleTiles.containsAll(tiles)) {
+                throw new DominantSpeciesException(DominantSpeciesError.INVALID_TILE);
+            }
+
+            var tiles = this.tiles.stream()
+                    .map(hex -> game.getTile(hex)
+                            .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.TILE_NOT_FOUND)))
+                    .collect(Collectors.toList());
+
+            if (tiles.stream().map(Tile::getType).distinct().count() != this.tiles.size()) {
+                throw new DominantSpeciesException(DominantSpeciesError.DUPLICATE_TILE_TYPES);
+            }
+
+            for (var i = 0; i < tiles.size(); i++) {
+                var tile = tiles.get(i);
+                var animal = game.getAnimal(animals.get(i));
+
+                tile.removeSpecies(animal.getType());
+                animal.addEliminatedSpecies();
+            }
+
+            return ActionResult.undoAllowed();
+        }
+
+        public static Stream<Hex> getPossibleTiles(DominantSpecies game) {
+            var opposingSpecies = getOpposingSpecies(game);
+
+            return getPossibleTiles(game, opposingSpecies);
+        }
+
+        private static Set<AnimalType> getOpposingSpecies(DominantSpecies game) {
+            return game.getOpposingSpecies(game.getCurrentAnimal());
+        }
+
+        private static Stream<Hex> getPossibleTiles(DominantSpecies game, Set<AnimalType> opposingSpecies) {
+            var possibleTileTypes = getPossibleTileTypes(game);
+
+            return game.getTiles().entrySet().stream()
+                    .filter(entry -> entry.getValue().isTundra() || possibleTileTypes.contains(entry.getValue().getType()))
+                    .filter(entry -> entry.getValue().hasSpecies(game.getCurrentAnimal())
+                            && opposingSpecies.stream().anyMatch(entry.getValue()::hasSpecies))
+                    .map(Map.Entry::getKey);
+        }
+
+        public static Set<TileType> getPossibleTileTypes(DominantSpecies game) {
+            var actionPawn = game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.MIGRATION)
+                    .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
+
+            switch (actionPawn.getIndex()) {
+                case 0:
+                    return Set.of(TileType.values());
+                case 1:
+                    return Set.of(TileType.JUNGLE, TileType.WETLAND);
+                case 2:
+                    return Set.of(TileType.WETLAND, TileType.DESERT);
+                case 3:
+                    return Set.of(TileType.DESERT, TileType.FOREST);
+                case 4:
+                    return Set.of(TileType.FOREST, TileType.SAVANNAH);
+                case 5:
+                    return Set.of(TileType.SAVANNAH, TileType.MOUNTAIN);
+                case 6:
+                    return Set.of(TileType.MOUNTAIN, TileType.SEA);
+                case 7:
+                    return Set.of(TileType.SEA, TileType.JUNGLE);
+                default:
+                    return Collections.emptySet();
+            }
         }
     }
 
@@ -514,20 +631,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new DominantSpeciesException(DominantSpeciesError.TILE_ALREADY_SCORED);
             }
 
-            var scores = tile.score();
-
-            scores.forEach((animalType, score) -> {
-                if (score > 0) {
-                    game.getAnimal(animalType).addVPs(score);
-                }
-            });
-
-            game.addScoredTile(this.tile);
+            game.scoreTile(this.tile);
 
             return tile.getDominant()
                     .map(dominant -> ActionResult.undoAllowed(PossibleAction.mandatory(dominant, Action.DominanceCard.class)))
                     .orElse(ActionResult.undoAllowed());
         }
+
     }
 
     @AllArgsConstructor
@@ -647,8 +757,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var tile = Corner.commonHex(elements)
                     .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.MUST_HAVE_1_COMMON_HEX));
 
-            var elementsOnTile = game.getAdjacentElements(tile).count();
-            if (elements.size() != elementsOnTile - 1) {
+            var elementsOnTile = game.getAdjacentElements(tile);
+            if (elements.size() != elementsOnTile.size()- 1) {
                 throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_ALL_BUT_1_ELEMENT_ON_TILE);
             }
 
