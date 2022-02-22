@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.ses;
+package com.boardgamefiesta.domain.email;
 
+import com.boardgamefiesta.domain.email.velocity.VelocityEmailTemplates;
 import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
@@ -55,7 +56,7 @@ class EmailTemplatesTest {
 
     @BeforeEach
     void setUp() {
-        emailTemplates = new EmailTemplates(new Translations(), "https://boardgamefiesta.com");
+        emailTemplates = new VelocityEmailTemplates(new Translations(), "https://boardgamefiesta.com");
     }
 
     @Test
@@ -72,7 +73,7 @@ class EmailTemplatesTest {
                 OffsetDateTime.of(2021, 1, 24, 14, 0, 0, 0, ZoneOffset.UTC).toInstant()
         ), user);
 
-        assertThat(message.subject().data()).isEqualTo("Your turn to play Ranchers Of The Old West started at 1/24/21, 9:00 AM");
+        assertThat(message.getSubject()).isEqualTo("Your turn to play Ranchers Of The Old West started at 1/24/21, 9:00 AM");
     }
 
     @Test
@@ -89,7 +90,7 @@ class EmailTemplatesTest {
                 OffsetDateTime.of(2021, 1, 24, 14, 0, 0, 0, ZoneOffset.UTC).toInstant()
         ), user);
 
-        assertThat(message.subject().data()).startsWith("Jouw beurt om te spelen bij Ranchers Of The Old West gestart op 24-01-2");
+        assertThat(message.getSubject()).startsWith("Jouw beurt om te spelen bij Ranchers Of The Old West gestart op 24-01-2");
     }
 
     @Test
@@ -112,7 +113,7 @@ class EmailTemplatesTest {
 
         var message = emailTemplates.createEndedMessage(table, player, userMap);
 
-        assertThat(message.subject().data()).isEqualTo("Ranchers Of The Old West has ended at 3/23/21, 12:46 PM");
+        assertThat(message.getSubject()).isEqualTo("Ranchers Of The Old West has ended at 3/23/21, 12:46 PM");
     }
 
     @Test
@@ -135,7 +136,7 @@ class EmailTemplatesTest {
 
         var message = emailTemplates.createEndedMessage(table, player, userMap);
 
-        assertThat(message.subject().data()).isEqualTo("Ranchers Of The Old West has ended at 23/03/21, 17:46");
+        assertThat(message.getSubject()).isEqualTo("Ranchers Of The Old West has ended at 23/03/21, 17:46");
     }
 
     @Test
@@ -148,6 +149,6 @@ class EmailTemplatesTest {
 
         var message = emailTemplates.createInvitedMessage(new Table.Invited(TABLE_ID, USER_ID, GAME_ID, OTHER_USER_ID), user, host);
 
-        assertThat(message.subject().data()).isEqualTo("You're invited to play Ranchers Of The Old West with wetgos");
+        assertThat(message.getSubject()).isEqualTo("You're invited to play Ranchers Of The Old West with wetgos");
     }
 }

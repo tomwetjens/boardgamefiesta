@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.ses;
+package com.boardgamefiesta.domain.email.velocity;
 
+import com.boardgamefiesta.domain.email.EmailTemplates;
+import com.boardgamefiesta.domain.email.Message;
+import com.boardgamefiesta.domain.email.Translations;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
@@ -27,28 +30,24 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import software.amazon.awssdk.services.ses.model.Body;
-import software.amazon.awssdk.services.ses.model.Content;
-import software.amazon.awssdk.services.ses.model.Message;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 @ApplicationScoped
-public class EmailTemplates {
+public class VelocityEmailTemplates implements EmailTemplates {
 
     private final Translations translations;
     private final String url;
 
     private final VelocityEngine velocityEngine;
 
-    public EmailTemplates(@NonNull Translations translations,
-                          @ConfigProperty(name = "bgf.url") String url) {
+    public VelocityEmailTemplates(@NonNull Translations translations,
+                                  @ConfigProperty(name = "bgf.url") String url) {
         this.translations = translations;
         this.url = url;
 
@@ -58,7 +57,8 @@ public class EmailTemplates {
         velocityEngine.init();
     }
 
-    Message createBeginTurnMessage(Table.BeginTurn event, User user) {
+    @Override
+    public Message createBeginTurnMessage(Table.BeginTurn event, User user) {
         var context = createDefaultContext(user.getLocale(), user.getTimeZone());
         context.put("event", event);
         context.put("user", user);
@@ -68,16 +68,8 @@ public class EmailTemplates {
         template.merge(context, writer);
 
         return Message.builder()
-                .subject(Content.builder()
-                        .charset(StandardCharsets.UTF_8.name())
-                        .data(extractTitle(writer.toString()))
-                        .build())
-                .body(Body.builder()
-                        .html(Content.builder()
-                                .charset(StandardCharsets.UTF_8.name())
-                                .data(writer.toString())
-                                .build())
-                        .build())
+                .subject(extractTitle(writer.toString()))
+                .body(writer.toString())
                 .build();
     }
 
@@ -97,7 +89,8 @@ public class EmailTemplates {
         throw new IllegalStateException("No title tag found in HTML: " + html);
     }
 
-    Message createInvitedMessage(Table.Invited event, User user, User host) {
+    @Override
+    public Message createInvitedMessage(Table.Invited event, User user, User host) {
         var context = createDefaultContext(user.getLocale(), user.getTimeZone());
         context.put("event", event);
         context.put("user", user);
@@ -108,19 +101,12 @@ public class EmailTemplates {
         template.merge(context, writer);
 
         return Message.builder()
-                .subject(Content.builder()
-                        .charset(StandardCharsets.UTF_8.name())
-                        .data(extractTitle(writer.toString()))
-                        .build())
-                .body(Body.builder()
-                        .html(Content.builder()
-                                .charset(StandardCharsets.UTF_8.name())
-                                .data(writer.toString())
-                                .build())
-                        .build())
+                .subject(extractTitle(writer.toString()))
+                .body(writer.toString())
                 .build();
     }
 
+    @Override
     public Message createEndedMessage(Table table, Player player, Map<User.Id, User> userMap) {
         var user = userMap.get(player.getUserId().get());
 
@@ -135,16 +121,8 @@ public class EmailTemplates {
         template.merge(context, writer);
 
         return Message.builder()
-                .subject(Content.builder()
-                        .charset(StandardCharsets.UTF_8.name())
-                        .data(extractTitle(writer.toString()))
-                        .build())
-                .body(Body.builder()
-                        .html(Content.builder()
-                                .charset(StandardCharsets.UTF_8.name())
-                                .data(writer.toString())
-                                .build())
-                        .build())
+                .subject(extractTitle(writer.toString()))
+                .body(writer.toString())
                 .build();
     }
 

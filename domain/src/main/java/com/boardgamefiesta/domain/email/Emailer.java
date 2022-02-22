@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.ses;
+package com.boardgamefiesta.domain.email;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.boardgamefiesta.domain.user.User;
 
-class InviteEmailerTest {
-
+public interface Emailer {
+    void sendEmailToUser(Message message, User user);
 }

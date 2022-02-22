@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,21 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.ses;
+package com.boardgamefiesta.domain.email;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
-import java.util.Locale;
+@Getter
+@Builder
+public class Message {
 
-@RequiredArgsConstructor
-public class TranslationsTool {
+    String subject;
+    String body;
 
-    private final Translations translations;
-    @NonNull
-    private final Locale locale;
-
-    public String get(String key, Object... arguments) {
-        return translations.getTranslation(key, locale, arguments);
-    }
 }

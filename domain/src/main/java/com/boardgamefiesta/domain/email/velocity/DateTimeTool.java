@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.ses;
+package com.boardgamefiesta.domain.email.velocity;
 
 import java.time.Instant;
 import java.time.ZoneId;
