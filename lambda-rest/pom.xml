@@ -28,7 +28,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>lambda-http</artifactId>
+    <artifactId>lambda-rest</artifactId>
 
     <build>
         <plugins>
