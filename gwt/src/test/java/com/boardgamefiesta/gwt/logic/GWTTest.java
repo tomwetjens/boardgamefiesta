@@ -61,6 +61,7 @@ class GWTTest {
     private Player playerA = new Player("Player A", PlayerColor.WHITE, Player.Type.HUMAN);
     private Player playerB = new Player("Player B", PlayerColor.YELLOW, Player.Type.HUMAN);
     private Player playerC = new Player("Player C", PlayerColor.BLUE, Player.Type.HUMAN);
+    private Player playerD = new Player("Player D", PlayerColor.RED, Player.Type.HUMAN);
 
     @Mock
     EventListener eventListener;
@@ -378,6 +379,75 @@ class GWTTest {
             game.leave(playerC, new Random(0));
 
             assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
+        }
+
+        @Test
+        void druen() {
+            // Feb 16, 2022
+            // https://boardgamefiesta.com/gwt2/c4a5026c-adcf-4d92-8c46-dd1bdb0adf3e
+
+            var game = GWT.start(GWT.Edition.FIRST, new LinkedHashSet<>(Arrays.asList(playerA, playerB, playerC, playerD)), GWT.Options.builder()
+                    .playerOrder(GWT.Options.PlayerOrder.BIDDING)
+                    .build(), eventListener, new Random(0));
+
+            // playerA = mario
+            // playerB = hildegard
+            // playerC = dannerz
+            // playerD = druen
+
+            // druen bids -1VP for seat #1
+            assertThat(game.getCurrentPlayer()).isSameAs(playerD);
+            game.perform(new Action.PlaceBid(new Bid(1, 1)), new Random(0));
+            game.endTurn(playerD, new Random(0));
+
+            // mario bids 0VP for seat #3
+            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
+            game.perform(new Action.PlaceBid(new Bid(3, 0)), new Random(0));
+            game.endTurn(playerA, new Random(0));
+
+            // hildegard bids 0VP for seat #2
+            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            game.perform(new Action.PlaceBid(new Bid(2, 0)), new Random(0));
+            game.endTurn(playerB, new Random(0));
+
+            // dannerz bids -2VP for seat #1
+            assertThat(game.getCurrentPlayer()).isSameAs(playerC);
+            game.perform(new Action.PlaceBid(new Bid(1, 2)), new Random(0));
+            game.endTurn(playerC, new Random(0));
+            // druen is now contested
+
+            // druen bids -3VP for seat #1
+            assertThat(game.getCurrentPlayer()).isSameAs(playerD);
+            game.perform(new Action.PlaceBid(new Bid(1, 3)), new Random(0));
+            game.endTurn(playerD, new Random(0));
+            // dannerz is now contested
+
+            // dannerz bids -4VP for seat #1
+            assertThat(game.getCurrentPlayer()).isSameAs(playerC);
+            game.perform(new Action.PlaceBid(new Bid(1, 4)), new Random(0));
+            game.endTurn(playerC, new Random(0));
+            // druen is now contested
+
+            // druen bids -1VP for seat #2
+            assertThat(game.getCurrentPlayer()).isSameAs(playerD);
+            game.perform(new Action.PlaceBid(new Bid(2, 1)), new Random(0));
+            game.endTurn(playerD, new Random(0));
+            // hildegard is now contested
+
+            // hildegard bids -2VP for seat #2
+            assertThat(game.getCurrentPlayer()).isSameAs(playerB);
+            game.perform(new Action.PlaceBid(new Bid(2, 2)), new Random(0));
+            game.endTurn(playerB, new Random(0));
+            // druen is now contested
+
+            // druen bids -4VP for seat #3
+            assertThat(game.getCurrentPlayer()).isSameAs(playerD);
+            game.perform(new Action.PlaceBid(new Bid(3, 4)), new Random(0));
+            game.endTurn(playerD, new Random(0));
+            // mario is now contested
+
+            assertThat(game.getCurrentPlayer()).isSameAs(playerA);
             assertThat(game.possibleActions()).containsExactly(Action.PlaceBid.class);
         }
     }
