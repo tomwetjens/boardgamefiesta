@@ -39,14 +39,14 @@ echo "${ACTION}: $STACK_NAME"
 #  --template-body file://db.yaml \
 #  --parameters ParameterKey=Environment,ParameterValue=$ENV
 
-aws s3 cp ../cognito/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/cognito.zip
+#aws s3 cp ../lambda-cognito/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-cognito.zip
+#
+#aws cloudformation $ACTION --stack-name $STACK_NAME-auth \
+#  --template-body file://auth.yaml \
+#  --capabilities CAPABILITY_NAMED_IAM \
+#  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
 
-aws cloudformation $ACTION --stack-name $STACK_NAME-auth \
-  --template-body file://auth.yaml \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
-
-aws s3 cp ../lambda-http/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-http.zip
+aws s3 cp ../lambda-rest/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-rest.zip
 
 aws cloudformation $ACTION --stack-name $STACK_NAME-apigw \
   --template-body file://apigw.yaml \

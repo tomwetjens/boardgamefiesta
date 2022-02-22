@@ -63,6 +63,7 @@
         <module>powergrid</module>
         <module>server</module>
         <module>dominant-species</module>
+        <module>rest-api</module>
     </modules>
 
     <dependencyManagement>
@@ -100,6 +101,11 @@
             <dependency>
                 <groupId>com.boardgamefiesta</groupId>
                 <artifactId>powergrid</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>rest-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

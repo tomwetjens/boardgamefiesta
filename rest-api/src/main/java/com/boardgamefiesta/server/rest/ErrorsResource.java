@@ -18,16 +18,17 @@
 
 package com.boardgamefiesta.server.rest;
 
-import javax.enterprise.context.ApplicationScoped;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.PermitAll;
-import javax.servlet.http.HttpServletRequest;
+import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.Optional;
 
@@ -38,9 +39,10 @@ import java.util.Optional;
 public class ErrorsResource {
 
     @POST
-    public void logError(@Context HttpServletRequest httpServletRequest, @NonNull ErrorsResource.Error error) {
-        var principal = Optional.ofNullable(httpServletRequest.getUserPrincipal()).map(Principal::getName).orElse("");
-        var userAgent = httpServletRequest.getHeader("User-Agent");
+    public void logError(@Context SecurityContext securityContext,
+                         @HeaderParam("User-Agent") String userAgent,
+                         @NonNull Error error) {
+        var principal = Optional.ofNullable(securityContext.getUserPrincipal()).map(Principal::getName).orElse("");
 
         log.error("{} URL={} Principal={}, User-Agent={}\nStack Trace:\n{}", error.getMessage(), error.getUrl(), principal, userAgent, error.getStack());
     }

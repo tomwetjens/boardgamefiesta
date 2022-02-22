@@ -44,6 +44,10 @@
             <groupId>com.boardgamefiesta</groupId>
             <artifactId>dynamodb</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>rest-api</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
@@ -96,11 +100,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-undertow-websockets</artifactId>
-        </dependency>
-        <dependency>
-            <!-- Enables @Transactional and CDI events AFTER_SUCCESS even though we don't have JPA -->
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-narayana-jta</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

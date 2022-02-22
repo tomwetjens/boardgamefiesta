@@ -23,6 +23,7 @@ import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.rating.Rating;
 import com.boardgamefiesta.domain.rating.Ratings;
+import com.boardgamefiesta.domain.subscription.Subscriptions;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
@@ -75,6 +76,9 @@ public class TableResource {
     Ratings ratings;
 
     @Inject
+    Subscriptions subscriptions;
+
+    @Inject
     CurrentUser currentUser;
 
     @GET
@@ -106,6 +110,18 @@ public class TableResource {
         return new TableView(table, getUserMap(table), getRatingMap(table), currentUser.getId());
     }
 
+    private void checkSubscription() {
+        // TODO Disabled for local testing
+        subscriptions.findByUserId(currentUser.getId())
+                .ifPresentOrElse(subscription -> {
+                    if (subscription.isActive(Instant.now())) {
+                        return;
+                    }
+                }, () -> {
+                    // TODO Check
+                });
+    }
+
     @GET
     @Path("/{id}")
     public TableView get(@PathParam("id") String id) {
@@ -121,6 +137,10 @@ public class TableResource {
     public TableView start(@PathParam("id") String id) {
         var result = handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
+
+            if (table.hasMoreThanOneHumanPlayer()) {
+                checkSubscription();
+            }
 
             table.start();
         });
@@ -147,6 +167,8 @@ public class TableResource {
     @Path("/{id}/join")
     @Transactional
     public void join(@PathParam("id") String id) {
+        checkSubscription();
+
         handleConcurrentModification(Table.Id.of(id), table ->
                 table.join(currentUser.get()));
     }
@@ -157,6 +179,8 @@ public class TableResource {
     public void makePublic(@PathParam("id") String id) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
+
+            checkSubscription();
 
             table.makePublic();
         });
@@ -269,6 +293,8 @@ public class TableResource {
     public void invite(@PathParam("id") String id, @NotNull @Valid InviteRequest request) {
         handleConcurrentModification(Table.Id.of(id), table -> {
             checkOwner(table);
+
+            checkSubscription();
 
             table.invite(users.findById(User.Id.of(request.getUserId()))
                     .orElseThrow(() -> APIException.badRequest(APIError.NO_SUCH_USER)));

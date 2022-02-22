@@ -77,6 +77,10 @@
             <artifactId>dynamodb</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>rest-api</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
@@ -115,6 +119,10 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-amazon-lambda-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-amazon-ses</artifactId>
         </dependency>
 
         <dependency>
