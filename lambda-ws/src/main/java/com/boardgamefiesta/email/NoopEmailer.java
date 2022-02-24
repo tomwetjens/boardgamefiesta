@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,28 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.domain.event;
-
-import com.boardgamefiesta.domain.table.Table;
+package com.boardgamefiesta.email;import com.boardgamefiesta.domain.email.Emailer;
+import com.boardgamefiesta.domain.email.Message;
 import com.boardgamefiesta.domain.user.User;
 
-import java.time.Instant;
-import java.util.Optional;
-import java.util.stream.Stream;
+import javax.enterprise.context.ApplicationScoped;
 
-public interface WebSocketConnections {
-
-    void add(WebSocketConnection webSocketConnection);
-
-    void remove(String connectionId);
-
-    void updateStatus(String id, User.Id userId, Instant updated, WebSocketConnection.Status status);
-
-    boolean wasActiveAfter(User.Id userId, Instant since);
-
-    Optional<WebSocketConnection> findByConnectionId(String connectionId);
-
-    Stream<String> findByTableId(Table.Id tableId);
-
-    Stream<String> findByUserId(User.Id userId);
+@ApplicationScoped
+public class NoopEmailer implements Emailer {
+    @Override
+    public void sendEmailToUser(Message message, User user) {
+        throw new UnsupportedOperationException();
+    }
 }

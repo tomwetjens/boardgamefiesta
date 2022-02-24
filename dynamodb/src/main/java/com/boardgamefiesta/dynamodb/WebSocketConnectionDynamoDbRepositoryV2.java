@@ -20,6 +20,7 @@ package com.boardgamefiesta.dynamodb;
 
 import com.boardgamefiesta.domain.event.WebSocketConnection;
 import com.boardgamefiesta.domain.event.WebSocketConnections;
+import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import lombok.NonNull;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -31,6 +32,8 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * PK=WebSocket#<ID>
@@ -40,9 +43,13 @@ import java.util.Map;
  * GSI1PK=User#<ID>
  * GSI1SK=WebSocket#<ID>
  * <p>
- * GSI2: by User ID - only when status=Active
+ * GSI2: by User ID - only "Active"
  * GSI2PK=User#<ID>
  * GSI2SK=WebSocket#<Updated>#<ID>
+ * <p>
+ * GSI3: by Table ID (optional)
+ * GSI3PK=Table#<ID>
+ * GSI3SK=WebSocket#<ID>
  */
 @ApplicationScoped
 public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnections {
@@ -59,8 +66,13 @@ public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnect
     private static final String GSI2PK = "GSI2PK";
     private static final String GSI2SK = "GSI2SK";
 
+    private static final String GSI3 = "GSI3";
+    private static final String GSI3PK = "GSI3PK";
+    private static final String GSI3SK = "GSI3SK";
+
     private static final String USER_PREFIX = "User#";
     private static final String WEB_SOCKET_PREFIX = "WebSocket#";
+    private static final String TABLE_PREFIX = "Table#";
 
     private static final DateTimeFormatter TIMESTAMP_SECS_FORMATTER = new DateTimeFormatterBuilder()
             .parseStrict()
@@ -90,9 +102,14 @@ public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnect
                 .setTTL(TTL, webSocketConnection.getExpires());
 
         if (webSocketConnection.getStatus() == WebSocketConnection.Status.ACTIVE) {
-            item.setString(GSI2PK, USER_PREFIX + webSocketConnection.getUserId().getId())
-                    .setString(GSI2SK, WEB_SOCKET_PREFIX + webSocketConnection.getUpdated() + "#" + webSocketConnection.getId());
+            item.setString(GSI2PK, USER_PREFIX + webSocketConnection.getUserId().getId());
+            item.setString(GSI2SK, WEB_SOCKET_PREFIX + TIMESTAMP_SECS_FORMATTER.format(webSocketConnection.getUpdated()) + "#" + webSocketConnection.getId());
         }
+
+        webSocketConnection.getTableId().ifPresent(tableId -> {
+            item.setString(GSI3PK, TABLE_PREFIX + tableId.getId());
+            item.setString(GSI3SK, WEB_SOCKET_PREFIX + webSocketConnection.getId());
+        });
 
         client.putItem(PutItemRequest.builder()
                 .tableName(config.getTableName())
@@ -119,8 +136,8 @@ public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnect
                 .setTTL(TTL, WebSocketConnection.calculateExpires(updated));
 
         if (status == WebSocketConnection.Status.ACTIVE) {
-            updateItem.setString(GSI2PK, USER_PREFIX + userId.getId())
-                    .setString(GSI2SK, WEB_SOCKET_PREFIX + TIMESTAMP_SECS_FORMATTER.format(updated) + "#" + id);
+            updateItem.setString(GSI2PK, USER_PREFIX + userId.getId());
+            updateItem.setString(GSI2SK, WEB_SOCKET_PREFIX + TIMESTAMP_SECS_FORMATTER.format(updated) + "#" + id);
         } else {
             updateItem.remove(GSI2PK, GSI2SK);
         }
@@ -150,4 +167,64 @@ public class WebSocketConnectionDynamoDbRepositoryV2 implements WebSocketConnect
                 .select(Select.COUNT)
                 .build()).count() > 0;
     }
+
+    @Override
+    public Optional<WebSocketConnection> findByConnectionId(String connectionId) {
+        var response = client.query(QueryRequest.builder()
+                .tableName(config.getTableName())
+                .keyConditionExpression(PK + "=:PK AND " + SK + "=:SK")
+                .expressionAttributeValues(Map.of(
+                        ":PK", Item.s(WEB_SOCKET_PREFIX + connectionId),
+                        ":SK", Item.s(WEB_SOCKET_PREFIX + connectionId)
+                ))
+                .build());
+
+        if (response.hasItems() && !response.items().isEmpty()) {
+            return Optional.of(mapToWebSocketConnection(Item.of(response.items().get(0))));
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Stream<String> findByTableId(Table.Id tableId) {
+        return client.queryPaginator(QueryRequest.builder()
+                .tableName(config.getTableName())
+                .indexName(GSI3)
+                .keyConditionExpression(GSI3PK + "=:GSI3PK AND begins_with(" + GSI3SK + ",:GSI3SK)")
+                .expressionAttributeValues(Map.of(
+                        ":GSI3PK", Item.s(TABLE_PREFIX + tableId.getId()),
+                        ":GSI3SK", Item.s(WEB_SOCKET_PREFIX)
+                ))
+                .build())
+                .items().stream()
+                .map(Item::of)
+                .map(item -> item.get(GSI3SK).s().replace(WEB_SOCKET_PREFIX, ""));
+    }
+
+    @Override
+    public Stream<String> findByUserId(User.Id userId) {
+        return client.queryPaginator(QueryRequest.builder()
+                .tableName(config.getTableName())
+                .indexName(GSI1)
+                .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
+                .expressionAttributeValues(Map.of(
+                        ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
+                        ":GSI1SK", Item.s(WEB_SOCKET_PREFIX)
+                ))
+                .build())
+                .items().stream()
+                .map(item -> item.get(GSI1SK).s().replace(WEB_SOCKET_PREFIX, ""));
+    }
+
+    private WebSocketConnection mapToWebSocketConnection(Item item) {
+        return WebSocketConnection.builder()
+                .id(item.getString(PK).replace(WEB_SOCKET_PREFIX, ""))
+                .userId(User.Id.fromString(item.getString(GSI1PK).replace(USER_PREFIX, "")))
+                .tableId(item.getOptionalString(GSI3PK).map(gsi3pk -> Table.Id.of(gsi3pk.replace(TABLE_PREFIX, ""))).orElse(null))
+                .status(item.getEnum("Status", WebSocketConnection.Status.class))
+                .created(item.getInstant("Created"))
+                .updated(item.getInstant("Updated"))
+                .build();
+    }
+
 }

@@ -28,16 +28,24 @@ import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
+import software.amazon.awssdk.services.apigatewaymanagementapi.model.GoneException;
+import software.amazon.awssdk.services.apigatewaymanagementapi.model.PostToConnectionRequest;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.event.TransactionPhase;
 import javax.inject.Inject;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
-
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
@@ -58,13 +66,20 @@ public class EventsServerEndpoint {
     private final Users users;
     private final Tables tables;
 
+    private final ApiGatewayManagementApiClient apiGatewayManagementApiClient;
+
     @Inject
     public EventsServerEndpoint(@NonNull WebSocketConnections webSocketConnections,
                                 @NonNull Users users,
-                                @NonNull Tables tables) {
+                                @NonNull Tables tables,
+                                @NonNull @ConfigProperty(name = "bgf.ws.connections-endpoint") String connectionsEndpoint) {
         this.webSocketConnections = webSocketConnections;
         this.users = users;
         this.tables = tables;
+
+        apiGatewayManagementApiClient = ApiGatewayManagementApiClient.builder()
+                .endpointOverride(URI.create(connectionsEndpoint))
+                .build();
     }
 
     @OnOpen
@@ -80,7 +95,7 @@ public class EventsServerEndpoint {
                 return sessions;
             });
 
-            webSocketConnections.add(WebSocketConnection.create(session.getId(), userId));
+            webSocketConnections.add(WebSocketConnection.createForUser(session.getId(), userId));
         });
     }
 
@@ -194,24 +209,47 @@ public class EventsServerEndpoint {
     }
 
     private void notifyOtherPlayers(User.Id currentUserId, Table table, Event event) {
+        var data = toJSON(event);
         table.getPlayers().stream()
                 .filter(player -> player.getType() == Player.Type.USER)
                 .flatMap(player -> player.getUserId().stream())
                 .filter(userId -> !userId.equals(currentUserId))
-                .forEach(userId -> notifyUser(userId, event));
+                .forEach(userId -> notifyUser(userId, data));
+    }
+
+    private static String toJSON(Event event) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(event);
+        } catch (JsonProcessingException e) {
+            // TODO Wrap in better exception
+            throw new UncheckedIOException(e);
+        }
     }
 
     private void notifyUser(User.Id userId, Event event) {
+        notifyUser(userId, toJSON(event));
+    }
+
+    private void notifyUser(User.Id userId, String data) {
         var sessions = USER_SESSIONS.get(userId);
         if (sessions != null) {
-            try {
-                var data = OBJECT_MAPPER.writeValueAsString(event);
-                sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
-            } catch (JsonProcessingException e) {
-                // TODO Wrap in better exception
-                throw new UncheckedIOException(e);
-            }
+            sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
         }
+
+        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
+        webSocketConnections.findByUserId(userId)
+                .forEach(connectionId -> {
+                    try {
+                        apiGatewayManagementApiClient.postToConnection(PostToConnectionRequest.builder()
+                                .connectionId(connectionId)
+                                .data(sdkBytes)
+                                .build());
+                    } catch (GoneException e) {
+                        // Ignore
+                    } catch (SdkException e) {
+                        log.debug("Could not send to WebSocket connection: {}", connectionId, e);
+                    }
+                });
     }
 
 }

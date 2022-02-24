@@ -16,28 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.domain.event;
+package com.boardgamefiesta.lambda.ws;
 
-import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.domain.user.User;
+import lombok.Data;
 
-import java.time.Instant;
-import java.util.Optional;
-import java.util.stream.Stream;
+@Data
+public class ClientEvent {
 
-public interface WebSocketConnections {
+    Type type;
 
-    void add(WebSocketConnection webSocketConnection);
-
-    void remove(String connectionId);
-
-    void updateStatus(String id, User.Id userId, Instant updated, WebSocketConnection.Status status);
-
-    boolean wasActiveAfter(User.Id userId, Instant since);
-
-    Optional<WebSocketConnection> findByConnectionId(String connectionId);
-
-    Stream<String> findByTableId(Table.Id tableId);
-
-    Stream<String> findByUserId(User.Id userId);
+    public enum Type {
+        ACTIVE,
+        INACTIVE
+    }
 }

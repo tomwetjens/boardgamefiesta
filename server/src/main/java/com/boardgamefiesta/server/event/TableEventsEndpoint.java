@@ -18,20 +18,31 @@
 
 package com.boardgamefiesta.server.event;
 
+import com.boardgamefiesta.domain.event.WebSocketConnections;
 import com.boardgamefiesta.domain.table.Table;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
+import software.amazon.awssdk.services.apigatewaymanagementapi.model.GoneException;
+import software.amazon.awssdk.services.apigatewaymanagementapi.model.PostToConnectionRequest;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.event.TransactionPhase;
+import javax.inject.Inject;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +57,20 @@ public class TableEventsEndpoint {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final Map<Table.Id, Set<Session>> SESSIONS = new ConcurrentHashMap<>();
+
+    private final WebSocketConnections webSocketConnections;
+
+    private final ApiGatewayManagementApiClient apiGatewayManagementApiClient;
+
+    @Inject
+    public TableEventsEndpoint(@NonNull WebSocketConnections webSocketConnections,
+                               @NonNull @ConfigProperty(name = "bgf.ws.connections-endpoint") String connectionsEndpoint) {
+        this.webSocketConnections = webSocketConnections;
+
+        apiGatewayManagementApiClient = ApiGatewayManagementApiClient.builder()
+                .endpointOverride(URI.create(connectionsEndpoint))
+                .build();
+    }
 
     @OnOpen
     public void onOpen(Session session) {
@@ -147,18 +172,36 @@ public class TableEventsEndpoint {
         broadcast(event.getTableId(), new Event(Event.EventType.COMPUTER_ADDED, event.getTableId().getId(), null));
     }
 
-    private static void broadcast(Table.Id tableId, Event event) {
+    private void broadcast(Table.Id tableId, Event event) {
+        var data = toJSON(event);
+
         var sessions = SESSIONS.get(tableId);
-
         if (sessions != null) {
-            try {
-                var data = OBJECT_MAPPER.writeValueAsString(event);
+            sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
+        }
 
-                sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
-            } catch (JsonProcessingException e) {
-                // TODO Wrap in better exception
-                throw new UncheckedIOException(e);
-            }
+        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
+        webSocketConnections.findByTableId(tableId)
+                .forEach(connectionId -> {
+                    try {
+                        apiGatewayManagementApiClient.postToConnection(PostToConnectionRequest.builder()
+                                .connectionId(connectionId)
+                                .data(sdkBytes)
+                                .build());
+                    } catch (GoneException e) {
+                        // Ignore
+                    } catch (SdkException e) {
+                        log.debug("Could not send to WebSocket connection: {}", connectionId, e);
+                    }
+                });
+    }
+
+    private static String toJSON(Event event) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(event);
+        } catch (JsonProcessingException e) {
+            // TODO Wrap in better exception
+            throw new UncheckedIOException(e);
         }
     }
 

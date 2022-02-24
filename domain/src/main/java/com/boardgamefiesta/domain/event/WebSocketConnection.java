@@ -18,6 +18,7 @@
 
 package com.boardgamefiesta.domain.event;
 
+import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +26,7 @@ import lombok.NonNull;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 @Builder
 public class WebSocketConnection {
@@ -36,6 +38,8 @@ public class WebSocketConnection {
     @Getter
     @NonNull
     User.Id userId;
+
+    Table.Id tableId;
 
     @Getter
     @NonNull
@@ -49,7 +53,7 @@ public class WebSocketConnection {
     @NonNull
     Instant updated;
 
-    public static WebSocketConnection create(String id, User.Id userId) {
+    public static WebSocketConnection createForUser(String id, User.Id userId) {
         return WebSocketConnection.builder()
                 .id(id)
                 .userId(userId)
@@ -57,6 +61,21 @@ public class WebSocketConnection {
                 .created(Instant.now())
                 .updated(Instant.now())
                 .build();
+    }
+
+    public static WebSocketConnection createForTable(String id, User.Id userId, Table.Id tableId) {
+        return WebSocketConnection.builder()
+                .id(id)
+                .userId(userId)
+                .tableId(tableId)
+                .status(Status.ACTIVE)
+                .created(Instant.now())
+                .updated(Instant.now())
+                .build();
+    }
+
+    public Optional<Table.Id> getTableId() {
+        return Optional.ofNullable(tableId);
     }
 
     public Instant getExpires() {

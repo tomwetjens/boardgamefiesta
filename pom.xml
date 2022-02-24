@@ -64,6 +64,7 @@
         <module>server</module>
         <module>dominant-species</module>
         <module>rest-api</module>
+        <module>lambda-ws</module>
     </modules>
 
     <dependencyManagement>
@@ -156,6 +157,11 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>cognitoidentityprovider</artifactId>
+                <version>${awssdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>apigatewaymanagementapi</artifactId>
                 <version>${awssdk.version}</version>
             </dependency>
             <dependency>
