@@ -29,7 +29,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cognito</artifactId>
+    <artifactId>lambda-cognito</artifactId>
 
     <dependencies>
         <dependency>
