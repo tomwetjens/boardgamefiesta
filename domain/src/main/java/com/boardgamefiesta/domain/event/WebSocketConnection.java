@@ -79,8 +79,10 @@ public class WebSocketConnection {
     }
 
     public Instant getExpires() {
-        // Table connections are not updated by a heartbeat, so no expiry on those
-        return tableId == null ? calculateExpires(updated) : null;
+        // Clients are expected to send a heartbeat every 60 sec that updates the WebSocket connection
+        // The TTL ensures that old WebSocket connections are removed from the database automatically,
+        // if no heartbeat is received after a certain time
+        return calculateExpires(updated);
     }
 
     public static Instant calculateExpires(Instant updated) {
