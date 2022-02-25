@@ -40,7 +40,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
-// TODO Move to lambda-rest when all clients have switched to WebSockets on API Gateway
+// TODO Remove when all clients have switched to REST API on API Gateway
 @ApplicationScoped
 @Slf4j
 public class APIGatewayWebSocketConnectionSender implements WebSocketConnectionSender {
