@@ -38,8 +38,9 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+// TODO Only enable for local testing when all clients have switched to WebSockets on API Gateway
 @ApplicationScoped
-@ServerEndpoint("/events") // TODO Only enable for local testing when all clients have switched to WebSockets on API Gateway
+@ServerEndpoint("/events")
 @Slf4j
 public class EventsServerEndpoint implements WebSocketConnectionSender {
 
@@ -72,15 +73,19 @@ public class EventsServerEndpoint implements WebSocketConnectionSender {
         });
 
         getTableId(session).ifPresent(tableId ->
-                TABLE_SESSIONS.compute(tableId, (key, sessions) -> {
-                    if (sessions == null) {
-                        sessions = new TreeSet<>(Comparator.comparing(Session::getId));
-                    }
+                addTableSession(session, tableId));
+    }
 
-                    sessions.add(session);
+    void addTableSession(Session session, Table.Id tableId) {
+        TABLE_SESSIONS.compute(tableId, (key, sessions) -> {
+            if (sessions == null) {
+                sessions = new TreeSet<>(Comparator.comparing(Session::getId));
+            }
 
-                    return sessions;
-                }));
+            sessions.add(session);
+
+            return sessions;
+        });
     }
 
     @OnClose
@@ -101,16 +106,20 @@ public class EventsServerEndpoint implements WebSocketConnectionSender {
         webSocketConnections.remove(session.getId());
 
         getTableId(session).ifPresent(tableId ->
-                TABLE_SESSIONS.computeIfPresent(tableId, (k, sessions) -> {
-                    sessions.remove(session);
+                removeTableSession(session, tableId));
+    }
 
-                    if (sessions.isEmpty()) {
-                        // Clean up mapping once all sessions are closed
-                        return null;
-                    }
+    void removeTableSession(Session session, Table.Id tableId) {
+        TABLE_SESSIONS.computeIfPresent(tableId, (k, sessions) -> {
+            sessions.remove(session);
 
-                    return sessions;
-                }));
+            if (sessions.isEmpty()) {
+                // Clean up mapping once all sessions are closed
+                return null;
+            }
+
+            return sessions;
+        });
     }
 
     // TODO Remove when all clients have switched to WebSockets on API Gateway
