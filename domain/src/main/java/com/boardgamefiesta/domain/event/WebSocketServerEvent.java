@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.event;
+package com.boardgamefiesta.domain.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,13 +25,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Event {
+public class WebSocketServerEvent {
 
-    private EventType type;
+    private Type type;
     private String tableId;
     private String userId;
 
-    public enum EventType {
+    public enum Type {
         STARTED,
         ENDED,
         INVITED,
@@ -46,6 +46,8 @@ public class Event {
         OPTIONS_CHANGED,
         COMPUTER_ADDED,
         ABANDONED,
-        JOINED, VISIBILITY_CHANGED, ADDED_AS_FRIEND
+        JOINED,
+        VISIBILITY_CHANGED,
+        ADDED_AS_FRIEND
     }
 }

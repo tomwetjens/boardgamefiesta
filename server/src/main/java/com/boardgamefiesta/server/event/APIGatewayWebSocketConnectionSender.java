@@ -18,9 +18,13 @@
 
 package com.boardgamefiesta.server.event;
 
+import com.boardgamefiesta.domain.event.WebSocketConnectionSender;
 import com.boardgamefiesta.domain.event.WebSocketConnections;
+import com.boardgamefiesta.domain.event.WebSocketServerEvent;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -32,20 +36,24 @@ import software.amazon.awssdk.services.apigatewaymanagementapi.model.PostToConne
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
+// TODO Move to lambda-rest when all clients have switched to WebSockets on API Gateway
 @ApplicationScoped
 @Slf4j
-public class APIGatewayWebSocketsSender implements WebSocketsSender {
+public class APIGatewayWebSocketConnectionSender implements WebSocketConnectionSender {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final WebSocketConnections webSocketConnections;
 
     private final ApiGatewayManagementApiClient apiGatewayManagementApiClient;
 
     @Inject
-    public APIGatewayWebSocketsSender(@NonNull WebSocketConnections webSocketConnections,
-                                      @NonNull @ConfigProperty(name = "bgf.ws.connections-endpoint") String connectionsEndpoint) {
+    public APIGatewayWebSocketConnectionSender(@NonNull WebSocketConnections webSocketConnections,
+                                               @NonNull @ConfigProperty(name = "bgf.ws.connections-endpoint") String connectionsEndpoint) {
         this.webSocketConnections = webSocketConnections;
 
         apiGatewayManagementApiClient = ApiGatewayManagementApiClient.builder()
@@ -54,8 +62,8 @@ public class APIGatewayWebSocketsSender implements WebSocketsSender {
     }
 
     @Override
-    public void sendToTable(Table.Id tableId, String data) {
-        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
+    public void sendToTable(Table.Id tableId, WebSocketServerEvent event) {
+        var sdkBytes = SdkBytes.fromString(toJSON(event), StandardCharsets.UTF_8);
 
         webSocketConnections.findByTableId(tableId)
                 .forEach(connectionId -> {
@@ -73,8 +81,8 @@ public class APIGatewayWebSocketsSender implements WebSocketsSender {
     }
 
     @Override
-    public void sendToUser(User.Id userId, String data) {
-        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
+    public void sendToUser(User.Id userId, WebSocketServerEvent event) {
+        var sdkBytes = SdkBytes.fromString(toJSON(event), StandardCharsets.UTF_8);
 
         webSocketConnections.findByUserId(userId)
                 .forEach(connectionId -> {
@@ -89,6 +97,15 @@ public class APIGatewayWebSocketsSender implements WebSocketsSender {
                         log.debug("Could not send to WebSocket connection: {}", connectionId, e);
                     }
                 });
+    }
+
+    private static String toJSON(WebSocketServerEvent event) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(event);
+        } catch (JsonProcessingException e) {
+            // TODO Wrap in better exception
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

@@ -16,13 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.event;
+package com.boardgamefiesta.domain.event;
 
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 
-public interface WebSocketsSender {
-    void sendToTable(Table.Id tableId, String data);
+public interface WebSocketConnectionSender {
 
-    void sendToUser(User.Id userId, String data);
+    void sendToTable(Table.Id tableId, WebSocketServerEvent event);
+
+    void sendToUser(User.Id userId, WebSocketServerEvent event);
+
 }

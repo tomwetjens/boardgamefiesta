@@ -19,11 +19,10 @@
 package com.boardgamefiesta.server.event;
 
 import com.boardgamefiesta.domain.event.WebSocketConnection;
+import com.boardgamefiesta.domain.event.WebSocketConnectionSender;
 import com.boardgamefiesta.domain.event.WebSocketConnections;
-import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.event.WebSocketServerEvent;
 import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.domain.table.Tables;
-import com.boardgamefiesta.domain.user.Friend;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,42 +30,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.enterprise.event.TransactionPhase;
 import javax.inject.Inject;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.UncheckedIOException;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
-@ServerEndpoint("/events") // TODO Remove when all clients have switched to WebSockets on API Gateway
+@ServerEndpoint("/events")
 @Slf4j
-public class EventsServerEndpoint {
+public class EventsServerEndpoint implements WebSocketConnectionSender {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final Map<User.Id, Set<Session>> USER_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<Table.Id, Set<Session>> TABLE_SESSIONS = new ConcurrentHashMap<>();
 
-    // TODO Remove when all clients have switched to WebSockets on API Gateway
     @Inject
     WebSocketConnections webSocketConnections;
 
     @Inject
     Users users;
 
-    @Inject
-    Tables tables;
-
-    @Inject
-    WebSocketsSender webSocketsSender;
-
-    // TODO Remove when all clients have switched to WebSockets on API Gateway
     @OnOpen
     public void onOpen(Session session) {
         CurrentUser.getUserId(session, users).ifPresent(userId -> {
@@ -80,11 +67,22 @@ public class EventsServerEndpoint {
                 return sessions;
             });
 
+            // TODO Remove when all clients have switched to WebSockets on API Gateway
             webSocketConnections.add(WebSocketConnection.createForUser(session.getId(), userId));
         });
+
+        getTableId(session).ifPresent(tableId ->
+                TABLE_SESSIONS.compute(tableId, (key, sessions) -> {
+                    if (sessions == null) {
+                        sessions = new TreeSet<>(Comparator.comparing(Session::getId));
+                    }
+
+                    sessions.add(session);
+
+                    return sessions;
+                }));
     }
 
-    // TODO Remove when all clients have switched to WebSockets on API Gateway
     @OnClose
     public void onClose(Session session) {
         CurrentUser.getUserId(session, users).ifPresent(userId ->
@@ -99,7 +97,20 @@ public class EventsServerEndpoint {
                     return sessions;
                 }));
 
+        // TODO Remove when all clients have switched to WebSockets on API Gateway
         webSocketConnections.remove(session.getId());
+
+        getTableId(session).ifPresent(tableId ->
+                TABLE_SESSIONS.computeIfPresent(tableId, (k, sessions) -> {
+                    sessions.remove(session);
+
+                    if (sessions.isEmpty()) {
+                        // Clean up mapping once all sessions are closed
+                        return null;
+                    }
+
+                    return sessions;
+                }));
     }
 
     // TODO Remove when all clients have switched to WebSockets on API Gateway
@@ -119,93 +130,32 @@ public class EventsServerEndpoint {
         }
     }
 
-    // TODO Remove when all clients have switched to WebSockets on API Gateway
     @OnError
     public void onError(Session session, Throwable throwable) {
         onClose(session);
     }
 
-    void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.ACCEPTED, event.getTableId().getId(), event.getUserId().getId())));
-    }
-
-    void rejected(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Rejected event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.REJECTED, event.getTableId().getId(), event.getUserId().getId())));
-    }
-
-    void started(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Started event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new Event(Event.EventType.STARTED, event.getTableId().getId(), null)));
-    }
-
-    void ended(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new Event(Event.EventType.ENDED, event.getTableId().getId(), null)));
-    }
-
-    void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.StateChanged event) {
-        // TODO Only notify other players who did not trigger the change
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new Event(Event.EventType.STATE_CHANGED, event.getTableId().getId(), null)));
-    }
-
-    void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited event) {
-        tables.findById(event.getTableId()).ifPresent(table -> {
-            notifyUser(event.getUserId(), new Event(Event.EventType.INVITED, event.getTableId().getId(), event.getUserId().getId()));
-            notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.INVITED, table.getId().getId(), event.getUserId().getId()));
-        });
-    }
-
-    void uninvited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
-        tables.findById(event.getTableId()).ifPresent(table -> {
-            notifyUser(event.getUserId(), new Event(Event.EventType.UNINVITED, event.getTableId().getId(), event.getUserId().getId()));
-            notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.UNINVITED, table.getId().getId(), event.getUserId().getId()));
-        });
-    }
-
-    void left(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Left event) {
-        tables.findById(event.getTableId()).ifPresent(table -> {
-            notifyUser(event.getUserId(), new Event(Event.EventType.LEFT, event.getTableId().getId(), event.getUserId().getId()));
-            notifyOtherPlayers(event.getUserId(), table, new Event(Event.EventType.LEFT, event.getTableId().getId(), event.getUserId().getId()));
-        });
-    }
-
-    void abandoned(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Abandoned event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new Event(Event.EventType.ABANDONED, event.getTableId().getId(), null)));
-    }
-
-    void kicked(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new Event(Event.EventType.KICKED, event.getTableId().getId(), event.getUserId().getId())));
-    }
-
-    void optionsChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.OptionsChanged event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new Event(Event.EventType.OPTIONS_CHANGED, event.getTableId().getId(), null)));
-    }
-
-    void computerAdded(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ComputerAdded event) {
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new Event(Event.EventType.COMPUTER_ADDED, event.getTableId().getId(), null)));
-    }
-
-    void addedAsFriend(@Observes(during = TransactionPhase.AFTER_SUCCESS) Friend.Started event) {
-        notifyUser(event.getId().getOtherUserId(), new Event(Event.EventType.ADDED_AS_FRIEND, null, event.getId().getUserId().getId()));
-    }
-
-    private void notifyOtherPlayers(User.Id currentUserId, Table table, Event event) {
+    @Override
+    public void sendToTable(Table.Id tableId, WebSocketServerEvent event) {
         var data = toJSON(event);
-        table.getPlayers().stream()
-                .filter(player -> player.getType() == Player.Type.USER)
-                .flatMap(player -> player.getUserId().stream())
-                .filter(userId -> !userId.equals(currentUserId))
-                .forEach(userId -> notifyUser(userId, data));
+
+        var sessions = TABLE_SESSIONS.get(tableId);
+        if (sessions != null) {
+            sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
+        }
     }
 
-    private static String toJSON(Event event) {
+    @Override
+    public void sendToUser(User.Id userId, WebSocketServerEvent event) {
+        var sessions = USER_SESSIONS.get(userId);
+        if (sessions != null) {
+            var data = toJSON(event);
+
+            sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
+        }
+    }
+
+    private static String toJSON(WebSocketServerEvent event) {
         try {
             return OBJECT_MAPPER.writeValueAsString(event);
         } catch (JsonProcessingException e) {
@@ -214,17 +164,7 @@ public class EventsServerEndpoint {
         }
     }
 
-    private void notifyUser(User.Id userId, Event event) {
-        notifyUser(userId, toJSON(event));
+    private static Optional<Table.Id> getTableId(Session session) {
+        return Optional.empty();
     }
-
-    private void notifyUser(User.Id userId, String data) {
-        var sessions = USER_SESSIONS.get(userId);
-        if (sessions != null) {
-            sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
-        }
-
-        webSocketsSender.sendToUser(userId, data);
-    }
-
 }
