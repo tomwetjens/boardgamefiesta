@@ -39,7 +39,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
-@ServerEndpoint("/events")
+@ServerEndpoint("/events") // TODO Only enable for local testing when all clients have switched to WebSockets on API Gateway
 @Slf4j
 public class EventsServerEndpoint implements WebSocketConnectionSender {
 
@@ -165,6 +165,7 @@ public class EventsServerEndpoint implements WebSocketConnectionSender {
     }
 
     private static Optional<Table.Id> getTableId(Session session) {
-        return Optional.empty();
+        var param = session.getRequestParameterMap().get("table");
+        return param != null && !param.isEmpty() ? Optional.of(Table.Id.of(param.get(0))) : Optional.empty();
     }
 }
