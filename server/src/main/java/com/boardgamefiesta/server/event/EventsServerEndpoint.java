@@ -28,14 +28,7 @@ import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
-import software.amazon.awssdk.services.apigatewaymanagementapi.model.GoneException;
-import software.amazon.awssdk.services.apigatewaymanagementapi.model.PostToConnectionRequest;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -44,8 +37,6 @@ import javax.inject.Inject;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
@@ -54,7 +45,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
-@ServerEndpoint("/events")
+@ServerEndpoint("/events") // TODO Remove when all clients have switched to WebSockets on API Gateway
 @Slf4j
 public class EventsServerEndpoint {
 
@@ -62,26 +53,20 @@ public class EventsServerEndpoint {
 
     private static final Map<User.Id, Set<Session>> USER_SESSIONS = new ConcurrentHashMap<>();
 
-    private final WebSocketConnections webSocketConnections;
-    private final Users users;
-    private final Tables tables;
-
-    private final ApiGatewayManagementApiClient apiGatewayManagementApiClient;
+    // TODO Remove when all clients have switched to WebSockets on API Gateway
+    @Inject
+    WebSocketConnections webSocketConnections;
 
     @Inject
-    public EventsServerEndpoint(@NonNull WebSocketConnections webSocketConnections,
-                                @NonNull Users users,
-                                @NonNull Tables tables,
-                                @NonNull @ConfigProperty(name = "bgf.ws.connections-endpoint") String connectionsEndpoint) {
-        this.webSocketConnections = webSocketConnections;
-        this.users = users;
-        this.tables = tables;
+    Users users;
 
-        apiGatewayManagementApiClient = ApiGatewayManagementApiClient.builder()
-                .endpointOverride(URI.create(connectionsEndpoint))
-                .build();
-    }
+    @Inject
+    Tables tables;
 
+    @Inject
+    WebSocketsSender webSocketsSender;
+
+    // TODO Remove when all clients have switched to WebSockets on API Gateway
     @OnOpen
     public void onOpen(Session session) {
         CurrentUser.getUserId(session, users).ifPresent(userId -> {
@@ -99,6 +84,7 @@ public class EventsServerEndpoint {
         });
     }
 
+    // TODO Remove when all clients have switched to WebSockets on API Gateway
     @OnClose
     public void onClose(Session session) {
         CurrentUser.getUserId(session, users).ifPresent(userId ->
@@ -116,6 +102,7 @@ public class EventsServerEndpoint {
         webSocketConnections.remove(session.getId());
     }
 
+    // TODO Remove when all clients have switched to WebSockets on API Gateway
     @OnMessage
     public void onMessage(Session session, String data) throws JsonProcessingException {
         var clientEvent = OBJECT_MAPPER.readValue(data, ClientEvent.class);
@@ -132,6 +119,7 @@ public class EventsServerEndpoint {
         }
     }
 
+    // TODO Remove when all clients have switched to WebSockets on API Gateway
     @OnError
     public void onError(Session session, Throwable throwable) {
         onClose(session);
@@ -236,20 +224,7 @@ public class EventsServerEndpoint {
             sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
         }
 
-        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
-        webSocketConnections.findByUserId(userId)
-                .forEach(connectionId -> {
-                    try {
-                        apiGatewayManagementApiClient.postToConnection(PostToConnectionRequest.builder()
-                                .connectionId(connectionId)
-                                .data(sdkBytes)
-                                .build());
-                    } catch (GoneException e) {
-                        // Ignore
-                    } catch (SdkException e) {
-                        log.debug("Could not send to WebSocket connection: {}", connectionId, e);
-                    }
-                });
+        webSocketsSender.sendToUser(userId, data);
     }
 
 }

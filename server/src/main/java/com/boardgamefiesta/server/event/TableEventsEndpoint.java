@@ -18,18 +18,10 @@
 
 package com.boardgamefiesta.server.event;
 
-import com.boardgamefiesta.domain.event.WebSocketConnections;
 import com.boardgamefiesta.domain.table.Table;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
-import software.amazon.awssdk.services.apigatewaymanagementapi.model.GoneException;
-import software.amazon.awssdk.services.apigatewaymanagementapi.model.PostToConnectionRequest;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -41,8 +33,6 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -58,19 +48,8 @@ public class TableEventsEndpoint {
 
     private static final Map<Table.Id, Set<Session>> SESSIONS = new ConcurrentHashMap<>();
 
-    private final WebSocketConnections webSocketConnections;
-
-    private final ApiGatewayManagementApiClient apiGatewayManagementApiClient;
-
     @Inject
-    public TableEventsEndpoint(@NonNull WebSocketConnections webSocketConnections,
-                               @NonNull @ConfigProperty(name = "bgf.ws.connections-endpoint") String connectionsEndpoint) {
-        this.webSocketConnections = webSocketConnections;
-
-        apiGatewayManagementApiClient = ApiGatewayManagementApiClient.builder()
-                .endpointOverride(URI.create(connectionsEndpoint))
-                .build();
-    }
+    WebSocketsSender webSocketsSender;
 
     @OnOpen
     public void onOpen(Session session) {
@@ -180,20 +159,7 @@ public class TableEventsEndpoint {
             sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
         }
 
-        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
-        webSocketConnections.findByTableId(tableId)
-                .forEach(connectionId -> {
-                    try {
-                        apiGatewayManagementApiClient.postToConnection(PostToConnectionRequest.builder()
-                                .connectionId(connectionId)
-                                .data(sdkBytes)
-                                .build());
-                    } catch (GoneException e) {
-                        // Ignore
-                    } catch (SdkException e) {
-                        log.debug("Could not send to WebSocket connection: {}", connectionId, e);
-                    }
-                });
+        webSocketsSender.sendToTable(tableId, data);
     }
 
     private static String toJSON(Event event) {
