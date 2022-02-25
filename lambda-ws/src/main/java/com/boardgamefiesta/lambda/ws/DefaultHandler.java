@@ -44,8 +44,6 @@ public class DefaultHandler implements RequestHandler<APIGatewayV2WebSocketEvent
     @SneakyThrows
     @Override
     public APIGatewayV2WebSocketResponse handleRequest(APIGatewayV2WebSocketEvent input, Context context) {
-        log.info("handleRequest: {}", input);
-
         var clientEvent = OBJECT_MAPPER.readValue(input.getBody(), ClientEvent.class);
 
         var connectionId = input.getRequestContext().getConnectionId();
