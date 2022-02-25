@@ -79,7 +79,8 @@ public class WebSocketConnection {
     }
 
     public Instant getExpires() {
-        return calculateExpires(updated);
+        // Table connections are not updated by a heartbeat, so no expiry on those
+        return tableId == null ? calculateExpires(updated) : null;
     }
 
     public static Instant calculateExpires(Instant updated) {
