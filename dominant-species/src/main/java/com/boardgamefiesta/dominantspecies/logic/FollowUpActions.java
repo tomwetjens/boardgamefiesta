@@ -20,6 +20,7 @@ package com.boardgamefiesta.dominantspecies.logic;
 
 import lombok.Value;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,5 +41,11 @@ public class FollowUpActions {
 
     void addTo(ActionQueue actionQueue) {
         actionQueue.addAll(possibleActions);
+    }
+
+    FollowUpActions concat(FollowUpActions other) {
+        var list = new ArrayList<>(possibleActions);
+        list.addAll(other.possibleActions);
+        return new FollowUpActions(list);
     }
 }

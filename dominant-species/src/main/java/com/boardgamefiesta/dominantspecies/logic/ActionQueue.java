@@ -51,6 +51,11 @@ public class ActionQueue {
         actions.remove(possibleAction);
     }
 
+
+    public boolean canSkip() {
+        return getNextPossibleAction().map(PossibleAction::canSkip).orElse(false);
+    }
+
     PossibleAction skip() {
         var possibleAction = getNextPossibleAction()
                 .filter(PossibleAction::canSkip)

@@ -30,56 +30,50 @@ import java.util.stream.IntStream;
 @Data
 public class DominantSpeciesView {
 
-    int round;
-    Phase phase;
-    Map<AnimalType, Animal> animals;
-    List<AnimalType> initiativeTrack;
-    Map<Hex, Tile> tiles;
-    Map<Corner, ElementType> elements;
     ActionDisplay actionDisplay;
-    DrawBag drawBag;
-    AnimalType currentAnimal;
-    ActionQueue actionQueue;
-    int deckSize;
+    List<String> actions;
+    Map<AnimalType, Animal> animals;
     Set<Card> availableCards;
     int availableTundraTiles;
+    boolean canUndo;
+    AnimalType currentAnimal;
+    List<ElementView> elements;
+    int deckSize;
+    DrawBag drawBag;
+    List<AnimalType> initiativeTrack;
+    Hex lastPlacedTile;
+    Phase phase;
+    Map<String, List<AnimalType>> players;
+    int round;
+    List<TileView> tiles;
     List<StackView> wanderlustTiles;
 
-    boolean canUndo;
-    List<String> actions;
-
     public DominantSpeciesView(DominantSpecies state) {
-        this.round = state.getRound();
-        this.phase = state.getPhase();
-        this.animals = state.getAnimals();
-        this.initiativeTrack = state.getInitiativeTrack();
-        this.tiles = state.getTiles();
-        this.elements = state.getElements();
         this.actionDisplay = state.getActionDisplay();
-        this.drawBag = state.getDrawBag();
-        this.currentAnimal = state.getCurrentAnimal();
-        this.deckSize = state.getDeckSize();
-        this.availableCards = state.getAvailableCards();
-        this.availableTundraTiles = state.getAvailableTundraTiles();
-        this.wanderlustTiles = IntStream.range(0, 3)
-                .mapToObj(i -> new StackView(state.getWanderlustTiles().getStack(i)))
-                .collect(Collectors.toList());
-
-        this.canUndo = state.canUndo();
         this.actions = state.possibleActions().stream()
                 .map(Action::getName)
                 .collect(Collectors.toList());
+        this.animals = state.getAnimals();
+        this.availableCards = state.getAvailableCards();
+        this.availableTundraTiles = state.getAvailableTundraTiles();
+        this.canUndo = state.canUndo();
+        this.currentAnimal = state.getCurrentAnimal();
+        this.deckSize = state.getDeckSize();
+        this.drawBag = state.getDrawBag();
+        this.elements = state.getElements().entrySet().stream().map(entry -> new ElementView(entry.getKey(), entry.getValue())).collect(Collectors.toList());
+        this.initiativeTrack = state.getInitiativeTrack();
+        this.lastPlacedTile = state.getLastPlacedTile().orElse(null);
+        this.round = state.getRound();
+        this.phase = state.getPhase();
+        var values = state.getAnimals().values();
+        var stream = values
+                .stream();
+        this.players = stream
+                .collect(Collectors.groupingBy(animal -> animal.getPlayer().getName(), Collectors.mapping(Animal::getType, Collectors.toList())));
+        this.tiles = state.getTiles().entrySet().stream().map(entry -> new TileView(entry.getKey(), entry.getValue())).collect(Collectors.toList());
+        this.wanderlustTiles = IntStream.range(0, 3)
+                .mapToObj(i -> new StackView(state.getWanderlustTiles().getStack(i)))
+                .collect(Collectors.toList());
     }
 
-    @Data
-    public static class StackView {
-
-        TileType faceUp;
-        int size;
-
-        public StackView(WanderlustTiles.Stack stack) {
-            this.faceUp = stack.getFaceUp().orElse(null);
-            this.size = stack.size();
-        }
-    }
 }

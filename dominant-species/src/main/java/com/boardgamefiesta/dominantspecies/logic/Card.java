@@ -275,7 +275,7 @@ public enum Card {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
             var animal = game.getAnimal(game.getCurrentAnimal());
-            return ActionResult.undoAllowed(game.getDrawBag().containsAny(animal.getRemovableElements())
+            return ActionResult.undoAllowed(game.getDrawBag().containsAny(animal.getRemovableElementTypes())
                     // If player can swap for the same element, then it's basically optional
                     ? PossibleAction.optional(game.getCurrentAnimal(), Action.Metamorphosis.class)
                     : PossibleAction.mandatory(game.getCurrentAnimal(), Action.Metamorphosis.class));

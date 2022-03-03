@@ -16,18 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.dominantspecies.logic;
+package com.boardgamefiesta.dominantspecies.view;
 
-import com.boardgamefiesta.api.domain.InGameException;
-import lombok.Getter;
+import com.boardgamefiesta.dominantspecies.logic.Corner;
+import com.boardgamefiesta.dominantspecies.logic.ElementType;
+import lombok.Data;
 
-public class DominantSpeciesException extends InGameException {
+@Data
+public class ElementView {
 
-    @Getter
-    private final DominantSpeciesError error;
+    Corner corner;
+    ElementType type;
 
-    public DominantSpeciesException(DominantSpeciesError error) {
-        super(error.name());
-        this.error = error;
+    public ElementView(Corner corner, ElementType type) {
+        this.corner = corner;
+        this.type = type;
     }
 }

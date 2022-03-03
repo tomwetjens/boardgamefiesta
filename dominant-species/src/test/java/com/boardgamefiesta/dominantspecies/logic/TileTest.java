@@ -18,16 +18,8 @@
 
 package com.boardgamefiesta.dominantspecies.logic;
 
-import com.boardgamefiesta.api.domain.InGameException;
-import lombok.Getter;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class DominantSpeciesException extends InGameException {
+class TileTest {
 
-    @Getter
-    private final DominantSpeciesError error;
-
-    public DominantSpeciesException(DominantSpeciesError error) {
-        super(error.name());
-        this.error = error;
-    }
 }

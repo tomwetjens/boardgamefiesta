@@ -20,18 +20,56 @@ package com.boardgamefiesta.dominantspecies.logic;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ActionTest {
 
+    @Mock(lenient = true)
+    DominantSpecies game;
+
+    @Mock(lenient = true)
+    ActionDisplay actionDisplay;
+
     @Nested
-    class Regression {
+    class RegressionTest {
 
+        @Mock(lenient = true)
+        Animal arachnids;
 
+        @Mock(lenient = true)
+        Animal insects;
+
+        @Test
+        void name() {
+            when(game.hasAnimal(AnimalType.ARACHNIDS)).thenReturn(true);
+            when(game.hasAnimal(AnimalType.INSECTS)).thenReturn(true);
+            when(game.getAnimal(AnimalType.ARACHNIDS)).thenReturn(arachnids);
+            when(game.getAnimal(AnimalType.INSECTS)).thenReturn(insects);
+            when(game.getActionDisplay()).thenReturn(actionDisplay);
+
+            when(arachnids.getType()).thenReturn(AnimalType.ARACHNIDS);
+            when(insects.getType()).thenReturn(AnimalType.INSECTS);
+
+            when(actionDisplay.getElements(ActionType.REGRESSION)).thenReturn(List.of(ElementType.SEED, ElementType.GRASS, ElementType.SUN));
+            when(actionDisplay.getNumberOfActionPawns(ActionType.REGRESSION, AnimalType.INSECTS)).thenReturn(1);
+            when(actionDisplay.getNumberOfActionPawns(ActionType.REGRESSION, AnimalType.ARACHNIDS)).thenReturn(1);
+            when(arachnids.canRemoveOneOfElementTypes(anySet())).thenReturn(false);
+            when(insects.canRemoveOneOfElementTypes(anySet())).thenReturn(false);
+
+            var followUpActions = Action.Regression.activate(game);
+
+            assertThat(followUpActions.isEmpty()).isTrue();
+        }
     }
 
 }

@@ -31,22 +31,21 @@ import java.util.stream.IntStream;
 @ToString
 public class Tile implements Cloneable {
 
-    @Getter
-    private final Map<AnimalType, Integer> species = new HashMap<>();
-
     TileType type;
 
     boolean tundra;
 
+    Map<AnimalType, Integer> species;
+
     AnimalType dominant;
 
     static Tile initial(TileType type, boolean tundra) {
-        return new Tile(type, tundra, null);
+        return new Tile(type, tundra, new HashMap<>(), null);
     }
 
     @Override
     public Tile clone() {
-        return new Tile(type, tundra, dominant);
+        return new Tile(type, tundra, new HashMap<>(species), dominant);
     }
 
     boolean hasSpecies(AnimalType animalType) {
@@ -157,5 +156,11 @@ public class Tile implements Cloneable {
         }
 
         return 0;
+    }
+
+    boolean hasSpeciesOfAny(Set<AnimalType> animalTypes) {
+        return species.entrySet().stream()
+                .filter(entry -> entry.getValue() > 0)
+                .anyMatch(entry -> animalTypes.contains(entry.getKey()));
     }
 }

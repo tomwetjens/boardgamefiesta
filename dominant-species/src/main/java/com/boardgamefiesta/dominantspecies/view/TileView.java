@@ -16,18 +16,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.dominantspecies.logic;
+package com.boardgamefiesta.dominantspecies.view;
 
-import com.boardgamefiesta.api.domain.InGameException;
-import lombok.Getter;
+import com.boardgamefiesta.dominantspecies.logic.AnimalType;
+import com.boardgamefiesta.dominantspecies.logic.Hex;
+import com.boardgamefiesta.dominantspecies.logic.Tile;
+import com.boardgamefiesta.dominantspecies.logic.TileType;
+import lombok.Data;
 
-public class DominantSpeciesException extends InGameException {
+import java.util.Map;
 
-    @Getter
-    private final DominantSpeciesError error;
+@Data
+public class TileView {
 
-    public DominantSpeciesException(DominantSpeciesError error) {
-        super(error.name());
-        this.error = error;
+    Hex hex;
+    Map<AnimalType, Integer> species;
+    TileType type;
+    boolean tundra;
+    AnimalType dominant;
+
+    public TileView(Hex hex, Tile tile) {
+        this.hex = hex;
+        this.species = tile.getSpecies();
+        this.type = tile.getType();
+        this.tundra = tile.isTundra();
+        this.dominant = tile.getDominant().orElse(null);
     }
 }

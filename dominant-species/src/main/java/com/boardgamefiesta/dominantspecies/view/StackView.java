@@ -16,18 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.dominantspecies.logic;
+package com.boardgamefiesta.dominantspecies.view;
 
-import com.boardgamefiesta.api.domain.InGameException;
-import lombok.Getter;
+import com.boardgamefiesta.dominantspecies.logic.TileType;
+import com.boardgamefiesta.dominantspecies.logic.WanderlustTiles;
+import lombok.Data;
 
-public class DominantSpeciesException extends InGameException {
+@Data
+public class StackView {
 
-    @Getter
-    private final DominantSpeciesError error;
+    TileType faceUp;
+    int size;
 
-    public DominantSpeciesException(DominantSpeciesError error) {
-        super(error.name());
-        this.error = error;
+    public StackView(WanderlustTiles.Stack stack) {
+        this.faceUp = stack.getFaceUp().orElse(null);
+        this.size = stack.size();
     }
 }

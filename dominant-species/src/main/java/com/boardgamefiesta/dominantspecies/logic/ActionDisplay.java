@@ -41,7 +41,7 @@ public class ActionDisplay {
 
     static ActionDisplay initial(Set<AnimalType> playingAnimals, DrawBag drawBag, Random random) {
         var actionPawns = Arrays.stream(ActionType.values())
-                .collect(Collectors.toMap(Function.identity(), type -> new AnimalType[type.getCapacity()]));
+                .collect(Collectors.toMap(Function.identity(), type -> new AnimalType[type.getCapacity(playingAnimals)]));
 
         var elements = Map.of(
                 ActionType.ADAPTATION, new ArrayList<ElementType>(4),
@@ -83,10 +83,10 @@ public class ActionDisplay {
     }
 
     Optional<ActionPawn> getLeftMostExecutableActionPawn(ActionType actionType) {
-        var pawns = actionPawns.get(actionType);
-        return IntStream.range(0, actionType.getExecutable())
-                .filter(index -> pawns[index] != null)
-                .mapToObj(index -> new ActionPawn(pawns[index], actionType, index))
+        var spaces = actionPawns.get(actionType);
+        return IntStream.range(0, Math.min(spaces.length, actionType.getExecutable()))
+                .filter(index -> spaces[index] != null)
+                .mapToObj(index -> new ActionPawn(spaces[index], actionType, index))
                 .findFirst();
     }
 
@@ -97,7 +97,7 @@ public class ActionDisplay {
     ActionDisplay placeActionPawn(AnimalType animalType, ActionType actionType, int index) {
         var spaces = actionPawns.get(actionType);
 
-        if (index < 0 || index >= actionType.getCapacity()) {
+        if (index < 0 || index >= spaces.length) {
             throw new DominantSpeciesException(DominantSpeciesError.INVALID_ACTION_SPACE);
         }
 
@@ -116,7 +116,7 @@ public class ActionDisplay {
     boolean removeLeftMostActionPawn(ActionType actionType) {
         var spaces = actionPawns.get(actionType);
 
-        for (var i = 0; i < actionType.getCapacity(); i++) {
+        for (var i = 0; i < spaces.length; i++) {
             if (spaces[i] != null) {
                 spaces[i] = null;
                 return !actionType.isFreeActionPawn(i);
@@ -138,7 +138,7 @@ public class ActionDisplay {
 
         var count = 0;
 
-        for (var i = 0; i < actionType.getCapacity(); i++) {
+        for (var i = 0; i < spaces.length; i++) {
             if (spaces[i] == animalType) {
                 spaces[i] = null;
                 if (actionType.getFreeActionPawn() == null
@@ -159,7 +159,7 @@ public class ActionDisplay {
 
     private Stream<PossibleSpace> possiblePlacements(ActionType actionType) {
         var pawns = actionPawns.get(actionType);
-        return IntStream.range(0, actionType.getCapacity())
+        return IntStream.range(0, pawns.length)
                 .filter(index -> pawns[index] == null)
                 .mapToObj(index -> new PossibleSpace(actionType, index));
     }
@@ -219,6 +219,10 @@ public class ActionDisplay {
         return (int) Arrays.stream(actionPawns.get(actionType))
                 .filter(ap -> ap == animalType)
                 .count();
+    }
+
+    List<ElementType> getElements(ActionType actionType) {
+        return elements.get(actionType);
     }
 
     void slideGlaciationActionPawnsLeft() {

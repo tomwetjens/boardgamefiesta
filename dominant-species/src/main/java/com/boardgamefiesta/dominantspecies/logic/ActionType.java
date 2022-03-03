@@ -26,6 +26,7 @@ import lombok.Value;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -45,11 +46,12 @@ public enum ActionType {
     COMPETITION(Action.Competition.class, 8, 8, new FreeActionPawn(AnimalType.ARACHNIDS, 0), null, null),
     DOMINATION(Action.Domination.class, 5, 5, null, null, null);
 
-    public static final List<ActionType> EXECUTION_ORDER = Arrays.asList(values());
+    public static final List<ActionType> EXECUTION_ORDER = Arrays.asList(
+            INITIATIVE, ADAPTATION, REGRESSION, ABUNDANCE, WASTELAND, DEPLETION, GLACIATION, SPECIATION,
+            WANDERLUST, MIGRATION, COMPETITION, DOMINATION);
 
     @Getter
     private final Class<? extends Action> action;
-    @Getter
     private final int capacity;
     @Getter
     private final int executable;
@@ -94,6 +96,13 @@ public enum ActionType {
 
     boolean isFreeActionPawn(int index) {
         return freeActionPawn != null && freeActionPawn.getIndex() == index;
+    }
+
+    int getCapacity(Set<AnimalType> playingAnimals) {
+        if (freeActionPawn == null) {
+            return capacity;
+        }
+        return playingAnimals.contains(freeActionPawn.getAnimalType()) ? capacity : capacity - 1;
     }
 
     @Value

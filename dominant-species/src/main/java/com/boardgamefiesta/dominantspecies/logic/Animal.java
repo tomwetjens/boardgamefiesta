@@ -21,9 +21,7 @@ package com.boardgamefiesta.dominantspecies.logic;
 import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)// For deserialization
@@ -53,7 +51,7 @@ public class Animal {
                 .genePool(initialGenePool(playerCount))
                 .actionPawns(initialActionPawns(playerCount))
                 .score(0)
-                .elements(new ArrayList<>())
+                .elements(new ArrayList<>(type.getInitialElements()))
                 .build();
     }
 
@@ -124,18 +122,12 @@ public class Animal {
         score = Math.max(0, score - amount);
     }
 
-    List<ElementType> getElements() {
-        var elements = new ArrayList<>(type.getInitialElements());
-        elements.addAll(this.elements);
-        return elements;
-    }
-
     boolean hasElement(ElementType elementType) {
-        return type.getInitialElements().contains(elementType) || elements.contains(elementType);
+        return elements.contains(elementType);
     }
 
     boolean canRemoveElement() {
-        return !elements.isEmpty();
+        return elements.size() > type.getInitialElements().size();
     }
 
     void addSpeciesToGenePool(int species) {
@@ -178,11 +170,17 @@ public class Animal {
     }
 
     boolean canRemoveElement(ElementType elementType) {
-        return elements.contains(elementType);
+        var copy = new ArrayList<>(elements);
+        copy.remove(elementType);
+        return copy.subList(0, type.getInitialElements().size()).equals(type.getInitialElements());
     }
 
-    Set<ElementType> getRemovableElements() {
-        return Set.copyOf(elements);
+    Set<ElementType> getRemovableElementTypes() {
+        return Set.copyOf(getRemovableElements());
+    }
+
+    List<ElementType> getRemovableElements() {
+        return elements.subList(type.getInitialElements().size(), elements.size());
     }
 
     int getNumberOfElements() {
@@ -190,14 +188,14 @@ public class Animal {
     }
 
     int matchElements(List<ElementType> adjacentElements) {
-        return Stream.concat(type.getInitialElements().stream(), elements.stream())
+        return elements.stream()
                 .mapToInt(elementOnAnimal -> (int) adjacentElements.stream()
                         .filter(adjacentElement -> adjacentElement == elementOnAnimal)
                         .count())
                 .sum();
     }
 
-    void removeOneOfEachElement(List<ElementType> elementTypes) {
+    void removeOneOfEachElementType(Collection<ElementType> elementTypes) {
         elementTypes.forEach(elementType -> {
             if (canRemoveElement(elementType)) {
                 removeElement(elementType);
@@ -205,5 +203,8 @@ public class Animal {
         });
     }
 
+    boolean canRemoveOneOfElementTypes(Set<ElementType> elementTypes) {
+        return !Collections.disjoint(getRemovableElementTypes(), elementTypes);
+    }
 }
 

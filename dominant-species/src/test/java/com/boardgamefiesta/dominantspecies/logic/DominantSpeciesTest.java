@@ -173,16 +173,19 @@ class DominantSpeciesTest {
                                     .type(AnimalType.ARACHNIDS)
                                     .player(playerA)
                                     .genePool(50)
+                                    .elements(new ArrayList<>(AnimalType.ARACHNIDS.getInitialElements()))
                                     .build(),
                             AnimalType.REPTILES, Animal.builder()
                                     .type(AnimalType.REPTILES)
                                     .player(playerB)
                                     .genePool(50)
+                                    .elements(new ArrayList<>(AnimalType.REPTILES.getInitialElements()))
                                     .build(),
                             AnimalType.MAMMALS, Animal.builder()
                                     .type(AnimalType.MAMMALS)
                                     .player(playerC)
                                     .genePool(50)
+                                    .elements(new ArrayList<>(AnimalType.MAMMALS.getInitialElements()))
                                     .build()
                     ))
                     .tiles(DominantSpecies.createInitialTiles())
@@ -273,14 +276,12 @@ class DominantSpeciesTest {
 
             // == Regression
 
-            // Regression
-
             assertThat(ds.possibleActions()).containsExactly(Action.Regression.class);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
 
-            ds.perform(new Action.Regression(List.of(adaptationReptiles)), new Random(0));
+            ds.perform(new Action.Regression(Set.of(adaptationReptiles)), new Random(0));
 
-            assertThat(ds.getAnimals().get(AnimalType.REPTILES).getElements()).containsExactlyInAnyOrder(ElementType.SUN, ElementType.SUN);
+            assertThat(ds.getAnimals().get(AnimalType.REPTILES).getElements()).containsExactlyInAnyOrder(ElementType.SUN, ElementType.SUN, adaptationReptiles);
             assertThat(ds.getAnimals().get(AnimalType.REPTILES).getActionPawns()).isEqualTo(1); // Not returned the 'free AP'
 
             ds.endTurn(new Random(0));
@@ -288,10 +289,10 @@ class DominantSpeciesTest {
             assertThat(ds.possibleActions()).containsExactly(Action.Regression.class);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.ARACHNIDS);
 
-            ds.perform(new Action.Regression(List.of(adaptationArachnids)), new Random(0));
+            ds.perform(new Action.Regression(Set.of(adaptationArachnids)), new Random(0));
 
             assertThat(ds.getAnimals().get(AnimalType.ARACHNIDS).getActionPawns()).isEqualTo(2);
-            assertThat(ds.getAnimals().get(AnimalType.ARACHNIDS).getElements()).containsExactlyInAnyOrder(ElementType.GRUB, ElementType.GRUB);
+            assertThat(ds.getAnimals().get(AnimalType.ARACHNIDS).getElements()).containsExactlyInAnyOrder(ElementType.GRUB, ElementType.GRUB, adaptationArachnids);
 
             ds.endTurn(new Random(0));
 
@@ -531,7 +532,7 @@ class DominantSpeciesTest {
                 // Reptiles can skip 1 element, but should decide which 1 element is removed
                 assertThat(ds.possibleActions()).containsExactly(Action.Regression.class);
                 assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
-                ds.perform(new Action.Regression(List.of(ElementType.MEAT)), new Random(0));
+                ds.perform(new Action.Regression(Set.of(ElementType.GRASS)), new Random(0));
                 ds.endTurn(new Random(0));
 
                 assertThat(ds.getAnimal(AnimalType.REPTILES).getElements()).containsExactly(ElementType.SUN, ElementType.SUN, ElementType.GRASS);

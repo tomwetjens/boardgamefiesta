@@ -87,40 +87,32 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
+    @Data
+    @NoArgsConstructor
     @AllArgsConstructor
-    @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
-    @Getter
-    @ToString
     public static final class Regression extends Action {
+        /**
+         * Element types that should be skipped.
+         */
         @NonNull
-        List<ElementType> elements;
+        Set<ElementType> elementTypes;
 
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            var regressionBox = game.getActionDisplay().getElements().get(ActionType.REGRESSION);
-
             var numberOfActionPawns = game.getActionDisplay().getNumberOfActionPawns(ActionType.REGRESSION, game.getCurrentAnimal());
-            var numberOfElementsToRemove = getNumberOfElementsToRemove(regressionBox, numberOfActionPawns);
+
+            if (elementTypes.size() > numberOfActionPawns) {
+                throw new DominantSpeciesException(DominantSpeciesError.CANNOT_SKIP_MORE_ELEMENT_TYPES_THAN_ACTION_PAWNS_PLACED);
+            } // Less is allowed
+
+            var regressionBox = game.getActionDisplay().getElements().get(ActionType.REGRESSION);
+            var elementTypesInRegressionBox = new HashSet<>(regressionBox);
+
+            var elementTypesToRemove = new ArrayList<>(elementTypesInRegressionBox);
+            this.elementTypes.forEach(elementTypesToRemove::remove);
 
             var animal = game.getAnimal(game.getCurrentAnimal());
-
-            if (elements.size() < numberOfElementsToRemove) {
-                throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_MORE_ELEMENTS_TO_REMOVE);
-            }
-
-            var remaining = new ArrayList<>(regressionBox);
-
-            for (var i = 0; i < numberOfElementsToRemove; i++) {
-                var elementType = elements.get(0);
-
-                if (!remaining.contains(elementType)) {
-                    throw new DominantSpeciesException(DominantSpeciesError.ELEMENT_NOT_IN_REGRESSION_BOX);
-                }
-
-                animal.removeElement(elementType);
-
-                remaining.remove(elementType);
-            }
+            animal.removeOneOfEachElementType(elementTypesToRemove);
 
             returnActionPawns(game, animal);
 
@@ -128,51 +120,33 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         static FollowUpActions activate(DominantSpecies game) {
-            var regressionBox = game.getActionDisplay().getElements().get(ActionType.REGRESSION);
-
-            return FollowUpActions.of(AnimalType.FOOD_CHAIN_ORDER.stream() // TODO In which order do the animals perform Regression?
+            return AnimalType.FOOD_CHAIN_ORDER.stream() // TODO In which order do the animals perform Regression?
                     .filter(game::hasAnimal)
                     .map(game::getAnimal)
-                    .flatMap(animal -> {
-                        if (!animal.canRemoveElement()) {
-                            System.out.println("[Regression] " + animal.getType() + " has no elements to remove, therefore can skip");
-
-                            returnActionPawns(game, animal);
-
-                            return Stream.empty();
-                        }
-
-                        var numberOfActionPawns = game.getActionDisplay().getNumberOfActionPawns(ActionType.REGRESSION, animal.getType());
-                        var numberOfElementsToRemove = getNumberOfElementsToRemove(regressionBox, numberOfActionPawns);
-
-                        if (numberOfElementsToRemove == 0) {
-                            // Player has placed enough APs to skip all elements
-                            System.out.println("[Regression] " + animal.getType() + " have placed enough APs to skip all removing of elements");
-
-                            returnActionPawns(game, animal);
-
-                            return Stream.empty();
-                        } else if (numberOfElementsToRemove == regressionBox.size()) {
-                            // Player has not placed any APs, therefore no choice for skipping needed
-                            System.out.println("[Regression] " + animal.getType() + " have not placed any APs therefore must remove one of each type of Element in the Regression Box");
-
-                            animal.removeOneOfEachElement(regressionBox);
-
-                            returnActionPawns(game, animal);
-
-                            return Stream.empty();
-                        } else {
-                            // Else player must remove elements but can skip on or more elements
-                            System.out.println("[Regression] " + animal.getType() + " may skip 1 or more removing of elements (therefore adding action to queue)");
-                            // TODO Try to do as much automatically as possible
-                            return Stream.of(PossibleAction.mandatory(animal.getType(), Action.Regression.class));
-                        }
-                    })
-                    .collect(Collectors.toList()));
+                    .map(animal -> autoRemoveOrFollowUpAction(animal, game))
+                    .reduce(FollowUpActions.none(), FollowUpActions::concat);
         }
 
-        private static int getNumberOfElementsToRemove(List<ElementType> regressionBox, int numberOfActionPawns) {
-            return Math.max(0, regressionBox.size() - numberOfActionPawns);
+        static FollowUpActions autoRemoveOrFollowUpAction(Animal animal, DominantSpecies game) {
+            var regressionBox = game.getActionDisplay().getElements(ActionType.REGRESSION);
+            var elementTypesInRegressionBox = new HashSet<>(regressionBox);
+
+            var numberOfActionPawns = game.getActionDisplay().getNumberOfActionPawns(ActionType.REGRESSION, animal.getType());
+            var numberOfElementsToRemove = Math.max(0, elementTypesInRegressionBox.size() - numberOfActionPawns);
+
+            if (numberOfElementsToRemove == 0 || !animal.canRemoveOneOfElementTypes(elementTypesInRegressionBox)) {
+                // Placed enough APs to skip all removals, regression box is empty, or animal cannot remove any of the element types
+                returnActionPawns(game, animal);
+                return FollowUpActions.none();
+            } else if (numberOfActionPawns == 0) {
+                // Not placed any APs therefore must remove one of each type of Element in the Regression Box
+                animal.removeOneOfEachElementType(elementTypesInRegressionBox);
+                returnActionPawns(game, animal);
+                return FollowUpActions.none();
+            } else {
+                // May skip one or more element types
+                return FollowUpActions.of(List.of(PossibleAction.mandatory(animal.getType(), Action.Regression.class)));
+            }
         }
 
         private static void returnActionPawns(DominantSpecies game, Animal animal) {
@@ -205,6 +179,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     }
 
     @AllArgsConstructor
+    @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
+    @Getter
+    @ToString
     public static final class Wasteland extends Action {
         @NonNull
         ElementType elementType;
@@ -223,6 +200,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     }
 
     @AllArgsConstructor
+    @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
+    @Getter
+    @ToString
     public static final class Depletion extends Action {
         @NonNull
         Corner corner;
@@ -249,6 +229,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     }
 
     @AllArgsConstructor
+    @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
+    @Getter
+    @ToString
     public static final class Glaciation extends Action {
         @NonNull
         Hex tile;
@@ -296,9 +279,9 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     @AllArgsConstructor
     @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
     @Getter
+    @ToString
     public static final class Speciation extends Action {
 
-        @NonNull
         Corner element;
         @NonNull
         List<Hex> tiles;
@@ -307,9 +290,6 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            var element = game.getElement(this.element)
-                    .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.ELEMENT_NOT_FOUND));
-
             var actionPawn = game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.SPECIATION)
                     .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
 
@@ -331,13 +311,17 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 if (tiles.size() > 3) {
                     throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_UP_TO_3_TILES);
                 }
+
+                var element = game.getElement(this.element)
+                        .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.ELEMENT_NOT_FOUND));
+
                 if (element != getElementType(actionPawn.getIndex())) {
                     throw new DominantSpeciesException(DominantSpeciesError.INVALID_ELEMENT_TYPE);
                 }
-            }
 
-            if (!tiles.stream().allMatch(this.element::isAdjacent)) {
-                throw new DominantSpeciesException(DominantSpeciesError.MUST_BE_ADJACENT_TO_ELEMENT);
+                if (!tiles.stream().allMatch(this.element::isAdjacent)) {
+                    throw new DominantSpeciesException(DominantSpeciesError.MUST_BE_ADJACENT_TO_ELEMENT);
+                }
             }
 
             var animal = game.getAnimal(game.getCurrentAnimal());
@@ -362,14 +346,14 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return ActionResult.undoAllowed();
         }
 
-        private static int getMaxSpeciation(Tile tile) {
+        static int getMaxSpeciation(Tile tile) {
             if (tile.isTundra()) {
                 return 1;
             }
             return tile.getType().getMaxSpeciation();
         }
 
-        private static ElementType getElementType(int index) {
+        static ElementType getElementType(int index) {
             switch (index) {
                 case 0:
                     return ElementType.MEAT;
@@ -391,6 +375,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @AllArgsConstructor
     @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
+    @Getter
+    @ToString
     public static final class Wanderlust extends Action {
         int stack;
 
@@ -407,7 +393,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var tile = Tile.initial(tileType, false);
             game.addTile(hex, tile);
 
-            if (elementType != null) {
+            if (elementType != null && corner != null) {
                 game.getActionDisplay().removeElement(ActionType.WANDERLUST, elementType);
                 game.addElement(corner, elementType);
             }
@@ -430,12 +416,14 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
     }
 
 
+    @Data
+    @NoArgsConstructor
     @AllArgsConstructor
-    @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
     public static final class WanderlustMove extends Action {
 
+        @Data
+        @NoArgsConstructor
         @AllArgsConstructor
-        @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
         public static final class Move {
             Hex from;
             int species;
@@ -468,15 +456,16 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     }
 
+    @Data
+    @NoArgsConstructor
     @AllArgsConstructor
-    @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
     public static final class Migration extends Action {
 
         private static final int[] MAX_SPECIES_TO_MOVE = new int[]{7, 6, 5, 4, 3, 2};
 
+        @Data
+        @NoArgsConstructor
         @AllArgsConstructor
-        @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
-        @Getter
         public static final class Move {
             Hex from;
             Hex to;
@@ -490,7 +479,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var actionPawn = game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.MIGRATION)
                     .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
 
-            var maxSpecies = MAX_SPECIES_TO_MOVE[actionPawn.getIndex()];
+            var maxSpecies = getMaxSpecies(actionPawn);
             var maxDistance = game.getCurrentAnimal() == AnimalType.BIRDS ? 2 : 1;
 
             if (moves.stream().mapToInt(Move::getSpecies).sum() > maxSpecies) {
@@ -499,6 +488,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             if (moves.stream().anyMatch(move -> move.from.distance(move.to) > maxDistance)) {
                 throw new DominantSpeciesException(DominantSpeciesError.MAX_DISTANCE_EXCEEDED);
+            }
+
+            if (moves.stream().anyMatch(move -> !game.canMoveThroughAdjacentTiles(move.from, move.to))) {
+                throw new DominantSpeciesException(DominantSpeciesError.CANNOT_MOVE_THROUGH_BLANK_HEX);
             }
 
             moves.forEach(move -> {
@@ -512,12 +505,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             });
 
             game.getActionDisplay().removeLeftMostActionPawn(ActionType.MIGRATION);
+            game.getAnimal(game.getCurrentAnimal()).addActionPawn();
 
             return ActionResult.undoAllowed();
         }
 
+        static int getMaxSpecies(ActionDisplay.ActionPawn actionPawn) {
+            return MAX_SPECIES_TO_MOVE[actionPawn.getIndex()];
+        }
     }
 
+    @Data
+    @NoArgsConstructor
     @AllArgsConstructor
     public static final class Competition extends Action {
 
@@ -562,20 +561,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 animal.addEliminatedSpecies();
             }
 
+            if (game.getActionDisplay().removeLeftMostActionPawn(ActionType.COMPETITION)) {
+                game.getAnimal(game.getCurrentAnimal()).addActionPawn();
+            }
+
             return ActionResult.undoAllowed();
-        }
-
-        public static Stream<Hex> getPossibleTiles(DominantSpecies game) {
-            var opposingSpecies = getOpposingSpecies(game);
-
-            return getPossibleTiles(game, opposingSpecies);
         }
 
         private static Set<AnimalType> getOpposingSpecies(DominantSpecies game) {
             return game.getOpposingSpecies(game.getCurrentAnimal());
         }
 
-        private static Stream<Hex> getPossibleTiles(DominantSpecies game, Set<AnimalType> opposingSpecies) {
+        static Stream<Hex> getPossibleTiles(DominantSpecies game, Set<AnimalType> opposingSpecies) {
             var possibleTileTypes = getPossibleTileTypes(game);
 
             return game.getTiles().entrySet().stream()
@@ -586,7 +583,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
 
         public static Set<TileType> getPossibleTileTypes(DominantSpecies game) {
-            var actionPawn = game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.MIGRATION)
+            var actionPawn = game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.COMPETITION)
                     .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
 
             switch (actionPawn.getIndex()) {
@@ -758,7 +755,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                     .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.MUST_HAVE_1_COMMON_HEX));
 
             var elementsOnTile = game.getAdjacentElements(tile);
-            if (elements.size() != elementsOnTile.size()- 1) {
+            if (elements.size() != elementsOnTile.size() - 1) {
                 throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_ALL_BUT_1_ELEMENT_ON_TILE);
             }
 
