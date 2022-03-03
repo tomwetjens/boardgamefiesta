@@ -28,17 +28,19 @@ import com.boardgamefiesta.domain.user.Users;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
+import javax.ws.rs.NotAllowedException;
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-// TODO Only enable for local testing when all clients have switched to WebSockets on API Gateway
 @ApplicationScoped
 @ServerEndpoint("/events")
 @Slf4j
@@ -55,8 +57,17 @@ public class EventsServerEndpoint implements WebSocketConnectionSender {
     @Inject
     Users users;
 
+    // Only enabled for local testing
+    // TODO Remove this config property when all clients have shifted to the API Gateway and server is not longer also deployed on AWS
+    @ConfigProperty(name = "bgf.ws.server.enabled", defaultValue = "false")
+    boolean enabled;
+
     @OnOpen
-    public void onOpen(Session session) {
+    public void onOpen(Session session) throws IOException {
+        if (!enabled) {
+            session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "WebSockets not enabled"));
+        }
+
         CurrentUser.getUserId(session, users).ifPresent(userId -> {
             USER_SESSIONS.compute(userId, (k, sessions) -> {
                 if (sessions == null) {
