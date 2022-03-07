@@ -39,7 +39,7 @@ public class Tile implements Cloneable {
 
     AnimalType dominant;
 
-    static Tile initial(TileType type, boolean tundra) {
+    static Tile initial(@NonNull TileType type, boolean tundra) {
         return new Tile(type, tundra, new HashMap<>(), null);
     }
 
@@ -48,15 +48,19 @@ public class Tile implements Cloneable {
         return new Tile(type, tundra, new HashMap<>(species), dominant);
     }
 
-    boolean hasSpecies(AnimalType animalType) {
+    boolean hasSpecies(@NonNull AnimalType animalType) {
         return getSpecies(animalType) > 0;
     }
 
-    void removeSpecies(AnimalType animalType) {
+    void removeSpecies(@NonNull AnimalType animalType) {
         removeSpecies(animalType, 1);
     }
 
-    void removeSpecies(AnimalType animalType, int species) {
+    void removeSpecies(@NonNull AnimalType animalType, int species) {
+        if (species <= 0) {
+            throw new DominantSpeciesException(DominantSpeciesError.SPECIES_MUST_BE_POSITIVE);
+        }
+
         var count = getSpecies(animalType);
 
         if (count < species) {
@@ -67,11 +71,15 @@ public class Tile implements Cloneable {
         this.species.put(animalType, count);
     }
 
-    void addSpecies(AnimalType animalType) {
+    void addSpecies(@NonNull AnimalType animalType) {
         addSpecies(animalType, 1);
     }
 
     void addSpecies(AnimalType animalType, int species) {
+        if (species <= 0) {
+            throw new DominantSpeciesException(DominantSpeciesError.SPECIES_MUST_BE_POSITIVE);
+        }
+
         this.species.put(animalType, getSpecies(animalType) + species);
     }
 
@@ -79,7 +87,7 @@ public class Tile implements Cloneable {
         return species.values().stream().reduce(Integer::sum).orElse(0);
     }
 
-    int getSpecies(AnimalType animalType) {
+    int getSpecies(@NonNull AnimalType animalType) {
         var count = species.get(animalType);
         return count != null ? count : 0;
     }
@@ -92,7 +100,7 @@ public class Tile implements Cloneable {
         return Optional.ofNullable(dominant);
     }
 
-    void recalculateDominance(Collection<Animal> animals, List<ElementType> adjacentElements) {
+    void recalculateDominance(@NonNull Collection<Animal> animals, @NonNull List<ElementType> adjacentElements) {
         var matches = animals.stream()
                 .filter(animal -> hasSpecies(animal.getType()))
                 .collect(Collectors.toMap(Animal::getType, animal -> animal.matchElements(adjacentElements)));
@@ -137,7 +145,7 @@ public class Tile implements Cloneable {
         tundra = true;
     }
 
-    int removeEndangeredSpecies(Animal animal, List<ElementType> adjacentElements) {
+    int removeEndangeredSpecies(@NonNull Animal animal, @NonNull List<ElementType> adjacentElements) {
         var species = getSpecies(animal.getType());
 
         if (species > 0) {
@@ -162,5 +170,10 @@ public class Tile implements Cloneable {
         return species.entrySet().stream()
                 .filter(entry -> entry.getValue() > 0)
                 .anyMatch(entry -> animalTypes.contains(entry.getKey()));
+    }
+
+    public boolean hasOpposingSpecies(AnimalType animalType) {
+        return species.entrySet().stream()
+                .anyMatch(entry -> entry.getKey() != animalType && entry.getValue() > 0);
     }
 }

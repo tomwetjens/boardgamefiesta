@@ -40,13 +40,13 @@ public enum Card {
     BIODIVERSITY() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            var opposingSpecies = game.getOpposingSpecies(game.getCurrentAnimal());
+            var vps = (int) game.getTiles().values().stream()
+                    .filter(tile -> tile.hasSpecies(game.getCurrentAnimal())
+                            && tile.hasOpposingSpecies(game.getCurrentAnimal()))
+                    .count();
 
-            game.getAnimal(game.getCurrentAnimal())
-                    .addVPs((int) game.getTiles().values().stream()
-                            .filter(tile -> tile.hasSpecies(game.getCurrentAnimal())
-                                    && opposingSpecies.stream().anyMatch(tile::hasSpecies))
-                            .count());
+            game.getAnimal(game.getCurrentAnimal()).addVPs(vps);
+            game.fireEvent(Event.Type.GAIN_VPS, List.of(vps));
 
             return ActionResult.undoAllowed();
         }
@@ -323,6 +323,9 @@ public enum Card {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
             game.getAnimal(game.getCurrentAnimal()).addActionPawn();
+
+            game.fireEvent(Event.Type.GAIN_ACTION_PAWN);
+
             return ActionResult.undoAllowed();
         }
     },
@@ -353,6 +356,9 @@ public enum Card {
         }
     },
 
+    /**
+     * You and each player with fewer elements than you gets 1 random element from the bag.
+     */
     SYMBIOTIC() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
@@ -361,7 +367,12 @@ public enum Card {
 
             game.getAnimals().values().forEach(animal -> {
                 if (animal == currentAnimal || animal.getNumberOfElements() < numberOfElements) {
-                    animal.addElement(game.getDrawBag().draw(random));
+                    if (animal.canAddElement() && !game.getDrawBag().isEmpty()) {
+                        var elementType = game.getDrawBag().draw(random);
+                        animal.addElement(elementType);
+
+                        game.fireEvent(animal.getType(), Event.Type.ADD_ELEMENT_TO_ANIMAL, List.of(elementType));
+                    }
                 }
             });
 

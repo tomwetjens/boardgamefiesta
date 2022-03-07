@@ -19,6 +19,7 @@
 package com.boardgamefiesta.dominantspecies.logic;
 
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.function.Function;
@@ -29,6 +30,7 @@ import java.util.stream.Stream;
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PACKAGE)
+@Slf4j
 public class ActionDisplay {
 
     @Getter
@@ -178,6 +180,10 @@ public class ActionDisplay {
     FollowUpActions startAtInitiative(DominantSpecies game) {
         executing = ActionType.INITIATIVE;
 
+        if (getLeftMostExecutableActionPawn(executing).isPresent()) {
+            game.fireEvent(Event.Type.EXECUTING, List.of(executing));
+        }
+
         var followUpActions = executing.activate(game);
         while (followUpActions.isEmpty()) {
             followUpActions = nextActionType(game);
@@ -187,32 +193,71 @@ public class ActionDisplay {
     }
 
     private FollowUpActions nextActionType(DominantSpecies game) {
+        log.debug("Moving to next Action after {}", executing);
+
         var followUpActions = FollowUpActions.none();
 
         do {
+            log.debug("Deactivating Action {}", executing);
             executing.deactivate(game);
 
             var index = ActionType.EXECUTION_ORDER.indexOf(executing);
             if (index == ActionType.EXECUTION_ORDER.size() - 1) {
-                return followUpActions;
+                log.debug("End of Actions reached");
+                return FollowUpActions.none();
             }
 
             executing = ActionType.EXECUTION_ORDER.get(index + 1);
+            log.debug("Activating Action {}", executing);
 
+            if (executing.hasActivation()) {
+                game.fireEvent(Event.Type.EXECUTING, List.of(executing));
+            }
             followUpActions = executing.activate(game);
 
             if (followUpActions.isEmpty()) {
+                log.debug("No follow up actions from activation of Action {}, so move to first Action Pawn", executing);
                 followUpActions = nextActionPawn(game);
+
+                if (!followUpActions.isEmpty() && !executing.hasActivation()) {
+                    game.fireEvent(Event.Type.EXECUTING, List.of(executing));
+                } else {
+                    log.debug("No Action Pawns on {}, moving to next action type", executing);
+                }
             }
         } while (followUpActions.isEmpty());
 
         return followUpActions;
     }
 
+    Optional<ActionPawn> getNextActionPawn() {
+        var actionType = executing;
+
+        Optional<ActionPawn> actionPawn;
+        do {
+            actionPawn = getLeftMostExecutableActionPawn(actionType);
+
+            if (actionPawn.isEmpty()) {
+                var index = ActionType.EXECUTION_ORDER.indexOf(actionType);
+                if (index == ActionType.EXECUTION_ORDER.size() - 1) {
+                    return Optional.empty();
+                }
+
+                actionType = ActionType.EXECUTION_ORDER.get(index + 1);
+            }
+        } while (actionPawn.isEmpty());
+
+        return actionPawn;
+    }
+
     FollowUpActions nextActionPawn(DominantSpecies game) {
+        log.debug("Moving to next Action Pawn of {}", executing);
         return getLeftMostExecutableActionPawn(executing)
                 .map(ActionPawn::toFollowUpActions)
-                .orElseGet(() -> nextActionType(game));
+                .orElseGet(() -> {
+                    log.debug("No more Action Pawns on {}, moving to next Action", executing);
+                    return nextActionType(game);
+                });
     }
 
     int getNumberOfActionPawns(ActionType actionType, AnimalType animalType) {

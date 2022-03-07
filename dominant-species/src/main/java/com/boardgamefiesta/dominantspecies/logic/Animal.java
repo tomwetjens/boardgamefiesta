@@ -102,7 +102,7 @@ public class Animal {
     }
 
     void addElement(ElementType elementType) {
-        if (elements.size() == 6) {
+        if (!canAddElement()) {
             throw new DominantSpeciesException(DominantSpeciesError.MAX_ELEMENTS_REACHED);
         }
         elements.add(elementType);
@@ -171,7 +171,9 @@ public class Animal {
 
     boolean canRemoveElement(ElementType elementType) {
         var copy = new ArrayList<>(elements);
-        copy.remove(elementType);
+        if (!copy.remove(elementType)) {
+            return false;
+        }
         return copy.subList(0, type.getInitialElements().size()).equals(type.getInitialElements());
     }
 
@@ -195,16 +197,12 @@ public class Animal {
                 .sum();
     }
 
-    void removeOneOfEachElementType(Collection<ElementType> elementTypes) {
-        elementTypes.forEach(elementType -> {
-            if (canRemoveElement(elementType)) {
-                removeElement(elementType);
-            }
-        });
-    }
-
     boolean canRemoveOneOfElementTypes(Set<ElementType> elementTypes) {
         return !Collections.disjoint(getRemovableElementTypes(), elementTypes);
+    }
+
+    boolean canAddElement() {
+        return elements.size() < 6;
     }
 }
 

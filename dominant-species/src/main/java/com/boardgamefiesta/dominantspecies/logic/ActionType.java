@@ -87,7 +87,9 @@ public enum ActionType {
                 .map(actionPawn -> {
                     game.getActionDisplay().removeLeftMostActionPawn(ActionType.INITIATIVE);
 
-                    game.moveForwardOnInitiative(actionPawn.getAnimalType());
+                    var index = game.moveForwardOnInitiative(actionPawn.getAnimalType());
+
+                    game.fireEvent(Event.Type.INITIATIVE, List.of(index + 1));
 
                     return FollowUpActions.of(List.of(PossibleAction.mandatory(actionPawn.getAnimalType(), Action.PlaceActionPawn.class)));
                 })
@@ -103,6 +105,10 @@ public enum ActionType {
             return capacity;
         }
         return playingAnimals.contains(freeActionPawn.getAnimalType()) ? capacity : capacity - 1;
+    }
+
+    public boolean hasActivation() {
+        return onActivate != null;
     }
 
     @Value

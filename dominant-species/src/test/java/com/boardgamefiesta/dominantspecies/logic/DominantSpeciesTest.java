@@ -303,7 +303,6 @@ class DominantSpeciesTest {
 
             var abundanceCorner1 = new Corner(DominantSpecies.INITIAL_FOREST, new Hex(-2, 1), new Hex(-2, 2));
             ds.perform(new Action.Abundance(ElementType.SEED, abundanceCorner1), new Random(0));
-            ds.endTurn(new Random(0));
 
             assertThat(ds.getElements()).hasSize(13);
             assertThat(ds.getElements()).containsEntry(abundanceCorner1, ElementType.SEED);

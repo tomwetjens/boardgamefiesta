@@ -50,6 +50,6 @@ public class Hex {
     }
 
     boolean isAdjacent(Hex hex) {
-        return distance(hex) == 1;
+        return !equals(hex) && distance(hex) == 1;
     }
 }

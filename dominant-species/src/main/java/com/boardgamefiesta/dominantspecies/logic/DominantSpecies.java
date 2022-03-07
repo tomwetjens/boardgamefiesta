@@ -97,8 +97,7 @@ public class DominantSpecies implements State {
     private ActionQueue actionQueue;
 
     @Getter
-    @Builder.Default
-    private final List<Hex> scoredTiles = new LinkedList<>();
+    private List<Hex> scoredTiles;
 
     private Queue<Card> deck;
 
@@ -137,6 +136,7 @@ public class DominantSpecies implements State {
                 .availableCards(new HashSet<>())
                 .availableTundraTiles(11)
                 .wanderlustTiles(WanderlustTiles.initial(random))
+                .scoredTiles(new ArrayList<>())
                 .build();
 
         game.drawCards();
@@ -240,6 +240,20 @@ public class DominantSpecies implements State {
         canUndo = result.canUndo();
 
         recalculateDominance();
+
+        if (actionQueue.isEmpty()) {
+            if (phase == Phase.PLANNING) {
+                getNextAnimalToPlaceActionPawn()
+                        // If next animal is also the current animal, then just move on
+                        .filter(nextAnimal -> nextAnimal == currentAnimal)
+                        .ifPresent(animal -> nextAnimalToPlaceActionPawn());
+            } else if (phase == Phase.EXECUTION) {
+                actionDisplay.getNextActionPawn()
+                        // If next action pawn is also for the current animal, then just move on
+                        .filter(actionPawn -> actionPawn.getAnimalType() == currentAnimal)
+                        .ifPresent(actionPawn -> nextActionPawn(random));
+            }
+        }
     }
 
     private void recalculateDominance() {
@@ -267,27 +281,45 @@ public class DominantSpecies implements State {
     }
 
     public void endTurn(@NonNull Random random) {
-        skipAll();
+        var animalType = currentAnimal;
 
-        if (actionQueue.isEmpty()) {
-            if (phase == Phase.PLANNING) {
-                var originalAnimal = currentAnimal;
-                do {
-                    currentAnimal = initiativeTrack.get((initiativeTrack.indexOf(currentAnimal) + 1) % initiativeTrack.size());
-                } while (!animals.get(currentAnimal).hasActionPawn() && currentAnimal != originalAnimal);
+        do {
+            skipAll();
 
-                if (currentAnimal == originalAnimal && animals.values().stream().noneMatch(Animal::hasActionPawn)) {
-                    triggerExecutionPhase();
-                } else {
-                    actionQueue.add(PossibleAction.mandatory(currentAnimal, Action.PlaceActionPawn.class));
+            if (actionQueue.isEmpty()) {
+                if (phase == Phase.PLANNING) {
+                    nextAnimalToPlaceActionPawn();
+                } else if (phase == Phase.EXECUTION) {
+                    nextActionPawn(random);
                 }
-            } else if (phase == Phase.EXECUTION) {
-                nextActionPawn(random);
+            } else {
+                currentAnimal = actionQueue.getNextAnimal()
+                        .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
             }
+        } while (currentAnimal == animalType && canSkip());
+
+        canUndo = false;
+    }
+
+    private Optional<AnimalType> getNextAnimalToPlaceActionPawn() {
+        var animalType = currentAnimal;
+        do {
+            animalType = initiativeTrack.get((initiativeTrack.indexOf(animalType) + 1) % initiativeTrack.size());
+        } while (!animals.get(animalType).hasActionPawn() && animalType != currentAnimal);
+
+        if (animalType == currentAnimal && animals.values().stream().noneMatch(Animal::hasActionPawn)) {
+            return Optional.empty();
         } else {
-            currentAnimal = actionQueue.getNextAnimal()
-                    .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
+            return Optional.of(animalType);
         }
+    }
+
+    private void nextAnimalToPlaceActionPawn() {
+        getNextAnimalToPlaceActionPawn()
+                .ifPresentOrElse(nextAnimal -> {
+                    currentAnimal = nextAnimal;
+                    actionQueue.add(PossibleAction.mandatory(currentAnimal, Action.PlaceActionPawn.class));
+                }, this::triggerExecutionPhase);
     }
 
     public boolean canSkip() {
@@ -316,11 +348,14 @@ public class DominantSpecies implements State {
     }
 
     private void triggerPlanningPhase() {
+        fireEvent(Event.Type.PLANNING_PHASE, List.of(round));
         phase = Phase.PLANNING;
         currentAnimal = initiativeTrack.get(0);
+        actionQueue.add(PossibleAction.mandatory(currentAnimal, Action.PlaceActionPawn.class));
     }
 
     private void triggerExecutionPhase() {
+        fireEvent(Event.Type.EXECUTION_PHASE, List.of(round));
         phase = Phase.EXECUTION;
 
         // There will always be at least 1 follow up action (from at least 1 AP)
@@ -338,6 +373,8 @@ public class DominantSpecies implements State {
     }
 
     private void triggerResetPhase(@NonNull Random random) {
+        fireEvent(Event.Type.RESET_PHASE, List.of(round));
+
         extinction();
         survival();
 
@@ -356,11 +393,14 @@ public class DominantSpecies implements State {
     }
 
     void scoreTile(@NonNull Hex hex) {
-        var scores = tiles.get(hex).score();
+        var tile = tiles.get(hex);
+        var scores = tile.score();
 
         scores.forEach((animalType, score) -> {
             if (score > 0) {
                 animals.get(animalType).addVPs(score);
+
+                fireEvent(animalType, Event.Type.SCORE_TILE, List.of(score, hex, tile.getType()));
             }
         });
 
@@ -434,12 +474,14 @@ public class DominantSpecies implements State {
                 .orElse(Collections.emptyList());
     }
 
-    void moveForwardOnInitiative(@NonNull AnimalType animalType) {
+    int moveForwardOnInitiative(@NonNull AnimalType animalType) {
         var index = initiativeTrack.indexOf(animalType);
         if (index > 0) {
             initiativeTrack.set(index, initiativeTrack.get(index - 1));
             initiativeTrack.set(index - 1, animalType);
+            return index - 1;
         }
+        return index;
     }
 
     void addElement(@NonNull Corner corner, @NonNull ElementType elementType) {
@@ -513,15 +555,6 @@ public class DominantSpecies implements State {
     Optional<Tile> getLastScoredTile() {
         return scoredTiles.isEmpty() ? Optional.empty()
                 : getTile(scoredTiles.get(scoredTiles.size() - 1));
-    }
-
-    Set<AnimalType> getOpposingSpecies(@NonNull AnimalType animalType) {
-        var player = animals.get(animalType).getPlayer();
-
-        return animals.values().stream()
-                .filter(animal -> animal.getPlayer() != player)
-                .map(Animal::getType)
-                .collect(Collectors.toSet());
     }
 
     void removeAvailableCard(@NonNull Card card) {
@@ -674,9 +707,9 @@ public class DominantSpecies implements State {
     Stream<Corner> getVacantCorners() {
         return tiles.keySet().stream() // start from the existing tiles so we at least have an adjacent tile (reduces search space)
                 .flatMap(a -> HEXES.stream()
-                        .filter(b -> b.isAdjacent(a)) // if all 3 hexes that make a corner must be adjacent, then at least 2 must be adjacent as well
+                        .filter(b -> !b.equals(a) && b.isAdjacent(a)) // if all 3 hexes that make a corner must be adjacent, then at least 2 must be adjacent as well
                         .flatMap(b -> HEXES.stream()
-                                .filter(c -> c.isAdjacent(b) && c.isAdjacent(a))// 3rd hex must be adjacent to first two
+                                .filter(c -> !c.equals(b) && c.isAdjacent(b) && c.isAdjacent(a))// 3rd hex must be adjacent to first two
                                 .map(c -> new Corner(a, b, c))
                                 .filter(this::isVacant) // corner must not have an element yet
                         ));
@@ -709,5 +742,25 @@ public class DominantSpecies implements State {
         return getAdjacentHexes(from)
                 .filter(this::hasTile)
                 .anyMatch(adjacent -> canMoveThroughAdjacentTiles(adjacent, to));
+    }
+
+    void fireEvent(Event.Type type, Collection<?>... values) {
+        fireEvent(currentAnimal, type, values);
+    }
+
+    void fireEvent(AnimalType animalType, Event.Type type, Collection<?>... values) {
+        var parameters = Stream.concat(Stream.of(animalType.name()),
+                Arrays.stream(values)
+                        .flatMap(Collection::stream)
+                        .map(o -> o != null ? o.toString() : ""))
+                .collect(Collectors.toList());
+
+        var event = new Event(getAnimal(animalType).getPlayer(), animalType, type, parameters);
+
+        fireEvent(event);
+    }
+
+    private void fireEvent(Event event) {
+        eventListeners.forEach(eventListener -> eventListener.event(event));
     }
 }

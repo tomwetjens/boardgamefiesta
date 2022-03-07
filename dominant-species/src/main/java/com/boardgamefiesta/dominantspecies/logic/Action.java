@@ -63,6 +63,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.getActionDisplay().placeActionPawn(animal.getType(), actionType, index);
 
+            game.fireEvent(Event.Type.PLACE_ACTION_PAWN, List.of(actionType, index));
+
             return ActionResult.undoAllowed();
         }
     }
@@ -82,6 +84,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.getActionDisplay().removeElement(ActionType.ADAPTATION, elementType);
             game.getAnimal(game.getCurrentAnimal()).addElement(elementType);
+
+            game.fireEvent(Event.Type.ADAPTATION, List.of(elementType));
 
             return ActionResult.undoAllowed();
         }
@@ -108,11 +112,21 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var regressionBox = game.getActionDisplay().getElements().get(ActionType.REGRESSION);
             var elementTypesInRegressionBox = new HashSet<>(regressionBox);
 
+            game.fireEvent(Event.Type.REGRESSION, List.of(numberOfActionPawns, elementTypesInRegressionBox.size()));
+
             var elementTypesToRemove = new ArrayList<>(elementTypesInRegressionBox);
-            this.elementTypes.forEach(elementTypesToRemove::remove);
+            this.elementTypes.forEach(elementType -> {
+                elementTypesToRemove.remove(elementType);
+                game.fireEvent(Event.Type.SKIP_ELEMENT_TYPE, List.of(elementType));
+            });
 
             var animal = game.getAnimal(game.getCurrentAnimal());
-            animal.removeOneOfEachElementType(elementTypesToRemove);
+            elementTypesToRemove.forEach(elementType -> {
+                if (animal.canRemoveElement(elementType)) {
+                    animal.removeElement(elementType);
+                    game.fireEvent(Event.Type.REMOVE_ELEMENT_FROM_ANIMAL, List.of(elementType));
+                }
+            });
 
             returnActionPawns(game, animal);
 
@@ -134,13 +148,20 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var numberOfActionPawns = game.getActionDisplay().getNumberOfActionPawns(ActionType.REGRESSION, animal.getType());
             var numberOfElementsToRemove = Math.max(0, elementTypesInRegressionBox.size() - numberOfActionPawns);
 
+            game.fireEvent(animal.getType(), Event.Type.REGRESSION, List.of(numberOfActionPawns, elementTypesInRegressionBox.size()));
+
             if (numberOfElementsToRemove == 0 || !animal.canRemoveOneOfElementTypes(elementTypesInRegressionBox)) {
                 // Placed enough APs to skip all removals, regression box is empty, or animal cannot remove any of the element types
                 returnActionPawns(game, animal);
                 return FollowUpActions.none();
             } else if (numberOfActionPawns == 0) {
                 // Not placed any APs therefore must remove one of each type of Element in the Regression Box
-                animal.removeOneOfEachElementType(elementTypesInRegressionBox);
+                elementTypesInRegressionBox.forEach(elementType -> {
+                    if (animal.canRemoveElement(elementType)) {
+                        animal.removeElement(elementType);
+                        game.fireEvent(animal.getType(), Event.Type.REMOVE_ELEMENT_FROM_ANIMAL, List.of(elementType));
+                    }
+                });
                 returnActionPawns(game, animal);
                 return FollowUpActions.none();
             } else {
@@ -174,6 +195,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.getActionDisplay().removeElement(ActionType.ABUNDANCE, elementType);
             game.addElement(corner, elementType);
 
+            game.fireEvent(Event.Type.ABUNDANCE, List.of(elementType, corner));
+
             return ActionResult.undoAllowed();
         }
     }
@@ -193,6 +216,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.getActionDisplay().removeElement(ActionType.WASTELAND, elementType);
             game.getDrawBag().add(elementType);
+
+            game.fireEvent(Event.Type.WASTELAND, List.of(elementType));
 
             return ActionResult.undoAllowed();
         }
@@ -224,6 +249,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.getActionDisplay().removeLeftMostActionPawn(ActionType.DEPLETION);
             game.getAnimal(game.getCurrentAnimal()).addActionPawn();
 
+            game.fireEvent(Event.Type.DEPLETION, List.of(element, corner));
+
             return ActionResult.undoAllowed();
         }
     }
@@ -250,13 +277,18 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             tile.glaciate();
 
+            game.fireEvent(Event.Type.GLACIATION, List.of(this.tile, tile.getType()));
+
             var elementsToRemove = game.getElements().keySet().stream()
                     .filter(element -> game.getTiles().entrySet().stream()
                             .filter(t -> t.getValue().isTundra())
                             .filter(t -> element.isAdjacent(t.getKey()))
                             .count() == 3)
                     .collect(Collectors.toSet());
-            elementsToRemove.forEach(game::removeElement);
+            elementsToRemove.forEach(element -> {
+                game.removeElement(element);
+                game.fireEvent(Event.Type.REMOVE_ELEMENT, List.of(element, game.getElement(element)));
+            });
 
             var animalTypes = new LinkedList<>(tile.getSpecies().keySet());
             for (var animalType : animalTypes) {
@@ -264,11 +296,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 if (speciesToRemove > 0) {
                     tile.removeSpecies(animalType, speciesToRemove);
                     game.getAnimal(animalType).addSpeciesToGenePool(speciesToRemove);
+                    game.fireEvent(animalType, Event.Type.SPECIES_REMOVED, List.of(speciesToRemove, this.tile, tile.getType()));
                 }
             }
 
-            game.getAnimal(game.getCurrentAnimal()).addVPs(
-                    DominantSpecies.bonusVPs(numberOfAdjacentTundraTiles));
+            var bonusVPs = DominantSpecies.bonusVPs(numberOfAdjacentTundraTiles);
+            game.getAnimal(game.getCurrentAnimal()).addVPs(bonusVPs);
+            game.fireEvent(Event.Type.GAIN_BONUS_VPS, List.of(bonusVPs));
 
             game.getActionDisplay().removeLeftMostActionPawn(ActionType.GLACIATION);
 
@@ -322,12 +356,16 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 if (!tiles.stream().allMatch(this.element::isAdjacent)) {
                     throw new DominantSpeciesException(DominantSpeciesError.MUST_BE_ADJACENT_TO_ELEMENT);
                 }
+
+                game.fireEvent(Event.Type.SELECT_ELEMENT, List.of(element, this.element));
             }
 
             var animal = game.getAnimal(game.getCurrentAnimal());
 
             for (var i = 0; i < tiles.size(); i++) {
-                var tile = game.getTile(tiles.get(i))
+                var hex = tiles.get(i);
+
+                var tile = game.getTile(hex)
                         .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.TILE_NOT_FOUND));
                 var species = this.species.get(i);
 
@@ -337,6 +375,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
                 animal.removeSpeciesFromGenePool(species);
                 tile.addSpecies(animal.getType(), species);
+
+                game.fireEvent(Event.Type.SPECIATION, List.of(species, hex, tile.getType()));
             }
 
             if (game.getActionDisplay().removeLeftMostActionPawn(ActionType.SPECIATION)) {
@@ -393,16 +433,22 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             var tile = Tile.initial(tileType, false);
             game.addTile(hex, tile);
 
+            game.fireEvent(Event.Type.WANDERLUST, List.of(stack + 1, tileType, hex));
+
             if (elementType != null && corner != null) {
                 game.getActionDisplay().removeElement(ActionType.WANDERLUST, elementType);
                 game.addElement(corner, elementType);
+
+                game.fireEvent(Event.Type.ADD_ELEMENT, List.of(elementType, corner));
             }
 
             var animal = game.getAnimal(game.getCurrentAnimal());
 
             var adjacentTiles = game.getAdjacentTiles(hex).collect(Collectors.toList());
             var numberOfAdjacentTiles = adjacentTiles.size();
-            animal.addVPs(DominantSpecies.bonusVPs(numberOfAdjacentTiles));
+            var bonusVPs = DominantSpecies.bonusVPs(numberOfAdjacentTiles);
+            animal.addVPs(bonusVPs);
+            game.fireEvent(Event.Type.GAIN_BONUS_VPS, List.of(bonusVPs));
 
             game.getActionDisplay().removeLeftMostActionPawn(ActionType.WANDERLUST);
             animal.addActionPawn();
@@ -433,13 +479,24 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
+            if (moves.stream().anyMatch(move -> move.getSpecies() <= 0)) {
+                throw new DominantSpeciesException(DominantSpeciesError.INVALID_MOVE);
+            }
+            
             var lastPlacedTile = game.getLastPlacedTile()
                     .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_TILE_SELECTED));
 
             var tile = game.getTile(lastPlacedTile)
                     .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.TILE_NOT_FOUND));
 
-            moves.forEach(move -> {
+            // Combine moves for the same 'from' into a single move
+            var normalized = moves.stream()
+                    .collect(Collectors.groupingBy(Move::getFrom, Collectors.reducing((a, b) -> new WanderlustMove.Move(a.from, a.species + b.species))))
+                    .values().stream()
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toList());
+
+            normalized.forEach(move -> {
                 var from = game.getTile(move.from)
                         .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.TILE_NOT_FOUND));
 
@@ -449,6 +506,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
                 from.removeSpecies(game.getCurrentAnimal(), move.species);
                 tile.addSpecies(game.getCurrentAnimal(), move.species);
+
+                game.fireEvent(Event.Type.MOVE_SPECIES, List.of(move.species, move.from, from.getType(), lastPlacedTile, tile.getType()));
             });
 
             return ActionResult.undoAllowed();
@@ -470,6 +529,19 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             Hex from;
             Hex to;
             int species;
+
+            Move combine(Move other) {
+                if (!from.equals(other.from) || !to.equals(other.to)) {
+                    throw new IllegalArgumentException("From and To must be equal when combining moves");
+                }
+                return new Move(from, to, species + other.species);
+            }
+        }
+
+        @Value
+        private static class FromTo {
+            Hex from;
+            Hex to;
         }
 
         List<Move> moves;
@@ -481,6 +553,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             var maxSpecies = getMaxSpecies(actionPawn);
             var maxDistance = game.getCurrentAnimal() == AnimalType.BIRDS ? 2 : 1;
+
+            if (moves.stream().anyMatch(move -> move.getSpecies() <= 0)) {
+                throw new DominantSpeciesException(DominantSpeciesError.INVALID_MOVE);
+            }
 
             if (moves.stream().mapToInt(Move::getSpecies).sum() > maxSpecies) {
                 throw new DominantSpeciesException(DominantSpeciesError.MAX_SPECIES_EXCEEDED);
@@ -494,7 +570,21 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new DominantSpeciesException(DominantSpeciesError.CANNOT_MOVE_THROUGH_BLANK_HEX);
             }
 
-            moves.forEach(move -> {
+            // Must check before moving any species in the loop below,
+            // because it's only allowed to move species pre-existing on a tile
+            if (moves.stream().anyMatch(move -> game.getTile(move.from).get().getSpecies(game.getCurrentAnimal()) < move.getSpecies())) {
+                throw new DominantSpeciesException(DominantSpeciesError.NOT_ENOUGH_SPECIES_ON_TILE);
+            }
+
+            // Combine moves for the same from/to pair into a single move
+            var normalized = moves.stream()
+                    .collect(Collectors.groupingBy(move -> new FromTo(move.from, move.to),
+                            Collectors.reducing(Move::combine)))
+                    .values().stream()
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toList());
+
+            normalized.forEach(move -> {
                 var from = game.getTile(move.from)
                         .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.TILE_NOT_FOUND));
                 var to = game.getTile(move.to)
@@ -502,6 +592,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
                 from.removeSpecies(game.getCurrentAnimal(), move.species);
                 to.addSpecies(game.getCurrentAnimal(), move.species);
+
+                game.fireEvent(Event.Type.MIGRATION, List.of(move.species, move.from, from.getType(), move.to, to.getType()));
             });
 
             game.getActionDisplay().removeLeftMostActionPawn(ActionType.MIGRATION);
@@ -532,13 +624,11 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_ANIMAL_FOR_EACH_TILE);
             }
 
-            var opposingSpecies = getOpposingSpecies(game);
-
-            if (!opposingSpecies.containsAll(animals)) {
+            if (animals.contains(game.getCurrentAnimal())) {
                 throw new DominantSpeciesException(DominantSpeciesError.NOT_OPPOSING_SPECIES);
             }
 
-            var possibleTiles = getPossibleTiles(game, opposingSpecies).collect(Collectors.toSet());
+            var possibleTiles = getPossibleTiles(game).collect(Collectors.toSet());
 
             if (!possibleTiles.containsAll(tiles)) {
                 throw new DominantSpeciesException(DominantSpeciesError.INVALID_TILE);
@@ -554,11 +644,14 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             }
 
             for (var i = 0; i < tiles.size(); i++) {
+                var hex = this.tiles.get(i);
                 var tile = tiles.get(i);
                 var animal = game.getAnimal(animals.get(i));
 
                 tile.removeSpecies(animal.getType());
                 animal.addEliminatedSpecies();
+
+                game.fireEvent(Event.Type.COMPETITION, List.of(animal.getType(), hex, tile.getType()));
             }
 
             if (game.getActionDisplay().removeLeftMostActionPawn(ActionType.COMPETITION)) {
@@ -568,17 +661,15 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             return ActionResult.undoAllowed();
         }
 
-        private static Set<AnimalType> getOpposingSpecies(DominantSpecies game) {
-            return game.getOpposingSpecies(game.getCurrentAnimal());
-        }
-
-        static Stream<Hex> getPossibleTiles(DominantSpecies game, Set<AnimalType> opposingSpecies) {
+        static Stream<Hex> getPossibleTiles(DominantSpecies game) {
             var possibleTileTypes = getPossibleTileTypes(game);
 
             return game.getTiles().entrySet().stream()
                     .filter(entry -> entry.getValue().isTundra() || possibleTileTypes.contains(entry.getValue().getType()))
                     .filter(entry -> entry.getValue().hasSpecies(game.getCurrentAnimal())
-                            && opposingSpecies.stream().anyMatch(entry.getValue()::hasSpecies))
+                            && game.getAnimals().keySet().stream()
+                            .filter(animalType -> animalType != game.getCurrentAnimal())
+                            .anyMatch(entry.getValue()::hasSpecies))
                     .map(Map.Entry::getKey);
         }
 
@@ -627,6 +718,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             if (game.getScoredTiles().contains(this.tile)) {
                 throw new DominantSpeciesException(DominantSpeciesError.TILE_ALREADY_SCORED);
             }
+
+            game.fireEvent(Event.Type.DOMINATION, List.of(this.tile, tile.getType(), tile.getDominant().map(AnimalType::name).orElse("")));
 
             game.scoreTile(this.tile);
 
@@ -1023,6 +1116,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         ActionResult perform(DominantSpecies game, Random random) {
             game.removeAvailableCard(card);
 
+            game.fireEvent(Event.Type.CARD, List.of(card));
+
             return card.perform(game, random);
         }
     }
@@ -1049,9 +1144,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_ALL_TILES_OCCUPIED_BY_PLAYER);
             }
 
-            var opposingSpecies = game.getOpposingSpecies(game.getCurrentAnimal());
-
-            if (!opposingSpecies.containsAll(animals)) {
+            if (animals.contains(game.getCurrentAnimal())) {
                 throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_OPPOSING_SPECIES);
             }
 

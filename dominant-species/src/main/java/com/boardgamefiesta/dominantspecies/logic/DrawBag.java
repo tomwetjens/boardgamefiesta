@@ -39,7 +39,7 @@ public class DrawBag {
     }
 
     ElementType draw(Random random) {
-        var total = elements.values().stream().mapToInt(i -> i).sum();
+        var total = getTotal();
 
         if (total > 0) {
             var n = random.nextInt(total);
@@ -52,6 +52,10 @@ public class DrawBag {
         }
 
         throw new DominantSpeciesException(DominantSpeciesError.NO_ELEMENTS_IN_DRAW_BAG);
+    }
+
+    private int getTotal() {
+        return elements.values().stream().mapToInt(i -> i).sum();
     }
 
     List<ElementType> draw(int count, Random random) {
@@ -90,4 +94,7 @@ public class DrawBag {
         return elements.getOrDefault(elementType, 0);
     }
 
+    public boolean isEmpty() {
+        return getTotal() == 0;
+    }
 }

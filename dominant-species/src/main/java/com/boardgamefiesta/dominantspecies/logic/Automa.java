@@ -96,15 +96,13 @@ public class Automa {
     }
 
     private Optional<Action> competition(DominantSpecies game, Random random) {
-        var opposingSpecies = game.getOpposingSpecies(game.getCurrentAnimal());
-
         var possibleTileTypes = Action.Competition.getPossibleTileTypes(game);
 
         var tiles = possibleTileTypes.stream()
                 // Don't do every tile type always
                 .filter(tileType -> random.nextInt(6) == 0) // TODO Make smarter than just random
                 .flatMap(tileType -> {
-                    var possibleTiles = Action.Competition.getPossibleTiles(game, opposingSpecies)
+                    var possibleTiles = Action.Competition.getPossibleTiles(game)
                             .collect(Collectors.toList());
 
                     if (possibleTiles.isEmpty()) {
@@ -120,7 +118,8 @@ public class Automa {
                 .map(game::getTile)
                 .flatMap(Optional::stream)
                 .map(tile -> {
-                    var opposingSpeciesOnTile = opposingSpecies.stream()
+                    var opposingSpeciesOnTile = game.getAnimals().keySet().stream()
+                            .filter(animalType -> animalType != game.getCurrentAnimal())
                             .filter(tile::hasSpecies)
                             .collect(Collectors.toList());
 
@@ -158,14 +157,16 @@ public class Automa {
             var speciesOnTile = game.getTile(from).orElseThrow().getSpecies(game.getCurrentAnimal());
             var species = random.nextInt(Math.min(remainingSpeciesToMove, speciesOnTile));
 
-            var adjacentTiles = game.getAdjacentHexes(from)
-                    .filter(game::hasTile)
-                    .collect(Collectors.toList());
-            var to = adjacentTiles.get(random.nextInt(adjacentTiles.size()));
+            if (species > 0) {
+                var adjacentTiles = game.getAdjacentHexes(from)
+                        .filter(game::hasTile)
+                        .collect(Collectors.toList());
+                var to = adjacentTiles.get(random.nextInt(adjacentTiles.size()));
 
-            moves.add(new Action.Migration.Move(from, to, species));
+                moves.add(new Action.Migration.Move(from, to, species));
 
-            remainingSpeciesToMove -= species;
+                remainingSpeciesToMove -= species;
+            }
         }
 
         return Optional.of(new Action.Migration(moves));
@@ -182,7 +183,8 @@ public class Automa {
                         .filter(tile -> tile.hasSpecies(game.getCurrentAnimal()))
                         .map(tile -> new Action.WanderlustMove.Move(from,
                                 random.nextInt(tile.getSpecies(game.getCurrentAnimal())) // TODO Make smarter than just random
-                        )))
+                        ))
+                        .filter(move -> move.species > 0))
                 .collect(Collectors.toList());
 
         return Optional.of(new Action.WanderlustMove(moves));
@@ -219,10 +221,8 @@ public class Automa {
         if (elementType != null) {
             var adjacentHexes = game.getAdjacentHexes(hex).collect(Collectors.toList());
 
-            var possibleCorners = adjacentHexes.stream()
-                    .flatMap(b -> adjacentHexes.stream()
-                            .map(c -> new Corner(hex, b, c)))
-                    .filter(game::isVacant)
+            var possibleCorners = game.getVacantCorners()
+                    .filter(c -> c.isAdjacent(hex))
                     .collect(Collectors.toList());
 
             corner = !possibleCorners.isEmpty()
@@ -324,6 +324,10 @@ public class Automa {
     }
 
     private Optional<Action> adaptation(DominantSpecies game, Random random) {
+        if (!game.getAnimal(game.getCurrentAnimal()).canAddElement()) {
+            return Optional.empty();
+        }
+
         var possibleElementTypes = game.getActionDisplay().getElements(ActionType.ADAPTATION);
 
         if (possibleElementTypes.isEmpty()) {
@@ -361,17 +365,31 @@ public class Automa {
             // TODO Make smarter than just random
             var element = possibleElements.get(random.nextInt(possibleElements.size()));
 
-            var hexes = List.of(element.getA(), element.getB(), element.getC());
+            var hexes = Stream.of(element.getA(), element.getB(), element.getC())
+                    .filter(game::hasTile)
+                    .collect(Collectors.toList());
 
             var tiles = hexes.stream()
                     .map(game::getTile)
                     .flatMap(Optional::stream)
                     .collect(Collectors.toList());
 
-            var species = tiles.stream()
-                    // TODO Just do max for now
-                    .map(Action.Speciation::getMaxSpeciation)
-                    .collect(Collectors.toList());
+            var remainingSpecies = game.getAnimal(game.getCurrentAnimal()).getGenePool();
+            var species = new ArrayList<Integer>();
+            for (var tile : tiles) {
+                // TODO Just do max for now
+                var amount = Math.min(remainingSpecies, Action.Speciation.getMaxSpeciation(tile));
+                if (amount > 0) {
+                    species.add(amount);
+                    remainingSpecies -= amount;
+                }
+            }
+
+            // Truncate lists if not enough species in gene pool to place on all tiles
+            while (tiles.size() > species.size()) {
+                tiles.remove(tiles.size() - 1);
+                hexes.remove(hexes.size() - 1);
+            }
 
             return Optional.of(new Action.Speciation(element, hexes, species));
         }

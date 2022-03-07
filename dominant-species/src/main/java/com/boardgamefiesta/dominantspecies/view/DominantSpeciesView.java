@@ -42,6 +42,7 @@ public class DominantSpeciesView {
     DrawBag drawBag;
     List<AnimalType> initiativeTrack;
     Hex lastPlacedTile;
+    List<Hex> scoredTiles;
     Phase phase;
     Map<String, List<AnimalType>> players;
     int round;
@@ -63,6 +64,7 @@ public class DominantSpeciesView {
         this.elements = state.getElements().entrySet().stream().map(entry -> new ElementView(entry.getKey(), entry.getValue())).collect(Collectors.toList());
         this.initiativeTrack = state.getInitiativeTrack();
         this.lastPlacedTile = state.getLastPlacedTile().orElse(null);
+        this.scoredTiles = state.getScoredTiles();
         this.round = state.getRound();
         this.phase = state.getPhase();
         var values = state.getAnimals().values();
