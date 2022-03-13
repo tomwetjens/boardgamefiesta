@@ -30,7 +30,11 @@ public enum Card {
     AQUATIC() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Aquatic.class));
+            if (game.hasVacantCorner() && !game.getDrawBag().isEmpty()) {
+                return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Aquatic.class));
+            } else {
+                return ActionResult.undoAllowed();
+            }
         }
     },
 
@@ -93,13 +97,14 @@ public enum Card {
                     .filter(animal -> animal.getPlayer() != game.getCurrentPlayer())
                     .collect(Collectors.toSet());
 
-            game.getTiles().values().stream()
-                    .filter(Tile::isTundra)
-                    .forEach(tile -> animals.stream()
-                            .filter(animal -> tile.hasSpecies(animal.getType()))
+            game.getTiles().entrySet().stream()
+                    .filter(entry -> entry.getValue().isTundra())
+                    .forEach(entry -> animals.stream()
+                            .filter(animal -> entry.getValue().hasSpecies(animal.getType()))
                             .forEach(animal -> {
-                                tile.removeSpecies(animal.getType());
+                                entry.getValue().removeSpecies(animal.getType());
                                 animal.addEliminatedSpecies();
+                                game.fireEvent(Event.Type.ELIMINATE_SPECIES, List.of(animal.getType(), 1, entry.getKey(), entry.getValue().getType()));
                             }));
 
             return ActionResult.undoAllowed();
@@ -130,10 +135,13 @@ public enum Card {
     ECODIVERSITY() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            game.getAnimals().values().forEach(animal ->
-                    animal.addVPs((int) game.getElements().values().stream()
-                            .filter(animal::hasElement)
-                            .count()));
+            game.getAnimals().values().forEach(animal -> {
+                var count = (int) game.getElements().values().stream()
+                        .filter(animal::hasElement)
+                        .count();
+                animal.addVPs(count);
+                game.fireEvent(animal.getType(), Event.Type.GAIN_VPS, List.of(count));
+            });
             return ActionResult.undoAllowed();
         }
     },
@@ -154,7 +162,12 @@ public enum Card {
     FECUNDITY() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            return ActionResult.undoAllowed(PossibleAction.optional(game.getCurrentAnimal(), Action.Fecundity.class));
+            if (game.getAnimal(game.getCurrentAnimal()).getGenePool() > 0
+                    && !game.getTilesWithSpecies(game.getCurrentAnimal()).isEmpty()) {
+                return ActionResult.undoAllowed(PossibleAction.optional(game.getCurrentAnimal(), Action.Fecundity.class));
+            } else {
+                return ActionResult.undoAllowed();
+            }
         }
     },
 
@@ -164,7 +177,11 @@ public enum Card {
     FERTILE() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            return ActionResult.undoAllowed(PossibleAction.optional(game.getCurrentAnimal(), Action.Fertile.class));
+            if (!game.getTilesWithSpecies(game.getCurrentAnimal()).isEmpty()) {
+                return ActionResult.undoAllowed(PossibleAction.optional(game.getCurrentAnimal(), Action.Fertile.class));
+            } else {
+                return ActionResult.undoAllowed();
+            }
         }
     },
 
@@ -174,7 +191,11 @@ public enum Card {
     HABITAT() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Habitat.class));
+            if (!game.getDrawBag().isEmpty() && game.hasVacantCorner()) {
+                return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Habitat.class));
+            } else {
+                return ActionResult.undoAllowed();
+            }
         }
     },
 
@@ -184,7 +205,11 @@ public enum Card {
     HIBERNATION() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Hibernation.class));
+            if (game.getAnimal(game.getCurrentAnimal()).getEliminatedSpecies() > 0) {
+                return ActionResult.undoAllowed(PossibleAction.optional(game.getCurrentAnimal(), Action.Hibernation.class));
+            } else {
+                return ActionResult.undoAllowed();
+            }
         }
     },
 
@@ -199,8 +224,11 @@ public enum Card {
                     .flatMap(Optional::stream)
                     .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-            dominating.forEach(((animalType, count) ->
-                    game.getAnimal(animalType).addVPs(DominantSpecies.bonusVPs(count.intValue()))));
+            dominating.forEach((animalType, count) -> {
+                var bonusVPs = DominantSpecies.bonusVPs(count.intValue());
+                game.getAnimal(animalType).addVPs(bonusVPs);
+                game.fireEvent(animalType, Event.Type.GAIN_BONUS_VPS, List.of(bonusVPs));
+            });
 
             return ActionResult.undoAllowed();
         }
@@ -252,7 +280,10 @@ public enum Card {
 
             game.getAnimals().values().stream()
                     .filter(animal -> AnimalType.FOOD_CHAIN_ORDER.indexOf(animal.getType()) >= index)
-                    .forEach(Animal::addActionPawn);
+                    .forEach(animal -> {
+                        animal.addActionPawn();
+                        game.fireEvent(animal.getType(), Event.Type.GAIN_ACTION_PAWN);
+                    });
 
             return ActionResult.undoAllowed();
         }
@@ -275,10 +306,18 @@ public enum Card {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
             var animal = game.getAnimal(game.getCurrentAnimal());
-            return ActionResult.undoAllowed(game.getDrawBag().containsAny(animal.getRemovableElementTypes())
-                    // If player can swap for the same element, then it's basically optional
-                    ? PossibleAction.optional(game.getCurrentAnimal(), Action.Metamorphosis.class)
-                    : PossibleAction.mandatory(game.getCurrentAnimal(), Action.Metamorphosis.class));
+
+            var swappableElementTypes = animal.getRemovableElementTypes();
+
+            if (game.getDrawBag().isEmpty() || swappableElementTypes.isEmpty()) {
+                return ActionResult.undoAllowed();
+            }
+
+            return ActionResult.undoAllowed(
+                    game.getDrawBag().containsAny(swappableElementTypes)
+                            // If player can swap for the same element, then it's basically optional
+                            ? PossibleAction.optional(game.getCurrentAnimal(), Action.Metamorphosis.class)
+                            : PossibleAction.mandatory(game.getCurrentAnimal(), Action.Metamorphosis.class));
         }
     },
 
@@ -297,7 +336,8 @@ public enum Card {
 
             game.getAnimals().values().forEach(animal -> {
                 if (animal.getScore() > currentAnimal.getScore()) {
-                    animal.loseVPs(-firstPlaceScore);
+                    int lost = animal.loseVPs(firstPlaceScore);
+                    game.fireEvent(animal.getType(), Event.Type.LOSE_VPS, List.of(lost));
                 }
             });
 
@@ -340,7 +380,10 @@ public enum Card {
 
             game.getAnimals().values().stream()
                     .filter(animal -> AnimalType.FOOD_CHAIN_ORDER.indexOf(animal.getType()) <= index)
-                    .forEach(Animal::addActionPawn);
+                    .forEach(animal -> {
+                        animal.addActionPawn();
+                        game.fireEvent(animal.getType(), Event.Type.GAIN_ACTION_PAWN);
+                    });
 
             return ActionResult.undoAllowed();
         }
@@ -352,7 +395,17 @@ public enum Card {
     PREDATOR() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Predator.class));
+            var currentAnimal = game.getCurrentAnimal();
+
+            if (game.getTilesWithSpecies(currentAnimal)
+                    .stream()
+                    .map(game::getTile)
+                    .map(Optional::get)
+                    .anyMatch(tile -> tile.hasOpposingSpecies(currentAnimal))) {
+                return ActionResult.undoAllowed(PossibleAction.mandatory(currentAnimal, Action.Predator.class));
+            } else {
+                return ActionResult.undoAllowed();
+            }
         }
     },
 

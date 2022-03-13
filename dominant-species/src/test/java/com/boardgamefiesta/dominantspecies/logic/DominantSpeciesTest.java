@@ -327,7 +327,7 @@ class DominantSpeciesTest {
             ds.endTurn(new Random(0));
 
             // Wasteland element(s) should be removed from tundra tiles
-            assertThat(ds.getAdjacentElements(DominantSpecies.INITIAL_SEA))
+            assertThat(ds.getAdjacentElementTypes(DominantSpecies.INITIAL_SEA))
                     .containsExactlyInAnyOrder(ElementType.SEED, ElementType.GRASS, ElementType.MEAT, ElementType.WATER, ElementType.GRUB);
 
             // == Depletion

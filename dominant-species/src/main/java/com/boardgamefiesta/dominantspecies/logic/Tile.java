@@ -36,16 +36,17 @@ public class Tile implements Cloneable {
     boolean tundra;
 
     Map<AnimalType, Integer> species;
+    Map<AnimalType, Integer> hibernating; // species that ignore extinction
 
     AnimalType dominant;
 
     static Tile initial(@NonNull TileType type, boolean tundra) {
-        return new Tile(type, tundra, new HashMap<>(), null);
+        return new Tile(type, tundra, new HashMap<>(), new HashMap<>(), null);
     }
 
     @Override
     public Tile clone() {
-        return new Tile(type, tundra, new HashMap<>(species), dominant);
+        return new Tile(type, tundra, new HashMap<>(species), new HashMap<>(hibernating), dominant);
     }
 
     boolean hasSpecies(@NonNull AnimalType animalType) {
@@ -67,8 +68,11 @@ public class Tile implements Cloneable {
             throw new DominantSpeciesException(DominantSpeciesError.NOT_ENOUGH_SPECIES_ON_TILE);
         }
 
-        count -= species;
-        this.species.put(animalType, count);
+        var newCount = count - species;
+        this.species.put(animalType, newCount);
+        if (this.hibernating != null) {
+            this.hibernating.compute(animalType, (k, hib) -> Math.min(newCount, hib != null ? hib : 0));
+        }
     }
 
     void addSpecies(@NonNull AnimalType animalType) {
@@ -83,6 +87,11 @@ public class Tile implements Cloneable {
         this.species.put(animalType, getSpecies(animalType) + species);
     }
 
+    void addHibernatingSpecies(AnimalType animalType, int species) {
+        addSpecies(animalType, species);
+        this.hibernating.compute(animalType, (k, existing) -> (existing != null ? existing : 0) + species);
+    }
+
     int getTotalSpecies() {
         return species.values().stream().reduce(Integer::sum).orElse(0);
     }
@@ -90,10 +99,6 @@ public class Tile implements Cloneable {
     int getSpecies(@NonNull AnimalType animalType) {
         var count = species.get(animalType);
         return count != null ? count : 0;
-    }
-
-    void removeAllSpecies() {
-        species.clear();
     }
 
     public Optional<AnimalType> getDominant() {
@@ -127,10 +132,10 @@ public class Tile implements Cloneable {
 
     Map<AnimalType, Integer> score() {
         var ranking = species.keySet().stream()
-                .sorted(Comparator.<AnimalType>comparingInt(species::get)
-                        .thenComparing(Comparator.<AnimalType>comparingInt(AnimalType.FOOD_CHAIN_ORDER::indexOf).reversed()))
+                .filter(this::hasSpecies)
+                .sorted((Comparator.<AnimalType>comparingInt(species::get)
+                        .thenComparing(Comparator.<AnimalType>comparingInt(AnimalType.FOOD_CHAIN_ORDER::indexOf)).reversed()))
                 .collect(Collectors.toList());
-
 
         return IntStream.range(0, ranking.size())
                 .filter(place -> place != 1 || !tundra)
@@ -145,7 +150,7 @@ public class Tile implements Cloneable {
         tundra = true;
     }
 
-    int removeEndangeredSpecies(@NonNull Animal animal, @NonNull List<ElementType> adjacentElements) {
+    int getEndangeredSpecies(@NonNull Animal animal, @NonNull List<ElementType> adjacentElements) {
         var species = getSpecies(animal.getType());
 
         if (species > 0) {
@@ -156,24 +161,40 @@ public class Tile implements Cloneable {
                     species--;
                 }
 
-                if (species > 0) {
-                    removeSpecies(animal.getType(), species);
-                    return species;
-                }
+                return species;
             }
         }
 
         return 0;
     }
 
-    boolean hasSpeciesOfAny(Set<AnimalType> animalTypes) {
-        return species.entrySet().stream()
-                .filter(entry -> entry.getValue() > 0)
-                .anyMatch(entry -> animalTypes.contains(entry.getKey()));
-    }
-
     public boolean hasOpposingSpecies(AnimalType animalType) {
         return species.entrySet().stream()
                 .anyMatch(entry -> entry.getKey() != animalType && entry.getValue() > 0);
+    }
+
+    /**
+     * @return eliminated species
+     */
+    int extinction(Animal animal, List<ElementType> adjacentElementTypes, int speciesToSave) {
+        var endangered = getEndangeredSpecies(animal, adjacentElementTypes);
+
+        // Ignore species that were placed through the Hibernation action this turn
+        var hibernating = this.hibernating != null ? this.hibernating.getOrDefault(animal.getType(), 0) : 0;
+        var species = Math.max(0, endangered - hibernating - speciesToSave);
+
+        if (species > 0) {
+            removeSpecies(animal.getType(), species);
+        }
+
+        stopHibernating(animal);
+
+        return species;
+    }
+
+    private void stopHibernating(Animal animal) {
+        if (this.hibernating != null) {
+            this.hibernating.remove(animal.getType());
+        }
     }
 }

@@ -22,7 +22,6 @@ import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)// For deserialization
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,7 +34,7 @@ public class Animal {
     AnimalType type;
 
     int genePool;
-    int eliminated;
+    int eliminatedSpecies;
 
     int actionPawns;
 
@@ -117,9 +116,13 @@ public class Animal {
         score += amount;
     }
 
-    void loseVPs(int amount) {
+    int loseVPs(int amount) {
         if (amount < 0) throw new IllegalArgumentException("amount must be positive: " + amount);
-        score = Math.max(0, score - amount);
+
+        var lost = Math.min(amount, score);
+        score -= lost;
+
+        return lost;
     }
 
     boolean hasElement(ElementType elementType) {
@@ -151,14 +154,14 @@ public class Animal {
     }
 
     void addEliminatedSpecies(int species) {
-        eliminated += species;
+        eliminatedSpecies += species;
     }
 
     void removeEliminatedSpecies(int species) {
-        if (eliminated < species) {
+        if (eliminatedSpecies < species) {
             throw new DominantSpeciesException(DominantSpeciesError.NOT_ENOUGH_ELIMINATED_SPECIES);
         }
-        eliminated -= species;
+        eliminatedSpecies -= species;
     }
 
     void removeElement(ElementType elementType) {

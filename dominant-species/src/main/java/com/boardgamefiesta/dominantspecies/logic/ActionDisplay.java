@@ -40,6 +40,7 @@ public class ActionDisplay {
     private Map<ActionType, List<ElementType>> elements;
 
     private ActionType executing;
+    private int index;
 
     static ActionDisplay initial(Set<AnimalType> playingAnimals, DrawBag drawBag, Random random) {
         var actionPawns = Arrays.stream(ActionType.values())
@@ -54,7 +55,7 @@ public class ActionDisplay {
                 ActionType.WANDERLUST, (List<ElementType>) new ArrayList<ElementType>(4)
         );
 
-        var actionDisplay = new ActionDisplay(actionPawns, elements, null);
+        var actionDisplay = new ActionDisplay(actionPawns, elements, ActionType.INITIATIVE, 0);
 
         actionDisplay.drawElements(drawBag, random);
         actionDisplay.resetFreeActionPawns(playingAnimals);
@@ -72,8 +73,6 @@ public class ActionDisplay {
         for (var actionType : ActionType.values()) {
             var pawns = actionPawns.get(actionType);
 
-            Arrays.fill(pawns, null);
-
             if (actionType.getFreeActionPawn() != null) {
                 var freeAction = actionType.getFreeActionPawn();
                 if (playingAnimals.contains(freeAction.getAnimalType())) {
@@ -84,16 +83,22 @@ public class ActionDisplay {
         return this;
     }
 
-    Optional<ActionPawn> getLeftMostExecutableActionPawn(ActionType actionType) {
+    private Optional<ActionPawn> getNextActionPawn(ActionType actionType, Integer startAtIndex) {
         var spaces = actionPawns.get(actionType);
-        return IntStream.range(0, Math.min(spaces.length, actionType.getExecutable()))
+
+        var len = Math.min(spaces.length, actionType.getExecutable());
+        if (startAtIndex >= len) {
+            return Optional.empty();
+        }
+
+        return IntStream.range(startAtIndex, len)
                 .filter(index -> spaces[index] != null)
                 .mapToObj(index -> new ActionPawn(spaces[index], actionType, index))
                 .findFirst();
     }
 
-    Optional<ActionPawn> getLeftMostExecutableActionPawn() {
-        return getLeftMostExecutableActionPawn(executing);
+    Optional<ActionPawn> getCurrentActionPawn() {
+        return getNextActionPawn(executing, index);
     }
 
     ActionDisplay placeActionPawn(AnimalType animalType, ActionType actionType, int index) {
@@ -112,24 +117,17 @@ public class ActionDisplay {
         return this;
     }
 
-    /**
-     * @return <code>true</code> if the AP was not a free action and must be added back to the animal
-     */
-    boolean removeLeftMostActionPawn(ActionType actionType) {
-        var spaces = actionPawns.get(actionType);
+    ActionPawn removeCurrentActionPawn() {
+        var spaces = actionPawns.get(executing);
 
-        for (var i = 0; i < spaces.length; i++) {
-            if (spaces[i] != null) {
-                spaces[i] = null;
-                return !actionType.isFreeActionPawn(i);
-            }
+        var animalType = spaces[index];
+        if (animalType == null) {
+            throw new DominantSpeciesException(DominantSpeciesError.ACTION_SPACE_EMPTY);
         }
 
-        throw new DominantSpeciesException(DominantSpeciesError.ACTION_SPACE_EMPTY);
-    }
+        spaces[index] = null;
 
-    boolean removeLeftMostActionPawn() {
-        return removeLeftMostActionPawn(executing);
+        return new ActionPawn(animalType, executing, index);
     }
 
     /**
@@ -179,8 +177,9 @@ public class ActionDisplay {
 
     FollowUpActions startAtInitiative(DominantSpecies game) {
         executing = ActionType.INITIATIVE;
+        index = 0;
 
-        if (getLeftMostExecutableActionPawn(executing).isPresent()) {
+        if (hasActionPawn(executing)) {
             game.fireEvent(Event.Type.EXECUTING, List.of(executing));
         }
 
@@ -192,6 +191,10 @@ public class ActionDisplay {
         return followUpActions;
     }
 
+    private boolean hasActionPawn(ActionType actionType) {
+        return getNextActionPawn(actionType, 0).isPresent();
+    }
+
     private FollowUpActions nextActionType(DominantSpecies game) {
         log.debug("Moving to next Action after {}", executing);
 
@@ -201,14 +204,15 @@ public class ActionDisplay {
             log.debug("Deactivating Action {}", executing);
             executing.deactivate(game);
 
-            var index = ActionType.EXECUTION_ORDER.indexOf(executing);
-            if (index == ActionType.EXECUTION_ORDER.size() - 1) {
+            var currentActionTypeIndex = ActionType.EXECUTION_ORDER.indexOf(executing);
+            if (currentActionTypeIndex == ActionType.EXECUTION_ORDER.size() - 1) {
                 log.debug("End of Actions reached");
                 return FollowUpActions.none();
             }
 
-            executing = ActionType.EXECUTION_ORDER.get(index + 1);
+            executing = ActionType.EXECUTION_ORDER.get(currentActionTypeIndex + 1);
             log.debug("Activating Action {}", executing);
+            this.index = 0;
 
             if (executing.hasActivation()) {
                 game.fireEvent(Event.Type.EXECUTING, List.of(executing));
@@ -217,10 +221,12 @@ public class ActionDisplay {
 
             if (followUpActions.isEmpty()) {
                 log.debug("No follow up actions from activation of Action {}, so move to first Action Pawn", executing);
-                followUpActions = nextActionPawn(game);
+                followUpActions = nextActionPawnOfExecutingActionType(game);
 
-                if (!followUpActions.isEmpty() && !executing.hasActivation()) {
-                    game.fireEvent(Event.Type.EXECUTING, List.of(executing));
+                if (!followUpActions.isEmpty()) {
+                    if (!executing.hasActivation()) {
+                        game.fireEvent(Event.Type.EXECUTING, List.of(executing));
+                    }
                 } else {
                     log.debug("No Action Pawns on {}, moving to next action type", executing);
                 }
@@ -231,33 +237,49 @@ public class ActionDisplay {
     }
 
     Optional<ActionPawn> getNextActionPawn() {
-        var actionType = executing;
+        var curActionType = executing;
+        var curIndex = index;
 
-        Optional<ActionPawn> actionPawn;
+        Optional<ActionPawn> next;
         do {
-            actionPawn = getLeftMostExecutableActionPawn(actionType);
+            next = getNextActionPawn(curActionType, curIndex);
 
-            if (actionPawn.isEmpty()) {
-                var index = ActionType.EXECUTION_ORDER.indexOf(actionType);
+            if (next.isEmpty()) {
+                var index = ActionType.EXECUTION_ORDER.indexOf(curActionType);
                 if (index == ActionType.EXECUTION_ORDER.size() - 1) {
                     return Optional.empty();
                 }
 
-                actionType = ActionType.EXECUTION_ORDER.get(index + 1);
+                curActionType = ActionType.EXECUTION_ORDER.get(index + 1);
+                curIndex = 0;
             }
-        } while (actionPawn.isEmpty());
+        } while (next.isEmpty());
 
-        return actionPawn;
+        return next;
     }
 
-    FollowUpActions nextActionPawn(DominantSpecies game) {
-        log.debug("Moving to next Action Pawn of {}", executing);
-        return getLeftMostExecutableActionPawn(executing)
-                .map(ActionPawn::toFollowUpActions)
-                .orElseGet(() -> {
-                    log.debug("No more Action Pawns on {}, moving to next Action", executing);
-                    return nextActionType(game);
-                });
+    private FollowUpActions nextActionPawnOfExecutingActionType(DominantSpecies game) {
+        log.debug("Moving to next Action Pawn >={} of {}", index, executing);
+
+        var next = getNextActionPawn(executing, index);
+        if (next.isPresent()) {
+            var actionPawn = next.get();
+            index = actionPawn.getIndex();
+            log.debug("Next Action Pawn is {} at {}", index, executing);
+            return actionPawn.toFollowUpActions();
+        } else {
+            log.debug("No more Action Pawns on {}", executing);
+            return FollowUpActions.none();
+        }
+    }
+
+    FollowUpActions nextActionPawnOrActionType(DominantSpecies game) {
+        var followUpActions = nextActionPawnOfExecutingActionType(game);
+        if (followUpActions.isEmpty()) {
+            log.debug("No more Action Pawns on {}, moving to next Action Type", executing);
+            return nextActionType(game);
+        }
+        return followUpActions;
     }
 
     int getNumberOfActionPawns(ActionType actionType, AnimalType animalType) {

@@ -45,6 +45,52 @@ public class Event implements InGameEvent {
     }
 
     public enum Type {
-        ADAPTATION, REGRESSION, REMOVE_ELEMENT_FROM_ANIMAL, SKIP_ELEMENT_TYPE, ABUNDANCE, DEPLETION, GLACIATION, WASTELAND, REMOVE_ELEMENT, SPECIES_REMOVED, GAIN_BONUS_VPS, SPECIATION, WANDERLUST, ADD_ELEMENT, MOVE_SPECIES, MIGRATION, COMPETITION, SCORE_TILE, DOMINATION, GAIN_VPS, CARD, SELECT_ELEMENT, EXECUTION_PHASE, EXECUTING, RESET_PHASE, PLANNING_PHASE, ADD_ELEMENT_TO_ANIMAL, GAIN_ACTION_PAWN, INITIATIVE, PLACE_ACTION_PAWN
+        // Phases
+        PLANNING_PHASE, // [round]
+        EXECUTION_PHASE, // [round]
+        EXECUTING, // [actionType]
+        RESET_PHASE, // [round]
+        EXTINCTION, // [species, hex, tileType]
+
+        // Actions
+        PLACE_ACTION_PAWN, // [actionType, position]
+        INITIATIVE, // [position]
+        ABUNDANCE, // [elementType, corner]
+        ADAPTATION, // [elementType]
+        DEPLETION, // [elementType, corner]
+        MIGRATION, // [species, fromHex, fromTileType, toHex, toTileType]
+        REGRESSION, // [#APs, #regressionBoxElements]
+        SKIP_REGRESSION_OF_ELEMENT, // [elementType]
+        GLACIATION, // [hex, tileType]
+        SPECIATION, // [species, hex, tileType]
+        WANDERLUST, // [stack, tileType, hex]
+        COMPETITION, // [animalType, hex, tileType]
+        WASTELAND, // [elementType]
+        DOMINATION, // [hex, tileType, dominant?]
+        CARD, // [card]
+
+        // Cards
+        HIBERNATION, // [species, hex, tileType]
+        CATASTROPHE, // [animalTypeToKeep, hex, tileType]
+
+        // Changes on Animal
+        GAIN_ACTION_PAWN, // []
+        REMOVE_ACTION_PAWN, // []
+        ADD_ELEMENT_TO_ANIMAL, // [elementType]
+        REMOVE_ELEMENT_FROM_ANIMAL, // [elementType]
+        GAIN_VPS, // [vps]
+        GAIN_VPS_FROM_TILE, // [vps, hex, tileType]
+        GAIN_BONUS_VPS, // [vps]
+        LOSE_VPS, // [vps]
+
+        // Changes on Earth
+        ADD_ELEMENT, // [elementType, corner]
+        REMOVE_ELEMENT, // [elementType, corner]
+        ADD_SPECIES, // [species, hex, tileType]
+        REMOVE_SPECIES, // [animalType, species, hex, tileType]
+        ELIMINATE_SPECIES, // [animalType, species, hex, tileType]
+        MOVE_SPECIES, // [animalType, species, fromHex, fromTileType, toHex, toTileType]
+        FINAL_SCORING,
+        SAVE_FROM_EXTINCTION
     }
 }

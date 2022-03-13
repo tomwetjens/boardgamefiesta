@@ -38,7 +38,7 @@ public class DrawBag {
                 .collect(Collectors.toMap(Function.identity(), elementType -> 18)));
     }
 
-    ElementType draw(Random random) {
+    ElementType draw(@NonNull Random random) {
         var total = getTotal();
 
         if (total > 0) {
@@ -58,21 +58,24 @@ public class DrawBag {
         return elements.values().stream().mapToInt(i -> i).sum();
     }
 
-    List<ElementType> draw(int count, Random random) {
+    List<ElementType> draw(int count, @NonNull Random random) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("Draw at least 1 element from bag");
+        }
         return IntStream.range(0, count)
                 .mapToObj(i -> draw(random))
                 .collect(Collectors.toList());
     }
 
-    void add(ElementType elementType) {
+    void add(@NonNull ElementType elementType) {
         elements.compute(elementType, (k, v) -> v + 1);
     }
 
-    void addAll(List<ElementType> elements) {
+    void addAll(@NonNull List<ElementType> elements) {
         elements.forEach(this::add);
     }
 
-    void remove(ElementType elementType) {
+    void remove(@NonNull ElementType elementType) {
         var count = elements.get(elementType);
 
         if (count == null || count == 0) {
@@ -82,15 +85,15 @@ public class DrawBag {
         elements.put(elementType, count - 1);
     }
 
-    boolean containsAny(Collection<ElementType> elementTypes) {
+    boolean containsAny(@NonNull Collection<ElementType> elementTypes) {
         return elementTypes.stream().anyMatch(this::contains);
     }
 
-    boolean contains(ElementType elementType) {
+    boolean contains(@NonNull ElementType elementType) {
         return elements.getOrDefault(elementType, 0) > 0;
     }
 
-    int count(ElementType elementType) {
+    int count(@NonNull ElementType elementType) {
         return elements.getOrDefault(elementType, 0);
     }
 

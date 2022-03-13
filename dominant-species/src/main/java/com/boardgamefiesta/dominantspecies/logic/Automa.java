@@ -63,12 +63,363 @@ public class Automa {
                     action = domination(game, random);
                 } else if (possibleActions.contains(Action.DominanceCard.class)) {
                     action = dominanceCard(game, random);
+                } else if (possibleActions.contains(Action.Aquatic.class)) {
+                    action = aquatic(game, random);
+                } else if (possibleActions.contains(Action.Biomass.class)) {
+                    action = biomass(game, random);
+                } else if (possibleActions.contains(Action.Blight.class)) {
+                    action = blight(game, random);
+                } else if (possibleActions.contains(Action.Catastrophe.class)) {
+                    action = catastrophe(game, random);
+                } else if (possibleActions.contains(Action.RemoveElement.class)) {
+                    if (possibleActions.size() == 1) {
+                        action = removeElement(game, random);
+                    } else {
+                        action = immigrants(game, random);
+                    }
+                } else if (possibleActions.contains(Action.RemoveActionPawn.class)) {
+                    if (possibleActions.contains(Action.RemoveAllBut1SpeciesOnEachTile.class)) {
+                        action = immigrants(game, random);
+                    } else {
+                        action = removeActionPawn();
+                    }
+                } else if (possibleActions.contains(Action.MassExodus.class)) {
+                    action = massExodus(game, random);
+                } else if (possibleActions.contains(Action.Metamorphosis.class)) {
+                    action = metamorphosis(game, random);
+                } else if (possibleActions.contains(Action.Predator.class)) {
+                    action = predator(game, random);
+                } else if (possibleActions.contains(Action.Evolution.class)) {
+                    action = evolution(game, random);
+                } else if (possibleActions.contains(Action.Fecundity.class)) {
+                    action = fecundity(game, random);
+                } else if (possibleActions.contains(Action.Fertile.class)) {
+                    action = fertile(game, random);
+                } else if (possibleActions.contains(Action.Habitat.class)) {
+                    action = habitat(game, random);
+                } else if (possibleActions.contains(Action.Hibernation.class)) {
+                    action = hibernation(game, random);
                 }
                 // TODO Add actions of Dominance Cards
 
                 action.ifPresentOrElse(a -> game.perform(player, a, random), () -> game.skip(player, random));
             }
         } while (game.getCurrentPlayers().contains(player));
+    }
+
+    private Optional<Action> hibernation(DominantSpecies game, Random random) {
+        var animal = game.getAnimal(game.getCurrentAnimal());
+
+        if (animal.getEliminatedSpecies() == 0) {
+            return Optional.empty();
+        }
+
+        var species = random.nextInt(Math.min(animal.getEliminatedSpecies(), Action.Hibernation.MAX_SPECIES));
+
+        if (species == 0) {
+            return Optional.empty();
+        }
+
+        var possibleTiles = new ArrayList<>(game.getTiles().keySet());
+
+        if (possibleTiles.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var tile = possibleTiles.get(random.nextInt(possibleTiles.size()));
+
+        return Optional.of(new Action.Hibernation(tile, species));
+    }
+
+    private Optional<Action> habitat(DominantSpecies game, Random random) {
+        if (game.getDrawBag().isEmpty()) {
+            return Optional.empty();
+        }
+
+        var possibleElementTypes = Arrays.stream(ElementType.values())
+                .filter(elementType -> game.getDrawBag().contains(elementType))
+                .collect(Collectors.toList());
+
+        if (possibleElementTypes.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var elementType = possibleElementTypes.get(random.nextInt(possibleElementTypes.size()));
+
+        var possibleCorners = game.getVacantCorners()
+                .filter(corner -> game.getAdjacentTiles(corner)
+                        .anyMatch(tile -> tile.getType() == TileType.SEA || tile.getType() == TileType.WETLAND))
+                .collect(Collectors.toList());
+
+        if (possibleCorners.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var corner = possibleCorners.get(random.nextInt(possibleCorners.size()));
+
+        return Optional.of(new Action.Habitat(elementType, corner));
+    }
+
+    private Optional<Action> fertile(DominantSpecies game, Random random) {
+        var tiles = new ArrayList<Hex>(game.getTilesWithSpecies(game.getCurrentAnimal()));
+        var tile = tiles.get(random.nextInt(tiles.size()));
+        return Optional.of(new Action.Fertile(tile));
+    }
+
+    private Optional<Action> fecundity(DominantSpecies game, Random random) {
+        var genePool = game.getAnimal(game.getCurrentAnimal()).getGenePool();
+
+        if (genePool == 0) {
+            return Optional.empty();
+        }
+
+        var tiles = game.getTilesWithSpecies(game.getCurrentAnimal()).stream()
+                .filter(hex -> random.nextInt(2) == 1)
+                .limit(genePool)
+                .collect(Collectors.toSet());
+
+        if (tiles.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new Action.Fecundity(tiles));
+    }
+
+    private Optional<Action> evolution(DominantSpecies game, Random random) {
+        var possibleAnimals = game.getAnimals().keySet().stream()
+                .filter(animalType -> animalType != game.getCurrentAnimal())
+                .filter(animalType -> !game.getTilesWithSpecies(animalType).isEmpty())
+                .collect(Collectors.toList());
+        if (possibleAnimals.size() > 1) {
+            Collections.shuffle(possibleAnimals);
+        }
+
+        var numberOfAnimals = random.nextInt(possibleAnimals.size());
+        if (numberOfAnimals == 0) {
+            return Optional.empty();
+        }
+
+        var animals = possibleAnimals.subList(0, numberOfAnimals);
+
+        var tiles = animals.stream()
+                .map(animalType -> {
+                    var possibleTiles = new ArrayList<>(game.getTilesWithSpecies(animalType));
+                    return possibleTiles.get(random.nextInt(possibleTiles.size()));
+                })
+                .collect(Collectors.toList());
+
+        return Optional.of(new Action.Evolution(tiles, animals));
+    }
+
+    private Optional<Action> predator(DominantSpecies game, Random random) {
+        var tiles = new ArrayList<>(game.getTilesWithSpecies(game.getCurrentAnimal()));
+
+        var animals = tiles.stream()
+                .map(game::getTile)
+                .map(Optional::get)
+                .map(tile -> {
+                    var opposingSpecies = tile.getSpecies().entrySet().stream()
+                            .filter(entry -> entry.getKey() != game.getCurrentAnimal() && entry.getValue() > 0)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toList());
+
+                    return !opposingSpecies.isEmpty() ? opposingSpecies.get(random.nextInt(opposingSpecies.size())) : null;
+                })
+                .collect(Collectors.toList());
+
+        return Optional.of(new Action.Predator(tiles, animals));
+    }
+
+    private Optional<Action> metamorphosis(DominantSpecies game, Random random) {
+        var animal = game.getAnimal(game.getCurrentAnimal());
+
+        var swappableElements = animal.getRemovableElements();
+
+        if (swappableElements.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var from = swappableElements.get(random.nextInt(swappableElements.size()));
+
+        var possibleElementTypes = Arrays.stream(ElementType.values())
+                .filter(elementType -> game.getDrawBag().contains(elementType))
+                .collect(Collectors.toList());
+
+        if (possibleElementTypes.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var to = possibleElementTypes.get(random.nextInt(possibleElementTypes.size()));
+
+        return Optional.of(new Action.Metamorphosis(from, to));
+    }
+
+    private Optional<Action> massExodus(DominantSpecies game, Random random) {
+        var possibleTiles = new ArrayList<>(game.getTiles().keySet());
+        var from = possibleTiles.get(random.nextInt(possibleTiles.size()));
+        var tile = game.getTile(from).get();
+
+        var adjacentTiles = game.getAdjacentHexes(from)
+                .filter(game::hasTile)
+                .collect(Collectors.toList());
+        Collections.shuffle(adjacentTiles);
+
+        var moves = new ArrayList<Action.MassExodus.Move>();
+
+        for (var animalType : tile.getSpecies().keySet()) {
+            var remaining = tile.getSpecies(animalType);
+
+            while (remaining > 0) {
+                var species = random.nextInt(remaining - 1) + 1;
+
+                var to = adjacentTiles.get(random.nextInt(adjacentTiles.size()));
+
+                moves.add(new Action.MassExodus.Move(to, animalType, species));
+
+                remaining -= species;
+            }
+        }
+
+        return Optional.of(new Action.MassExodus(from, moves));
+    }
+
+    private Optional<Action> removeAllBut1SpeciesOnEachTile() {
+        return Optional.of(new Action.RemoveAllBut1SpeciesOnEachTile());
+    }
+
+    private Optional<Action> removeActionPawn() {
+        return Optional.of(new Action.RemoveActionPawn());
+    }
+
+    private Optional<Action> immigrants(DominantSpecies game, Random random) {
+        var possibleActions = game.possibleActions();
+
+        var possibleAction = possibleActions.get(random.nextInt(possibleActions.size()));
+
+        if (possibleAction == Action.RemoveElement.class) {
+            return removeElement(game, random);
+        } else if (possibleAction == Action.RemoveActionPawn.class) {
+            return removeActionPawn();
+        } else if (possibleAction == Action.RemoveAllBut1SpeciesOnEachTile.class) {
+            return removeAllBut1SpeciesOnEachTile();
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Action> removeElement(DominantSpecies game, Random random) {
+        var animal = game.getAnimal(game.getCurrentAnimal());
+
+        var removableElements = animal.getRemovableElements();
+
+        if (removableElements.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var element = removableElements.get(random.nextInt(removableElements.size()));
+
+        return Optional.of(new Action.RemoveElement(element));
+    }
+
+    private Optional<Action> catastrophe(DominantSpecies game, Random random) {
+        var possibleTiles = new ArrayList<>(game.getTiles().keySet());
+        var hex = possibleTiles.get(random.nextInt(possibleTiles.size()));
+        var tile = game.getTile(hex).get();
+
+        var possibleSaves = game.getAnimals().keySet().stream()
+                .filter(tile::hasSpecies)
+                .collect(Collectors.toList());
+
+        var save = !possibleSaves.isEmpty()
+                ? possibleSaves.get(random.nextInt(possibleSaves.size())) : null;
+
+        var adjacentTiles = game.getAdjacentHexes(hex)
+                .filter(game::hasTile)
+                .collect(Collectors.toList());
+
+        var eliminateOnAdjacentTiles = adjacentTiles.stream()
+                .map(adjacentTile -> {
+                    var possibleEliminations = game.getAnimals().keySet().stream()
+                            .filter(tile::hasSpecies)
+                            .collect(Collectors.toList());
+
+                    return !possibleEliminations.isEmpty()
+                            ? possibleEliminations.get(random.nextInt(possibleEliminations.size())) : null;
+                })
+                .collect(Collectors.toList());
+
+        return Optional.of(new Action.Catastrophe(hex, save, adjacentTiles, eliminateOnAdjacentTiles));
+    }
+
+    private Optional<Action> blight(DominantSpecies game, Random random) {
+        var possibleTiles = new ArrayList<>(game.getTiles().keySet());
+
+        var tile = possibleTiles.get(random.nextInt(possibleTiles.size()));
+
+        var elements = game.getAdjacentElements(tile);
+        if (elements.size() > 1) {
+            elements.remove(random.nextInt(elements.size()));
+        } else {
+            elements.clear();
+        }
+
+        return Optional.of(new Action.Blight(tile, new HashSet<>(elements)));
+    }
+
+    private Optional<Action> biomass(DominantSpecies game, Random random) {
+        var tiles = new ArrayList<>(Action.Biomass.getAffectedTiles(game));
+
+        var animalTypes = tiles.stream()
+                .map(game::getTile)
+                .map(Optional::get)
+                .map(tile -> {
+                    var possibleAnimalTypes = tile.getSpecies().entrySet().stream()
+                            .filter(entry -> entry.getValue() > 0)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toList());
+
+                    return possibleAnimalTypes.get(random.nextInt(possibleAnimalTypes.size()));
+                })
+                .collect(Collectors.toList());
+
+        return Optional.of(new Action.Biomass(tiles, animalTypes));
+    }
+
+    private Optional<Action> aquatic(DominantSpecies game, Random random) {
+        var possibleElementTypes = Arrays.stream(ElementType.values())
+                .filter(elementType -> game.getDrawBag().contains(elementType))
+                .collect(Collectors.toList());
+
+        if (possibleElementTypes.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var elementType = possibleElementTypes.get(random.nextInt(possibleElementTypes.size()));
+
+        var possibleCorners = game.getVacantCorners()
+                .filter(corner -> game.getAdjacentTiles(corner)
+                        .anyMatch(tile -> tile.getType() == TileType.SEA || tile.getType() == TileType.WETLAND))
+                .collect(Collectors.toList());
+
+        if (possibleCorners.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var corner = possibleCorners.get(random.nextInt(possibleCorners.size()));
+
+        var species = Math.min(game.getAnimal(game.getCurrentAnimal()).getGenePool(), Action.Aquatic.MAX_SPECIES);
+
+        if (species > 0) {
+            var possibleTiles = game.getTiles().entrySet().stream()
+                    .filter(entry -> entry.getValue().getType() == TileType.SEA || entry.getValue().getType() == TileType.WETLAND)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+
+            var tile = !possibleTiles.isEmpty() ? possibleTiles.get(random.nextInt(possibleTiles.size())) : null;
+
+            return Optional.of(new Action.Aquatic(elementType, corner, tile, species));
+        } else {
+            return Optional.of(new Action.Aquatic(elementType, corner, null, 0));
+        }
     }
 
     private Optional<Action> dominanceCard(DominantSpecies game, Random random) {
@@ -134,7 +485,7 @@ public class Automa {
     private Optional<Action> migration(DominantSpecies game, Random random) {
         // TODO Make smarter than just random
 
-        var actionPawn = game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.MIGRATION)
+        var actionPawn = game.getActionDisplay().getCurrentActionPawn()
                 .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
 
         var maxSpecies = Action.Migration.getMaxSpecies(actionPawn);
@@ -341,7 +692,7 @@ public class Automa {
     }
 
     private Optional<Action> speciation(DominantSpecies game, Random random) {
-        var actionPawn = game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.SPECIATION)
+        var actionPawn = game.getActionDisplay().getCurrentActionPawn()
                 .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_ACTION_PAWN));
 
         if (actionPawn.isFree() && game.getCurrentAnimal() == AnimalType.INSECTS) {

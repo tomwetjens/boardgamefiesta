@@ -18,8 +18,44 @@
 
 package com.boardgamefiesta.dominantspecies.logic;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class TileTest {
+
+    @Nested
+    class ScoreTest {
+
+        @Test
+        void tie() {
+            var tile = Tile.initial(TileType.SEA, false);
+            tile.addSpecies(AnimalType.ARACHNIDS, 7);
+            tile.addSpecies(AnimalType.INSECTS, 7);
+
+            var score = tile.score();
+            assertThat(score).containsExactlyEntriesOf(Map.of(
+                    AnimalType.ARACHNIDS, 9,
+                    AnimalType.INSECTS, 5
+            ));
+        }
+
+        @Test
+        void zeroSpecies() {
+            var tile = Tile.initial(TileType.SEA, false);
+            tile.addSpecies(AnimalType.INSECTS, 1);
+            tile.removeSpecies(AnimalType.INSECTS, 1);
+            tile.addSpecies(AnimalType.ARACHNIDS, 7);
+
+            var score = tile.score();
+            assertThat(score).containsExactlyEntriesOf(Map.of(
+                    AnimalType.ARACHNIDS, 9,
+                    AnimalType.INSECTS, 0
+            ));
+        }
+    }
 
 }

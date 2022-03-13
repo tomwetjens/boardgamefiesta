@@ -83,9 +83,9 @@ public enum ActionType {
     }
 
     private static FollowUpActions initiative(DominantSpecies game) {
-        return game.getActionDisplay().getLeftMostExecutableActionPawn(ActionType.INITIATIVE)
+        return game.getActionDisplay().getCurrentActionPawn()
                 .map(actionPawn -> {
-                    game.getActionDisplay().removeLeftMostActionPawn(ActionType.INITIATIVE);
+                    game.getActionDisplay().removeCurrentActionPawn();
 
                     var index = game.moveForwardOnInitiative(actionPawn.getAnimalType());
 
