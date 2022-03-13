@@ -298,20 +298,18 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 ? ((LazyLog) log).pending()
                 : log.stream();
 
-        var writeRequests = logEntries
+        logEntries
                 .map(logEntry -> mapItemFromLogEntry(logEntry, table.getId()))
                 .map(logItem -> WriteRequest.builder()
                         .putRequest(PutRequest.builder()
                                 .item(logItem.asMap())
                                 .build())
                         .build())
-                .collect(Collectors.toList());
-
-        if (!writeRequests.isEmpty()) {
-            client.batchWriteItem(BatchWriteItemRequest.builder()
-                    .requestItems(Map.of(config.getTableName(), writeRequests))
-                    .build());
-        }
+                .collect(Chunked.chunked(MAX_BATCH_WRITE_SIZE))
+                .forEach(writeRequests ->
+                        client.batchWriteItem(BatchWriteItemRequest.builder()
+                                .requestItems(Map.of(config.getTableName(), writeRequests))
+                                .build()));
     }
 
     private int countActive(User.Id userId) {
