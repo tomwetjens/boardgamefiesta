@@ -99,12 +99,26 @@ public class Automa {
                     action = habitat(game, random);
                 } else if (possibleActions.contains(Action.Hibernation.class)) {
                     action = hibernation(game, random);
+                } else if (possibleActions.contains(Action.SaveFromExtinction.class)) {
+                    action = saveFromExtinction(game, random);
                 }
                 // TODO Add actions of Dominance Cards
 
                 action.ifPresentOrElse(a -> game.perform(player, a, random), () -> game.skip(player, random));
             }
         } while (game.getCurrentPlayers().contains(player));
+    }
+
+    private Optional<Action> saveFromExtinction(DominantSpecies game, Random random) {
+        var possibleTiles = new ArrayList<>(game.getTilesWithSpecies(game.getCurrentAnimal()));
+
+        if (possibleTiles.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var tile = possibleTiles.get(random.nextInt(possibleTiles.size()));
+
+        return Optional.of(new Action.SaveFromExtinction(tile));
     }
 
     private Optional<Action> hibernation(DominantSpecies game, Random random) {
@@ -212,7 +226,7 @@ public class Automa {
     }
 
     private Optional<Action> predator(DominantSpecies game, Random random) {
-        var tiles = new ArrayList<>(game.getTilesWithSpecies(game.getCurrentAnimal()));
+        var tiles = new ArrayList<>(Action.Predator.getOccupiedTiles(game));
 
         var animals = tiles.stream()
                 .map(game::getTile)
