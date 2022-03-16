@@ -16,17 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.email;import com.boardgamefiesta.domain.email.Emailer;
-import com.boardgamefiesta.domain.email.Message;
-import com.boardgamefiesta.domain.user.User;
+package com.boardgamefiesta;
+
+import com.boardgamefiesta.domain.table.AutomaScheduler;
+import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.table.Table;
 
 import javax.enterprise.context.ApplicationScoped;
 
 // TODO Refactor so it is not necessary to provide this bean
 @ApplicationScoped
-public class NoopEmailer implements Emailer {
+public class NoopAutomaScheduler implements AutomaScheduler {
     @Override
-    public void sendEmailToUser(Message message, User user) {
+    public void schedule(Table.Id tableId, Player.Id playerId) {
         throw new UnsupportedOperationException();
     }
 }

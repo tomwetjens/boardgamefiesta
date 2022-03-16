@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,77 +16,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.automa;
+package com.boardgamefiesta.domain.table;
 
-import com.boardgamefiesta.domain.table.Player;
-import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.domain.table.Tables;
-import io.quarkus.runtime.ShutdownEvent;
-import io.quarkus.runtime.StartupEvent;
+import com.boardgamefiesta.domain.DomainService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.Message;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonObject;
 import javax.transaction.Transactional;
-import java.io.StringReader;
 
 @ApplicationScoped
 @Slf4j
-@Transactional
-class AutomaExecutor {
+public class AutomaExecutor implements DomainService {
 
     public static final int MAX_RETRIES = 30;
 
     private final Tables tables;
-    private final SqsListener listener;
 
     @Inject
-    AutomaExecutor(@NonNull Tables tables,
-                   @NonNull SqsClient sqsClient,
-                   @ConfigProperty(name = "bgf.sqs.enabled") boolean enabled,
-                   @ConfigProperty(name = "bgf.sqs.queue-url") String queueUrl) {
+    AutomaExecutor(@NonNull Tables tables) {
         this.tables = tables;
-
-        if (enabled) {
-            listener = new SqsListener(sqsClient, queueUrl, this::processMessage);
-        } else {
-            listener = null;
-        }
-    }
-
-    public void init(@Observes StartupEvent event) {
-        if (listener != null) {
-            listener.start();
-        }
-    }
-
-    public void destroy(@Observes ShutdownEvent event) {
-        if (listener != null) {
-            listener.stop();
-        }
-    }
-
-    private void processMessage(Message message) {
-        var body = message.body();
-        var jsonObject = parseJsonString(body);
-
-        execute(Table.Id.of(jsonObject.getString("tableId")),
-                Player.Id.of(jsonObject.getString("playerId")));
-    }
-
-    private JsonObject parseJsonString(String str) {
-        return Json.createReader(new StringReader(str)).readObject();
     }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    void execute(Table.Id tableId, Player.Id playerId) {
+    public void execute(Table.Id tableId, Player.Id playerId) {
         try {
             var retries = 0;
             do {

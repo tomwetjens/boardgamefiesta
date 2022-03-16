@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.automa;
+package com.boardgamefiesta;
 
-import com.boardgamefiesta.domain.DomainService;
+import com.boardgamefiesta.domain.table.AutomaScheduler;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import lombok.NonNull;
@@ -35,19 +35,20 @@ import java.io.StringWriter;
 
 @ApplicationScoped
 @Slf4j
-class AutomaScheduler implements DomainService {
+class SqsAutomaScheduler implements AutomaScheduler {
 
     private final SqsClient sqsClient;
     private final String queueUrl;
 
     @Inject
-    public AutomaScheduler(@NonNull SqsClient sqsClient,
-                           @ConfigProperty(name = "bgf.sqs.queue-url") String queueUrl) {
+    public SqsAutomaScheduler(@NonNull SqsClient sqsClient,
+                              @ConfigProperty(name = "bgf.sqs.queue-url") String queueUrl) {
         this.sqsClient = sqsClient;
         this.queueUrl = queueUrl;
     }
 
-    void schedule(Table. Id tableId, Player.Id playerId) {
+    @Override
+    public void schedule(Table.Id tableId, Player.Id playerId) {
         // Send to external queue so it is persisted and can be picked by any worker
         var message = Json.createObjectBuilder()
                 .add("tableId", tableId.getId())

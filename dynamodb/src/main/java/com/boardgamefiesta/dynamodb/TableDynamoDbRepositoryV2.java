@@ -789,7 +789,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .collect(Collectors.toCollection(TrackingSet::new));
         players.flush(); // Consider everything added up until now to be unchanged
 
-        var game = games.get(Game.Id.of(item.getString("GameId")));
+        var game = games.get(Game.Id.fromString(item.getString("GameId")));
 
         return Table.builder()
                 .id(id)

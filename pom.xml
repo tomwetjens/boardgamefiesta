@@ -65,6 +65,7 @@
         <module>dominant-species</module>
         <module>rest-api</module>
         <module>lambda-ws</module>
+        <module>lambda-automa</module>
     </modules>
 
     <dependencyManagement>

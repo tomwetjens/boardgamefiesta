@@ -44,7 +44,11 @@ public class Games implements DomainService {
     }
 
     public Game get(Game.Id id) {
-        return games.get(id);
+        var game = games.get(id);
+        if (game == null) {
+            throw new IllegalArgumentException("Unknown game: " + id.getId());
+        }
+        return game;
     }
 
     public Optional<Game> findById(Game.Id id) {

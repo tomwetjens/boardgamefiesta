@@ -1,6 +1,6 @@
 /*
  * Board Game Fiesta
- * Copyright (C)  2021 Tom Wetjens <tomwetjens@gmail.com>
+ * Copyright (C)  2022 Tom Wetjens <tomwetjens@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,11 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.server.automa;
+package com.boardgamefiesta.domain.table;
 
-import com.boardgamefiesta.domain.table.Player;
-import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.domain.table.Tables;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

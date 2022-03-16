@@ -16,17 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.boardgamefiesta.email;import com.boardgamefiesta.domain.email.Emailer;
-import com.boardgamefiesta.domain.email.Message;
-import com.boardgamefiesta.domain.user.User;
+package com.boardgamefiesta.lambda.sqs;
 
-import javax.enterprise.context.ApplicationScoped;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-// TODO Refactor so it is not necessary to provide this bean
-@ApplicationScoped
-public class NoopEmailer implements Emailer {
-    @Override
-    public void sendEmailToUser(Message message, User user) {
-        throw new UnsupportedOperationException();
+import java.io.Serializable;
+import java.util.List;
+
+@Data
+@AllArgsConstructor
+public class SQSBatchResponse {
+
+    List<BatchItemFailure> batchItemFailures;
+
+    @Data
+    @AllArgsConstructor
+    public static class BatchItemFailure implements Serializable {
+        String itemIdentifier;
     }
 }
