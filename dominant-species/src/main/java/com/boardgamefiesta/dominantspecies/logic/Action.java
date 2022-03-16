@@ -1249,7 +1249,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             if (!occupiedTiles.containsAll(tiles)) {
                 throw new DominantSpeciesException(DominantSpeciesError.TILE_NOT_OCCUPIED_BY_PLAYER);
             }
-            if (tiles.containsAll(occupiedTiles)) {
+            if (!tiles.containsAll(occupiedTiles)) {
                 throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_ALL_TILES_OCCUPIED_BY_PLAYER);
             }
 
