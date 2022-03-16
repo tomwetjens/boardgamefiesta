@@ -144,12 +144,14 @@ class DominantSpeciesTest {
 
             while (ds.getAnimals().get(ds.getCurrentAnimal()).getActionPawns() > 0
                     && ds.getPhase() == Phase.PLANNING) {
-                var placement = ds.getActionDisplay().possiblePlacements()
-                        .findFirst()
-                        .orElseThrow(() -> new AssertionError("No available action space"));
+                do {
+                    var placement = ds.getActionDisplay().possiblePlacements()
+                            .findFirst()
+                            .orElseThrow(() -> new AssertionError("No available action space"));
 
-                ds.perform(new Action.PlaceActionPawn(placement.getActionType(), placement.getIndex()), new Random(0));
-                assertThat(ds.possibleActions()).isEmpty();
+                    ds.perform(new Action.PlaceActionPawn(placement.getActionType(), placement.getIndex()), new Random(0));
+                } while (!ds.possibleActions().isEmpty());
+
                 ds.endTurn(new Random(0));
             }
 
@@ -421,8 +423,6 @@ class DominantSpeciesTest {
                     new Action.WanderlustMove.Move(DominantSpecies.INITIAL_MOUNTAIN, 2),
                     new Action.WanderlustMove.Move(DominantSpecies.INITIAL_DESERT, 1)
             )), new Random(0));
-
-            ds.endTurn(new Random(0));
 
             assertThat(ds.getTile(wanderlustHex).get().getSpecies(AnimalType.REPTILES)).isEqualTo(3);
             assertThat(ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().getSpecies(AnimalType.REPTILES)).isEqualTo(0);
