@@ -1,14 +1,16 @@
 @startuml
 actor User
 frame BoardGameFiesta {
-    component Frontend <<Angular>>
-    component Backend <<JVM>>
-    component AuthServer <<OIDC>>
+    component WebApp
+    component Backend
+    component IdentityProvider
     database Database
-    Frontend --> Backend
+    WebApp --> Backend
     Backend --> Database
-    Backend --> AuthServer
+    Backend --> IdentityProvider
 }
-User --> Frontend
-User --> AuthServer
+User --> WebApp
+User --> IdentityProvider
+Backend --> [PaymentProvider]
+Backend --> [EmailServer]
 @enduml

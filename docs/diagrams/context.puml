@@ -1,5 +1,7 @@
 @startuml
 actor User
-rectangle BoardGameFiesta
-User --> BoardGameFiesta
+[BoardGameFiesta]
+User --> [BoardGameFiesta]
+[BoardGameFiesta] --> [PaymentProvider]
+[BoardGameFiesta] --> [EmailServer]
 @enduml

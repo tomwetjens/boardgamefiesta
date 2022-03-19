@@ -1,21 +1,39 @@
 @startuml
+
 actor User
-database Database <<DynamoDB>>
 
-frame Backend <<JVM>> {
-  component Commands
-  component Queries
-  component Domain
-  component Repositories
+database Database <<AWS DynamoDB>>
 
-  Commands --> Repositories
-  Commands --> Domain
-  Queries --> Repositories
-  Repositories --> Domain
-  Repositories --> Database
+frame Backend {
+  component [REST API Gateway] <<AWS API Gateway>>
+  component [REST API] <<AWS Lambda>>
+  [REST API Gateway] --> [REST API]
+
+  component [WebSocket API Gateway] <<AWS API Gateway>>
+  component [WebSocket API] <<AWS Lambda>>
+  [WebSocket API Gateway] --> [WebSocket API]
+
+  component [Automa Executor] <<AWS Lambda>>
+  () Queue <<AWS SQS>>
+  [Automa Executor] - Queue
+  [Automa Executor] --> Queue
+
+  [REST API] --> Queue
+
+  component [Cognito Trigger] <<AWS Lambda>>
+
+  [REST API] --> Database
+  [WebSocket API] --> Database
+  [Automa Executor] --> Database
 }
 
-User --> Commands
-User --> Queries
+component [Identity Provider] <<AWS Cognito>>
+[Identity Provider] --> [Cognito Trigger]
+[REST API] --> [Identity Provider]
+[WebSocket API] --> [Identity Provider]
+
+User --> [REST API Gateway]
+User --> [WebSocket API Gateway]
+User --> [Identity Provider]
 
 @enduml
