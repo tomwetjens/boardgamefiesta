@@ -39,6 +39,10 @@
             <groupId>com.boardgamefiesta</groupId>
             <artifactId>domain</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>dynamodb-shared</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
