@@ -56,13 +56,10 @@
         <module>api</module>
         <module>domain</module>
         <module>dynamodb</module>
-        <module>gwt</module>
-        <module>istanbul</module>
+        <module>games</module>
         <module>lambda-cognito</module>
         <module>lambda-rest</module>
-        <module>powergrid</module>
         <module>server</module>
-        <module>dominant-species</module>
         <module>rest-api</module>
         <module>lambda-ws</module>
         <module>lambda-automa</module>
@@ -87,22 +84,7 @@
             </dependency>
             <dependency>
                 <groupId>com.boardgamefiesta</groupId>
-                <artifactId>dominant-species</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.boardgamefiesta</groupId>
-                <artifactId>gwt</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.boardgamefiesta</groupId>
-                <artifactId>istanbul</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.boardgamefiesta</groupId>
-                <artifactId>powergrid</artifactId>
+                <artifactId>games</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

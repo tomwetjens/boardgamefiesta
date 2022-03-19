@@ -94,7 +94,7 @@
         <dependency>
             <!-- For canary test -->
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>gwt</artifactId>
+            <artifactId>games</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
