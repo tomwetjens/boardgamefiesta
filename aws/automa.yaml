@@ -60,6 +60,15 @@ Resources:
                   - sqs:SendMessage
                 Resource:
                   - !GetAtt AutomaSqsQueue.Arn
+        - PolicyName: ExecuteApi
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - execute-api:ManageConnections
+                Resource:
+                  - 'arn:aws:execute-api:eu-west-1:598172618529:5479own0ue/production/*/*'
 
   AutomaSqsFunction:
     Type: AWS::Lambda::Function
