@@ -207,6 +207,7 @@ public class WebSocketConnectionRepository {
                 ))
                 .build())
                 .items().stream()
+                .filter(item -> !item.containsKey(GSI3PK)) // Exclude table connections
                 .map(item -> item.get(GSI1SK).s().replace(WEB_SOCKET_PREFIX, ""));
     }
 
