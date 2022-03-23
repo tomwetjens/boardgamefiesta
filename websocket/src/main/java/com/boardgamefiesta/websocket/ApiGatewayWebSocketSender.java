@@ -33,7 +33,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Slf4j
@@ -59,11 +61,23 @@ public class ApiGatewayWebSocketSender implements WebSocketSender {
 
     @Override
     public void sendToTable(Table.Id tableId, WebSocketServerEvent event) {
-        var sdkBytes = SdkBytes.fromString(event.toJSON(), StandardCharsets.UTF_8);
+        var data = event.toJSON();
 
-        webSocketConnections.findByTableId(tableId)
-                .forEach(connectionId -> {
+        log.debug("Sending message to table {}: {}", tableId.getId(), data);
+
+        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
+
+        var connectionIds = webSocketConnections.findByTableId(tableId)
+                .collect(Collectors.toList());
+
+        if (connectionIds.isEmpty()) {
+            log.debug("No connections found for table: {}", tableId.getId());
+        }
+
+        connectionIds.forEach(connectionId -> {
                     try {
+                        log.debug("Sending message to connection {}: {}", connectionId, data);
+
                         apiGatewayManagementApiClient.postToConnection(PostToConnectionRequest.builder()
                                 .connectionId(connectionId)
                                 .data(sdkBytes)
@@ -71,28 +85,40 @@ public class ApiGatewayWebSocketSender implements WebSocketSender {
                     } catch (GoneException e) {
                         // Ignore
                     } catch (SdkException e) {
-                        log.debug("Could not send to WebSocket connection: {}", connectionId, e);
+                        log.error("Could not send to WebSocket connection: {}", connectionId, e);
                     }
                 });
     }
 
     @Override
     public void sendToUser(User.Id userId, WebSocketServerEvent event) {
-        var sdkBytes = SdkBytes.fromString(event.toJSON(), StandardCharsets.UTF_8);
+        var data = event.toJSON();
 
-        webSocketConnections.findByUserId(userId)
-                .forEach(connectionId -> {
-                    try {
-                        apiGatewayManagementApiClient.postToConnection(PostToConnectionRequest.builder()
-                                .connectionId(connectionId)
-                                .data(sdkBytes)
-                                .build());
-                    } catch (GoneException e) {
-                        // Ignore
-                    } catch (SdkException e) {
-                        log.debug("Could not send to WebSocket connection: {}", connectionId, e);
-                    }
-                });
+        log.debug("Sending message to user {}: {}", userId.getId(), data);
+
+        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
+
+        var connectionIds = webSocketConnections.findByUserId(userId)
+                .collect(Collectors.toList());
+
+        if (connectionIds.isEmpty()) {
+            log.debug("No connections found for user: {}", userId.getId());
+        }
+
+        connectionIds.forEach(connectionId -> {
+            try {
+                log.debug("Sending message to connection {}: {}", connectionId, data);
+
+                apiGatewayManagementApiClient.postToConnection(PostToConnectionRequest.builder()
+                        .connectionId(connectionId)
+                        .data(sdkBytes)
+                        .build());
+            } catch (GoneException e) {
+                // Ignore
+            } catch (SdkException e) {
+                log.error("Could not send to WebSocket connection: {}", connectionId, e);
+            }
+        });
     }
 
 }

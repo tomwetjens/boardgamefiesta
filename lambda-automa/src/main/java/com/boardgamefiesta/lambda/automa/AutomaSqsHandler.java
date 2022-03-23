@@ -46,7 +46,6 @@ public class AutomaSqsHandler implements RequestHandler<SQSEvent, SQSBatchRespon
         return new SQSBatchResponse(input.getRecords().stream()
                 .flatMap(message -> {
                     try {
-                        log.info("Handling message: {}", message.getMessageId());
                         handleMessage(message);
                         return Stream.empty();
                     } catch (Exception e) {
@@ -58,6 +57,8 @@ public class AutomaSqsHandler implements RequestHandler<SQSEvent, SQSBatchRespon
     }
 
     private void handleMessage(SQSEvent.SQSMessage message) {
+        log.info("Handling message: {}", message.getMessageId());
+
         var automaRequest = AutomaRequest.fromJSON(message.getBody());
 
         automaExecutor.execute(Table.Id.of(automaRequest.getTableId()),
