@@ -1,0 +1,40 @@
+@startuml
+
+package api {
+    hexagon restapi
+    hexagon wsapi
+}
+
+package domain {
+hexagon domainuser
+hexagon domaintable
+hexagon domainws
+hexagon domainemail
+}
+
+package awsimpl {
+hexagon dynamodb
+hexagon awsimplws
+hexagon awsimplemail
+}
+
+restapi -d-> domainuser
+restapi -d-> domaintable
+wsapi -d-> domainws
+
+domainws --> domainuser
+domainws --> domaintable
+domaintable --> domainuser
+domainemail -u-> domaintable
+domainemail -u-> domainws
+domainemail -u-> domainuser
+
+dynamodb -u-> domainuser
+dynamodb -u-> domaintable
+awsimplws -u-> domainws
+awsimplemail -u-> domainemail
+
+hexagon devserver
+devserver --> restapi
+
+@enduml

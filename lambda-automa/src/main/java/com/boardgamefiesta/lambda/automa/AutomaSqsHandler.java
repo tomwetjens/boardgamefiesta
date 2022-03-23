@@ -21,7 +21,8 @@ package com.boardgamefiesta.lambda.automa;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.boardgamefiesta.domain.table.AutomaExecutor;
+import com.boardgamefiesta.domain.automa.AutomaExecutor;
+import com.boardgamefiesta.domain.automa.AutomaRequest;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.lambda.sqs.SQSBatchResponse;
@@ -29,16 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Named("automa")
 @Slf4j
 public class AutomaSqsHandler implements RequestHandler<SQSEvent, SQSBatchResponse> {
-
-    private static final Jsonb JSONB = JsonbBuilder.create();
 
     @Inject
     AutomaExecutor automaExecutor;
@@ -61,7 +58,7 @@ public class AutomaSqsHandler implements RequestHandler<SQSEvent, SQSBatchRespon
     }
 
     private void handleMessage(SQSEvent.SQSMessage message) {
-        var automaRequest = JSONB.fromJson(message.getBody(), AutomaRequest.class);
+        var automaRequest = AutomaRequest.fromJSON(message.getBody());
 
         automaExecutor.execute(Table.Id.of(automaRequest.getTableId()),
                 Player.Id.of(automaRequest.getPlayerId()));

@@ -34,11 +34,7 @@
     <dependencies>
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>domain</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>dynamodb</artifactId>
+            <artifactId>user</artifactId>
         </dependency>
 
         <dependency>
@@ -48,6 +44,11 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Enables @Transactional and CDI events AFTER_SUCCESS even though we don't have JPA -->
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-narayana-jta</artifactId>
         </dependency>
 
         <dependency>

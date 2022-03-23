@@ -63,7 +63,7 @@ echo "${ACTION}: $STACK_NAME"
 aws s3 cp ../lambda-automa/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-automa.zip
 
 aws cloudformation $ACTION --stack-name $STACK_NAME-automa \
-  --template-body file://lambda-automa.yaml \
+  --template-body file://automa.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
 

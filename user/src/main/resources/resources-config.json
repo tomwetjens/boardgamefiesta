@@ -1,0 +1,13 @@
+{
+  "resources": [
+    {
+      "pattern": ".*\\.properties"
+    },
+    {
+      "pattern": ".*\\.txt"
+    },
+    {
+      "pattern": ".*\\.json$"
+    }
+  ]
+}

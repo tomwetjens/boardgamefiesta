@@ -34,30 +34,22 @@
     <dependencies>
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>domain</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>dynamodb</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
             <artifactId>rest-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>gwt</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>istanbul</artifactId>
+            <artifactId>email</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>cognito</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>websocket</artifactId>
         </dependency>
 
         <dependency>
@@ -76,10 +68,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-amazon-dynamodb</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-amazon-ses</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -105,23 +93,15 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>cognitoidentityprovider</artifactId>
+            <!-- Enables @Transactional and CDI events AFTER_SUCCESS even though we don't have JPA -->
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-narayana-jta</artifactId>
         </dependency>
+
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>apache-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>apigatewaymanagementapi</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
         </dependency>
 
         <dependency>

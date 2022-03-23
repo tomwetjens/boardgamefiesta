@@ -38,31 +38,4 @@
         <module>powergrid</module>
     </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>dominant-species</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>gwt</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>istanbul</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>powergrid</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-    </dependencies>
-
 </project>

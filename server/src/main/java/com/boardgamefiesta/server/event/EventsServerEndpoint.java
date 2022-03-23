@@ -18,15 +18,8 @@
 
 package com.boardgamefiesta.server.event;
 
-import com.boardgamefiesta.domain.event.WebSocketConnection;
-import com.boardgamefiesta.domain.event.WebSocketConnectionSender;
-import com.boardgamefiesta.domain.event.WebSocketConnections;
-import com.boardgamefiesta.domain.event.WebSocketServerEvent;
 import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.domain.user.Users;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -34,33 +27,24 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
-import javax.ws.rs.NotAllowedException;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 
 @ApplicationScoped
 @ServerEndpoint("/events")
 @Slf4j
-public class EventsServerEndpoint implements WebSocketConnectionSender {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    private static final Map<User.Id, Set<Session>> USER_SESSIONS = new ConcurrentHashMap<>();
-    private static final Map<Table.Id, Set<Session>> TABLE_SESSIONS = new ConcurrentHashMap<>();
-
-    @Inject
-    WebSocketConnections webSocketConnections;
+public class EventsServerEndpoint {
 
     @Inject
     Users users;
 
     // Only enabled for local testing
-    // TODO Remove this config property when all clients have shifted to the API Gateway and server is not longer also deployed on AWS
+    // TODO Remove this config property when server is no longer deployed on AWS (in favor of REST API Gateway and Lambda)
     @ConfigProperty(name = "bgf.ws.server.enabled", defaultValue = "false")
     boolean enabled;
+
+    @Inject
+    ServerWebSocketSender sender;
 
     @OnOpen
     public void onOpen(Session session) throws IOException {
@@ -69,119 +53,25 @@ public class EventsServerEndpoint implements WebSocketConnectionSender {
         }
 
         CurrentUser.getUserId(session, users).ifPresent(userId -> {
-            USER_SESSIONS.compute(userId, (k, sessions) -> {
-                if (sessions == null) {
-                    sessions = new TreeSet<>(Comparator.comparing(Session::getId));
-                }
-
-                sessions.add(session);
-
-                return sessions;
-            });
-
-            // TODO Remove when all clients have switched to WebSockets on API Gateway
-            webSocketConnections.add(WebSocketConnection.createForUser(session.getId(), userId));
+            sender.registerUser(userId, session);
         });
 
         getTableId(session).ifPresent(tableId ->
-                addTableSession(session, tableId));
-    }
-
-    void addTableSession(Session session, Table.Id tableId) {
-        TABLE_SESSIONS.compute(tableId, (key, sessions) -> {
-            if (sessions == null) {
-                sessions = new TreeSet<>(Comparator.comparing(Session::getId));
-            }
-
-            sessions.add(session);
-
-            return sessions;
-        });
+                sender.registerTable(tableId, session));
     }
 
     @OnClose
     public void onClose(Session session) {
         CurrentUser.getUserId(session, users).ifPresent(userId ->
-                USER_SESSIONS.computeIfPresent(userId, (k, sessions) -> {
-                    sessions.remove(session);
-
-                    if (sessions.isEmpty()) {
-                        // Clean up mapping once all sessions are closed
-                        return null;
-                    }
-
-                    return sessions;
-                }));
-
-        // TODO Remove when all clients have switched to WebSockets on API Gateway
-        webSocketConnections.remove(session.getId());
+                sender.unregisterUser(userId, session));
 
         getTableId(session).ifPresent(tableId ->
-                removeTableSession(session, tableId));
-    }
-
-    void removeTableSession(Session session, Table.Id tableId) {
-        TABLE_SESSIONS.computeIfPresent(tableId, (k, sessions) -> {
-            sessions.remove(session);
-
-            if (sessions.isEmpty()) {
-                // Clean up mapping once all sessions are closed
-                return null;
-            }
-
-            return sessions;
-        });
-    }
-
-    // TODO Remove when all clients have switched to WebSockets on API Gateway
-    @OnMessage
-    public void onMessage(Session session, String data) throws JsonProcessingException {
-        var clientEvent = OBJECT_MAPPER.readValue(data, ClientEvent.class);
-
-        switch (clientEvent.getType()) {
-            case ACTIVE:
-                CurrentUser.getUserId(session, users).ifPresent(userId ->
-                        webSocketConnections.updateStatus(session.getId(), userId, Instant.now(), WebSocketConnection.Status.ACTIVE));
-                break;
-            case INACTIVE:
-                CurrentUser.getUserId(session, users).ifPresent(userId ->
-                        webSocketConnections.updateStatus(session.getId(), userId, Instant.now(), WebSocketConnection.Status.INACTIVE));
-                break;
-        }
+                sender.unregisterTable(tableId, session));
     }
 
     @OnError
     public void onError(Session session, Throwable throwable) {
         onClose(session);
-    }
-
-    @Override
-    public void sendToTable(Table.Id tableId, WebSocketServerEvent event) {
-        var data = toJSON(event);
-
-        var sessions = TABLE_SESSIONS.get(tableId);
-        if (sessions != null) {
-            sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
-        }
-    }
-
-    @Override
-    public void sendToUser(User.Id userId, WebSocketServerEvent event) {
-        var sessions = USER_SESSIONS.get(userId);
-        if (sessions != null) {
-            var data = toJSON(event);
-
-            sessions.forEach(session -> session.getAsyncRemote().sendObject(data));
-        }
-    }
-
-    private static String toJSON(WebSocketServerEvent event) {
-        try {
-            return OBJECT_MAPPER.writeValueAsString(event);
-        } catch (JsonProcessingException e) {
-            // TODO Wrap in better exception
-            throw new UncheckedIOException(e);
-        }
     }
 
     private static Optional<Table.Id> getTableId(Session session) {

@@ -67,24 +67,25 @@
             <groupId>com.boardgamefiesta</groupId>
             <artifactId>api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>domain</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>dynamodb</artifactId>
+            <artifactId>rest-api</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>rest-api</artifactId>
+            <artifactId>cognito</artifactId>
+            <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>games</artifactId>
+            <artifactId>email</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>websocket</artifactId>
             <scope>runtime</scope>
         </dependency>
 
@@ -126,11 +127,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

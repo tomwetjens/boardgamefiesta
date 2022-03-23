@@ -50,21 +50,29 @@
         <awssdk.version>2.17.0</awssdk.version>
         <javax.json.bind-api.version>1.0</javax.json.bind-api.version>
         <yasson.version>1.0.10</yasson.version>
+        <stripe.version>20.99.0</stripe.version>
+        <jakarta.transaction-api.version>1.3.3</jakarta.transaction-api.version>
     </properties>
 
     <modules>
         <module>api</module>
-        <module>domain</module>
-        <module>dynamodb</module>
-        <module>games</module>
-        <module>lambda-cognito</module>
-        <module>lambda-rest</module>
-        <module>server</module>
-        <module>rest-api</module>
-        <module>lambda-ws</module>
-        <module>lambda-automa</module>
+        <module>cognito</module>
+        <module>game</module>
+        <module>domain-generic</module>
+        <module>table</module>
         <module>dynamodb-generic</module>
         <module>dynamodb-shared</module>
+        <module>dynamodb-test</module>
+        <module>email</module>
+        <module>games</module>
+        <module>lambda-automa</module>
+        <module>lambda-cognito</module>
+        <module>lambda-rest</module>
+        <module>lambda-websocket</module>
+        <module>rest-api</module>
+        <module>server</module>
+        <module>user</module>
+        <module>websocket</module>
     </modules>
 
     <dependencyManagement>
@@ -76,12 +84,27 @@
             </dependency>
             <dependency>
                 <groupId>com.boardgamefiesta</groupId>
-                <artifactId>domain</artifactId>
+                <artifactId>cognito</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.boardgamefiesta</groupId>
-                <artifactId>dynamodb</artifactId>
+                <artifactId>email</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>game</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>domain-generic</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>table</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -96,7 +119,18 @@
             </dependency>
             <dependency>
                 <groupId>com.boardgamefiesta</groupId>
-                <artifactId>games</artifactId>
+                <artifactId>dynamodb-test</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>user</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.boardgamefiesta</groupId>
+                <artifactId>websocket</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -104,6 +138,7 @@
                 <artifactId>rest-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
@@ -147,6 +182,12 @@
                 <version>${javax.enterprise.cdi-api.version}</version>
                 <scope>provided</scope>
             </dependency>
+            <dependency>
+                <groupId>jakarta.transaction</groupId>
+                <artifactId>jakarta.transaction-api</artifactId>
+                <version>${jakarta.transaction-api.version}</version>
+                <scope>provided</scope>
+            </dependency>
 
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
@@ -163,6 +204,12 @@
                 <artifactId>apache-client</artifactId>
                 <version>${awssdk.version}</version>
                 <scope>runtime</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.stripe</groupId>
+                <artifactId>stripe-java</artifactId>
+                <version>${stripe.version}</version>
             </dependency>
 
             <dependency>

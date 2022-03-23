@@ -24,6 +24,7 @@ import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
+import com.boardgamefiesta.server.rest.StatsResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

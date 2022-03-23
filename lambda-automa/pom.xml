@@ -37,18 +37,17 @@
         </dependency>
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>domain</artifactId>
+            <artifactId>table</artifactId>
         </dependency>
 
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>dynamodb</artifactId>
+            <artifactId>email</artifactId>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
-            <artifactId>games</artifactId>
+            <artifactId>websocket</artifactId>
             <scope>runtime</scope>
         </dependency>
 
@@ -57,26 +56,9 @@
             <artifactId>quarkus-amazon-lambda</artifactId>
         </dependency>
         <dependency>
+            <!-- Enables @Transactional and CDI events AFTER_SUCCESS even though we don't have JPA -->
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-amazon-ses</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-amazon-sqs</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.json</groupId>
-            <artifactId>javax.json-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.json.bind</groupId>
-            <artifactId>javax.json.bind-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse</groupId>
-            <artifactId>yasson</artifactId>
-            <scope>runtime</scope>
+            <artifactId>quarkus-narayana-jta</artifactId>
         </dependency>
 
         <dependency>

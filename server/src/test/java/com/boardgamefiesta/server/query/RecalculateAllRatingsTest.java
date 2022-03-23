@@ -30,7 +30,6 @@ import com.boardgamefiesta.dynamodb.DynamoDbConfiguration;
 import com.boardgamefiesta.dynamodb.RatingDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.TableDynamoDbRepositoryV2;
 import com.boardgamefiesta.dynamodb.UserDynamoDbRepositoryV2;
-import com.boardgamefiesta.gwt.GWTProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -68,7 +67,7 @@ class RecalculateAllRatingsTest {
 
     @Test
     void run() {
-        tables.findEndedWithHumanPlayers(Game.Id.of(GWTProvider.ID), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
+        tables.findEndedWithHumanPlayers(Game.Id.of("gwt"), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .forEach(this::recalculate);
     }
 
