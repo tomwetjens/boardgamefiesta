@@ -57,7 +57,7 @@ Resources:
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-ws.zip'
+        S3Key: !Sub '${Version}/lambda-websocket.zip'
 
   WsDisconnectFunction:
     Type: AWS::Lambda::Function
@@ -73,7 +73,7 @@ Resources:
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-ws.zip'
+        S3Key: !Sub '${Version}/lambda-websocket.zip'
 
   WsDefaultFunction:
     Type: AWS::Lambda::Function
@@ -89,4 +89,4 @@ Resources:
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-ws.zip'
+        S3Key: !Sub '${Version}/lambda-websocket.zip'

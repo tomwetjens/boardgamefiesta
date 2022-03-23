@@ -33,6 +33,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 @ApplicationScoped
 @Slf4j
@@ -44,12 +45,16 @@ public class ApiGatewayWebSocketSender implements WebSocketSender {
 
     @Inject
     public ApiGatewayWebSocketSender(@NonNull WebSocketConnectionRepository webSocketConnections,
-                                     @NonNull @ConfigProperty(name = "bgf.ws.connections-endpoint") String connectionsEndpoint) {
+                                     @NonNull @ConfigProperty(name = "bgf.ws.connections-endpoint") Optional<String> connectionsEndpoint) {
         this.webSocketConnections = webSocketConnections;
 
-        apiGatewayManagementApiClient = ApiGatewayManagementApiClient.builder()
-                .endpointOverride(URI.create(connectionsEndpoint))
-                .build();
+        var clientBuilder = ApiGatewayManagementApiClient.builder();
+
+        connectionsEndpoint
+                .map(URI::create)
+                .ifPresent(clientBuilder::endpointOverride);
+
+        apiGatewayManagementApiClient = clientBuilder.build();
     }
 
     @Override

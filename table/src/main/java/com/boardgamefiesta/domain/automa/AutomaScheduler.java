@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.Optional;
 
 @ApplicationScoped
 @Slf4j
@@ -38,12 +39,16 @@ class AutomaScheduler {
 
     @Inject
     public AutomaScheduler(@NonNull SqsClient sqsClient,
-                           @ConfigProperty(name = "bgf.sqs.queue-url") String queueUrl) {
+                           @ConfigProperty(name = "bgf.sqs.queue-url") Optional<String> queueUrl) {
         this.sqsClient = sqsClient;
-        this.queueUrl = queueUrl;
+        this.queueUrl = queueUrl.orElse(null);
     }
 
     public void schedule(Table.Id tableId, Player.Id playerId) {
+        if (queueUrl == null) {
+            throw new IllegalStateException("SQS queue URL not configured!");
+        }
+
         // Send to external queue so it is persisted and can be picked by a Lambda
         sqsClient.sendMessage(SendMessageRequest.builder()
                 .queueUrl(queueUrl)

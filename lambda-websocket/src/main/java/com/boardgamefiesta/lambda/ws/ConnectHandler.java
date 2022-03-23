@@ -48,9 +48,13 @@ public class ConnectHandler implements RequestHandler<APIGatewayV2WebSocketEvent
 
     @Override
     public APIGatewayV2WebSocketResponse handleRequest(APIGatewayV2WebSocketEvent input, Context context) {
-        var queryParams = input.getQueryStringParameters();
-
         var response = new APIGatewayV2WebSocketResponse();
+
+        var queryParams = input.getQueryStringParameters();
+        if (queryParams == null || queryParams.isEmpty()) {
+            response.setStatusCode(401);
+            return response;
+        }
 
         var token = queryParams.get("token");
         if (token == null || token.isBlank()) {
@@ -67,8 +71,13 @@ public class ConnectHandler implements RequestHandler<APIGatewayV2WebSocketEvent
                     .orElseThrow(() -> new OidcAuthenticationException("User not found"));
 
             var connectionId = input.getRequestContext().getConnectionId();
-            log.info("Adding WebSocket connection: {} for user {}", connectionId, userId);
-            webSocketConnections.add(WebSocketConnection.createForTable(connectionId, userId, tableId));
+            if (tableId == null) {
+                log.info("Adding WebSocket connection: {} for user {}", connectionId, userId);
+                webSocketConnections.add(WebSocketConnection.createForUser(connectionId, userId));
+            } else {
+                log.info("Adding WebSocket connection: {} for table {}", connectionId, tableId);
+                webSocketConnections.add(WebSocketConnection.createForTable(connectionId, userId, tableId));
+            }
 
             response.setStatusCode(200);
             return response;

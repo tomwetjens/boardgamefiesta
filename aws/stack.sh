@@ -46,19 +46,19 @@ echo "${ACTION}: $STACK_NAME"
 #  --capabilities CAPABILITY_NAMED_IAM \
 #  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
 
-#aws s3 cp ../lambda-rest/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-rest.zip
-#
-#aws cloudformation $ACTION --stack-name $STACK_NAME-apigw \
-#  --template-body file://apigw.yaml \
-#  --capabilities CAPABILITY_NAMED_IAM \
-#  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
+aws s3 cp ../lambda-rest/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-rest.zip
 
-#aws s3 cp ../lambda-ws/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-ws.zip
-#
-#aws cloudformation $ACTION --stack-name $STACK_NAME-ws \
-#  --template-body file://ws.yaml \
-#  --capabilities CAPABILITY_NAMED_IAM \
-#  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
+aws cloudformation $ACTION --stack-name $STACK_NAME-apigw \
+  --template-body file://apigw.yaml \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
+
+aws s3 cp ../lambda-websocket/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-websocket.zip
+
+aws cloudformation $ACTION --stack-name $STACK_NAME-ws \
+  --template-body file://ws.yaml \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
 
 aws s3 cp ../lambda-automa/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-automa.zip
 
