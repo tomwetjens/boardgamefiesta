@@ -53,6 +53,7 @@ Resources:
       Timeout: 60
       Environment:
         Variables:
+          QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: ConnectHandler
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
@@ -69,6 +70,7 @@ Resources:
       Timeout: 60
       Environment:
         Variables:
+          QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: DisconnectHandler
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
@@ -85,8 +87,133 @@ Resources:
       Timeout: 60
       Environment:
         Variables:
+          QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: DefaultHandler
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
         S3Key: !Sub '${Version}/lambda-websocket.zip'
+
+  WsApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      DisableExecuteApiEndpoint: true
+      Name: !Sub 'boardgamefiesta-${Environment}-websocket-api'
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: '$request.body.action'
+
+  WsApiDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: !Join [ '', [ 'ws', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      DomainNameConfigurations:
+        - CertificateArn: 'arn:aws:acm:eu-west-1:598172618529:certificate/3a61edbf-a6b3-4090-bbfd-2298ac3ad7aa'
+
+  WsApiRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: 'boardgamefiesta.com.'
+      Name: !Join [ '', [ 'ws', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt WsApiDomainName.RegionalDomainName
+        HostedZoneId: !GetAtt WsApiDomainName.RegionalHostedZoneId
+
+  WsConnectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WsApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WsConnectFunction.Arn}/invocations'
+
+  WsConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WsApi
+      RouteKey: '$connect'
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${WsConnectIntegration}'
+
+  WsDisconnectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WsApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WsDisconnectFunction.Arn}/invocations'
+
+  WsDisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WsApi
+      RouteKey: '$disconnect'
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${WsDisconnectIntegration}'
+
+  WsDefaultIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WsApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WsDefaultFunction.Arn}/invocations'
+
+  WsDefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WsApi
+      RouteKey: '$default'
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${WsDefaultIntegration}'
+
+  WsApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref WsApi
+      StageName: 'default'
+
+  WsApiDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - WsApiStage
+    Properties:
+      ApiId: !Ref WsApi
+      StageName: 'default'
+
+  WsApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    DependsOn:
+      - WsApiStage
+    Properties:
+      ApiId: !Ref WsApi
+      ApiMappingKey: ''
+      DomainName: !Ref WsApiDomainName
+      Stage: 'default'
+
+  WsConnectFunctionApiGatewayLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WsApi
+      - WsConnectFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WsConnectFunction
+      Principal: apigateway.amazonaws.com
+
+  WsDisconnectFunctionApiGatewayLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WsApi
+      - WsDisconnectFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WsDisconnectFunction
+      Principal: apigateway.amazonaws.com
+
+  WsDefaultFunctionApiGatewayLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WsApi
+      - WsDefaultFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WsDefaultFunction
+      Principal: apigateway.amazonaws.com

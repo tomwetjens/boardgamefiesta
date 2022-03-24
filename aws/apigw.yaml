@@ -43,6 +43,24 @@ Resources:
                 Resource:
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
+        - PolicyName: SendMessage
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt AutomaSqsQueue.Arn
+        - PolicyName: ExecuteApi
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - execute-api:ManageConnections
+                Resource:
+                  - 'arn:aws:execute-api:eu-west-1:598172618529:5479own0ue/production/*/*'
 
   ApiFunction:
     Type: AWS::Lambda::Function
@@ -54,9 +72,137 @@ Resources:
       Timeout: 60
       Environment:
         Variables:
+          QUARKUS_PROFILE: !Sub '${Environment}'
           BGF_SQS_ENABLED: false
           BGF_STATS_ENABLED: true
           GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
       Code:
         S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-rest.zip'
+        S3Key: '2022-03-24T13:45:06.000Z/lambda-rest.zip'
+# TODO        S3Key: !Sub '${Version}/lambda-rest.zip'
+
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'boardgamefiesta-${Environment}-rest-api'
+      DisableExecuteApiEndpoint: true
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  RestApiDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Join [ '', [ 'api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      RegionalCertificateArn: 'arn:aws:acm:eu-west-1:598172618529:certificate/3a61edbf-a6b3-4090-bbfd-2298ac3ad7aa'
+
+  RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: 'boardgamefiesta.com.'
+      Name: !Join [ '', [ 'api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt RestApiDomainName.RegionalDomainName
+        HostedZoneId: !GetAtt RestApiDomainName.RegionalHostedZoneId
+
+  StatsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt RestApi.RootResourceId
+      PathPart: 'stats'
+      RestApiId: !Ref RestApi
+  StatsGameIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StatsResource
+      PathPart: '{gameId}'
+      RestApiId: !Ref RestApi
+
+  ProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt RestApi.RootResourceId
+      PathPart: '{proxy+}'
+      RestApiId: !Ref RestApi
+
+  ProxyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations'
+        IntegrationHttpMethod: POST
+        PassthroughBehavior: WHEN_NO_MATCH
+      ResourceId: !Ref ProxyResource
+      RestApiId: !Ref RestApi
+
+  ProxyCorsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: !If [ IsProduction, "'boardgamefiesta.com'", "'*'" ]
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+      ResourceId: !Ref ProxyResource
+      RestApiId: !Ref RestApi
+
+  ApiFunctionInvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ApiFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/*/*'
+
+  GetStatsByGameIdMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations'
+        IntegrationHttpMethod: POST
+        PassthroughBehavior: WHEN_NO_MATCH
+      ResourceId: !Ref StatsGameIdResource
+      RestApiId: !Ref RestApi
+
+  RestApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref RestApi
+      StageName: 'default'
+
+  RestApiBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: ''
+      DomainName: !Join [ '', [ 'api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      RestApiId: !Ref RestApi
+      Stage: 'default'
