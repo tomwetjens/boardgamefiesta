@@ -82,7 +82,7 @@ public class ConnectHandler implements RequestHandler<APIGatewayV2WebSocketEvent
             response.setStatusCode(200);
             return response;
         } catch (OidcAuthenticationException e) {
-            log.error("Authentication error", e);
+            log.debug("Authentication error", e);
             response.setStatusCode(401);
             return response;
         }

@@ -53,7 +53,6 @@ class AutomaScheduler {
         sqsClient.sendMessage(SendMessageRequest.builder()
                 .queueUrl(queueUrl)
                 .messageBody(new AutomaRequest(tableId.getId(), playerId.getId()).toJSON())
-                .delaySeconds(2) // simulate computer thinking
                 .build());
     }
 

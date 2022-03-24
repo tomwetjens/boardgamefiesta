@@ -14,6 +14,7 @@ Resources:
     Properties:
       MessageRetentionPeriod: 345600
       VisibilityTimeout: 30
+      DelaySeconds: 1 # Simulate computer thinking
 
   AutomaSqsRole:
     Type: AWS::IAM::Role
