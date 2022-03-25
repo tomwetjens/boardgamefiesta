@@ -73,7 +73,7 @@ aws cloudformation $ACTION --stack-name $STACK_NAME-apigw \
   --parameters ParameterKey=Environment,ParameterValue=$ENV \
     ParameterKey=Version,ParameterValue=$TIMESTAMP \
     ParameterKey=DbStackName,ParameterValue=$STACK_NAME-db \
-    ParameterKey=AutomaStackName,ParameterValue=$STACK_NAME-automa
+    ParameterKey=AutomaStackName,ParameterValue=$STACK_NAME-automa \
     ParameterKey=WebSocketStackName,ParameterValue=$STACK_NAME-ws
 
 #aws cloudformation $ACTION --stack-name $STACK_NAME-api \
