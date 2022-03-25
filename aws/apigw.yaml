@@ -5,7 +5,11 @@ Parameters:
     Type: String
   Version:
     Type: String
+  DbStackName:
+    Type: String
   AutomaStackName:
+    Type: String
+  WebSocketStackName:
     Type: String
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
@@ -65,7 +69,11 @@ Resources:
                 Action:
                   - execute-api:ManageConnections
                 Resource:
-                  - 'arn:aws:execute-api:eu-west-1:598172618529:5479own0ue/production/*/*'
+                  - Fn::Join:
+                      - ''
+                      - - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}'
+                        - Fn::ImportValue: !Sub '${WebSocketStackName}-ApiId'
+                        - ':/production/*/*'
 
   ApiFunction:
     Type: AWS::Lambda::Function
@@ -80,7 +88,14 @@ Resources:
           QUARKUS_PROFILE: !Sub '${Environment}'
           BGF_SQS_ENABLED: false
           BGF_STATS_ENABLED: true
-          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+          GWT_DYNAMODB_TABLE_NAME:
+            Fn::ImportValue: !Sub '${DbStackName}-TableName'
+          BGF_WS_CONNECTIONS_ENDPOINT:
+            Fn::Join:
+              - ''
+              - - 'https://'
+                - Fn::ImportValue: !Sub '${WebSocketStackName}-ApiId'
+                - '.execute-api.eu-west-1.amazonaws.com/default'
       Code:
         S3Bucket: boardgamefiesta-builds
         S3Key: '2022-03-24T13:45:06.000Z/lambda-rest.zip'

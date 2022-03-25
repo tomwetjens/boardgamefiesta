@@ -7,6 +7,8 @@ Parameters:
     Type: String
   DbStackName:
     Type: String
+  WebSocketStackName:
+    Type: String
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
 Resources:
@@ -54,9 +56,9 @@ Resources:
                 Resource:
                   - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
                   - Fn::Join:
-                    - ''
-                    - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                      - '/index/*'
+                      - ''
+                      - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
+                        - '/index/*'
         - PolicyName: SendMessage
           PolicyDocument:
             Version: '2012-10-17'
@@ -74,7 +76,11 @@ Resources:
                 Action:
                   - execute-api:ManageConnections
                 Resource:
-                  - 'arn:aws:execute-api:eu-west-1:598172618529:5479own0ue/production/*/*'
+                  - Fn::Join:
+                      - ''
+                      - - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}'
+                        - Fn::ImportValue: !Sub '${WebSocketStackName}-ApiId'
+                        - ':/production/*/*'
 
   AutomaSqsFunction:
     Type: AWS::Lambda::Function
@@ -88,8 +94,15 @@ Resources:
       Environment:
         Variables:
           QUARKUS_LAMBDA_HANDLER: automa
-          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+          GWT_DYNAMODB_TABLE_NAME:
+            Fn::ImportValue: !Sub '${DbStackName}-TableName'
           BGF_SQS_QUEUE_URL: !Ref AutomaSqsQueue
+          BGF_WS_CONNECTIONS_ENDPOINT:
+            Fn::Join:
+              - ''
+              - - 'https://'
+                - Fn::ImportValue: !Sub '${WebSocketStackName}-ApiId'
+                - '.execute-api.eu-west-1.amazonaws.com/default'
       Code:
         S3Bucket: boardgamefiesta-builds
         S3Key: !Sub '${Version}/lambda-automa.zip'
