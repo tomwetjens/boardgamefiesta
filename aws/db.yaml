@@ -28,6 +28,10 @@ Resources:
           AttributeType: S
         - AttributeName: GSI3SK
           AttributeType: S
+        - AttributeName: GSI4PK
+          AttributeType: S
+        - AttributeName: GSI4SK
+          AttributeType: S
       BillingMode: !If [ IsProduction, 'PROVISIONED', 'PAY_PER_REQUEST' ]
       GlobalSecondaryIndexes:
         - IndexName: GSI1
@@ -77,3 +81,13 @@ Resources:
       ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: !If [ IsProduction, true, false ]
+
+Outputs:
+  TableName:
+    Value: !Ref Table
+    Export:
+      Name: !Sub '${AWS::StackName}-TableName'
+  TableArn:
+    Value: !GetAtt Table.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-TableArn'
