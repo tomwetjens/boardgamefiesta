@@ -22,6 +22,7 @@ import com.boardgamefiesta.domain.game.Game;
 import com.boardgamefiesta.domain.game.Games;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.table.Tables;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +30,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @Disabled
@@ -40,12 +44,23 @@ public class CanaryTest {
 
     Games games = new Games();
 
-    Tables tables;
+    UserDynamoDbRepositoryV2 users;
+
+    TableDynamoDbRepositoryV2 tables;
+
+    @BeforeEach
+    void setUp() {
+        when(config.getTableName()).thenReturn("boardgamefiesta-prod");
+        when(config.getReadGameIdShards()).thenReturn(2);
+        when(config.getWriteGameIdShards()).thenReturn(2);
+
+        var dynamoDbClient = DynamoDbClient.create();
+        tables = new TableDynamoDbRepositoryV2(games, dynamoDbClient, config);
+        users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
+    }
 
     @Test
     void allTablesCanBeOpened() {
-        tables = new TableDynamoDbRepositoryV2(games, DynamoDbClient.create(), config);
-
         var count = tables.findEndedWithHumanPlayers(Game.Id.of("gwt"), Integer.MAX_VALUE, Tables.MIN_TIMESTAMP, Tables.MAX_TIMESTAMP, true)
                 .filter(table -> table.getStatus() == Table.Status.STARTED || table.getStatus() == Table.Status.ENDED)
                 .peek(table -> {
@@ -60,6 +75,18 @@ public class CanaryTest {
         assertThat(count).isGreaterThan(0);
 
         System.out.println("Checked " + count + " tables");
+    }
+
+    @Disabled
+    @Test
+    void deleteTablesForUnfinishedGames() {
+        var gameIdsToDelete = List.of(Game.Id.fromString("ds"), Game.Id.fromString("power-grid"));
+
+        gameIdsToDelete.stream()
+                .peek(gameId -> System.out.println("Finding tables for " + gameId.getId()))
+                .flatMap(tables::findAllIds)
+                .peek(tableId -> System.out.println("Deleting table " + tableId.getId()))
+                .forEach(tables::delete);
     }
 
 }

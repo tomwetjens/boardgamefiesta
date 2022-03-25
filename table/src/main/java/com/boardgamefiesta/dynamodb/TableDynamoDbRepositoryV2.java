@@ -966,12 +966,13 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     public void delete(Table.Id id) {
         client.queryPaginator(QueryRequest.builder()
                 .tableName(config.getTableName())
-                .keyConditionExpression("PK=:PK")
-                .expressionAttributeValues(Map.of(":PK", Item.s(id.getId())))
-                .projectionExpression("PK,SK")
+                .keyConditionExpression(PK + "=:PK")
+                .expressionAttributeValues(Map.of(":PK", Item.s(TABLE_PREFIX + id.getId())))
+                .projectionExpression(PK + "," + SK)
                 .build())
                 .items()
                 .stream()
+                .peek(key -> System.out.println("Delete Request: " + key))
                 .map(key -> WriteRequest.builder()
                         .deleteRequest(DeleteRequest.builder()
                                 .key(key)
@@ -982,6 +983,30 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                         client.batchWriteItem(BatchWriteItemRequest.builder()
                                 .requestItems(Map.of(config.getTableName(), chunk))
                                 .build()));
+    }
+
+    /**
+     * @return stream of ids, no specific order is guaranteed
+     */
+    public Stream<Table.Id> findAllIds(Game.Id gameId) {
+        return IntStream.range(0, config.getReadGameIdShards())
+                // Scatter
+                .parallel()
+                .mapToObj(shard -> client.queryPaginator(QueryRequest.builder()
+                        .tableName(config.getTableName())
+                        .indexName(GSI4)
+                        .scanIndexForward(false)
+                        .keyConditionExpression(GSI4PK + "=:GSI4PK AND begins_with(" + GSI4SK + ",:GSI4SK)")
+                        .expressionAttributeValues(Map.of(
+                                ":GSI4PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                ":GSI4SK", Item.s(TABLE_PREFIX)
+                        ))
+                        .build())
+                        .items()
+                        .stream())
+                // Gather
+                .flatMap(Function.identity())
+                .map(item -> Table.Id.of(item.get(PK).s().replace(TABLE_PREFIX, "")));
     }
 
     @Value
