@@ -72,7 +72,7 @@ Resources:
                   - Fn::Join:
                       - ''
                       - - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}'
-                        - Fn::ImportValue: !Sub '${WebSocketStackName}-ApiId'
+                        - Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiId'
                         - ':/production/*/*'
 
   ApiFunction:
@@ -94,17 +94,17 @@ Resources:
             Fn::Join:
               - ''
               - - 'https://'
-                - Fn::ImportValue: !Sub '${WebSocketStackName}-ApiId'
-                - '.execute-api.eu-west-1.amazonaws.com/default'
+                - Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiId'
+                - !Sub '.execute-api.${AWS::Region}.amazonaws.com/default'
       Code:
         S3Bucket: boardgamefiesta-builds
-        S3Key: '2022-03-24T13:45:06.000Z/lambda-rest.zip'
-# TODO        S3Key: !Sub '${Version}/lambda-rest.zip'
+        S3Key: !Sub '${Version}/lambda-rest.zip'
 
   RestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Name: !Sub 'boardgamefiesta-${Environment}-rest-api'
+      Description: 'Board Game Fiesta REST API'
       DisableExecuteApiEndpoint: true
       EndpointConfiguration:
         Types:
@@ -226,3 +226,13 @@ Resources:
       DomainName: !Join [ '', [ 'api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
       RestApiId: !Ref RestApi
       Stage: 'default'
+
+Outputs:
+  RestApiId:
+    Value: !Ref RestApi
+    Export:
+      Name: !Sub '${AWS::StackName}-RestApiId'
+  RestApiDomainName:
+    Value: !Ref RestApiDomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-RestApiDomainName'

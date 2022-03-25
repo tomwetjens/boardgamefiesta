@@ -79,7 +79,7 @@ Resources:
                   - Fn::Join:
                       - ''
                       - - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}'
-                        - Fn::ImportValue: !Sub '${WebSocketStackName}-ApiId'
+                        - Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiId'
                         - ':/production/*/*'
 
   AutomaSqsFunction:
@@ -93,6 +93,7 @@ Resources:
       Timeout: 30
       Environment:
         Variables:
+          QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: automa
           GWT_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DbStackName}-TableName'
@@ -101,7 +102,7 @@ Resources:
             Fn::Join:
               - ''
               - - 'https://'
-                - Fn::ImportValue: !Sub '${WebSocketStackName}-ApiId'
+                - Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiId'
                 - '.execute-api.eu-west-1.amazonaws.com/default'
       Code:
         S3Bucket: boardgamefiesta-builds

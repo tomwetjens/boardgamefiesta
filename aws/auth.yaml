@@ -5,6 +5,8 @@ Parameters:
     Type: String
   Version:
     Type: String
+  DbStackName:
+    Type: String
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
 Mappings:
@@ -14,50 +16,6 @@ Mappings:
     prod:
       UserPoolId: eu-west-1_4FuZdxo27
 Resources:
-  MigrateUserTriggerRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - cognito-idp:AdminInitiateAuth
-                  - cognito-idp:AdminGetUser
-                Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/eu-west-1_c5qwAzc0x'
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
-
-  MigrateUserTriggerLambdaFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 512
-      Role: !GetAtt MigrateUserTriggerRole.Arn
-      Runtime: java11
-      Timeout: 60
-      Environment:
-        Variables:
-          QUARKUS_LAMBDA_HANDLER: migrateUser
-          OLDUSERPOOLID: eu-west-1_c5qwAzc0x
-          OLDCLIENTID: 39334dh8ifidq5dpmnch2vnopr
-      Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/cognito.zip'
-
   PreSignUpTriggerRole:
     Type: AWS::IAM::Role
     Properties:
@@ -80,8 +38,11 @@ Resources:
                 Action:
                   - dynamodb:Query
                 Resource:
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
+                  - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
+                  - Fn::Join:
+                      - ''
+                      - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
+                        - '/index/*'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
@@ -96,11 +57,13 @@ Resources:
       Timeout: 60
       Environment:
         Variables:
+          QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: preSignUp
-          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+          GWT_DYNAMODB_TABLE_NAME:
+            Fn::ImportValue: !Sub '${DbStackName}-TableName'
       Code:
         S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/cognito.zip'
+        S3Key: !Sub '${Version}/lambda-cognito.zip'
 
   PostConfirmationTriggerRole:
     Type: AWS::IAM::Role
@@ -129,8 +92,11 @@ Resources:
                   - dynamodb:Query
                   - dynamodb:PutItem
                 Resource:
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}'
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/boardgamefiesta-${Environment}/index/*'
+                  - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
+                  - Fn::Join:
+                      - ''
+                      - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
+                        - '/index/*'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
@@ -145,11 +111,13 @@ Resources:
       Timeout: 60
       Environment:
         Variables:
+          QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: postConfirmation
-          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+          GWT_DYNAMODB_TABLE_NAME:
+            Fn::ImportValue: !Sub '${DbStackName}-TableName'
       Code:
         S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/cognito.zip'
+        S3Key: !Sub '${Version}/lambda-cognito.zip'
 
   #  UserPool:
   #    Type: AWS::Cognito::UserPool
@@ -189,15 +157,6 @@ Resources:
   #      UsernameConfiguration:
   #        CaseSensitive: false
   #
-  MigrateUserTriggerPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - MigrateUserTriggerLambdaFunction
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt MigrateUserTriggerLambdaFunction.Arn
-      Principal: cognito-idp.amazonaws.com
-      SourceArn: !Join [ '', [ !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
 
   PreSignUpTriggerPermission:
     Type: AWS::Lambda::Permission
@@ -323,8 +282,14 @@ Resources:
 #        DNSName: !GetAtt UserPoolDomainInfo.CloudFrontDistribution
 #        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront
 #
-#Outputs:
-#  UserPool:
-#    Value: !GetAtt UserPool.Arn
-#    Export:
-#      Name: !Sub '${AWS::StackName}:UserPool'
+Outputs:
+  UserPoolId:
+    # TODO Value: !Ref UserPool
+    Value: !FindInMap [ Environments, !Ref 'Environment', UserPoolId ]
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolId'
+  UserPoolDomainName:
+    # TODO Value: !Ref UserPoolDomain
+    Value: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolDomainName'

@@ -39,12 +39,14 @@ echo "${ACTION}: $STACK_NAME"
 #  --template-body file://db.yaml \
 #  --parameters ParameterKey=Environment,ParameterValue=$ENV
 
-#aws s3 cp ../lambda-cognito/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-cognito.zip
-#
-#aws cloudformation $ACTION --stack-name $STACK_NAME-auth \
-#  --template-body file://auth.yaml \
-#  --capabilities CAPABILITY_NAMED_IAM \
-#  --parameters ParameterKey=Environment,ParameterValue=$ENV ParameterKey=Version,ParameterValue=$TIMESTAMP
+aws s3 cp ../lambda-cognito/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-cognito.zip
+
+aws cloudformation $ACTION --stack-name $STACK_NAME-auth \
+  --template-body file://auth.yaml \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameters ParameterKey=Environment,ParameterValue=$ENV \
+    ParameterKey=Version,ParameterValue=$TIMESTAMP \
+    ParameterKey=DbStackName,ParameterValue=$STACK_NAME-db
 
 #aws s3 cp ../lambda-websocket/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-websocket.zip
 #
@@ -65,16 +67,16 @@ echo "${ACTION}: $STACK_NAME"
 #    ParameterKey=DbStackName,ParameterValue=$STACK_NAME-db \
 #    ParameterKey=WebSocketStackName,ParameterValue=$STACK_NAME-ws
 
-aws s3 cp ../lambda-rest/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-rest.zip
-
-aws cloudformation $ACTION --stack-name $STACK_NAME-apigw \
-  --template-body file://apigw.yaml \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameters ParameterKey=Environment,ParameterValue=$ENV \
-    ParameterKey=Version,ParameterValue=$TIMESTAMP \
-    ParameterKey=DbStackName,ParameterValue=$STACK_NAME-db \
-    ParameterKey=AutomaStackName,ParameterValue=$STACK_NAME-automa \
-    ParameterKey=WebSocketStackName,ParameterValue=$STACK_NAME-ws
+#aws s3 cp ../lambda-rest/target/function.zip s3://boardgamefiesta-builds/$TIMESTAMP/lambda-rest.zip
+#
+#aws cloudformation $ACTION --stack-name $STACK_NAME-apigw \
+#  --template-body file://apigw.yaml \
+#  --capabilities CAPABILITY_NAMED_IAM \
+#  --parameters ParameterKey=Environment,ParameterValue=$ENV \
+#    ParameterKey=Version,ParameterValue=$TIMESTAMP \
+#    ParameterKey=DbStackName,ParameterValue=$STACK_NAME-db \
+#    ParameterKey=AutomaStackName,ParameterValue=$STACK_NAME-automa \
+#    ParameterKey=WebSocketStackName,ParameterValue=$STACK_NAME-ws
 
 #aws cloudformation $ACTION --stack-name $STACK_NAME-api \
 #  --template-body file://api.yaml \

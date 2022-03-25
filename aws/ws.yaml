@@ -104,6 +104,7 @@ Resources:
     Properties:
       DisableExecuteApiEndpoint: true
       Name: !Sub 'boardgamefiesta-${Environment}-websocket-api'
+      Description: 'Board Game Fiesta WebSocket API'
       ProtocolType: WEBSOCKET
       RouteSelectionExpression: '$request.body.action'
 
@@ -232,3 +233,7 @@ Outputs:
     Value: !GetAtt WsApi.ApiEndpoint
     Export:
       Name: !Sub '${AWS::StackName}-WsApiEndpoint'
+  WsApiDomainName:
+    Value: !Ref WsApiDomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-WsApiDomainName'
