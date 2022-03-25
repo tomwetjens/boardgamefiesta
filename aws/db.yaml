@@ -57,6 +57,15 @@ Resources:
           Projection:
             ProjectionType: KEYS_ONLY
           ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
+        - IndexName: GSI4
+          KeySchema:
+            - AttributeName: GSI4PK
+              KeyType: HASH
+            - AttributeName: GSI4SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: KEYS_ONLY
+          ProvisionedThroughput: !If [ IsProduction, { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }, !Ref 'AWS::NoValue' ]
       KeySchema:
         - AttributeName: PK
           KeyType: HASH

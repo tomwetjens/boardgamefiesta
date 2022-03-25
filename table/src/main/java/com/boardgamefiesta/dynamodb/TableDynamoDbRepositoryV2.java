@@ -61,6 +61,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     private static final String GSI3 = "GSI3";
     private static final String GSI3PK = "GSI3PK";
     private static final String GSI3SK = "GSI3SK";
+    private static final String GSI4 = "GSI4";
+    private static final String GSI4PK = "GSI4PK";
+    private static final String GSI4SK = "GSI4SK";
 
     private static final String TABLE_PREFIX = "Table#";
     private static final String USER_PREFIX = "User#";
@@ -664,6 +667,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
             item.setString(GSI3PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
             item.setString(GSI3SK, GSISK.fromTable(table));
         }
+
+        item.setString(GSI4PK, shardedGameGSIPK(table.getGame().getId(), table.getId()));
+        item.setString(GSI4SK, GSISK.fromTable(table));
 
         item.setString("GameId", table.getGame().getId().getId())
                 .setEnum("Type", table.getType())
