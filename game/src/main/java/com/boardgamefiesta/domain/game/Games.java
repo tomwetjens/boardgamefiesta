@@ -20,10 +20,11 @@ package com.boardgamefiesta.domain.game;
 
 import com.boardgamefiesta.api.spi.GameProviders;
 import com.boardgamefiesta.domain.DomainService;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
-import java.util.Map;
-import java.util.Optional;
+import javax.inject.Inject;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,14 +34,26 @@ public class Games implements DomainService {
 
     private final Map<Game.Id, Game> games;
 
-    public Games() {
+    @Inject
+    Games(@ConfigProperty(name = "bgf.games.enabled", defaultValue = "") String enabledGameIds) {
+        this(Arrays.stream(enabledGameIds.split(","))
+                .map(Game.Id::fromString)
+                .collect(Collectors.toSet()));
+    }
+
+    private Games(Set<Game.Id> enabled) {
         games = GameProviders.instance()
                 .list()
                 .map(provider -> Game.builder()
                         .id(Game.Id.of(provider.getId()))
                         .provider(provider)
                         .build())
+                .filter(game -> enabled.isEmpty() || enabled.contains(game.getId()))
                 .collect(Collectors.toMap(Game::getId, Function.identity()));
+    }
+
+    public static Games all() {
+        return new Games(Collections.emptySet());
     }
 
     public Game get(Game.Id id) {

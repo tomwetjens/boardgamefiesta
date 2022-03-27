@@ -47,7 +47,7 @@ class StatsResourceTest {
 
     DynamoDbConfiguration config = new DynamoDbConfiguration();
 
-    Games games = new Games();
+    Games games = Games.all();
 
     StatsResource statsResource;
 

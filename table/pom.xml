@@ -57,12 +57,12 @@
             <artifactId>jakarta.transaction-api</artifactId>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>com.boardgamefiesta</groupId>-->
-<!--            <artifactId>dominant-species</artifactId>-->
-<!--            <version>${project.version}</version>-->
-<!--            <scope>runtime</scope>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.boardgamefiesta</groupId>
+            <artifactId>dominant-species</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>com.boardgamefiesta</groupId>
             <artifactId>gwt</artifactId>

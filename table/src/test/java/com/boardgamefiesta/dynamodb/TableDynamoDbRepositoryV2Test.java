@@ -50,7 +50,7 @@ class TableDynamoDbRepositoryV2Test extends BaseDynamoDbRepositoryTest {
 
     static final Game.Id GAME_ID = Game.Id.of("gwt");
 
-    static Games games = new Games();
+    static Games games = Games.all();
 
     static Game game = games.get(GAME_ID);
 

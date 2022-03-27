@@ -42,7 +42,7 @@ public class CanaryTest {
     @Mock
     DynamoDbConfiguration config;
 
-    Games games = new Games();
+    Games games = Games.all();
 
     UserDynamoDbRepositoryV2 users;
 

@@ -60,7 +60,7 @@ class RecalculateAllRatingsTest {
         var dynamoDbClient = DynamoDbClient.create();
         users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);
         ratings = new RatingDynamoDbRepositoryV2(dynamoDbClient, config);
-        tables = new TableDynamoDbRepositoryV2(new Games(), dynamoDbClient, config);
+        tables = new TableDynamoDbRepositoryV2(Games.all(), dynamoDbClient, config);
 
         ratingAdjuster = new RatingAdjuster(tables, ratings);
     }
