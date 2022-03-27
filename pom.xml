@@ -193,11 +193,25 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>cognitoidentityprovider</artifactId>
                 <version>${awssdk.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>apache-client</artifactId>
+                        <!-- Excluded because we have software.amazon.awssdk:url-connection-client already on the classpath -->
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>apigatewaymanagementapi</artifactId>
                 <version>${awssdk.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>apache-client</artifactId>
+                        <!-- Excluded because we have software.amazon.awssdk:url-connection-client already on the classpath -->
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>

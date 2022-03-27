@@ -34,6 +34,13 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>dynamodb</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>apache-client</artifactId>
+                    <!-- Excluded because we have software.amazon.awssdk:url-connection-client already on the classpath -->
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
