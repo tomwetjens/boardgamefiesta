@@ -7,7 +7,9 @@ Parameters:
     Type: String
   LambdaS3Key:
     Type: String
-  DbStackName:
+  DynamoDbStackName:
+    Type: String
+  CognitoStackName:
     Type: String
   AutomaStackName:
     Type: String
@@ -30,12 +32,9 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - Fn::ImportValue:
-            !Sub '${DbStackName}-ReadWritePolicyArn'
-        - Fn::ImportValue:
-            !Sub '${AutomaStackName}-ScheduleOnlyPolicyArn'
-        - Fn::ImportValue:
-            !Sub '${WebSocketStackName}-SendMessagePolicyArn'
+        - Fn::ImportValue: !Sub '${DynamoDbStackName}-ReadWritePolicyArn'
+        - Fn::ImportValue: !Sub '${AutomaStackName}-ScheduleOnlyPolicyArn'
+        - Fn::ImportValue: !Sub '${WebSocketStackName}-SendMessagePolicyArn'
       Path: "/"
 
   ApiFunction:
@@ -49,9 +48,17 @@ Resources:
       Environment:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
-          BGF_STATS_ENABLED: true
+          QUARKUS_HTTP_CORS_ORIGINS:
+            Fn::If:
+              - IsProduction
+              - 'https://boardgamefiesta.com,https://www.boardgamefiesta.com'
+              - !Sub 'https://${Environment}.boardgamefiesta.com,https://www-${Environment}.boardgamefiesta.com,http://localhost:4200'
+          QUARKUS_OIDC_AUTH_SERVER_URL:
+            Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
+          QUARKUS_OIDC_CLIENT_ID:
+            Fn::ImportValue: !Sub '${CognitoStackName}-WebAppClientId'
           GWT_DYNAMODB_TABLE_NAME:
-            Fn::ImportValue: !Sub '${DbStackName}-TableName'
+            Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
           BGF_SQS_QUEUE_URL:
             Fn::ImportValue: !Sub '${AutomaStackName}-AutomaSqsQueueUrl'
           BGF_WS_CONNECTIONS_ENDPOINT:
@@ -73,7 +80,7 @@ Resources:
   RestApiDomainName:
     Type: AWS::ApiGateway::DomainName
     Properties:
-      DomainName: !Join [ '', [ 'api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      DomainName: !If [ IsProduction, 'api2.boardgamefiesta.com', !Sub 'api-${Environment}.boardgamefiesta.com' ]
       EndpointConfiguration:
         Types:
           - REGIONAL

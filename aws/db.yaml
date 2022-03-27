@@ -100,7 +100,7 @@ Resources:
               - dynamodb:UpdateItem
             Resource:
               - !GetAtt Table.Arn
-              - !Join ['', [!GetAtt Table.Arn, '/index/*' ]]
+              - !Sub '${Table.Arn}/index/*'
 
   ReadOnlyPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -113,7 +113,7 @@ Resources:
               - dynamodb:Query
             Resource:
               - !GetAtt Table.Arn
-              - !Join ['', [!GetAtt Table.Arn, '/index/*' ]]
+              - !Sub '${Table.Arn}/index/*'
 
 Outputs:
   TableName:

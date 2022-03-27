@@ -7,7 +7,7 @@ Parameters:
     Type: String
   LambdaS3Key:
     Type: String
-  DbStackName:
+  DynamoDbStackName:
     Type: String
   WebSocketStackName:
     Type: String
@@ -64,10 +64,8 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !Ref ExecutePolicy
-        - Fn::ImportValue:
-            !Sub '${DbStackName}-ReadWritePolicyArn'
-        - Fn::ImportValue:
-            !Sub '${WebSocketStackName}-SendMessagePolicyArn'
+        - Fn::ImportValue: !Sub '${DynamoDbStackName}-ReadWritePolicyArn'
+        - Fn::ImportValue: !Sub '${WebSocketStackName}-SendMessagePolicyArn'
       Path: "/"
 
   AutomaSqsFunction:
@@ -83,7 +81,7 @@ Resources:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: automa
           GWT_DYNAMODB_TABLE_NAME:
-            Fn::ImportValue: !Sub '${DbStackName}-TableName'
+            Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
           BGF_SQS_QUEUE_URL: !Ref AutomaSqsQueue
           BGF_WS_CONNECTIONS_ENDPOINT:
             Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiEndpoint'

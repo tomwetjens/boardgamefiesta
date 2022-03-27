@@ -7,7 +7,9 @@ Parameters:
     Type: String
   LambdaS3Key:
     Type: String
-  DbStackName:
+  DynamoDbStackName:
+    Type: String
+  CognitoStackName:
     Type: String
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
@@ -26,8 +28,7 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - Fn::ImportValue:
-            !Sub '${DbStackName}-ReadWritePolicyArn'
+        - Fn::ImportValue: !Sub '${DynamoDbStackName}-ReadWritePolicyArn'
       Path: "/"
 
   WsConnectFunction:
@@ -42,8 +43,12 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: ConnectHandler
+          QUARKUS_OIDC_AUTH_SERVER_URL:
+            Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
+          QUARKUS_OIDC_CLIENT_ID:
+            Fn::ImportValue: !Sub '${CognitoStackName}-WebAppClientId'
           GWT_DYNAMODB_TABLE_NAME:
-            Fn::ImportValue: !Sub '${DbStackName}-TableName'
+            Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref LambdaS3Key
@@ -60,8 +65,12 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: DisconnectHandler
+          QUARKUS_OIDC_AUTH_SERVER_URL:
+            Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
+          QUARKUS_OIDC_CLIENT_ID:
+            Fn::ImportValue: !Sub '${CognitoStackName}-WebAppClientId'
           GWT_DYNAMODB_TABLE_NAME:
-            Fn::ImportValue: !Sub '${DbStackName}-TableName'
+            Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref LambdaS3Key
@@ -78,8 +87,12 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: DefaultHandler
+          QUARKUS_OIDC_AUTH_SERVER_URL:
+            Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
+          QUARKUS_OIDC_CLIENT_ID:
+            Fn::ImportValue: !Sub '${CognitoStackName}-WebAppClientId'
           GWT_DYNAMODB_TABLE_NAME:
-            Fn::ImportValue: !Sub '${DbStackName}-TableName'
+            Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref LambdaS3Key
@@ -96,7 +109,7 @@ Resources:
   WsApiDomainName:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
-      DomainName: !Join [ '', [ 'ws', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      DomainName: !If [ IsProduction, 'ws.boardgamefiesta.com', !Sub 'ws-${Environment}.boardgamefiesta.com' ]
       DomainNameConfigurations:
         - CertificateArn: 'arn:aws:acm:eu-west-1:598172618529:certificate/3a61edbf-a6b3-4090-bbfd-2298ac3ad7aa'
 
@@ -219,7 +232,8 @@ Resources:
             Action:
               - execute-api:ManageConnections
             Resource:
-              - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WsApi}/${WsApiStage}/POST/@connections'
+              # TODO Make more specific like 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WsApi}/${WsApiStage}/POST/@connections' (doesn't seem to work)
+              - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WsApi}/*'
 
 Outputs:
   WsApiId:
@@ -227,7 +241,7 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-WsApiId'
   WsApiEndpoint:
-    Value: !Join ['', ['https://', !Ref WsApi, !Sub '.execute-api.eu-west-1.amazonaws.com/${WsApiStage}']]
+    Value: !Sub 'https://${WsApi}.execute-api.${AWS::Region}.amazonaws.com/${WsApiStage}'
     Export:
       Name: !Sub '${AWS::StackName}-WsApiEndpoint'
   WsApiDomainName:

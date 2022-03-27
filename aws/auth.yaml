@@ -7,7 +7,7 @@ Parameters:
     Type: String
   LambdaS3Key:
     Type: String
-  DbStackName:
+  DynamoDbStackName:
     Type: String
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
@@ -15,8 +15,10 @@ Mappings:
   Environments:
     dev:
       UserPoolId: eu-west-1_s6Ypfd935
+      WebAppClientId: 376e8rt8oopbqs5k5h2mnvl0nl
     prod:
       UserPoolId: eu-west-1_4FuZdxo27
+      WebAppClientId: 75mphvul79khilegesecif6o0k
 Resources:
   PreSignUpTriggerRole:
     Type: AWS::IAM::Role
@@ -33,8 +35,7 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - Fn::ImportValue:
-            !Sub '${DbStackName}-ReadOnlyPolicyArn'
+        - Fn::ImportValue: !Sub '${DynamoDbStackName}-ReadOnlyPolicyArn'
 
   PreSignUpTriggerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -49,7 +50,7 @@ Resources:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: preSignUp
           GWT_DYNAMODB_TABLE_NAME:
-            Fn::ImportValue: !Sub '${DbStackName}-TableName'
+            Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref LambdaS3Key
@@ -78,8 +79,7 @@ Resources:
                 Resource: !Join [ '', [ !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - Fn::ImportValue:
-            !Sub '${DbStackName}-ReadWritePolicyArn'
+        - Fn::ImportValue: !Sub '${DynamoDbStackName}-ReadWritePolicyArn'
 
   PostConfirmationTriggerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -94,7 +94,7 @@ Resources:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: postConfirmation
           GWT_DYNAMODB_TABLE_NAME:
-            Fn::ImportValue: !Sub '${DbStackName}-TableName'
+            Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref LambdaS3Key
@@ -164,10 +164,10 @@ Resources:
 #    Properties:
 #      CustomDomainConfig:
 #        CertificateArn: arn:aws:acm:us-east-1:598172618529:certificate/67df310f-1baf-437f-a48c-a062182be260
-#      Domain: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+#      Domain: !If [ IsProduction, 'auth2.boardgamefiesta.com', !Sub 'auth-${Environment}.boardgamefiesta.com' ]
 #      UserPoolId: !Ref UserPool
 #
-#  UserPoolClient:
+#  WebAppClient:
 #    Type: AWS::Cognito::UserPoolClient
 #    Properties:
 #      AccessTokenValidity: 1
@@ -181,11 +181,11 @@ Resources:
 #        - email
 #        - openid
 #      CallbackURLs:
-#        - !Join [ '', [ 'https://', !If [ IsProduction, '', !Join [ '', [ !Ref Environment, '.' ] ] ], 'boardgamefiesta.com' ] ]
-#        - !Join [ '', [ 'https://www', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+#        - !If [ IsProduction, 'https://boardgamefiesta.com', !Sub 'https://${Environment}.boardgamefiesta.com' ]
+#        - !If [ IsProduction, 'https://www.boardgamefiesta.com', !Sub 'https://www-${Environment}.boardgamefiesta.com' ]
 #      LogoutURLs:
-#        - !Join [ '', [ 'https://', !If [ IsProduction, '', !Join [ '', [ !Ref Environment, '.' ] ] ], '.boardgamefiesta.com' ] ]
-#        - !Join [ '', [ 'https://www', !If [ IsProduction, '', !Ref Environment ], '.boardgamefiesta.com' ] ]
+#        - !If [ IsProduction, 'https://boardgamefiesta.com', !Sub 'https://${Environment}.boardgamefiesta.com' ]
+#        - !If [ IsProduction, 'https://www.boardgamefiesta.com', !Sub 'https://www-${Environment}.boardgamefiesta.com' ]
 #      ClientName: 'webapp'
 #      DefaultRedirectURI: !Join [ '', [ 'https://', !If [ IsProduction, '', !Join [ '', [ !Ref Environment, '.' ] ] ], '.boardgamefiesta.com' ] ]
 #      ExplicitAuthFlows:
@@ -256,7 +256,7 @@ Resources:
 #    Type: AWS::Route53::RecordSet
 #    Properties:
 #      HostedZoneName: boardgamefiesta.com.
-#      Name: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+#      Name: !Ref UserPoolDomain
 #      Type: A
 #      AliasTarget:
 #        DNSName: !GetAtt UserPoolDomainInfo.CloudFrontDistribution
@@ -264,12 +264,18 @@ Resources:
 #
 Outputs:
   UserPoolId:
-    # TODO Value: !Ref UserPool
     Value: !FindInMap [ Environments, !Ref 'Environment', UserPoolId ]
     Export:
       Name: !Sub '${AWS::StackName}-UserPoolId'
   UserPoolDomainName:
-    # TODO Value: !Ref UserPoolDomain
-    Value: !Join [ '', [ 'auth', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+    Value: !If [ IsProduction, 'auth2.boardgamefiesta.com', !Sub 'auth-${Environment}.boardgamefiesta.com' ]
     Export:
       Name: !Sub '${AWS::StackName}-UserPoolDomainName'
+  UserPoolUrl:
+    Value: !Join [ '', [ !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolUrl'
+  WebAppClientId:
+    Value: !FindInMap [ Environments, !Ref 'Environment', WebAppClientId ]
+    Export:
+      Name: !Sub '${AWS::StackName}-WebAppClientId'
