@@ -30,6 +30,9 @@ import java.net.URI;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 @Testcontainers
 abstract class BaseDynamoDbRepositoryTest {
 
@@ -39,13 +42,14 @@ abstract class BaseDynamoDbRepositoryTest {
     static DynaliteContainer dynaliteContainer = new DynaliteContainer("quay.io/testcontainers/dynalite:v1.2.1-1");
 
     static DynamoDbClient dynamoDbClient;
-    static DynamoDbConfiguration config = new DynamoDbConfiguration();
+    static DynamoDbConfiguration config;
 
     @BeforeAll
     static void beforeAll() {
-        config.setTableName(TABLE_NAME);
-        config.setReadGameIdShards(2);
-        config.setWriteGameIdShards(2);
+        config = mock(DynamoDbConfiguration.class);
+        when(config.tableName()).thenReturn(TABLE_NAME);
+        when(config.readGameIdShards()).thenReturn(2);
+        when(config.writeGameIdShards()).thenReturn(2);
 
         dynamoDbClient = DynamoDbClient.create();
         dynamoDbClient = DynamoDbClient.builder()

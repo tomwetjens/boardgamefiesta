@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
@@ -39,13 +40,16 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.regex.Pattern;
 
+import static org.mockito.Mockito.when;
+
 @ExtendWith(MockitoExtension.class)
 @Disabled
 class StatsResourceTest {
 
     static final Pattern FILE_NAME_PATTERN = Pattern.compile("filename=\"([^\"]+)\"");
 
-    DynamoDbConfiguration config = new DynamoDbConfiguration();
+    @Mock
+    DynamoDbConfiguration config;
 
     Games games = Games.all();
 
@@ -53,9 +57,9 @@ class StatsResourceTest {
 
     @BeforeEach
     void setUp() {
-        config.setTableName("boardgamefiesta-prod");
-        config.setReadGameIdShards(2);
-        config.setWriteGameIdShards(2);
+        when(config.tableName()).thenReturn("boardgamefiesta-prod");
+        when(config.readGameIdShards()).thenReturn(2);
+        when(config.writeGameIdShards()).thenReturn(2);
 
         var dynamoDbClient = DynamoDbClient.create();
         var tables = new TableDynamoDbRepositoryV2(games, dynamoDbClient, config);

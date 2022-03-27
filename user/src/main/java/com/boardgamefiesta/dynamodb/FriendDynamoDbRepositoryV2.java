@@ -61,7 +61,7 @@ public class FriendDynamoDbRepositoryV2 implements Friends {
     @Override
     public Optional<Friend> findById(Friend.Id id) {
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression(PK + "=:PK AND " + SK + "=:SK")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(USER_PREFIX + id.getUserId().getId()),
@@ -87,7 +87,7 @@ public class FriendDynamoDbRepositoryV2 implements Friends {
     @Override
     public Stream<Friend> findByUserId(User.Id userId, int maxResults) {
         return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression(PK + "=:PK AND begins_with(" + SK + ",:SK)")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(USER_PREFIX + userId.getId()),
@@ -102,7 +102,7 @@ public class FriendDynamoDbRepositoryV2 implements Friends {
     @Override
     public void add(Friend friend) {
         client.putItem(PutItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .item(new Item()
                         .setString(PK, USER_PREFIX + friend.getId().getUserId().getId())
                         .setString(SK, FRIEND_PREFIX + friend.getId().getOtherUserId().getId())
@@ -120,7 +120,7 @@ public class FriendDynamoDbRepositoryV2 implements Friends {
 
     public void delete(Friend.Id friendId) {
         client.deleteItem(DeleteItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .key(Map.of(
                         PK, Item.s(USER_PREFIX + friendId.getUserId().getId()),
                         SK, Item.s(FRIEND_PREFIX + friendId.getOtherUserId().getId())))

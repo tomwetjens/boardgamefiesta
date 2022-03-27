@@ -50,9 +50,9 @@ public class CanaryTest {
 
     @BeforeEach
     void setUp() {
-        when(config.getTableName()).thenReturn("boardgamefiesta-prod");
-        when(config.getReadGameIdShards()).thenReturn(2);
-        when(config.getWriteGameIdShards()).thenReturn(2);
+        when(config.tableName()).thenReturn("boardgamefiesta-prod");
+        when(config.readGameIdShards()).thenReturn(2);
+        when(config.writeGameIdShards()).thenReturn(2);
 
         var dynamoDbClient = DynamoDbClient.create();
         tables = new TableDynamoDbRepositoryV2(games, dynamoDbClient, config);

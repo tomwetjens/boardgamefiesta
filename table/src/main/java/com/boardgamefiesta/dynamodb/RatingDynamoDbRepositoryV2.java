@@ -93,7 +93,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     @Override
     public Stream<Rating> findHistoric(User.Id userId, Game.Id gameId, Instant from, Instant to) {
         return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression(PK + "=:PK AND " + SK + " BETWEEN :From AND :To")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(USER_PREFIX + userId.getId()),
@@ -138,7 +138,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     @Override
     public Optional<Rating> findByTable(User.Id userId, Table.Id tableId) {
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI1)
                 .keyConditionExpression(GSI1PK + "=:PK AND " + GSI1SK + "=:SK")
                 .expressionAttributeValues(Map.of(
@@ -150,7 +150,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
         if (response.hasItems() && !response.items().isEmpty()) {
             var item = response.items().get(0);
             return Optional.of(mapToRating(Item.of(client.getItem(GetItemRequest.builder()
-                    .tableName(config.getTableName())
+                    .tableName(config.tableName())
                     .key(Map.of(PK, item.get(PK), SK, item.get(SK)))
                     .build())
                     .item())));
@@ -161,7 +161,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     @Override
     public Rating findLatest(User.Id userId, Game.Id gameId, Instant before) {
         return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression(PK + "=:PK AND " + SK + " BETWEEN :From AND :To")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(USER_PREFIX + userId.getId()),
@@ -181,7 +181,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     @Override
     public void addAll(Collection<Rating> ratings) {
         client.batchWriteItem(BatchWriteItemRequest.builder()
-                .requestItems(Map.of(config.getTableName(),
+                .requestItems(Map.of(config.tableName(),
                         ratings.stream()
                                 .flatMap(rating -> Stream.of(
                                         WriteRequest.builder()
@@ -194,7 +194,7 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
                                                         .item(new Item()
                                                                 .setString(PK, USER_PREFIX + rating.getUserId().getId())
                                                                 .setString(SK, RATING_PREFIX + rating.getGameId().getId())
-                                                                .setString(GSI1PK, GAME_PREFIX + rating.getGameId().getId() + "#" + Math.abs(rating.getTimestamp().hashCode()) % config.getWriteGameIdShards())
+                                                                .setString(GSI1PK, GAME_PREFIX + rating.getGameId().getId() + "#" + Math.abs(rating.getTimestamp().hashCode()) % config.writeGameIdShards())
                                                                 // 1. By rating, with leading zeros (because of lexicographical sorting)
                                                                 // 2. Then by timestamp, in case 2 users have the same rating
                                                                 // 3. Then by user id, to make it guaranteed unique, in case 2 users have the same rating at the same time
@@ -228,10 +228,10 @@ public class RatingDynamoDbRepositoryV2 implements Ratings {
     @Override
     public Stream<Ranking> findRanking(Game.Id gameId, int maxResults) {
         // Scatter-gather across shards
-        return IntStream.range(0, config.getReadGameIdShards())
+        return IntStream.range(0, config.readGameIdShards())
                 .parallel()
                 .mapToObj(shard -> client.queryPaginator(QueryRequest.builder()
-                        .tableName(config.getTableName())
+                        .tableName(config.tableName())
                         .indexName(GSI1)
                         .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
                         .expressionAttributeValues(Map.of(

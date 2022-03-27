@@ -112,14 +112,14 @@ public class WebSocketConnectionRepository {
         });
 
         client.putItem(PutItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .item(item.asMap())
                 .build());
     }
 
     public void remove(String id) {
         client.deleteItem(DeleteItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .key(new Item()
                         .setString(PK, WEB_SOCKET_PREFIX + id)
                         .setString(SK, WEB_SOCKET_PREFIX + id)
@@ -141,7 +141,7 @@ public class WebSocketConnectionRepository {
         }
 
         client.updateItem(UpdateItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .key(new Item()
                         .setString(PK, WEB_SOCKET_PREFIX + id)
                         .setString(SK, WEB_SOCKET_PREFIX + id)
@@ -154,7 +154,7 @@ public class WebSocketConnectionRepository {
 
     public boolean wasActiveAfter(User.Id userId, Instant after) {
         return client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI2)
                 .keyConditionExpression(GSI2PK + "=:GSI2PK AND " + GSI2SK + ">:GSI2SK")
                 .expressionAttributeValues(Map.of(
@@ -167,7 +167,7 @@ public class WebSocketConnectionRepository {
 
     public Optional<WebSocketConnection> findByConnectionId(String connectionId) {
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression(PK + "=:PK AND " + SK + "=:SK")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(WEB_SOCKET_PREFIX + connectionId),
@@ -183,7 +183,7 @@ public class WebSocketConnectionRepository {
 
     public Stream<String> findByTableId(Table.Id tableId) {
         return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI3)
                 .keyConditionExpression(GSI3PK + "=:GSI3PK AND begins_with(" + GSI3SK + ",:GSI3SK)")
                 .expressionAttributeValues(Map.of(
@@ -198,7 +198,7 @@ public class WebSocketConnectionRepository {
 
     public Stream<String> findByUserId(User.Id userId) {
         return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI1)
                 .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
                 .expressionAttributeValues(Map.of(

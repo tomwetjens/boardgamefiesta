@@ -18,19 +18,18 @@
 
 package com.boardgamefiesta.dynamodb;
 
-import io.quarkus.arc.config.ConfigProperties;
-import lombok.Data;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 
-import java.util.Optional;
+@ConfigMapping(prefix = "bgf.dynamodb")
+public interface DynamoDbConfiguration {
 
-@ConfigProperties(prefix = "bgf.dynamodb")
-@Data
-public class DynamoDbConfiguration {
+    String tableName();
 
-    private String tableName = "boardgamefiesta-prod";
+    @WithDefault("2")
+    int writeGameIdShards();
 
-    private int writeGameIdShards = 2;
-    private int readGameIdShards = 2;
+    @WithDefault("2")
+    int readGameIdShards();
 
 }

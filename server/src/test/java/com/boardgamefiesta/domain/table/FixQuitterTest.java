@@ -66,9 +66,9 @@ class FixQuitterTest {
         lenient().when(cdi.getBeanManager()).thenReturn(beanManager);
         CDI.setCDIProvider(() -> cdi);
 
-        lenient().when(config.getTableName()).thenReturn("boardgamefiesta-prod");
-        lenient().when(config.getReadGameIdShards()).thenReturn(2);
-        lenient().when(config.getWriteGameIdShards()).thenReturn(2);
+        lenient().when(config.tableName()).thenReturn("boardgamefiesta-prod");
+        lenient().when(config.readGameIdShards()).thenReturn(2);
+        lenient().when(config.writeGameIdShards()).thenReturn(2);
 
         var dynamoDbClient = DynamoDbClient.create();
         users = new UserDynamoDbRepositoryV2(dynamoDbClient, config);

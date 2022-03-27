@@ -101,7 +101,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     private String shardedGameGSIPK(Game.Id gameId, Table.Id tableId) {
-        return GAME_PREFIX + gameId.getId() + "#" + Math.abs(tableId.hashCode()) % config.getWriteGameIdShards();
+        return GAME_PREFIX + gameId.getId() + "#" + Math.abs(tableId.hashCode()) % config.writeGameIdShards();
     }
 
     @Override
@@ -111,7 +111,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         // Query both the Table#<Id> + latest State#<timestamp> in one go,
         // because it is always needed by caller
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression(PK + "=:PK AND " + SK + ">:SK")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(TABLE_PREFIX + id.getId()),
@@ -180,7 +180,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .collect(Chunked.chunked(MAX_BATCH_WRITE_SIZE))
                 .forEach(chunk ->
                         client.batchWriteItem(BatchWriteItemRequest.builder()
-                                .requestItems(Map.of(config.getTableName(), chunk))
+                                .requestItems(Map.of(config.tableName(), chunk))
                                 .build()));
     }
 
@@ -263,7 +263,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         updateItem.expressionAttributeValue(":ExpectedVersion", Item.n(table.getVersion()));
 
         var request = UpdateItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .key(Map.of(
                         PK, Item.s(TABLE_PREFIX + table.getId().getId()),
                         SK, Item.s(TABLE_PREFIX + table.getId().getId())
@@ -289,7 +289,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                           @NonNull Game game, @NonNull State state, @NonNull Instant timestamp,
                           @NonNull Optional<Instant> previousTimestamp) {
         client.putItem(PutItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .item(mapItemFromState(tableId, game, state, timestamp, previousTimestamp))
                 .build());
     }
@@ -313,13 +313,13 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .collect(Chunked.chunked(MAX_BATCH_WRITE_SIZE))
                 .forEach(writeRequests ->
                         client.batchWriteItem(BatchWriteItemRequest.builder()
-                                .requestItems(Map.of(config.getTableName(), writeRequests))
+                                .requestItems(Map.of(config.tableName(), writeRequests))
                                 .build()));
     }
 
     private int countActive(User.Id userId) {
         return client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI2)
                 .keyConditionExpression("GSI2PK=:GSI2PK AND begins_with(GSI2SK, :GSI2SK)")
                 .expressionAttributeValues(Map.of(
@@ -334,7 +334,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     @Override
     public Stream<Table> findActive(User.Id userId) {
         return findByIds(client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI2)
                 .scanIndexForward(false)
                 .keyConditionExpression(GSI2PK + "=:GSI2PK AND begins_with(" + GSI2SK + ",:GSI2SK)")
@@ -351,7 +351,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     @Override
     public Stream<Table> findAll(User.@NonNull Id userId, int maxResults) {
         return findByIds(client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI1)
                 .scanIndexForward(false)
                 .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
@@ -369,7 +369,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     @Override
     public Stream<Table> findAll(@NonNull User.Id userId, Game.Id gameId, int maxResults) {
         return findByIds(client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI1)
                 .scanIndexForward(false)
                 .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
@@ -409,13 +409,13 @@ public class TableDynamoDbRepositoryV2 implements Tables {
             throw new IllegalArgumentException("'To' must be after " + from + ", but was: " + to);
         }
 
-        return findByIds(IntStream.range(0, config.getReadGameIdShards())
+        return findByIds(IntStream.range(0, config.readGameIdShards())
                 // Scatter
                 .parallel()
                 .mapToObj(shard -> {
                     var gsi2skTo = GSISK.from(lastEvaluatedId, Table.Status.STARTED, to, gameId);
                     return client.queryPaginator(QueryRequest.builder()
-                            .tableName(config.getTableName())
+                            .tableName(config.tableName())
                             .indexName(GSI2)
                             .scanIndexForward(false)
                             .keyConditionExpression(GSI2PK + "=:GSI2PK AND " + GSI2SK + " BETWEEN :GSI2SKFrom AND :GSI2SKTo")
@@ -463,13 +463,13 @@ public class TableDynamoDbRepositoryV2 implements Tables {
             throw new IllegalArgumentException("'To' must be after " + from + ", but was: " + to);
         }
 
-        return findByIds(IntStream.range(0, config.getReadGameIdShards())
+        return findByIds(IntStream.range(0, config.readGameIdShards())
                 // Scatter
                 .parallel()
                 .mapToObj(shard -> {
                     var gsi3skTo = GSISK.from(lastEvaluatedId, Table.Status.NEW, to, gameId);
                     return client.queryPaginator(QueryRequest.builder()
-                            .tableName(config.getTableName())
+                            .tableName(config.tableName())
                             .indexName(GSI3)
                             .scanIndexForward(false)
                             .keyConditionExpression(GSI3PK + "=:GSI3PK AND " + GSI3SK + " BETWEEN :GSI3SKFrom AND :GSI3SKTo")
@@ -517,13 +517,13 @@ public class TableDynamoDbRepositoryV2 implements Tables {
             throw new IllegalArgumentException("'To' must be after " + from + ", but was: " + to);
         }
 
-        return findByIds(IntStream.range(0, config.getReadGameIdShards())
+        return findByIds(IntStream.range(0, config.readGameIdShards())
                 // Scatter
                 .parallel()
                 .mapToObj(shard -> {
                     var gsi1skTo = GSISK.from(lastEvaluatedId, Table.Status.ENDED, to, gameId);
                     return client.queryPaginator(QueryRequest.builder()
-                            .tableName(config.getTableName())
+                            .tableName(config.tableName())
                             .indexName(GSI1)
                             .scanIndexForward(ascending)
                             .keyConditionExpression(GSI1PK + "=:GSI1PK AND " + GSI1SK + " BETWEEN :GSI1SKFrom AND :GSI1SKTo")
@@ -561,14 +561,14 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                         .collect(Collectors.toList()))
                 .flatMap(keys -> {
                     var response = client.batchGetItem(BatchGetItemRequest.builder()
-                            .requestItems(Map.of(config.getTableName(),
+                            .requestItems(Map.of(config.tableName(),
                                     KeysAndAttributes.builder()
                                             .keys(keys)
                                             .build()))
                             .build());
 
                     if (response.hasResponses()) {
-                        var items = response.responses().get(config.getTableName()).stream()
+                        var items = response.responses().get(config.tableName()).stream()
                                 .collect(Collectors.toMap(item -> item.get(PK).s(), Function.identity()));
                         return keys.stream()
                                 .map(key -> key.get(PK).s())
@@ -607,7 +607,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
             if (!writeRequests.isEmpty()) {
                 client.batchWriteItem(BatchWriteItemRequest.builder()
-                        .requestItems(Map.of(config.getTableName(), writeRequests))
+                        .requestItems(Map.of(config.tableName(), writeRequests))
                         .build());
             }
         }
@@ -635,7 +635,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         }, () -> updateItem.remove(GSI1PK, GSI1SK, GSI2PK, GSI2SK));
 
         client.updateItem(UpdateItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .key(Map.of(
                         PK, Item.s(TABLE_PREFIX + table.getId().getId()),
                         SK, Item.s(PLAYER_PREFIX + player.getId().getId())))
@@ -846,7 +846,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         log.debug("getCurrentState: {}", tableId);
 
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression("PK=:PK AND begins_with(SK,:SK)")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(TABLE_PREFIX + tableId.getId()),
@@ -866,7 +866,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         log.debug("getHistoricState: {} {}", tableId, timestamp);
 
         var response = client.getItem(GetItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .key(Map.of(
                         PK, Item.s(TABLE_PREFIX + tableId.getId()),
                         SK, Item.s(STATE_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(timestamp))
@@ -895,7 +895,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         log.debug("findLogEntries: {} >={} <{} limit {}", tableId, since, before, limit);
 
         return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 // Needs to put an upper limit on SK because else it will also return other items like "Player#..." and "State#..."
                 .keyConditionExpression("PK=:PK AND SK BETWEEN :SKFrom AND :SKTo")
                 .expressionAttributeValues(Map.of(
@@ -965,7 +965,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     public void delete(Table.Id id) {
         client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression(PK + "=:PK")
                 .expressionAttributeValues(Map.of(":PK", Item.s(TABLE_PREFIX + id.getId())))
                 .projectionExpression(PK + "," + SK)
@@ -981,7 +981,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .collect(Chunked.chunked(MAX_BATCH_WRITE_SIZE))
                 .forEach(chunk ->
                         client.batchWriteItem(BatchWriteItemRequest.builder()
-                                .requestItems(Map.of(config.getTableName(), chunk))
+                                .requestItems(Map.of(config.tableName(), chunk))
                                 .build()));
     }
 
@@ -989,11 +989,11 @@ public class TableDynamoDbRepositoryV2 implements Tables {
      * @return stream of ids, no specific order is guaranteed
      */
     public Stream<Table.Id> findAllIds(Game.Id gameId) {
-        return IntStream.range(0, config.getReadGameIdShards())
+        return IntStream.range(0, config.readGameIdShards())
                 // Scatter
                 .parallel()
                 .mapToObj(shard -> client.queryPaginator(QueryRequest.builder()
-                        .tableName(config.getTableName())
+                        .tableName(config.tableName())
                         .indexName(GSI4)
                         .scanIndexForward(false)
                         .keyConditionExpression(GSI4PK + "=:GSI4PK AND begins_with(" + GSI4SK + ",:GSI4SK)")

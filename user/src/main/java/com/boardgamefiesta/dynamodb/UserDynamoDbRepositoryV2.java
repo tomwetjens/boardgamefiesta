@@ -88,7 +88,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
     @Override
     public Optional<User> findById(User.Id id) {
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .keyConditionExpression(PK + "=:PK AND " + SK + "=:SK")
                 .expressionAttributeValues(Map.of(
                         ":PK", Item.s(USER_PREFIX + id.getId()),
@@ -112,14 +112,14 @@ public class UserDynamoDbRepositoryV2 implements Users {
                         .collect(Collectors.toList()))
                 .flatMap(keys -> {
                     var response = client.batchGetItem(BatchGetItemRequest.builder()
-                            .requestItems(Map.of(config.getTableName(),
+                            .requestItems(Map.of(config.tableName(),
                                     KeysAndAttributes.builder()
                                             .keys(keys)
                                             .build()))
                             .build());
 
                     if (response.hasResponses()) {
-                        var items = response.responses().get(config.getTableName()).stream()
+                        var items = response.responses().get(config.tableName()).stream()
                                 .collect(Collectors.toMap(item -> item.get(PK).s(), Function.identity()));
                         return keys.stream()
                                 .map(key -> key.get(PK).s())
@@ -180,7 +180,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
     @Override
     public Stream<User> findByUsernameStartsWith(String username, int maxResults) {
         return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI1)
                 .keyConditionExpression(GSI1PK + "=:PK AND begins_with(" + GSI1SK + ",:SK)")
                 .expressionAttributeValues(Map.of(
@@ -197,7 +197,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
     @Override
     public Optional<User> findByUsername(String username) {
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI1)
                 .keyConditionExpression(GSI1PK + "=:PK AND " + GSI1SK + "=:SK")
                 .expressionAttributeValues(Map.of(
@@ -217,7 +217,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
     @Override
     public Optional<User> findByEmail(String email) {
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI2)
                 .keyConditionExpression(GSI2PK + "=:PK AND " + GSI2SK + "=:SK")
                 .expressionAttributeValues(Map.of(
@@ -237,7 +237,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
     @Override
     public Optional<User.Id> findIdByCognitoUsername(String cognitoUsername) {
         var response = client.query(QueryRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .indexName(GSI3)
                 .keyConditionExpression(GSI3PK + "=:PK AND " + GSI3SK + "=:SK")
                 .expressionAttributeValues(Map.of(
@@ -288,7 +288,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
         }
 
         client.putItem(PutItemRequest.builder()
-                .tableName(config.getTableName())
+                .tableName(config.tableName())
                 .item(item.asMap())
                 .build());
     }
@@ -353,7 +353,7 @@ public class UserDynamoDbRepositoryV2 implements Users {
 
         try {
             client.updateItem(UpdateItemRequest.builder()
-                    .tableName(config.getTableName())
+                    .tableName(config.tableName())
                     .key(Map.of(
                             PK, Item.s(USER_PREFIX + user.getId().getId()),
                             SK, Item.s(USER_PREFIX + user.getId().getId())
