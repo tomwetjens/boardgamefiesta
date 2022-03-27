@@ -52,11 +52,16 @@ public class ApiGatewayWebSocketSender implements WebSocketSender {
 
         var clientBuilder = ApiGatewayManagementApiClient.builder();
 
-        connectionsEndpoint
+        apiGatewayManagementApiClient = connectionsEndpoint
                 .map(URI::create)
-                .ifPresent(clientBuilder::endpointOverride);
-
-        apiGatewayManagementApiClient = clientBuilder.build();
+                .map(uri -> {
+                    log.info("Overriding WebSocket API Gateway endpoint: {}", uri);
+                    return clientBuilder.endpointOverride(uri);
+                })
+                .orElseGet(() -> {
+                    log.warn("No WebSocket API Gateway connections endpoint configured!");
+                    return clientBuilder;
+                }).build();
     }
 
     @Override
@@ -65,8 +70,6 @@ public class ApiGatewayWebSocketSender implements WebSocketSender {
 
         log.debug("Sending message to table {}: {}", tableId.getId(), data);
 
-        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
-
         var connectionIds = webSocketConnections.findByTableId(tableId)
                 .collect(Collectors.toList());
 
@@ -74,20 +77,7 @@ public class ApiGatewayWebSocketSender implements WebSocketSender {
             log.debug("No connections found for table: {}", tableId.getId());
         }
 
-        connectionIds.forEach(connectionId -> {
-                    try {
-                        log.debug("Sending message to connection {}: {}", connectionId, data);
-
-                        apiGatewayManagementApiClient.postToConnection(PostToConnectionRequest.builder()
-                                .connectionId(connectionId)
-                                .data(sdkBytes)
-                                .build());
-                    } catch (GoneException e) {
-                        // Ignore
-                    } catch (SdkException e) {
-                        log.error("Could not send to WebSocket connection: {}", connectionId, e);
-                    }
-                });
+        sendToConnections(data, connectionIds);
     }
 
     @Override
@@ -96,14 +86,18 @@ public class ApiGatewayWebSocketSender implements WebSocketSender {
 
         log.debug("Sending message to user {}: {}", userId.getId(), data);
 
-        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
-
         var connectionIds = webSocketConnections.findByUserId(userId)
                 .collect(Collectors.toList());
 
         if (connectionIds.isEmpty()) {
             log.debug("No connections found for user: {}", userId.getId());
         }
+
+        sendToConnections(data, connectionIds);
+    }
+
+    private void sendToConnections(String data, List<String> connectionIds) {
+        var sdkBytes = SdkBytes.fromString(data, StandardCharsets.UTF_8);
 
         connectionIds.forEach(connectionId -> {
             try {
