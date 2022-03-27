@@ -3,7 +3,9 @@ Description: API for Board Game Fiesta
 Parameters:
   Environment:
     Type: String
-  Version:
+  LambdaS3Bucket:
+    Type: String
+  LambdaS3Key:
     Type: String
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]

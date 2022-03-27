@@ -3,7 +3,9 @@ Description: API Gateway for Board Game Fiesta
 Parameters:
   Environment:
     Type: String
-  Version:
+  LambdaS3Bucket:
+    Type: String
+  LambdaS3Key:
     Type: String
   DbStackName:
     Type: String
@@ -28,52 +30,13 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole
+        - Fn::ImportValue:
+            !Sub '${DbStackName}-ReadWritePolicyArn'
+        - Fn::ImportValue:
+            !Sub '${AutomaStackName}-ScheduleOnlyPolicyArn'
+        - Fn::ImportValue:
+            !Sub '${WebSocketStackName}-SendMessagePolicyArn'
       Path: "/"
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:BatchGetItem
-                  - dynamodb:BatchWriteItem
-                  - dynamodb:PutItem
-                  - dynamodb:DeleteItem
-                  - dynamodb:GetItem
-                  - dynamodb:Scan
-                  - dynamodb:Query
-                  - dynamodb:UpdateItem
-                Resource:
-                  - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                  - Fn::Join:
-                      - ''
-                      - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                        - '/index/*'
-        - PolicyName: SendMessage
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:SendMessage
-                Resource:
-                  - Fn::ImportValue: !Sub '${AutomaStackName}-AutomaSqsQueueArn'
-        - PolicyName: ExecuteApi
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - execute-api:ManageConnections
-                Resource:
-                  - Fn::Join:
-                      - ''
-                      - - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}'
-                        - Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiId'
-                        - ':/production/*/*'
 
   ApiFunction:
     Type: AWS::Lambda::Function
@@ -86,19 +49,16 @@ Resources:
       Environment:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
-          BGF_SQS_ENABLED: false
           BGF_STATS_ENABLED: true
           GWT_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DbStackName}-TableName'
+          BGF_SQS_QUEUE_URL:
+            Fn::ImportValue: !Sub '${AutomaStackName}-AutomaSqsQueueUrl'
           BGF_WS_CONNECTIONS_ENDPOINT:
-            Fn::Join:
-              - ''
-              - - 'https://'
-                - Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiId'
-                - !Sub '.execute-api.${AWS::Region}.amazonaws.com/default'
+            Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiEndpoint'
       Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-rest.zip'
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
 
   RestApi:
     Type: AWS::ApiGateway::RestApi
@@ -123,7 +83,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: 'boardgamefiesta.com.'
-      Name: !Join [ '', [ 'api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      Name: !Ref RestApiDomainName
       Type: A
       AliasTarget:
         DNSName: !GetAtt RestApiDomainName.RegionalDomainName
@@ -223,7 +183,7 @@ Resources:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
       BasePath: ''
-      DomainName: !Join [ '', [ 'api', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      DomainName: !Ref RestApiDomainName
       RestApiId: !Ref RestApi
       Stage: 'default'
 

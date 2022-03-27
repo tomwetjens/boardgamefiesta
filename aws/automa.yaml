@@ -3,7 +3,9 @@ Description: Lambda SQS for Board Game Fiesta
 Parameters:
   Environment:
     Type: String
-  Version:
+  LambdaS3Bucket:
+    Type: String
+  LambdaS3Key:
     Type: String
   DbStackName:
     Type: String
@@ -20,9 +22,35 @@ Resources:
       VisibilityTimeout: 30
       DelaySeconds: 1 # Simulate computer thinking
 
+  ExecutePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource:
+              - !GetAtt AutomaSqsQueue.Arn
+
+  ScheduleOnlyPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource:
+              - !GetAtt AutomaSqsQueue.Arn
+
   AutomaSqsRole:
     Type: AWS::IAM::Role
-    Condition: IsProduction # Local dev server does SQS handling instead of Lambda
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -35,56 +63,15 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole
+        - !Ref ExecutePolicy
+        - Fn::ImportValue:
+            !Sub '${DbStackName}-ReadWritePolicyArn'
+        - Fn::ImportValue:
+            !Sub '${WebSocketStackName}-SendMessagePolicyArn'
       Path: "/"
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:BatchGetItem
-                  - dynamodb:BatchWriteItem
-                  - dynamodb:PutItem
-                  - dynamodb:DeleteItem
-                  - dynamodb:GetItem
-                  - dynamodb:Scan
-                  - dynamodb:Query
-                  - dynamodb:UpdateItem
-                Resource:
-                  - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                  - Fn::Join:
-                      - ''
-                      - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                        - '/index/*'
-        - PolicyName: SendMessage
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:SendMessage
-                Resource:
-                  - !GetAtt AutomaSqsQueue.Arn
-        - PolicyName: ExecuteApi
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - execute-api:ManageConnections
-                Resource:
-                  - Fn::Join:
-                      - ''
-                      - - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}'
-                        - Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiId'
-                        - ':/production/*/*'
 
   AutomaSqsFunction:
     Type: AWS::Lambda::Function
-    Condition: IsProduction # Local dev server does SQS handling instead of Lambda
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       MemorySize: 2048
@@ -99,18 +86,13 @@ Resources:
             Fn::ImportValue: !Sub '${DbStackName}-TableName'
           BGF_SQS_QUEUE_URL: !Ref AutomaSqsQueue
           BGF_WS_CONNECTIONS_ENDPOINT:
-            Fn::Join:
-              - ''
-              - - 'https://'
-                - Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiId'
-                - '.execute-api.eu-west-1.amazonaws.com/default'
+            Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiEndpoint'
       Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-automa.zip'
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
 
   AutomaSqsFunctionTrigger:
     Type: AWS::Lambda::EventSourceMapping
-    Condition: IsProduction # Local dev server does SQS handling instead of Lambda
     DependsOn:
       - AutomaSqsQueue
       - AutomaSqsFunction
@@ -131,3 +113,7 @@ Outputs:
     Value: !Ref AutomaSqsQueue
     Export:
       Name: !Sub '${AWS::StackName}-AutomaSqsQueueUrl'
+  ScheduleOnlyPolicyArn:
+    Value: !Ref ScheduleOnlyPolicy
+    Export:
+      Name: !Sub '${AWS::StackName}-ScheduleOnlyPolicyArn'

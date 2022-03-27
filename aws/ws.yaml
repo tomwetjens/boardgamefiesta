@@ -3,7 +3,9 @@ Description: API Gateway WebSocket for Board Game Fiesta
 Parameters:
   Environment:
     Type: String
-  Version:
+  LambdaS3Bucket:
+    Type: String
+  LambdaS3Key:
     Type: String
   DbStackName:
     Type: String
@@ -24,29 +26,9 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
+        - Fn::ImportValue:
+            !Sub '${DbStackName}-ReadWritePolicyArn'
       Path: "/"
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:BatchGetItem
-                  - dynamodb:BatchWriteItem
-                  - dynamodb:PutItem
-                  - dynamodb:DeleteItem
-                  - dynamodb:GetItem
-                  - dynamodb:Scan
-                  - dynamodb:Query
-                  - dynamodb:UpdateItem
-                Resource:
-                  - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                  - Fn::Join:
-                      - ''
-                      - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                        - '/index/*'
 
   WsConnectFunction:
     Type: AWS::Lambda::Function
@@ -60,10 +42,11 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: ConnectHandler
-          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+          GWT_DYNAMODB_TABLE_NAME:
+            Fn::ImportValue: !Sub '${DbStackName}-TableName'
       Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-websocket.zip'
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
 
   WsDisconnectFunction:
     Type: AWS::Lambda::Function
@@ -77,10 +60,11 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: DisconnectHandler
-          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+          GWT_DYNAMODB_TABLE_NAME:
+            Fn::ImportValue: !Sub '${DbStackName}-TableName'
       Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-websocket.zip'
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
 
   WsDefaultFunction:
     Type: AWS::Lambda::Function
@@ -94,10 +78,11 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: DefaultHandler
-          GWT_DYNAMODB_TABLE_NAME: !Sub 'boardgamefiesta-${Environment}'
+          GWT_DYNAMODB_TABLE_NAME:
+            Fn::ImportValue: !Sub '${DbStackName}-TableName'
       Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-websocket.zip'
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
 
   WsApi:
     Type: AWS::ApiGatewayV2::Api
@@ -119,7 +104,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: 'boardgamefiesta.com.'
-      Name: !Join [ '', [ 'ws', !If [ IsProduction, '', !Join [ '',[ '-', !Ref Environment ] ] ], '.boardgamefiesta.com' ] ]
+      Name: !Ref WsApiDomainName
       Type: A
       AliasTarget:
         DNSName: !GetAtt WsApiDomainName.RegionalDomainName
@@ -182,7 +167,7 @@ Resources:
       - WsApiStage
     Properties:
       ApiId: !Ref WsApi
-      StageName: 'default'
+      StageName: !Ref WsApiStage
 
   WsApiMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
@@ -192,7 +177,7 @@ Resources:
       ApiId: !Ref WsApi
       ApiMappingKey: ''
       DomainName: !Ref WsApiDomainName
-      Stage: 'default'
+      Stage: !Ref WsApiStage
 
   WsConnectFunctionApiGatewayLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -224,16 +209,32 @@ Resources:
       FunctionName: !Ref WsDefaultFunction
       Principal: apigateway.amazonaws.com
 
+  SendMessagePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - execute-api:ManageConnections
+            Resource:
+              - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WsApi}/${WsApiStage}/POST/@connections'
+
 Outputs:
   WsApiId:
     Value: !Ref WsApi
     Export:
       Name: !Sub '${AWS::StackName}-WsApiId'
   WsApiEndpoint:
-    Value: !GetAtt WsApi.ApiEndpoint
+    Value: !Join ['', ['https://', !Ref WsApi, !Sub '.execute-api.eu-west-1.amazonaws.com/${WsApiStage}']]
     Export:
       Name: !Sub '${AWS::StackName}-WsApiEndpoint'
   WsApiDomainName:
     Value: !Ref WsApiDomainName
     Export:
       Name: !Sub '${AWS::StackName}-WsApiDomainName'
+  SendMessagePolicyArn:
+    Value: !Ref SendMessagePolicy
+    Export:
+      Name: !Sub '${AWS::StackName}-SendMessagePolicyArn'

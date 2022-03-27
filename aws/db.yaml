@@ -82,6 +82,39 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: !If [ IsProduction, true, false ]
 
+  ReadWritePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:Query
+              - dynamodb:UpdateItem
+            Resource:
+              - !GetAtt Table.Arn
+              - !Join ['', [!GetAtt Table.Arn, '/index/*' ]]
+
+  ReadOnlyPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+            Resource:
+              - !GetAtt Table.Arn
+              - !Join ['', [!GetAtt Table.Arn, '/index/*' ]]
+
 Outputs:
   TableName:
     Value: !Ref Table
@@ -91,3 +124,11 @@ Outputs:
     Value: !GetAtt Table.Arn
     Export:
       Name: !Sub '${AWS::StackName}-TableArn'
+  ReadWritePolicyArn:
+    Value: !Ref ReadWritePolicy
+    Export:
+      Name: !Sub '${AWS::StackName}-ReadWritePolicyArn'
+  ReadOnlyPolicyArn:
+    Value: !Ref ReadOnlyPolicy
+    Export:
+      Name: !Sub '${AWS::StackName}-ReadOnlyPolicyArn'

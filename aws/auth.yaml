@@ -3,7 +3,9 @@ Description: Auth for Board Game Fiesta
 Parameters:
   Environment:
     Type: String
-  Version:
+  LambdaS3Bucket:
+    Type: String
+  LambdaS3Key:
     Type: String
   DbStackName:
     Type: String
@@ -29,23 +31,10 @@ Resources:
             Action:
               - sts:AssumeRole
       Path: "/"
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:Query
-                Resource:
-                  - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                  - Fn::Join:
-                      - ''
-                      - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                        - '/index/*'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
+        - Fn::ImportValue:
+            !Sub '${DbStackName}-ReadOnlyPolicyArn'
 
   PreSignUpTriggerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -62,8 +51,8 @@ Resources:
           GWT_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DbStackName}-TableName'
       Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-cognito.zip'
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
 
   PostConfirmationTriggerRole:
     Type: AWS::IAM::Role
@@ -87,19 +76,10 @@ Resources:
                 Action:
                   - cognito-idp:AdminAddUserToGroup
                 Resource: !Join [ '', [ !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
-              - Effect: Allow
-                Action:
-                  - dynamodb:Query
-                  - dynamodb:PutItem
-                Resource:
-                  - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                  - Fn::Join:
-                      - ''
-                      - - Fn::ImportValue: !Sub '${DbStackName}-TableArn'
-                        - '/index/*'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
+        - Fn::ImportValue:
+            !Sub '${DbStackName}-ReadWritePolicyArn'
 
   PostConfirmationTriggerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -116,8 +96,8 @@ Resources:
           GWT_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DbStackName}-TableName'
       Code:
-        S3Bucket: boardgamefiesta-builds
-        S3Key: !Sub '${Version}/lambda-cognito.zip'
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
 
   #  UserPool:
   #    Type: AWS::Cognito::UserPool
