@@ -60,7 +60,7 @@ public class EventsAuthFilter implements Filter {
         }
 
         try {
-            var idTokenCredential = new IdTokenCredential(token, routingContext);
+            var idTokenCredential = new IdTokenCredential(token);
             var tokenAuthenticationRequest = new TokenAuthenticationRequest(idTokenCredential);
 
             SecurityIdentity securityIdentity = oidcIdentityProvider.authenticate(tokenAuthenticationRequest, function -> Uni.createFrom().item(function.get()))

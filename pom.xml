@@ -36,7 +36,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.5.3.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.7.5.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
 
         <commons-codec.version>1.15</commons-codec.version>
@@ -46,8 +46,7 @@
         <mockito.version>4.1.0</mockito.version>
         <javax.json-api.version>1.1.4</javax.json-api.version>
         <javax.enterprise.cdi-api.version>2.0</javax.enterprise.cdi-api.version>
-        <commons-codec.version>1.15</commons-codec.version>
-        <awssdk.version>2.17.78</awssdk.version> <!-- Must match version coming through quarkus-amazon-* dependencies! -->
+        <awssdk.version>2.17.100</awssdk.version> <!-- Must match version coming through quarkus-amazon-* dependencies! -->
         <javax.json.bind-api.version>1.0</javax.json.bind-api.version>
         <yasson.version>1.0.10</yasson.version>
         <stripe.version>20.99.0</stripe.version>
@@ -189,6 +188,11 @@
                 <scope>provided</scope>
             </dependency>
 
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>dynamodb</artifactId>
+                <version>${awssdk.version}</version>
+            </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>cognitoidentityprovider</artifactId>
