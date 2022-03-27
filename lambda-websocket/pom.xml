@@ -61,7 +61,7 @@
 
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>apache-client</artifactId>
+            <artifactId>url-connection-client</artifactId>
         </dependency>
 
         <dependency>
