@@ -47,7 +47,7 @@
         <javax.json-api.version>1.1.4</javax.json-api.version>
         <javax.enterprise.cdi-api.version>2.0</javax.enterprise.cdi-api.version>
         <commons-codec.version>1.15</commons-codec.version>
-        <awssdk.version>2.17.0</awssdk.version>
+        <awssdk.version>2.17.78</awssdk.version> <!-- Must match version coming through quarkus-amazon-* dependencies! -->
         <javax.json.bind-api.version>1.0</javax.json.bind-api.version>
         <yasson.version>1.0.10</yasson.version>
         <stripe.version>20.99.0</stripe.version>
@@ -199,6 +199,11 @@
                         <artifactId>apache-client</artifactId>
                         <!-- Excluded because we have software.amazon.awssdk:url-connection-client already on the classpath -->
                     </exclusion>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>netty-nio-client</artifactId>
+                        <!-- Excluded because we have software.amazon.awssdk:url-connection-client already on the classpath -->
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -209,6 +214,11 @@
                     <exclusion>
                         <groupId>software.amazon.awssdk</groupId>
                         <artifactId>apache-client</artifactId>
+                        <!-- Excluded because we have software.amazon.awssdk:url-connection-client already on the classpath -->
+                    </exclusion>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>netty-nio-client</artifactId>
                         <!-- Excluded because we have software.amazon.awssdk:url-connection-client already on the classpath -->
                     </exclusion>
                 </exclusions>

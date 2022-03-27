@@ -47,7 +47,7 @@ Resources:
             Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
           QUARKUS_OIDC_CLIENT_ID:
             Fn::ImportValue: !Sub '${CognitoStackName}-WebAppClientId'
-          GWT_DYNAMODB_TABLE_NAME:
+          BGF_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
@@ -69,7 +69,7 @@ Resources:
             Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
           QUARKUS_OIDC_CLIENT_ID:
             Fn::ImportValue: !Sub '${CognitoStackName}-WebAppClientId'
-          GWT_DYNAMODB_TABLE_NAME:
+          BGF_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
@@ -91,7 +91,7 @@ Resources:
             Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
           QUARKUS_OIDC_CLIENT_ID:
             Fn::ImportValue: !Sub '${CognitoStackName}-WebAppClientId'
-          GWT_DYNAMODB_TABLE_NAME:
+          BGF_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket

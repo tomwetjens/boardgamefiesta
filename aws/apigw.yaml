@@ -57,7 +57,7 @@ Resources:
             Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
           QUARKUS_OIDC_CLIENT_ID:
             Fn::ImportValue: !Sub '${CognitoStackName}-WebAppClientId'
-          GWT_DYNAMODB_TABLE_NAME:
+          BGF_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
           BGF_SQS_QUEUE_URL:
             Fn::ImportValue: !Sub '${AutomaStackName}-AutomaSqsQueueUrl'

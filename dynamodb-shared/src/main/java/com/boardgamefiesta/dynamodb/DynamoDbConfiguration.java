@@ -24,7 +24,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Optional;
 
-@ConfigProperties(prefix = "gwt.dynamodb")
+@ConfigProperties(prefix = "bgf.dynamodb")
 @Data
 public class DynamoDbConfiguration {
 

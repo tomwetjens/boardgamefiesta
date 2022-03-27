@@ -49,7 +49,7 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: preSignUp
-          GWT_DYNAMODB_TABLE_NAME:
+          BGF_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
@@ -93,7 +93,7 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: postConfirmation
-          GWT_DYNAMODB_TABLE_NAME:
+          BGF_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
       Code:
         S3Bucket: !Ref LambdaS3Bucket

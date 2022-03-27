@@ -80,7 +80,7 @@ Resources:
         Variables:
           QUARKUS_PROFILE: !Sub '${Environment}'
           QUARKUS_LAMBDA_HANDLER: automa
-          GWT_DYNAMODB_TABLE_NAME:
+          BGF_DYNAMODB_TABLE_NAME:
             Fn::ImportValue: !Sub '${DynamoDbStackName}-TableName'
           BGF_SQS_QUEUE_URL: !Ref AutomaSqsQueue
           BGF_WS_CONNECTIONS_ENDPOINT:
