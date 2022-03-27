@@ -61,7 +61,8 @@ aws cloudformation deploy --stack-name $STACK_PREFIX-ws \
   --parameter-overrides Environment=$ENV \
     LambdaS3Bucket=$LAMBDA_S3_BUCKET \
     LambdaS3Key=$LAMBDA_WEBSOCKET_S3_KEY \
-    DynamoDbStackName=$STACK_PREFIX-db
+    DynamoDbStackName=$STACK_PREFIX-db \
+    CognitoStackName=$STACK_PREFIX-auth
 
 LAMBDA_AUTOMA_VERSION=$(md5sum "../lambda-automa/target/function.zip" | cut -c-32)
 LAMBDA_AUTOMA_S3_KEY=lambda-automa.$LAMBDA_AUTOMA_VERSION.zip
