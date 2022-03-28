@@ -18,6 +18,12 @@ Parameters:
 Conditions:
   IsProduction: !Equals [ !Ref Environment, 'prod' ]
 Resources:
+  PayPalSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${AWS::StackName}-PayPalSecret'
+      SecretString: '{"clientId":"","clientSecret":""}' # To be filled later manually
+
   ApiRole:
     Type: AWS::IAM::Role
     Properties:
@@ -63,6 +69,8 @@ Resources:
             Fn::ImportValue: !Sub '${AutomaStackName}-AutomaSqsQueueUrl'
           BGF_WS_CONNECTIONS_ENDPOINT:
             Fn::ImportValue: !Sub '${WebSocketStackName}-WsApiEndpoint'
+          PAYPAL_CLIENT_ID: !Sub '{{resolve:secretsmanager:${PayPalSecret}:SecretString:clientId}}'
+          PAYPAL_CLIENT_SECRET: !Sub '{{resolve:secretsmanager:${PayPalSecret}:SecretString:clientSecret}}'
       Code:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref LambdaS3Key
