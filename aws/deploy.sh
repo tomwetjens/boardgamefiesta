@@ -93,3 +93,8 @@ aws cloudformation deploy --stack-name $STACK_PREFIX-apigw \
     CognitoStackName=$STACK_PREFIX-auth \
     AutomaStackName=$STACK_PREFIX-automa \
     WebSocketStackName=$STACK_PREFIX-ws
+
+REST_API_ID=$(aws cloudformation describe-stacks --stack-name $STACK_PREFIX-apigw \
+  --query "Stacks[0].Outputs[?OutputKey=='RestApiId'].OutputValue" --output text)
+
+aws apigateway create-deployment --rest-api-id $REST_API_ID --stage-name default
