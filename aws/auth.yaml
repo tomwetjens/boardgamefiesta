@@ -267,6 +267,10 @@ Outputs:
     Value: !FindInMap [ Environments, !Ref 'Environment', UserPoolId ]
     Export:
       Name: !Sub '${AWS::StackName}-UserPoolId'
+  UserPoolArn:
+    Value: !Join [ '', [ !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !FindInMap [ Environments, !Ref 'Environment', UserPoolId ] ] ]
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolArn'
   UserPoolDomainName:
     Value: !If [ IsProduction, 'auth2.boardgamefiesta.com', !Sub 'auth-${Environment}.boardgamefiesta.com' ]
     Export:

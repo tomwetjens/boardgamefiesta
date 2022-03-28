@@ -36,6 +36,10 @@ Resources:
               - sqs:GetQueueAttributes
             Resource:
               - !GetAtt AutomaSqsQueue.Arn
+          - Effect: Allow
+            Action:
+              - ses:SendEmail
+            Resource: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
 
   ScheduleOnlyPolicy:
     Type: AWS::IAM::ManagedPolicy

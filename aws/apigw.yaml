@@ -41,6 +41,25 @@ Resources:
         - Fn::ImportValue: !Sub '${DynamoDbStackName}-ReadWritePolicyArn'
         - Fn::ImportValue: !Sub '${AutomaStackName}-ScheduleOnlyPolicyArn'
         - Fn::ImportValue: !Sub '${WebSocketStackName}-SendMessagePolicyArn'
+      Policies:
+        - PolicyName: UpdateCognitoUser
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminSetUserPassword
+                  - cognito-idp:AdminUpdateUserAttributes
+                Resource:
+                  Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolArn'
+        - PolicyName: SendEmail
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
       Path: "/"
 
   ApiFunction:
@@ -57,7 +76,7 @@ Resources:
           QUARKUS_HTTP_CORS_ORIGINS:
             Fn::If:
               - IsProduction
-              - 'https://boardgamefiesta.com,https://www.boardgamefiesta.com'
+              - 'https://boardgamefiesta.com,https://www.boardgamefiesta.com,http://localhost:4200'
               - !Sub 'https://${Environment}.boardgamefiesta.com,https://www-${Environment}.boardgamefiesta.com,http://localhost:4200'
           QUARKUS_OIDC_AUTH_SERVER_URL:
             Fn::ImportValue: !Sub '${CognitoStackName}-UserPoolUrl'
@@ -149,7 +168,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
               method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: !If [ IsProduction, "'boardgamefiesta.com'", "'*'" ]
+              method.response.header.Access-Control-Allow-Origin: "'*'"
             ResponseTemplates:
               application/json: ''
         PassthroughBehavior: WHEN_NO_MATCH
