@@ -166,7 +166,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/*/*'
 
-  GetStatsByGameIdMethod:
+  StatsMethod:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: GET
@@ -180,15 +180,21 @@ Resources:
       ResourceId: !Ref StatsGameIdResource
       RestApiId: !Ref RestApi
 
-# TODO Force redeployment on stack update
+  # TODO Force redeployment on stack update
   RestApiDeployment:
     Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ProxyMethod
+      - ProxyCorsMethod
+      - StatsMethod
     Properties:
       RestApiId: !Ref RestApi
       StageName: 'default'
 
   RestApiBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
+    DependsOn:
+      - RestApiDeployment
     Properties:
       BasePath: ''
       DomainName: !Ref RestApiDomainName

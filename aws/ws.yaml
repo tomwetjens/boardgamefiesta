@@ -179,6 +179,9 @@ Resources:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
       - WsApiStage
+      - WsConnectRoute
+      - WsDefaultRoute
+      - WsDisconnectRoute
     Properties:
       ApiId: !Ref WsApi
       StageName: !Ref WsApiStage
