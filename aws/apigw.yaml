@@ -180,6 +180,7 @@ Resources:
       ResourceId: !Ref StatsGameIdResource
       RestApiId: !Ref RestApi
 
+# TODO Force redeployment on stack update
   RestApiDeployment:
     Type: AWS::ApiGateway::Deployment
     Properties:
