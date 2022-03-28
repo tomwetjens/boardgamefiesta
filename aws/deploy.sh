@@ -64,6 +64,11 @@ aws cloudformation deploy --stack-name $STACK_PREFIX-ws \
     DynamoDbStackName=$STACK_PREFIX-db \
     CognitoStackName=$STACK_PREFIX-auth
 
+WEBSOCKET_API_ID=$(aws cloudformation describe-stacks --stack-name $STACK_PREFIX-ws \
+  --query "Stacks[0].Outputs[?OutputKey=='WsApiId'].OutputValue" --output text)
+
+aws apigateway create-deployment --api-id $WEBSOCKET_API_ID --stage-name default
+
 LAMBDA_AUTOMA_VERSION=$(md5sum "../lambda-automa/target/function.zip" | cut -c-32)
 LAMBDA_AUTOMA_S3_KEY=lambda-automa.$LAMBDA_AUTOMA_VERSION.zip
 aws s3 ls s3://$LAMBDA_S3_BUCKET/$LAMBDA_AUTOMA_S3_KEY || aws s3 cp ../lambda-automa/target/function.zip s3://$LAMBDA_S3_BUCKET/$LAMBDA_AUTOMA_S3_KEY
