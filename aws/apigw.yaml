@@ -113,6 +113,17 @@ Resources:
           - REGIONAL
       RegionalCertificateArn: 'arn:aws:acm:eu-west-1:598172618529:certificate/3a61edbf-a6b3-4090-bbfd-2298ac3ad7aa'
 
+  RestApiDomainName2:
+    # TODO Merge with RestApiDomainName; was needed for migrating from ECS backend at api.boardgamefiesta.com to backend on API Gateway
+    Type: AWS::ApiGateway::DomainName
+    Condition: IsProduction
+    Properties:
+      DomainName: 'api.boardgamefiesta.com'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      RegionalCertificateArn: 'arn:aws:acm:eu-west-1:598172618529:certificate/3a61edbf-a6b3-4090-bbfd-2298ac3ad7aa'
+
   RecordSet:
     Type: AWS::Route53::RecordSet
     Properties:
@@ -122,6 +133,17 @@ Resources:
       AliasTarget:
         DNSName: !GetAtt RestApiDomainName.RegionalDomainName
         HostedZoneId: !GetAtt RestApiDomainName.RegionalHostedZoneId
+
+  RecordSet2:
+    Type: AWS::Route53::RecordSet
+    Condition: IsProduction
+    Properties:
+      HostedZoneName: 'boardgamefiesta.com.'
+      Name: !Ref RestApiDomainName2
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt RestApiDomainName2.RegionalDomainName
+        HostedZoneId: !GetAtt RestApiDomainName2.RegionalHostedZoneId
 
   StatsResource:
     Type: AWS::ApiGateway::Resource
@@ -225,6 +247,17 @@ Resources:
     Properties:
       BasePath: ''
       DomainName: !Ref RestApiDomainName
+      RestApiId: !Ref RestApi
+      Stage: 'default'
+
+  RestApiBasePathMapping2:
+    Type: AWS::ApiGateway::BasePathMapping
+    Condition: IsProduction
+    DependsOn:
+      - RestApiDeployment
+    Properties:
+      BasePath: ''
+      DomainName: !Ref RestApiDomainName2
       RestApiId: !Ref RestApi
       Stage: 'default'
 
