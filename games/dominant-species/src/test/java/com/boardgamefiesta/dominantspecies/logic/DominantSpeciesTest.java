@@ -559,6 +559,157 @@ class DominantSpeciesTest {
         }
     }
 
+    @Nested
+    class ResetPhaseTests {
+
+        @Test
+        void noEndangeredSpecies() {
+            var ds = DominantSpecies.start(Map.of(
+                    AnimalType.MAMMALS, playerA,
+                    AnimalType.INSECTS, playerB
+            ), new Random(0));
+
+            ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().addSpecies(AnimalType.MAMMALS, 1);
+
+            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+
+            skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
+            assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.INSECTS);
+            assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.PlaceActionPawn.class);
+
+            assertThat(ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().getSpecies(AnimalType.MAMMALS)).isEqualTo(1);
+        }
+
+        @Test
+        void endangeredSpeciesButNotMammals() {
+            var ds = DominantSpecies.start(Map.of(
+                    AnimalType.MAMMALS, playerA,
+                    AnimalType.INSECTS, playerB
+            ), new Random(0));
+
+            Set.copyOf(ds.getElements().keySet()).forEach(ds::removeElement);
+            ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.INSECTS, 1);
+
+            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+
+            skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
+            assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.INSECTS);
+            assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.PlaceActionPawn.class);
+
+            assertThat(ds.getTile(DominantSpecies.INITIAL_FOREST).get().getSpecies(AnimalType.INSECTS))
+                    .describedAs("extinction should have eliminated the species")
+                    .isEqualTo(0);
+        }
+
+        @Test
+        void saveFromExtinction() {
+            var ds = DominantSpecies.start(Map.of(
+                    AnimalType.MAMMALS, playerA,
+                    AnimalType.INSECTS, playerB
+            ), new Random(0));
+
+            Set.copyOf(ds.getElements().keySet()).forEach(ds::removeElement);
+            ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.MAMMALS, 2);
+
+            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+
+            skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
+            assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.INSECTS);
+            assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.PlaceActionPawn.class);
+
+            assertThat(ds.getTile(DominantSpecies.INITIAL_FOREST).get().getSpecies(AnimalType.MAMMALS))
+                    .describedAs("should have saved 1 species from extinction")
+                    .isEqualTo(1);
+        }
+
+        @Test
+        void saveFromExtinctionMultipleEndangeredSpecies() {
+            var ds = DominantSpecies.start(Map.of(
+                    AnimalType.MAMMALS, playerA,
+                    AnimalType.INSECTS, playerB
+            ), new Random(0));
+
+            Set.copyOf(ds.getElements().keySet()).forEach(ds::removeElement);
+            ds.getTile(DominantSpecies.INITIAL_SEA).get().addSpecies(AnimalType.MAMMALS, 2);
+            ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.MAMMALS, 2);
+
+            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+
+            skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
+            assertThat(ds.getPhase()).isEqualTo(Phase.RESET);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.MAMMALS);
+            assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.SaveFromExtinction.class);
+
+            ds.perform(new Action.SaveFromExtinction(DominantSpecies.INITIAL_SEA), new Random(0));
+
+            assertThat(ds.getPhase()).isEqualTo(Phase.RESET);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_SEA).get().getSpecies(AnimalType.MAMMALS))
+                    .describedAs("should have saved 1 species from extinction")
+                    .isEqualTo(1);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_FOREST).get().getSpecies(AnimalType.MAMMALS))
+                    .describedAs("extinction should have eliminated species from other tile")
+                    .isEqualTo(0);
+
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.INSECTS);
+            assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.PlaceActionPawn.class);
+        }
+
+        @Test
+        void saveFromExtinctionMultipleEndangeredSpeciesButSkipAction() {
+            var ds = DominantSpecies.start(Map.of(
+                    AnimalType.MAMMALS, playerA,
+                    AnimalType.INSECTS, playerB
+            ), new Random(0));
+
+            Set.copyOf(ds.getElements().keySet()).forEach(ds::removeElement);
+            ds.getTile(DominantSpecies.INITIAL_SEA).get().addSpecies(AnimalType.MAMMALS, 2);
+            ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.MAMMALS, 2);
+
+            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+
+            skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
+            assertThat(ds.getPhase()).isEqualTo(Phase.RESET);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.MAMMALS);
+            assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.SaveFromExtinction.class);
+
+            ds.skip(new Random(0));
+
+            assertThat(ds.getPhase()).isEqualTo(Phase.RESET);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_SEA).get().getSpecies(AnimalType.MAMMALS))
+                    .describedAs("extinction should have eliminated species from tile")
+                    .isEqualTo(0);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_FOREST).get().getSpecies(AnimalType.MAMMALS))
+                    .describedAs("extinction should have eliminated species from other tile")
+                    .isEqualTo(0);
+
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.INSECTS);
+            assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.PlaceActionPawn.class);
+        }
+
+        void skipAllExecutionUntilNoActionPawnLeft(DominantSpecies ds, Random random) {
+            do {
+                while (ds.canSkip()) {
+                    ds.skip(random);
+                }
+                ds.endTurn(random);
+            } while (ds.getPhase() == Phase.EXECUTION && ds.getActionDisplay().hasActionPawn());
+        }
+    }
+
     void placeAllRemainingActionPawns(DominantSpecies ds, ActionType... exclude) {
         while (ds.getAnimals().get(ds.getCurrentAnimal()).getActionPawns() > 0
                 && ds.getPhase() == Phase.PLANNING) {

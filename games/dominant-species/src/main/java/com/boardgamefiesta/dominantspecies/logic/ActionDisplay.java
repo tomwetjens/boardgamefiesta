@@ -325,6 +325,10 @@ public class ActionDisplay {
         adaptationBox.clear();
     }
 
+    boolean hasActionPawn() {
+        return actionPawns.keySet().stream().anyMatch(this::hasActionPawn);
+    }
+
     @Value
     public static class PossibleSpace {
         ActionType actionType;

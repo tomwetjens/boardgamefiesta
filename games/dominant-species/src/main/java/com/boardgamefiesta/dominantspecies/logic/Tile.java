@@ -157,10 +157,6 @@ public class Tile implements Cloneable {
             var matching = animal.matchElements(adjacentElements);
 
             if (isEndangered(matching)) {
-                if (animal.getType() == AnimalType.MAMMALS) {
-                    species--;
-                }
-
                 return species;
             }
         }

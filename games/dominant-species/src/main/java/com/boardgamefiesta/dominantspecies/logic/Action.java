@@ -1279,8 +1279,10 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         }
     }
 
-    @Data
+    @Getter
+    @ToString
     @AllArgsConstructor
+    @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
     public static class SaveFromExtinction extends Action {
 
         Hex tile;
@@ -1296,7 +1298,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
             game.fireEvent(Event.Type.SAVE_FROM_EXTINCTION, List.of(this.tile, tile.getType()));
 
-            game.extinction(this.tile, random);
+            game.extinction(this.tile);
 
             return ActionResult.undoAllowed();
         }
