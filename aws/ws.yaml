@@ -35,7 +35,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 2048
+      MemorySize: 512
       Role: !GetAtt WsApiRole.Arn
       Runtime: java11
       Timeout: 60
@@ -57,7 +57,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 2048
+      MemorySize: 512
       Role: !GetAtt WsApiRole.Arn
       Runtime: java11
       Timeout: 60
@@ -79,7 +79,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 2048
+      MemorySize: 512
       Role: !GetAtt WsApiRole.Arn
       Runtime: java11
       Timeout: 60

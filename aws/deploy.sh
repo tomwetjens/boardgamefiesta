@@ -67,7 +67,7 @@ aws cloudformation deploy --stack-name $STACK_PREFIX-ws \
 WEBSOCKET_API_ID=$(aws cloudformation describe-stacks --stack-name $STACK_PREFIX-ws \
   --query "Stacks[0].Outputs[?OutputKey=='WsApiId'].OutputValue" --output text)
 
-aws apigateway create-deployment --api-id $WEBSOCKET_API_ID --stage-name default
+aws apigatewayv2 create-deployment --api-id $WEBSOCKET_API_ID --stage-name default
 
 LAMBDA_AUTOMA_VERSION=$(md5sum "../lambda-automa/target/function.zip" | cut -c-32)
 LAMBDA_AUTOMA_S3_KEY=lambda-automa.$LAMBDA_AUTOMA_VERSION.zip

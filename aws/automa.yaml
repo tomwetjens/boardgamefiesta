@@ -76,7 +76,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      MemorySize: 2048
+      MemorySize: 1024
       Role: !GetAtt AutomaSqsRole.Arn
       Runtime: java11
       Timeout: 30
