@@ -96,4 +96,7 @@ public class ActionQueue {
         return actions.isEmpty();
     }
 
+    void removeAll(AnimalType animalType) {
+        actions.removeIf(possibleAction -> possibleAction.getAnimal() == animalType);
+    }
 }

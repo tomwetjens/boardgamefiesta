@@ -21,7 +21,10 @@ package com.boardgamefiesta.dominantspecies.logic;
 import com.boardgamefiesta.api.domain.Player;
 import lombok.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)// For deserialization
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -177,7 +180,8 @@ public class Animal {
         if (!copy.remove(elementType)) {
             return false;
         }
-        return copy.subList(0, type.getInitialElements().size()).equals(type.getInitialElements());
+        return copy.size() >= type.getInitialElements().size()
+                && copy.subList(0, type.getInitialElements().size()).equals(type.getInitialElements());
     }
 
     Set<ElementType> getRemovableElementTypes() {
@@ -206,6 +210,10 @@ public class Animal {
 
     boolean canAddElement() {
         return elements.size() < 6;
+    }
+
+    void leave() {
+        score = 0;
     }
 }
 

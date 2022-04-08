@@ -495,7 +495,7 @@ class DominantSpeciesTest {
                 ds.getAnimal(AnimalType.ARACHNIDS).addElement(ElementType.GRASS);
 
                 // Both animals do not place any AP at regression (reptiles get 1 free AP there)
-                placeAllRemainingActionPawns(ds, ActionType.INITIATIVE, ActionType.REGRESSION, ActionType.ADAPTATION);
+                placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE, ActionType.REGRESSION, ActionType.ADAPTATION);
 
                 // Then we expect Regression to have executed automatically
                 // Reptiles should have kept their element because of the free AP
@@ -525,7 +525,7 @@ class DominantSpeciesTest {
                 ds.getAnimal(AnimalType.ARACHNIDS).addElement(ElementType.MEAT);
 
                 // Both animals do not place any(more) APs at Regression (Reptiles get 1 free AP there)
-                placeAllRemainingActionPawns(ds, ActionType.INITIATIVE, ActionType.REGRESSION, ActionType.ADAPTATION);
+                placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE, ActionType.REGRESSION, ActionType.ADAPTATION);
                 assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
                 // Reptiles can skip 1 element, but should decide which 1 element is removed
@@ -571,7 +571,7 @@ class DominantSpeciesTest {
 
             ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().addSpecies(AnimalType.MAMMALS, 1);
 
-            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
             skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
@@ -592,7 +592,7 @@ class DominantSpeciesTest {
             Set.copyOf(ds.getElements().keySet()).forEach(ds::removeElement);
             ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.INSECTS, 1);
 
-            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
             skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
@@ -615,7 +615,7 @@ class DominantSpeciesTest {
             Set.copyOf(ds.getElements().keySet()).forEach(ds::removeElement);
             ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.MAMMALS, 2);
 
-            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
             skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
@@ -639,7 +639,7 @@ class DominantSpeciesTest {
             ds.getTile(DominantSpecies.INITIAL_SEA).get().addSpecies(AnimalType.MAMMALS, 2);
             ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.MAMMALS, 2);
 
-            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
             skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
@@ -675,7 +675,7 @@ class DominantSpeciesTest {
             ds.getTile(DominantSpecies.INITIAL_SEA).get().addSpecies(AnimalType.MAMMALS, 2);
             ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.MAMMALS, 2);
 
-            placeAllRemainingActionPawns(ds, ActionType.INITIATIVE);
+            placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
             skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
@@ -699,19 +699,170 @@ class DominantSpeciesTest {
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.INSECTS);
             assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.PlaceActionPawn.class);
         }
+    }
 
-        void skipAllExecutionUntilNoActionPawnLeft(DominantSpecies ds, Random random) {
-            do {
-                while (ds.canSkip()) {
-                    ds.skip(random);
+    @Nested
+    class EndgameTests {
+
+        @Test
+        void finishDominationAfterIceAgePlayed() {
+            var ds = DominantSpecies.start(Set.of(playerA, playerB, playerC), new Random(0));
+            // Some reference checks for later assertions
+            assertThat(ds.getAnimal(AnimalType.ARACHNIDS).getPlayer()).isSameAs(playerA);
+            assertThat(ds.getAnimal(AnimalType.REPTILES).getPlayer()).isSameAs(playerB);
+            assertThat(ds.getAnimal(AnimalType.BIRDS).getPlayer()).isSameAs(playerC);
+            assertThat(ds.getInitiativeTrack()).containsExactly(AnimalType.ARACHNIDS, AnimalType.BIRDS, AnimalType.REPTILES);
+
+            playTurnsUntilDominanceCardActionAndCardAvailable(ds, Card.ICE_AGE);
+
+            assertThat(ds.possibleActions()).containsExactly(Action.DominanceCard.class);
+            assertThat(ds.getAvailableCards()).contains(Card.ICE_AGE);
+
+            // Trigger endgame
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.BIRDS);
+            ds.perform(new Action.DominanceCard(Card.ICE_AGE), new Random(0));
+            ds.endTurn(new Random(0));
+
+            // Other players should be allowed to finish all domination actions
+            assertThat(ds.isEnded()).isFalse();
+            assertThat(ds.getActionDisplay().getActionPawns().get(ActionType.DOMINATION))
+                    .containsExactly(null, AnimalType.ARACHNIDS, AnimalType.REPTILES, AnimalType.BIRDS, AnimalType.ARACHNIDS);
+
+            // 2nd AP on Domination:
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.ARACHNIDS);
+            performDominationOnAnyTileAndThenAnyDominanceCardExcept(ds, null);
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.isEnded()).isFalse();
+
+            // 3rd AP on Domination:
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.REPTILES);
+            performDominationOnAnyTileAndThenAnyDominanceCardExcept(ds, null);
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.isEnded()).isFalse();
+
+            // 4th AP on Domination:
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.BIRDS);
+            performDominationOnAnyTileAndThenAnyDominanceCardExcept(ds, null);
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.isEnded()).isFalse();
+
+            // 5th AP on Domination:
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+            assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.ARACHNIDS);
+            performDominationOnAnyTileAndThenAnyDominanceCardExcept(ds, null);
+            ds.endTurn(new Random(0));
+
+            assertThat(ds.isEnded()).isTrue();
+            assertThat(ds.getCurrentPlayers()).isEmpty();
+        }
+
+        void playTurnsUntilDominanceCardActionAndCardAvailable(DominantSpecies ds, Card card) {
+            while (!ds.getAvailableCards().contains(card) || !ds.possibleActions().contains(Action.DominanceCard.class)) {
+                assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
+
+                playTurnUntilDominanceCardActionAndCardAvailable(ds, card);
+            }
+
+            assertThat(ds.possibleActions()).containsExactly(Action.DominanceCard.class);
+            assertThat(ds.getAvailableCards()).contains(card);
+        }
+
+        void playTurnUntilDominanceCardActionAndCardAvailable(DominantSpecies ds, Card card) {
+            assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
+
+            System.out.println("======= Play turn " + ds.getRound() + " until dominance card action and card " + card + " is available ============");
+
+            // In each turn, perform as many Domination actions as possible to quickly end the game
+            placeAsManyActionPawnsAsPossibleOn(ds, ActionType.DOMINATION);
+            placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
+
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+            skipOrResolveAnyActionsOtherThan(ds, Action.Domination.class);
+
+            // Sanity checks
+            assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
+            assertThat(ds.possibleActions()).containsExactly(Action.Domination.class);
+            assertThat(ds.getActionDisplay().getCurrentActionPawn().get().getActionType()).isEqualTo(ActionType.DOMINATION);
+            assertThat(ds.getActionDisplay().getCurrentActionPawn().get().getIndex()).isEqualTo(0);
+
+            while (ds.possibleActions().contains(Action.Domination.class)) {
+                performDominationOnAnyTileAndThenAnyDominanceCardExcept(ds, card);
+            }
+        }
+
+        void performDominationOnAnyTileAndThenAnyDominanceCardExcept(DominantSpecies ds, Card card) {
+            // Fake that current animal is dominant on a tile
+            var hex = makeCurrentAnimalDominantOnUnscoredTile(ds);
+            ds.perform(new Action.Domination(hex), new Random(0));
+
+            if (ds.possibleActions().contains(Action.DominanceCard.class)) {
+                if (!ds.getAvailableCards().contains(card)) {
+                    playAnyDominanceCardAndSkipOrPerformAnyCardActions(ds);
                 }
-                ds.endTurn(random);
-            } while (ds.getPhase() == Phase.EXECUTION && ds.getActionDisplay().hasActionPawn());
+            }
+        }
+
+        void playAnyDominanceCardAndSkipOrPerformAnyCardActions(DominantSpecies ds) {
+            var card = ds.getAvailableCards().stream().sorted().findFirst().orElseThrow();
+            ds.perform(new Action.DominanceCard(card), new Random(0));
+
+            skipOrResolveAnyActionsOtherThan(ds, Action.Domination.class);
+        }
+
+        void skipOrResolveAnyActionsOtherThan(DominantSpecies ds, Class<Action.Domination> actionClass) {
+            while (ds.getPhase() == Phase.EXECUTION && !ds.possibleActions().contains(actionClass)) {
+                if (ds.possibleActions().isEmpty()) {
+                    ds.endTurn(new Random(0));
+                } else if (ds.canSkip()) {
+                    ds.skip(new Random(0));
+                } else {
+                    // Or use Automa to perform any mandatory action
+                    new Automa().perform(ds, ds.getCurrentPlayer(), new Random(0));
+                }
+            }
+        }
+
+        Hex makeCurrentAnimalDominantOnUnscoredTile(DominantSpecies ds) {
+            var hex = ds.getTiles().keySet().stream()
+                    .filter(tile -> !ds.getScoredTiles().contains(tile))
+                    .findFirst()
+                    .orElseThrow();
+            var tile = ds.getTile(hex).get();
+            removeAllSpeciesFromTile(ds, tile);
+            tile.addSpecies(ds.getCurrentAnimal(), 1);
+
+            var animal = ds.getAnimal(ds.getCurrentAnimal());
+            tile.recalculateDominance(ds.getAnimals().values(), animal.getElements());
+
+            // Sanity check
+            assertThat(tile.getDominant()).contains(ds.getCurrentAnimal());
+            return hex;
+        }
+
+        void removeAllSpeciesFromTile(DominantSpecies ds, Tile tile) {
+            for (var animalType : ds.getAnimals().keySet()) {
+                if (tile.hasSpecies(animalType)) {
+                    tile.removeSpecies(animalType, tile.getSpecies(animalType));
+                }
+            }
+        }
+
+        void placeAsManyActionPawnsAsPossibleOn(DominantSpecies ds, ActionType actionType) {
+            while (ds.getPhase() == Phase.PLANNING && ds.getActionDisplay().hasVacantActionSpace(actionType)) {
+                ds.perform(new Action.PlaceActionPawn(actionType, ds.getActionDisplay().getNumberOfActionPawns(actionType)), new Random(0));
+                ds.endTurn(new Random(0));
+            }
         }
     }
 
-    void placeAllRemainingActionPawns(DominantSpecies ds, ActionType... exclude) {
-        while (ds.getAnimals().get(ds.getCurrentAnimal()).getActionPawns() > 0
+    void placeAllRemainingActionPawnsAnywhereExcept(DominantSpecies ds, ActionType... exclude) {
+        while (ds.getAnimal(ds.getCurrentAnimal()).getActionPawns() > 0
                 && ds.getPhase() == Phase.PLANNING) {
             var placement = ds.getActionDisplay().possiblePlacements()
                     .filter(p -> !Arrays.asList(exclude).contains(p.getActionType()))
@@ -719,7 +870,18 @@ class DominantSpeciesTest {
                     .orElseThrow(() -> new AssertionError("No available action space"));
 
             ds.perform(new Action.PlaceActionPawn(placement.getActionType(), placement.getIndex()), new Random(0));
-            ds.endTurn(new Random(0));
+            if (ds.possibleActions().isEmpty()) {
+                ds.endTurn(new Random(0));
+            }
         }
+    }
+
+    void skipAllExecutionUntilNoActionPawnLeft(DominantSpecies ds, Random random) {
+        do {
+            while (ds.canSkip()) {
+                ds.skip(random);
+            }
+            ds.endTurn(random);
+        } while (ds.getPhase() == Phase.EXECUTION && ds.getActionDisplay().hasActionPawn());
     }
 }

@@ -75,6 +75,11 @@ public class Tile implements Cloneable {
         }
     }
 
+    void removeAllSpecies(AnimalType animalType) {
+        this.species.remove(animalType);
+        this.hibernating.remove(animalType);
+    }
+
     void addSpecies(@NonNull AnimalType animalType) {
         addSpecies(animalType, 1);
     }
@@ -193,4 +198,5 @@ public class Tile implements Cloneable {
             this.hibernating.remove(animal.getType());
         }
     }
+
 }

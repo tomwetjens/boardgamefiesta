@@ -69,7 +69,7 @@ public class ActionDisplay {
         elements.get(ActionType.WANDERLUST).addAll(drawBag.draw(4, random));
     }
 
-    ActionDisplay resetFreeActionPawns(Set<AnimalType> playingAnimals) {
+    ActionDisplay resetFreeActionPawns(Collection<AnimalType> playingAnimals) {
         for (var actionType : ActionType.values()) {
             var pawns = actionPawns.get(actionType);
 
@@ -118,16 +118,20 @@ public class ActionDisplay {
     }
 
     ActionPawn removeCurrentActionPawn() {
-        var spaces = actionPawns.get(executing);
+        return removeActionPawn(executing, index);
+    }
 
-        var animalType = spaces[index];
+    private ActionPawn removeActionPawn(ActionType actionType, int indexToRemove) {
+        var spaces = actionPawns.get(actionType);
+
+        var animalType = spaces[indexToRemove];
         if (animalType == null) {
             throw new DominantSpeciesException(DominantSpeciesError.ACTION_SPACE_EMPTY);
         }
 
-        spaces[index] = null;
+        spaces[indexToRemove] = null;
 
-        return new ActionPawn(animalType, executing, index);
+        return new ActionPawn(animalType, actionType, indexToRemove);
     }
 
     /**
@@ -191,7 +195,7 @@ public class ActionDisplay {
         return followUpActions;
     }
 
-    private boolean hasActionPawn(ActionType actionType) {
+    boolean hasActionPawn(ActionType actionType) {
         return getNextActionPawn(actionType, 0).isPresent();
     }
 
@@ -288,6 +292,12 @@ public class ActionDisplay {
                 .count();
     }
 
+    int getNumberOfActionPawns(ActionType actionType) {
+        return (int) Arrays.stream(actionPawns.get(actionType))
+                .filter(Objects::nonNull)
+                .count();
+    }
+
     List<ElementType> getElements(ActionType actionType) {
         return elements.get(actionType);
     }
@@ -327,6 +337,14 @@ public class ActionDisplay {
 
     boolean hasActionPawn() {
         return actionPawns.keySet().stream().anyMatch(this::hasActionPawn);
+    }
+
+    boolean hasVacantActionSpace(ActionType actionType) {
+        return Arrays.stream(actionPawns.get(actionType)).anyMatch(Objects::isNull);
+    }
+
+    void removeAllActionPawns(AnimalType animalType) {
+        actionPawns.keySet().forEach(actionType -> removeActionPawns(actionType, animalType));
     }
 
     @Value

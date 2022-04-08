@@ -23,6 +23,7 @@ import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.api.domain.Stats;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.function.Function;
@@ -33,6 +34,7 @@ import java.util.stream.Stream;
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PACKAGE)
+@Slf4j
 public class DominantSpecies implements State {
 
     static final Hex INITIAL_JUNGLE = new Hex(-1, 0);
@@ -249,6 +251,8 @@ public class DominantSpecies implements State {
             throw new DominantSpeciesException(DominantSpeciesError.CANNOT_PERFORM_ACTION);
         }
 
+        log.debug("{} perform action: {}", currentAnimal, action);
+
         var result = action.perform(this, random);
 
         actionQueue.perform(currentAnimal, action);
@@ -301,6 +305,8 @@ public class DominantSpecies implements State {
         var animalEndingTurn = currentAnimal;
         var phaseWhenEndingTurn = phase;
 
+        log.debug("{} end turn", currentAnimal);
+
         do {
             skipAll(random);
 
@@ -319,6 +325,10 @@ public class DominantSpecies implements State {
         } while (currentAnimal == animalEndingTurn && phase == phaseWhenEndingTurn && canSkip());
 
         canUndo = false;
+
+        if (isEnded()) {
+            log.debug("Ended");
+        }
     }
 
     private Optional<AnimalType> getNextAnimalToPlaceActionPawn() {
@@ -350,6 +360,8 @@ public class DominantSpecies implements State {
         var skippedPossibleAction = actionQueue.skip();
         var skippedAction = skippedPossibleAction.getActions().get(0);
 
+        log.debug("{} skip action: {}", currentAnimal, skippedAction.getSimpleName());
+
         if (skippedAction.equals(Action.SaveFromExtinction.class)) {
             extinction(null);
         } else {
@@ -362,6 +374,10 @@ public class DominantSpecies implements State {
                             getAnimal(currentAnimal).addActionPawn();
                         }
                     });
+
+            if (actionQueue.isEmpty() && phase == Phase.EXECUTION) {
+                nextActionPawn(random);
+            }
         }
     }
 
@@ -426,10 +442,14 @@ public class DominantSpecies implements State {
     }
 
     void scoreTile(@NonNull Hex hex) {
+        log.debug("Scoring tile {}", hex);
+
         var tile = tiles.get(hex);
         var scores = tile.score();
 
         scores.forEach((animalType, score) -> {
+            log.debug("{} get {} VPs from tile {}", animalType, score, hex);
+
             if (score > 0) {
                 animals.get(animalType).addVPs(score);
 
@@ -441,6 +461,8 @@ public class DominantSpecies implements State {
     }
 
     private void finalScoring() {
+        log.debug("Final scoring");
+
         fireEvent(Event.Type.FINAL_SCORING, List.of(round));
         tiles.keySet().forEach(this::scoreTile);
     }
@@ -457,7 +479,7 @@ public class DominantSpecies implements State {
         actionDisplay.slideElementsDown();
         actionDisplay.drawElements(drawBag, random);
 
-        actionDisplay.resetFreeActionPawns(animals.keySet());
+        actionDisplay.resetFreeActionPawns(initiativeTrack);
 
         wanderlustTiles.flipTopFaceUp();
     }
@@ -488,7 +510,7 @@ public class DominantSpecies implements State {
         scoredTiles.clear();
         lastPlacedTile = null;
 
-        if (!isEnded()) {
+        if (!isEndgame()) {
             reseed(random);
 
             round++;
@@ -678,8 +700,8 @@ public class DominantSpecies implements State {
         return Optional.ofNullable(lastPlacedTile);
     }
 
-    boolean hasAnimal(@NonNull AnimalType animalType) {
-        return animals.containsKey(animalType);
+    boolean isAnimalPlaying(@NonNull AnimalType animalType) {
+        return initiativeTrack.contains(animalType);
     }
 
     public int getDeckSize() {
@@ -690,6 +712,10 @@ public class DominantSpecies implements State {
 
     @Override
     public boolean isEnded() {
+        return isEndgame() && !actionDisplay.hasActionPawn(ActionType.DOMINATION) && actionQueue.isEmpty();
+    }
+
+    private boolean isEndgame() {
         return actionQueue.isEmpty() && !deck.contains(Card.ICE_AGE) && !availableCards.contains(Card.ICE_AGE);
     }
 
@@ -727,8 +753,19 @@ public class DominantSpecies implements State {
 
     @Override
     public void forceEndTurn(@NonNull Player player, @NonNull Random random) {
-        // TODO
-        throw new UnsupportedOperationException();
+        if (getAnimal(currentAnimal).getPlayer() != player) {
+            throw new DominantSpeciesException(DominantSpeciesError.NOT_CURRENT_PLAYER);
+        }
+
+        while (actionQueue.hasActions(currentAnimal)) {
+            if (canSkip()) {
+                skip(random);
+            } else {
+                new Automa().perform(this, player, random);
+            }
+        }
+
+        endTurn(player, random);
     }
 
     @Override
@@ -738,7 +775,10 @@ public class DominantSpecies implements State {
 
     @Override
     public List<Player> getPlayers() {
-        return animals.values().stream().map(Animal::getPlayer).collect(Collectors.toList());
+        return initiativeTrack.stream()
+                .map(animals::get)
+                .map(Animal::getPlayer)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -752,8 +792,11 @@ public class DominantSpecies implements State {
 
     @Override
     public List<Player> ranking() {
-        // TODO
-        throw new UnsupportedOperationException();
+        return animals.values().stream()
+                .sorted(Comparator.comparingInt(Animal::getScore).reversed()
+                        .thenComparingInt(animal -> AnimalType.FOOD_CHAIN_ORDER.indexOf(animal.getType())))
+                .map(Animal::getPlayer)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -763,24 +806,36 @@ public class DominantSpecies implements State {
 
     @Override
     public Set<Player> getCurrentPlayers() {
-        return Collections.singleton(animals.get(currentAnimal).getPlayer());
+        return isEnded() ? Collections.emptySet() : Collections.singleton(animals.get(currentAnimal).getPlayer());
     }
 
     @Override
     public void leave(@NonNull Player player, @NonNull Random random) {
-        // TODO
-        throw new UnsupportedOperationException();
+        var animal = animals.values().stream().filter(a -> a.getPlayer().equals(player)).findAny()
+                .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.INVALID_PLAYER));
+
+        animal.leave();
+
+        initiativeTrack.remove(animal.getType());
+        actionQueue.removeAll(animal.getType());
+        actionDisplay.removeAllActionPawns(animal.getType());
+
+        tiles.values().forEach(tile -> tile.removeAllSpecies(animal.getType()));
+        recalculateDominance();
+
+        if (currentAnimal == animal.getType()) {
+            endTurn(random);
+        }
     }
 
     @Override
     public Stats stats(@NonNull Player player) {
         // TODO
-        throw new UnsupportedOperationException();
+        return Stats.builder().build();
     }
 
     @Override
     public Optional<Integer> getTurn(@NonNull Player player) {
-        // TODO
         return Optional.empty();
     }
 

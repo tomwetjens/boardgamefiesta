@@ -62,7 +62,10 @@ public enum Card {
     BIOMASS() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Biomass.class));
+            if (!Action.Biomass.getAffectedTiles(game).isEmpty()) {
+                return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Biomass.class));
+            }
+            return ActionResult.undoAllowed();
         }
     },
 
@@ -72,7 +75,10 @@ public enum Card {
     BLIGHT() {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
-            return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Blight.class));
+            if (!game.getElements().isEmpty()) {
+                return ActionResult.undoAllowed(PossibleAction.mandatory(game.getCurrentAnimal(), Action.Blight.class));
+            }
+            return ActionResult.undoAllowed();
         }
     },
 
@@ -120,7 +126,7 @@ public enum Card {
             var currentAnimal = game.getAnimal(game.getCurrentAnimal());
             return ActionResult.undoAllowed(FollowUpActions.of(
                     AnimalType.FOOD_CHAIN_ORDER.stream() // TODO In which order do animals remove an element?
-                            .filter(game::hasAnimal)
+                            .filter(game::isAnimalPlaying)
                             .map(game::getAnimal)
                             .filter(Animal::canRemoveElement)
                             .filter(animal -> animal.getNumberOfElements() > currentAnimal.getNumberOfElements())
@@ -251,7 +257,7 @@ public enum Card {
         @Override
         ActionResult perform(DominantSpecies game, Random random) {
             return ActionResult.undoAllowed(FollowUpActions.of(AnimalType.FOOD_CHAIN_ORDER.stream()
-                    .filter(game::hasAnimal)
+                    .filter(game::isAnimalPlaying)
                     .map(game::getAnimal)
                     .map(animal -> animal.canRemoveElement()
                             ? PossibleAction.choice(animal.getType(), Action.RemoveElement.class, Action.RemoveActionPawn.class, Action.RemoveAllBut1SpeciesOnEachTile.class)

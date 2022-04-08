@@ -102,11 +102,10 @@ public class Automa {
                 } else if (possibleActions.contains(Action.SaveFromExtinction.class)) {
                     action = saveFromExtinction(game, random);
                 }
-                // TODO Add actions of Dominance Cards
 
                 action.ifPresentOrElse(a -> game.perform(player, a, random), () -> game.skip(player, random));
             }
-        } while (game.getCurrentPlayers().contains(player));
+        } while (!game.isEnded() && game.getCurrentPlayers().contains(player));
     }
 
     private Optional<Action> saveFromExtinction(DominantSpecies game, Random random) {
@@ -351,9 +350,11 @@ public class Automa {
                 .collect(Collectors.toList());
 
         var eliminateOnAdjacentTiles = adjacentTiles.stream()
-                .map(adjacentTile -> {
+                .map(adjacentHex -> {
+                    var adjacentTile = game.getTile(adjacentHex).get();
+
                     var possibleEliminations = game.getAnimals().keySet().stream()
-                            .filter(tile::hasSpecies)
+                            .filter(adjacentTile::hasSpecies)
                             .collect(Collectors.toList());
 
                     return !possibleEliminations.isEmpty()

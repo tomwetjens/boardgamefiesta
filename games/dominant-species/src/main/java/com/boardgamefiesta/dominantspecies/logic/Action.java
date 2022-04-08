@@ -135,7 +135,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
         static FollowUpActions activate(DominantSpecies game) {
             return AnimalType.FOOD_CHAIN_ORDER.stream() // TODO In which order do the animals perform Regression?
-                    .filter(game::hasAnimal)
+                    .filter(game::isAnimalPlaying)
                     .map(game::getAnimal)
                     .map(animal -> autoRemoveOrFollowUpAction(animal, game))
                     .reduce(FollowUpActions.none(), FollowUpActions::concat);
@@ -306,8 +306,13 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             animal.addVPs(bonusVPs);
             game.fireEvent(Event.Type.GAIN_BONUS_VPS, List.of(bonusVPs));
 
-            game.getActionDisplay().removeCurrentActionPawn();
-            animal.addActionPawn();
+            // Glaciation can also be performed through the Ice Sheet card in which case there is no Action Pawn to return
+            game.getActionDisplay().getCurrentActionPawn()
+                    .filter(actionPawn -> actionPawn.getActionType() == ActionType.GLACIATION)
+                    .ifPresent(actionPawn -> {
+                        game.getActionDisplay().removeCurrentActionPawn();
+                        animal.addActionPawn();
+                    });
 
             return ActionResult.undoAllowed();
         }
@@ -703,6 +708,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @AllArgsConstructor
     @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
+    @Getter
+    @ToString
     public static final class Domination extends Action {
 
         @NonNull
@@ -725,6 +732,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
             game.scoreTile(this.tile);
 
             return tile.getDominant()
+                    .filter(dominant -> !game.getAvailableCards().isEmpty())
                     .map(dominant -> ActionResult.undoAllowed(PossibleAction.mandatory(dominant, Action.DominanceCard.class)))
                     .orElse(ActionResult.undoAllowed());
         }
@@ -908,6 +916,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @AllArgsConstructor
     @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
+    @ToString
     public static final class Catastrophe extends Action {
 
         Hex tile;
@@ -930,7 +939,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 throw new DominantSpeciesException(DominantSpeciesError.MUST_SELECT_ALL_ADJACENT_TILES);
             }
 
-            game.fireEvent(Event.Type.CATASTROPHE, List.of(keep, this.tile, tile.getType()));
+            game.fireEvent(Event.Type.CATASTROPHE, Arrays.asList(keep, this.tile, tile.getType()));
 
             if (tile.getTotalSpecies() > 0) {
                 if (!tile.hasSpecies(keep)) {
@@ -1217,6 +1226,8 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
 
     @AllArgsConstructor
     @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization
+    @ToString
+    @Getter
     public static final class DominanceCard extends Action {
 
         Card card;

@@ -24,7 +24,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,8 +50,8 @@ class ActionTest {
 
         @Test
         void name() {
-            when(game.hasAnimal(AnimalType.ARACHNIDS)).thenReturn(true);
-            when(game.hasAnimal(AnimalType.INSECTS)).thenReturn(true);
+            when(game.isAnimalPlaying(AnimalType.ARACHNIDS)).thenReturn(true);
+            when(game.isAnimalPlaying(AnimalType.INSECTS)).thenReturn(true);
             when(game.getAnimal(AnimalType.ARACHNIDS)).thenReturn(arachnids);
             when(game.getAnimal(AnimalType.INSECTS)).thenReturn(insects);
             when(game.getActionDisplay()).thenReturn(actionDisplay);
