@@ -59,7 +59,7 @@ public class DominantSpecies implements State {
             .flatMap(Function.identity())
             .collect(Collectors.toSet());
 
-    static final Map<TileType, List<Integer>> TILE_SCORING = Map.of(
+    private static final Map<TileType, List<Integer>> TILE_SCORING = Map.of(
             TileType.SEA, List.of(9, 5, 3, 2),
             TileType.WETLAND, List.of(8, 4, 2, 1),
             TileType.SAVANNAH, List.of(7, 4, 2),
@@ -376,7 +376,9 @@ public class DominantSpecies implements State {
                     });
 
             if (actionQueue.isEmpty() && phase == Phase.EXECUTION) {
-                nextActionPawn(random);
+                actionDisplay.getNextActionPawn()
+                        .filter(ap -> ap.getAnimalType() == currentAnimal)
+                        .ifPresent(ap -> nextActionPawn(random));
             }
         }
     }

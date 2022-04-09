@@ -195,6 +195,7 @@ class DominantSpeciesTest {
                     .currentAnimal(AnimalType.MAMMALS)
                     .drawBag(drawBag)
                     .wanderlustTiles(WanderlustTiles.initial(new Random(0)))
+                    .scoredTiles(new ArrayList<>())
                     .actionDisplay(ActionDisplay.initial(Set.of(AnimalType.ARACHNIDS, AnimalType.REPTILES, AnimalType.MAMMALS), drawBag, new Random(0))
                             .resetFreeActionPawns(Set.of(AnimalType.ARACHNIDS, AnimalType.REPTILES, AnimalType.MAMMALS))
                             .placeActionPawn(AnimalType.MAMMALS, ActionType.INITIATIVE, 0)
@@ -225,6 +226,8 @@ class DominantSpeciesTest {
                     )
                     .actionQueue(ActionQueue.create())
                     .availableTundraTiles(11)
+                    .deck(new LinkedList<>(List.of(Card.CATASTROPHE, Card.DISEASE, Card.FERTILE, Card.AQUATIC, Card.ICE_AGE)))
+                    .availableCards(new HashSet<>(Set.of(Card.BIODIVERSITY, Card.BIOMASS, Card.EVOLUTION, Card.HIBERNATION)))
                     .build();
 
             ds.endTurn(new Random(0));
@@ -447,7 +450,9 @@ class DominantSpeciesTest {
             assertThat(ds.possibleActions()).containsExactly(Action.Competition.class);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.ARACHNIDS); // Free AP
 
-            ds.endTurn(new Random(0)); // Skip
+            ds.skip(new Random(0));
+            assertThat(ds.possibleActions()).isEmpty();
+            ds.endTurn(new Random(0));
 
             assertThat(ds.possibleActions()).containsExactly(Action.Competition.class);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.MAMMALS);
