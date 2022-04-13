@@ -83,9 +83,9 @@ aws cloudformation deploy --stack-name $STACK_PREFIX-automa \
     DynamoDbStackName=$STACK_PREFIX-db \
     WebSocketStackName=$STACK_PREFIX-ws
 
-LAMBDA_REST_VERSION=$(md5sum "../lambda-rest/target/function.zip" | cut -c-32)
-LAMBDA_REST_S3_KEY=lambda-rest.$LAMBDA_REST_VERSION.zip
-aws s3 ls s3://$LAMBDA_S3_BUCKET/$LAMBDA_REST_S3_KEY || aws s3 cp ../lambda-rest/target/function.zip s3://$LAMBDA_S3_BUCKET/$LAMBDA_REST_S3_KEY
+LAMBDA_HTTP_VERSION=$(md5sum "../lambda-http/target/function.zip" | cut -c-32)
+LAMBDA_HTTP_S3_KEY=lambda-http.$LAMBDA_HTTP_VERSION.zip
+aws s3 ls s3://$LAMBDA_S3_BUCKET/$LAMBDA_HTTP_S3_KEY || aws s3 cp ../lambda-http/target/function.zip s3://$LAMBDA_S3_BUCKET/$LAMBDA_HTTP_S3_KEY
 
 aws cloudformation deploy --stack-name $STACK_PREFIX-apigw \
   --template-file apigw.yaml \
@@ -93,13 +93,13 @@ aws cloudformation deploy --stack-name $STACK_PREFIX-apigw \
   --no-fail-on-empty-changeset \
   --parameter-overrides Environment=$ENV \
     LambdaS3Bucket=$LAMBDA_S3_BUCKET \
-    LambdaS3Key=$LAMBDA_REST_S3_KEY \
+    LambdaS3Key=$LAMBDA_HTTP_S3_KEY \
     DynamoDbStackName=$STACK_PREFIX-db \
     CognitoStackName=$STACK_PREFIX-auth \
     AutomaStackName=$STACK_PREFIX-automa \
     WebSocketStackName=$STACK_PREFIX-ws
 
-REST_API_ID=$(aws cloudformation describe-stacks --stack-name $STACK_PREFIX-apigw \
-  --query "Stacks[0].Outputs[?OutputKey=='RestApiId'].OutputValue" --output text)
+HTTP_API_ID=$(aws cloudformation describe-stacks --stack-name $STACK_PREFIX-apigw \
+  --query "Stacks[0].Outputs[?OutputKey=='HttpApiId'].OutputValue" --output text)
 
-aws apigateway create-deployment --rest-api-id $REST_API_ID --stage-name default
+aws apigatewayv2 create-deployment --api-id $HTTP_API_ID --stage-name '$default'

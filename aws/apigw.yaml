@@ -62,7 +62,7 @@ Resources:
                 Resource: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
       Path: "/"
 
-  ApiFunction:
+  HttpApiFunction:
     Type: AWS::Lambda::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
@@ -94,146 +94,98 @@ Resources:
         S3Bucket: !Ref LambdaS3Bucket
         S3Key: !Ref LambdaS3Key
 
-  RestApi:
-    Type: AWS::ApiGateway::RestApi
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: !Sub 'boardgamefiesta-${Environment}-rest-api'
-      Description: 'Board Game Fiesta REST API'
       DisableExecuteApiEndpoint: true
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
+      Name: !Sub 'boardgamefiesta-${Environment}-http-api'
+      Description: 'Board Game Fiesta HTTP API'
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowCredentials: true
+        AllowHeaders:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+          - X-Amz-Security-Token
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowOrigins:
+          - !If [ IsProduction, 'https://boardgamefiesta.com', !Sub 'https://${Environment}.boardgamefiesta.com' ]
+          - 'http://localhost:4200'
 
-  RestApiDomainName:
-    Type: AWS::ApiGateway::DomainName
+  HttpDefaultIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HttpApiFunction.Arn}/invocations'
+      PayloadFormatVersion: 2.0
+
+  HttpDefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: '$default'
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${HttpDefaultIntegration}'
+
+  HttpApiDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
     Properties:
       DomainName: !If [ IsProduction, 'api.boardgamefiesta.com', !Sub 'api-${Environment}.boardgamefiesta.com' ]
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
-      RegionalCertificateArn: 'arn:aws:acm:eu-west-1:598172618529:certificate/3a61edbf-a6b3-4090-bbfd-2298ac3ad7aa'
+      DomainNameConfigurations:
+        - CertificateArn: 'arn:aws:acm:eu-west-1:598172618529:certificate/3a61edbf-a6b3-4090-bbfd-2298ac3ad7aa'
 
   RecordSet:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: 'boardgamefiesta.com.'
-      Name: !Ref RestApiDomainName
+      Name: !Ref HttpApiDomainName
       Type: A
       AliasTarget:
-        DNSName: !GetAtt RestApiDomainName.RegionalDomainName
-        HostedZoneId: !GetAtt RestApiDomainName.RegionalHostedZoneId
+        DNSName: !GetAtt HttpApiDomainName.RegionalDomainName
+        HostedZoneId: !GetAtt HttpApiDomainName.RegionalHostedZoneId
 
-  StatsResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt RestApi.RootResourceId
-      PathPart: 'stats'
-      RestApiId: !Ref RestApi
-  StatsGameIdResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref StatsResource
-      PathPart: '{gameId}'
-      RestApiId: !Ref RestApi
-
-  ProxyResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt RestApi.RootResourceId
-      PathPart: '{proxy+}'
-      RestApiId: !Ref RestApi
-
-  ProxyMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      HttpMethod: ANY
-      AuthorizationType: NONE
-      Integration:
-        Type: AWS_PROXY
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations'
-        IntegrationHttpMethod: POST
-        PassthroughBehavior: WHEN_NO_MATCH
-      ResourceId: !Ref ProxyResource
-      RestApiId: !Ref RestApi
-
-  ProxyCorsMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ''
-        PassthroughBehavior: WHEN_NO_MATCH
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels:
-            application/json: 'Empty'
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: false
-            method.response.header.Access-Control-Allow-Methods: false
-            method.response.header.Access-Control-Allow-Origin: false
-      ResourceId: !Ref ProxyResource
-      RestApiId: !Ref RestApi
-
-  ApiFunctionInvokeLambdaPermission:
+  HttpApiFunctionInvokeLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt ApiFunction.Arn
+      FunctionName: !GetAtt HttpApiFunction.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApi}/*/*/*'
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/$default'
 
-  StatsMethod:
-    Type: AWS::ApiGateway::Method
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
     Properties:
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: AWS_PROXY
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations'
-        IntegrationHttpMethod: POST
-        PassthroughBehavior: WHEN_NO_MATCH
-      ResourceId: !Ref StatsGameIdResource
-      RestApiId: !Ref RestApi
+      ApiId: !Ref HttpApi
+      StageName: '$default'
 
-  # TODO Force redeployment on stack update
-  RestApiDeployment:
-    Type: AWS::ApiGateway::Deployment
+  HttpApiDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
-      - ProxyMethod
-      - ProxyCorsMethod
-      - StatsMethod
+      - HttpDefaultRoute
     Properties:
-      RestApiId: !Ref RestApi
-      StageName: 'default'
+      ApiId: !Ref HttpApi
+      StageName: !Ref HttpApiStage
 
-  RestApiBasePathMapping:
-    Type: AWS::ApiGateway::BasePathMapping
-    DependsOn:
-      - RestApiDeployment
+  HttpApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
     Properties:
-      BasePath: ''
-      DomainName: !Ref RestApiDomainName
-      RestApiId: !Ref RestApi
-      Stage: 'default'
+      ApiId: !Ref HttpApi
+      ApiMappingKey: ''
+      DomainName: !Ref HttpApiDomainName
+      Stage: !Ref HttpApiStage
 
 Outputs:
-  RestApiId:
-    Value: !Ref RestApi
+  HttpApiId:
+    Value: !Ref HttpApi
     Export:
-      Name: !Sub '${AWS::StackName}-RestApiId'
-  RestApiDomainName:
-    Value: !Ref RestApiDomainName
+      Name: !Sub '${AWS::StackName}-HttpApiId'
+  HttpApiDomainName:
+    Value: !Ref HttpApiDomainName
     Export:
-      Name: !Sub '${AWS::StackName}-RestApiDomainName'
+      Name: !Sub '${AWS::StackName}-HttpApiDomainName'
