@@ -548,7 +548,7 @@ public class PlayerState {
         return buildings.contains(building);
     }
 
-    Set<PossibleAction> unlockedSingleAuxiliaryActions(boolean railsToTheNorth) {
+    Set<PossibleAction> unlockedSingleAuxiliaryActions(GWT game) {
         Set<PossibleAction> actions = new HashSet<>();
 
         actions.add(PossibleAction.optional(Action.Gain1Dollar.class));
@@ -561,10 +561,14 @@ public class PlayerState {
             actions.add(PossibleAction.optional(Action.Pay1DollarToMoveEngine1Forward.class));
         }
         if (hasUnlocked(Unlockable.AUX_MOVE_ENGINE_BACKWARDS_TO_REMOVE_CARD)) {
-            actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1Card.class));
+            if (game.getEdition() == GWT.Edition.SECOND) {
+                actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1CardAndGain1Dollar.class));
+            } else {
+                actions.add(PossibleAction.optional(Action.MoveEngine1BackwardsToRemove1Card.class));
+            }
         }
 
-        if (railsToTheNorth) {
+        if (game.isRailsToTheNorth()) {
             actions.add(PossibleAction.optional(Action.DiscardCattleCardToPlaceBranchlet.class));
         }
 

@@ -104,7 +104,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
         public ActionResult perform(GWT game, Random random) {
             game.fireActionEvent(this, Collections.emptyList());
 
-            return ActionResult.undoAllowed(PossibleAction.optional(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions(game.isRailsToTheNorth()))));
+            return ActionResult.undoAllowed(PossibleAction.optional(PossibleAction.choice(game.currentPlayerState().unlockedSingleAuxiliaryActions(game))));
         }
     }
 
