@@ -166,7 +166,7 @@ public class Table implements AggregateRoot {
 
         table.log.add(new LogEntry(player, LogEntry.Type.CREATE));
 
-        new Created(table.getId()).fire();
+        new Created(Lazy.of(table), table.getId()).fire();
 
         return table;
     }
@@ -209,7 +209,7 @@ public class Table implements AggregateRoot {
 
             afterStateChange();
 
-            new Started(id).fire();
+            new Started(Lazy.of(this), id).fire();
 
             state.getCurrentPlayers().stream()
                     .map(com.boardgamefiesta.api.domain.Player::getName)
@@ -232,7 +232,7 @@ public class Table implements AggregateRoot {
                 .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN_NR, List.of(turns))),
                         () -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN)));
 
-        new BeginTurn(game.getId(), id, type, player.getUserId(), player.getTurnLimit().get(), started).fire();
+        new BeginTurn(Lazy.of(this), game.getId(), id, type, player.getUserId(), player.getTurnLimit().get(), started).fire();
     }
 
     private void endTurnInternal(Player player) {
@@ -246,7 +246,7 @@ public class Table implements AggregateRoot {
                     .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.END_TURN_NR, List.of(turns))),
                             () -> log.add(new LogEntry(player, LogEntry.Type.END_TURN)));
 
-            new EndTurn(id, player.getUserId(), Instant.now()).fire();
+            new EndTurn(Lazy.of(this), id, player.getUserId(), Instant.now()).fire();
         }
     }
 
@@ -372,7 +372,7 @@ public class Table implements AggregateRoot {
             players.remove(player);
         }
 
-        new Left(id, userId, Instant.now()).fire();
+        new Left(Lazy.of(this), id, userId, Instant.now()).fire();
 
         updated = Instant.now();
 
@@ -421,7 +421,7 @@ public class Table implements AggregateRoot {
         ownerId = userId;
         updated = Instant.now();
 
-        new ChangedOwner(id, userId).fire();
+        new ChangedOwner(Lazy.of(this), id, userId).fire();
     }
 
     public void proposeToLeave(@NonNull User.Id userId) {
@@ -434,7 +434,7 @@ public class Table implements AggregateRoot {
 
         log.add(new LogEntry(player, LogEntry.Type.PROPOSED_TO_LEAVE));
 
-        new ProposedToLeave(id, userId).fire();
+        new ProposedToLeave(Lazy.of(this), id, userId).fire();
     }
 
     public void agreeToLeave(@NonNull User.Id userId) {
@@ -445,7 +445,7 @@ public class Table implements AggregateRoot {
 
         player.agreeToLeave();
 
-        new AgreedToLeave(id, userId).fire();
+        new AgreedToLeave(Lazy.of(this), id, userId).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.AGREED_TO_LEAVE));
 
@@ -486,7 +486,7 @@ public class Table implements AggregateRoot {
 
         log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.END));
 
-        new Ended(id, ended).fire();
+        new Ended(Lazy.of(this), id, ended).fire();
     }
 
     private void assignScores() {
@@ -516,7 +516,7 @@ public class Table implements AggregateRoot {
                 .orElseThrow(NotPlayer::new);
 
         player.accept();
-        new Accepted(id, user.getId()).fire();
+        new Accepted(Lazy.of(this), id, user.getId()).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
 
@@ -544,7 +544,7 @@ public class Table implements AggregateRoot {
         status = Status.ABANDONED;
         updated = Instant.now();
 
-        new Abandoned(id).fire();
+        new Abandoned(Lazy.of(this), id).fire();
     }
 
     private Stream<Player> playersThatAccepted() {
@@ -562,7 +562,7 @@ public class Table implements AggregateRoot {
         player.reject();
 
         players.remove(player);
-        new Rejected(id, userId).fire();
+        new Rejected(Lazy.of(this), id, userId).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.REJECT));
 
@@ -617,7 +617,7 @@ public class Table implements AggregateRoot {
 
         log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getId().getId())));
 
-        new Invited(id, type, user.getId(), game.getId(), ownerId).fire();
+        new Invited(Lazy.of(this), id, type, user.getId(), game.getId(), ownerId).fire();
     }
 
     public void kick(@NonNull User.Id currentUserId, @NonNull Player player) {
@@ -640,7 +640,7 @@ public class Table implements AggregateRoot {
         player.getUserId().ifPresent(userId -> {
             log.add(new LogEntry(kickingPlayer, LogEntry.Type.KICK, List.of(userId.getId())));
 
-            new Kicked(this.id, userId, Instant.now()).fire();
+            new Kicked(Lazy.of(this), this.id, userId, Instant.now()).fire();
         });
 
         afterPlayerLeft(player);
@@ -662,7 +662,7 @@ public class Table implements AggregateRoot {
 
         runStateChange(state -> state.forceEndTurn(getPlayer(player), RANDOM));
 
-        new ForcedEndTurn(id, userId, Instant.now()).fire();
+        new ForcedEndTurn(Lazy.of(this), id, userId, Instant.now()).fire();
     }
 
     private void checkPlayer(Player player) {
@@ -700,7 +700,7 @@ public class Table implements AggregateRoot {
 
         log.add(new LogEntry(player, LogEntry.Type.JOIN, List.of(user.getId())));
 
-        new Joined(id, user.getId()).fire();
+        new Joined(Lazy.of(this), id, user.getId()).fire();
 
         autoStartIfPossible();
     }
@@ -720,7 +720,7 @@ public class Table implements AggregateRoot {
 
         visibility = Visibility.PUBLIC;
 
-        new VisibilityChanged(id).fire();
+        new VisibilityChanged(Lazy.of(this), id).fire();
     }
 
     public void makePrivate() {
@@ -728,7 +728,7 @@ public class Table implements AggregateRoot {
 
         visibility = Visibility.PRIVATE;
 
-        new VisibilityChanged(id).fire();
+        new VisibilityChanged(Lazy.of(this), id).fire();
     }
 
     public void addComputer() {
@@ -744,7 +744,7 @@ public class Table implements AggregateRoot {
 
         players.add(Player.computer());
 
-        new ComputerAdded(id);
+        new ComputerAdded(Lazy.of(this), id);
     }
 
     public void changeOptions(@NonNull Options options) {
@@ -752,7 +752,7 @@ public class Table implements AggregateRoot {
 
         this.options = options;
 
-        new OptionsChanged(id).fire();
+        new OptionsChanged(Lazy.of(this), id).fire();
     }
 
     private void checkNew() {
@@ -824,7 +824,7 @@ public class Table implements AggregateRoot {
 
         this.type = type;
 
-        new OptionsChanged(id).fire();
+        new OptionsChanged(Lazy.of(this), id).fire();
     }
 
     public void changeColor(@NonNull Player player, PlayerColor color) {
@@ -883,7 +883,7 @@ public class Table implements AggregateRoot {
 
         this.mode = mode;
 
-        new OptionsChanged(id).fire();
+        new OptionsChanged(Lazy.of(this), id).fire();
     }
 
     public void changeMinMaxNumberOfPlayers(int minNumberOfPlayers, int maxNumberOfPlayers) {
@@ -902,7 +902,7 @@ public class Table implements AggregateRoot {
         this.minNumberOfPlayers = minNumberOfPlayers;
         this.maxNumberOfPlayers = maxNumberOfPlayers;
 
-        new OptionsChanged(id).fire();
+        new OptionsChanged(Lazy.of(this), id).fire();
     }
 
     public void changeAutoStart(boolean autoStart) {
@@ -910,7 +910,7 @@ public class Table implements AggregateRoot {
 
         this.autoStart = autoStart;
 
-        new OptionsChanged(id).fire();
+        new OptionsChanged(Lazy.of(this), id).fire();
     }
 
     public enum Status {
@@ -946,6 +946,7 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class Invited implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull Table.Type type;
         @NonNull User.Id userId;
@@ -955,12 +956,14 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class Joined implements DomainEvent {
-        Table.Id tableId;
-        User.Id userId;
+        @NonNull Lazy<Table> table;
+        @NonNull Table.Id tableId;
+        @NonNull User.Id userId;
     }
 
     @Value
     public static class Kicked implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull User.Id userId;
         @NonNull Instant timestamp;
@@ -968,6 +971,7 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class ForcedEndTurn implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull User.Id userId;
         @NonNull Instant timestamp;
@@ -975,23 +979,27 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class Accepted implements DomainEvent {
-        Table.Id tableId;
-        User.Id userId;
+        @NonNull Lazy<Table> table;
+        @NonNull Table.Id tableId;
+        @NonNull User.Id userId;
     }
 
     @Value
     public static class Rejected implements DomainEvent {
-        Table.Id tableId;
-        User.Id userId;
+        @NonNull Lazy<Table> table;
+        @NonNull Table.Id tableId;
+        @NonNull User.Id userId;
     }
 
     @Value
     public static class Started implements DomainEvent {
+        @NonNull Lazy<Table> table;
         Table.Id tableId;
     }
 
     @Value
     public static class Ended implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull Instant timestamp;
     }
@@ -1004,22 +1012,26 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class VisibilityChanged implements DomainEvent {
+        @NonNull Lazy<Table> table;
         Table.Id tableId;
     }
 
     @Value
     public static class Created implements DomainEvent {
+        @NonNull Lazy<Table> table;
         Table.Id tableId;
     }
 
     @Value
     private static class ChangedOwner implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull User.Id userId;
     }
 
     @Value
     public static class Left implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull User.Id userId;
         @NonNull Instant timestamp;
@@ -1027,33 +1039,39 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class ProposedToLeave implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull User.Id userId;
     }
 
     @Value
     public static class AgreedToLeave implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull User.Id userId;
     }
 
     @Value
     public static class Abandoned implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
     }
 
     @Value
     public static class ComputerAdded implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
     }
 
     @Value
     public static class OptionsChanged implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
     }
 
     @Value
     public static class BeginTurn implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Game.Id gameId;
         @NonNull Table.Id tableId;
         @NonNull Table.Type type;
@@ -1064,6 +1082,7 @@ public class Table implements AggregateRoot {
 
     @Value
     public static class EndTurn implements DomainEvent {
+        @NonNull Lazy<Table> table;
         @NonNull Table.Id tableId;
         @NonNull Optional<User.Id> userId;
         @NonNull Instant timestamp;

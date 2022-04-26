@@ -64,25 +64,27 @@ public class TurnBasedEmailer {
     }
 
     void ended(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended event) {
-        tables.findById(event.getTableId())
-                .filter(table -> table.getType() == Table.Type.TURN_BASED)
-                .ifPresent(table -> {
-                    var humanPlayers = table.getPlayers().stream()
-                            .filter(Player::isPlaying)
-                            .filter(Player::isUser)
-                            .collect(Collectors.toList());
+        var table = event.getTable().get();
 
-                    if (humanPlayers.size() > 1) {
-                        var userMap = humanPlayers.stream()
-                                .flatMap(player -> player.getUserId().stream())
-                                .flatMap(userId -> users.findById(userId).stream())
-                                .collect(Collectors.toMap(User::getId, Function.identity()));
+        if (table.getType() != Table.Type.TURN_BASED) {
+            return;
+        }
 
-                        humanPlayers.forEach(player -> users.findById(player.getUserId().get())
-                                .filter(user -> user.getEmailPreferences().getTurnBasedPreferences().isSendEndedEmail())
-                                .ifPresent(user -> sendEmail(table, player, userMap)));
-                    }
-                });
+        var humanPlayers = table.getPlayers().stream()
+                .filter(Player::isPlaying)
+                .filter(Player::isUser)
+                .collect(Collectors.toList());
+
+        if (humanPlayers.size() > 1) {
+            var userMap = humanPlayers.stream()
+                    .flatMap(player -> player.getUserId().stream())
+                    .flatMap(userId -> users.findById(userId).stream())
+                    .collect(Collectors.toMap(User::getId, Function.identity()));
+
+            humanPlayers.forEach(player -> users.findById(player.getUserId().get())
+                    .filter(user -> user.getEmailPreferences().getTurnBasedPreferences().isSendEndedEmail())
+                    .ifPresent(user -> sendEmail(table, player, userMap)));
+        }
     }
 
     private void sendEmail(Table table, Player player, Map<User.Id, User> userMap) {

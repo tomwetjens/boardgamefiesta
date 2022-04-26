@@ -7,9 +7,10 @@
 
 # Run locally
 ```
-./mvnw compile 
-./mvnw quarkus:dev -pl server
+./mvnw install 
+./mvnw quarkus:dev -pl !lambda*
 ```
+Note: currently this needs some resources to be created on AWS. Easiest way is to deploy the `dev` stack on AWS and point the local server to it by editing the `application.properties`.
 
 # Deploy to AWS
 After you have ran `mvn package`:

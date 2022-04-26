@@ -20,6 +20,7 @@ package com.boardgamefiesta.domain.email;
 
 import com.boardgamefiesta.domain.email.velocity.VelocityEmailTemplates;
 import com.boardgamefiesta.domain.game.Game;
+import com.boardgamefiesta.domain.table.Lazy;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
@@ -65,6 +66,7 @@ class EmailTemplatesTest {
         when(user.getTimeZone()).thenReturn(ZoneId.of("America/New_York"));
 
         var message = emailTemplates.createBeginTurnMessage(new Table.BeginTurn(
+                Lazy.of(null),
                 Game.Id.of("gwt"),
                 Table.Id.of("tableId"),
                 Table.Type.TURN_BASED,
@@ -82,6 +84,7 @@ class EmailTemplatesTest {
         when(user.getTimeZone()).thenReturn(ZoneId.of("Europe/Amsterdam"));
 
         var message = emailTemplates.createBeginTurnMessage(new Table.BeginTurn(
+                Lazy.of(null),
                 GAME_ID,
                 TABLE_ID,
                 Table.Type.TURN_BASED,
@@ -147,7 +150,7 @@ class EmailTemplatesTest {
         var host = mock(User.class);
         when(host.getUsername()).thenReturn("wetgos");
 
-        var message = emailTemplates.createInvitedMessage(new Table.Invited(TABLE_ID, Table.Type.TURN_BASED, USER_ID, GAME_ID, OTHER_USER_ID), user, host);
+        var message = emailTemplates.createInvitedMessage(new Table.Invited(Lazy.of(null), TABLE_ID, Table.Type.TURN_BASED, USER_ID, GAME_ID, OTHER_USER_ID), user, host);
 
         assertThat(message.getSubject()).isEqualTo("You're invited to play Ranchers Of The Old West with wetgos");
     }

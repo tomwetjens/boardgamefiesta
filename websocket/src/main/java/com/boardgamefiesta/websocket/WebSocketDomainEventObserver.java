@@ -20,7 +20,6 @@ package com.boardgamefiesta.websocket;
 
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
-import com.boardgamefiesta.domain.table.Tables;
 import com.boardgamefiesta.domain.user.Friend;
 import com.boardgamefiesta.domain.user.User;
 import lombok.extern.slf4j.Slf4j;
@@ -37,38 +36,35 @@ import javax.inject.Inject;
 class WebSocketDomainEventObserver {
 
     @Inject
-    Tables tables;
-
-    @Inject
     @Any
     Instance<WebSocketSender> senders;
 
     void accepted(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Accepted event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.ACCEPTED, event.getTableId().getId(), event.getUserId().getId()));
 
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.ACCEPTED, event.getTableId().getId(), event.getUserId().getId())));
+        var table = event.getTable().get();
+        notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.ACCEPTED, event.getTableId().getId(), event.getUserId().getId()));
     }
 
     void rejected(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Rejected event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.REJECTED, event.getTableId().getId(), event.getUserId().getId()));
 
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.REJECTED, event.getTableId().getId(), event.getUserId().getId())));
+        var table = event.getTable().get();
+        notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.REJECTED, event.getTableId().getId(), event.getUserId().getId()));
     }
 
     void started(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Started event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.STARTED, event.getTableId().getId(), null));
 
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.STARTED, event.getTableId().getId(), null)));
+        var table = event.getTable().get();
+        notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.STARTED, event.getTableId().getId(), null));
     }
 
     void ended(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Ended event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.ENDED, event.getTableId().getId(), null));
 
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.ENDED, event.getTableId().getId(), null)));
+        var table = event.getTable().get();
+        notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.ENDED, event.getTableId().getId(), null));
     }
 
     void stateChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.StateChanged event) {
@@ -81,19 +77,17 @@ class WebSocketDomainEventObserver {
     void invited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Invited event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.INVITED, event.getTableId().getId(), event.getUserId().getId()));
 
-        tables.findById(event.getTableId()).ifPresent(table -> {
-            notifyUser(event.getUserId(), new WebSocketServerEvent(WebSocketServerEvent.Type.INVITED, event.getTableId().getId(), event.getUserId().getId()));
-            notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.INVITED, table.getId().getId(), event.getUserId().getId()));
-        });
+        var table = event.getTable().get();
+        notifyUser(event.getUserId(), new WebSocketServerEvent(WebSocketServerEvent.Type.INVITED, event.getTableId().getId(), event.getUserId().getId()));
+        notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.INVITED, table.getId().getId(), event.getUserId().getId()));
     }
 
     void uninvited(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.UNINVITED, event.getTableId().getId(), event.getUserId().getId()));
 
-        tables.findById(event.getTableId()).ifPresent(table -> {
-            notifyUser(event.getUserId(), new WebSocketServerEvent(WebSocketServerEvent.Type.UNINVITED, event.getTableId().getId(), event.getUserId().getId()));
-            notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.UNINVITED, table.getId().getId(), event.getUserId().getId()));
-        });
+        var table = event.getTable().get();
+        notifyUser(event.getUserId(), new WebSocketServerEvent(WebSocketServerEvent.Type.UNINVITED, event.getTableId().getId(), event.getUserId().getId()));
+        notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.UNINVITED, table.getId().getId(), event.getUserId().getId()));
     }
 
     void joined(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Joined event) {
@@ -107,17 +101,16 @@ class WebSocketDomainEventObserver {
     void left(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Left event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.LEFT, event.getTableId().getId(), event.getUserId().getId()));
 
-        tables.findById(event.getTableId()).ifPresent(table -> {
-            notifyUser(event.getUserId(), new WebSocketServerEvent(WebSocketServerEvent.Type.LEFT, event.getTableId().getId(), event.getUserId().getId()));
-            notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.LEFT, event.getTableId().getId(), event.getUserId().getId()));
-        });
+        var table = event.getTable().get();
+        notifyUser(event.getUserId(), new WebSocketServerEvent(WebSocketServerEvent.Type.LEFT, event.getTableId().getId(), event.getUserId().getId()));
+        notifyOtherPlayers(event.getUserId(), table, new WebSocketServerEvent(WebSocketServerEvent.Type.LEFT, event.getTableId().getId(), event.getUserId().getId()));
     }
 
     void abandoned(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Abandoned event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.ABANDONED, event.getTableId().getId(), null));
 
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.ABANDONED, event.getTableId().getId(), null)));
+        var table = event.getTable().get();
+        notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.ABANDONED, event.getTableId().getId(), null));
     }
 
     void proposedToLeave(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ProposedToLeave event) {
@@ -131,24 +124,24 @@ class WebSocketDomainEventObserver {
     void kicked(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.Kicked event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.KICKED, event.getTableId().getId(), event.getUserId().getId()));
 
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.KICKED, event.getTableId().getId(), event.getUserId().getId())));
+        var table = event.getTable().get();
+        notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.KICKED, event.getTableId().getId(), event.getUserId().getId()));
     }
 
     void optionsChanged(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.OptionsChanged event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.OPTIONS_CHANGED, event.getTableId().getId(), null));
 
         // TODO Is this actually needed?
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.OPTIONS_CHANGED, event.getTableId().getId(), null)));
+        var table = event.getTable().get();
+        notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.OPTIONS_CHANGED, event.getTableId().getId(), null));
     }
 
     void computerAdded(@Observes(during = TransactionPhase.AFTER_SUCCESS) Table.ComputerAdded event) {
         notifyTable(event.getTableId(), new WebSocketServerEvent(WebSocketServerEvent.Type.COMPUTER_ADDED, event.getTableId().getId(), null));
 
         // TODO Is this actually needed?
-        tables.findById(event.getTableId()).ifPresent(table ->
-                notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.COMPUTER_ADDED, event.getTableId().getId(), null)));
+        var table = event.getTable().get();
+        notifyOtherPlayers(null, table, new WebSocketServerEvent(WebSocketServerEvent.Type.COMPUTER_ADDED, event.getTableId().getId(), null));
     }
 
     void addedAsFriend(@Observes(during = TransactionPhase.AFTER_SUCCESS) Friend.Started event) {
