@@ -283,7 +283,7 @@ public class Automa {
             var remaining = tile.getSpecies(animalType);
 
             while (remaining > 0) {
-                var species = random.nextInt(remaining - 1) + 1;
+                var species = remaining > 1 ? random.nextInt(remaining - 1) + 1 : 1;
 
                 var to = adjacentTiles.get(random.nextInt(adjacentTiles.size()));
 
