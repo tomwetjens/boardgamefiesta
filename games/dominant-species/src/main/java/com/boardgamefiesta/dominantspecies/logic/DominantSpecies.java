@@ -141,7 +141,7 @@ public class DominantSpecies implements State {
                 .phase(Phase.PLANNING)
                 .animals(animals)
                 .initiativeTrack(initiativeTrack)
-                .tiles(createInitialTiles())
+                .tiles(createInitialTiles(animals.keySet()))
                 .elements(createInitialElements())
                 .drawBag(drawBag)
                 .actionDisplay(ActionDisplay.initial(animals.keySet(), drawBag, random))
@@ -187,15 +187,56 @@ public class DominantSpecies implements State {
         return elements;
     }
 
-    static Map<Hex, Tile> createInitialTiles() {
+    static Map<Hex, Tile> createInitialTiles(Set<AnimalType> playingAnimals) {
         var tiles = new HashMap<Hex, Tile>();
-        tiles.put(INITIAL_JUNGLE, Tile.initial(TileType.JUNGLE, false));
-        tiles.put(INITIAL_WETLAND, Tile.initial(TileType.WETLAND, false));
-        tiles.put(INITIAL_SAVANNAH, Tile.initial(TileType.SAVANNAH, false));
-        tiles.put(INITIAL_SEA, Tile.initial(TileType.SEA, true));
-        tiles.put(INITIAL_FOREST, Tile.initial(TileType.FOREST, false));
-        tiles.put(INITIAL_MOUNTAIN, Tile.initial(TileType.MOUNTAIN, false));
-        tiles.put(INITIAL_DESERT, Tile.initial(TileType.DESERT, false));
+
+        var jungle = Tile.initial(TileType.JUNGLE, false);
+        var wetland = Tile.initial(TileType.WETLAND, false);
+        var savannah = Tile.initial(TileType.SAVANNAH, false);
+        var sea = Tile.initial(TileType.SEA, true);
+        var forest = Tile.initial(TileType.FOREST, false);
+        var mountain = Tile.initial(TileType.MOUNTAIN, false);
+        var desert = Tile.initial(TileType.DESERT, false);
+
+        if (playingAnimals.contains(AnimalType.INSECTS)) {
+            savannah.addSpecies(AnimalType.INSECTS, 2);
+            wetland.addSpecies(AnimalType.INSECTS, 1);
+            desert.addSpecies(AnimalType.INSECTS, 1);
+        }
+        if (playingAnimals.contains(AnimalType.ARACHNIDS)) {
+            jungle.addSpecies(AnimalType.ARACHNIDS, 2);
+            forest.addSpecies(AnimalType.ARACHNIDS, 1);
+            wetland.addSpecies(AnimalType.ARACHNIDS, 1);
+        }
+        if (playingAnimals.contains(AnimalType.AMPHIBIANS)) {
+            wetland.addSpecies(AnimalType.AMPHIBIANS, 2);
+            jungle.addSpecies(AnimalType.AMPHIBIANS, 1);
+            savannah.addSpecies(AnimalType.AMPHIBIANS, 1);
+        }
+        if (playingAnimals.contains(AnimalType.BIRDS)) {
+            forest.addSpecies(AnimalType.BIRDS, 2);
+            mountain.addSpecies(AnimalType.BIRDS, 1);
+            jungle.addSpecies(AnimalType.BIRDS, 1);
+        }
+        if (playingAnimals.contains(AnimalType.REPTILES)) {
+            desert.addSpecies(AnimalType.REPTILES, 2);
+            savannah.addSpecies(AnimalType.REPTILES, 1);
+            mountain.addSpecies(AnimalType.REPTILES, 1);
+        }
+        if (playingAnimals.contains(AnimalType.MAMMALS)) {
+            mountain.addSpecies(AnimalType.MAMMALS, 2);
+            desert.addSpecies(AnimalType.MAMMALS, 1);
+            forest.addSpecies(AnimalType.MAMMALS, 1);
+        }
+
+        tiles.put(INITIAL_JUNGLE,jungle);
+        tiles.put(INITIAL_WETLAND, wetland);
+        tiles.put(INITIAL_SAVANNAH, savannah);
+        tiles.put(INITIAL_SEA, sea);
+        tiles.put(INITIAL_FOREST, forest);
+        tiles.put(INITIAL_MOUNTAIN, mountain);
+        tiles.put(INITIAL_DESERT, desert);
+
         return tiles;
     }
 
@@ -896,9 +937,9 @@ public class DominantSpecies implements State {
 
     void fireEvent(AnimalType animalType, Event.Type type, Collection<?>... values) {
         var parameters = Stream.concat(Stream.of(animalType.name()),
-                Arrays.stream(values)
-                        .flatMap(Collection::stream)
-                        .map(o -> o != null ? o.toString() : ""))
+                        Arrays.stream(values)
+                                .flatMap(Collection::stream)
+                                .map(o -> o != null ? o.toString() : ""))
                 .collect(Collectors.toList());
 
         var event = new Event(getAnimal(animalType).getPlayer(), animalType, type, parameters);

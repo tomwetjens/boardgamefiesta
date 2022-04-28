@@ -50,7 +50,7 @@ public class Animal {
         return Animal.builder()
                 .player(player)
                 .type(type)
-                .genePool(initialGenePool(playerCount))
+                .genePool(initialGenePool(playerCount) - 3) // 3 less that are added to tiles initially
                 .actionPawns(initialActionPawns(playerCount))
                 .score(0)
                 .elements(new ArrayList<>(type.getInitialElements()))

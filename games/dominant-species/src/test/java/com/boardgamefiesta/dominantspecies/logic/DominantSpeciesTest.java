@@ -54,7 +54,7 @@ class DominantSpeciesTest {
 
             assertThat(ds.getAnimals()).allSatisfy((animalType, animal) -> {
                 assertThat(animal.getType()).isEqualTo(animalType);
-                assertThat(animal.getGenePool()).isEqualTo(55);
+                assertThat(animal.getGenePool()).isEqualTo(52);
                 assertThat(animal.getActionPawns()).isEqualTo(7);
             });
 
@@ -134,7 +134,7 @@ class DominantSpeciesTest {
                             AnimalType.REPTILES, Animal.builder().type(AnimalType.REPTILES).player(playerB).actionPawns(3).build(),
                             AnimalType.MAMMALS, Animal.builder().type(AnimalType.MAMMALS).player(playerC).actionPawns(1).build()
                     ))
-                    .tiles(DominantSpecies.createInitialTiles())
+                    .tiles(DominantSpecies.createInitialTiles(Set.of(AnimalType.ARACHNIDS, AnimalType.REPTILES, AnimalType.MAMMALS)))
                     .elements(DominantSpecies.createInitialElements())
                     .currentAnimal(AnimalType.ARACHNIDS)
                     .drawBag(drawBag)
@@ -190,7 +190,7 @@ class DominantSpeciesTest {
                                     .elements(new ArrayList<>(AnimalType.MAMMALS.getInitialElements()))
                                     .build()
                     ))
-                    .tiles(DominantSpecies.createInitialTiles())
+                    .tiles(DominantSpecies.createInitialTiles(Collections.emptySet()))
                     .elements(DominantSpecies.createInitialElements())
                     .currentAnimal(AnimalType.MAMMALS)
                     .drawBag(drawBag)
@@ -574,6 +574,9 @@ class DominantSpeciesTest {
                     AnimalType.INSECTS, playerB
             ), new Random(0));
 
+            ds.getTiles().values().stream()
+                    .filter(tile -> tile.hasSpecies(AnimalType.MAMMALS))
+                    .forEach(tile -> tile.removeAllSpecies(AnimalType.MAMMALS));
             ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().addSpecies(AnimalType.MAMMALS, 1);
 
             placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
@@ -593,6 +596,10 @@ class DominantSpeciesTest {
                     AnimalType.MAMMALS, playerA,
                     AnimalType.INSECTS, playerB
             ), new Random(0));
+
+            ds.getTiles().values().stream()
+                    .filter(tile -> tile.hasSpecies(AnimalType.MAMMALS))
+                    .forEach(tile -> tile.removeAllSpecies(AnimalType.MAMMALS));
 
             Set.copyOf(ds.getElements().keySet()).forEach(ds::removeElement);
             ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.INSECTS, 1);
@@ -616,6 +623,10 @@ class DominantSpeciesTest {
                     AnimalType.MAMMALS, playerA,
                     AnimalType.INSECTS, playerB
             ), new Random(0));
+
+            ds.getTiles().values().stream()
+                    .filter(tile -> tile.hasSpecies(AnimalType.MAMMALS))
+                    .forEach(tile -> tile.removeAllSpecies(AnimalType.MAMMALS));
 
             Set.copyOf(ds.getElements().keySet()).forEach(ds::removeElement);
             ds.getTile(DominantSpecies.INITIAL_FOREST).get().addSpecies(AnimalType.MAMMALS, 2);
