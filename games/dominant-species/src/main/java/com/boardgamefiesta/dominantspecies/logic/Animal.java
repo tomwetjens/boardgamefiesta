@@ -32,6 +32,8 @@ import java.util.Set;
 @Getter
 public class Animal {
 
+    private static final int MAX_ELEMENTS = 6;
+
     Player player;
 
     AnimalType type;
@@ -62,7 +64,7 @@ public class Animal {
             case 2:
                 return 7;
             case 3:
-                return 6;
+                return MAX_ELEMENTS;
             case 4:
                 return 5;
             case 5:
@@ -193,7 +195,7 @@ public class Animal {
     }
 
     int getNumberOfElements() {
-        return type.getInitialElements().size() + elements.size();
+        return elements.size();
     }
 
     int matchElements(List<ElementType> adjacentElements) {
@@ -209,7 +211,7 @@ public class Animal {
     }
 
     boolean canAddElement() {
-        return elements.size() < 6;
+        return elements.size() < MAX_ELEMENTS;
     }
 
     void leave() {

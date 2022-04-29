@@ -31,7 +31,7 @@ public enum AnimalType {
     MAMMALS(List.of(ElementType.MEAT, ElementType.MEAT)),
     REPTILES(List.of(ElementType.SUN, ElementType.SUN)),
     BIRDS(List.of(ElementType.SEED, ElementType.SEED)),
-    AMPHIBIANS(List.of(ElementType.WATER, ElementType.WATER)),
+    AMPHIBIANS(List.of(ElementType.WATER, ElementType.WATER, ElementType.WATER)),
     ARACHNIDS(List.of(ElementType.GRUB, ElementType.GRUB)),
     INSECTS(List.of(ElementType.GRASS, ElementType.GRASS));
 
