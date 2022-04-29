@@ -336,7 +336,7 @@ public enum Card {
             var lastScoredTile = game.getLastScoredTile()
                     .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.NO_TILE_SCORED));
 
-            var firstPlaceScore = DominantSpecies.tileScore(lastScoredTile.getType(), 0);
+            var firstPlaceScore = lastScoredTile.calculateScore(0);
 
             var currentAnimal = game.getAnimal(game.getCurrentAnimal());
 

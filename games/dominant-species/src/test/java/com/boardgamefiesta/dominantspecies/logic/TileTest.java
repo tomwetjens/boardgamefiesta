@@ -55,6 +55,19 @@ class TileTest {
                     AnimalType.ARACHNIDS, 9
             ));
         }
+
+        @Test
+        void tundra() {
+            var tile = Tile.initial(TileType.SEA, true);
+            tile.addSpecies(AnimalType.ARACHNIDS, 7);
+            tile.addSpecies(AnimalType.INSECTS, 7);
+
+            var score = tile.score();
+            assertThat(score).containsExactlyInAnyOrderEntriesOf(Map.of(
+                    AnimalType.ARACHNIDS, 1,
+                    AnimalType.INSECTS, 0
+            ));
+        }
     }
 
 }

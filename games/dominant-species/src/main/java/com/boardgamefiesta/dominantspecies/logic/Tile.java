@@ -31,6 +31,16 @@ import java.util.stream.IntStream;
 @ToString
 public class Tile implements Cloneable {
 
+    private static final Map<TileType, List<Integer>> SCORING = Map.of(
+            TileType.SEA, List.of(9, 5, 3, 2),
+            TileType.WETLAND, List.of(8, 4, 2, 1),
+            TileType.SAVANNAH, List.of(7, 4, 2),
+            TileType.JUNGLE, List.of(6, 3, 2),
+            TileType.FOREST, List.of(5, 3, 2),
+            TileType.DESERT, List.of(4, 2),
+            TileType.MOUNTAIN, List.of(3, 2)
+    );
+
     TileType type;
 
     boolean tundra;
@@ -143,9 +153,17 @@ public class Tile implements Cloneable {
                 .collect(Collectors.toList());
 
         return IntStream.range(0, ranking.size())
-                .filter(place -> place != 1 || !tundra)
                 .boxed()
-                .collect(Collectors.toMap(ranking::get, place -> DominantSpecies.tileScore(type, place)));
+                .collect(Collectors.toMap(ranking::get, this::calculateScore));
+    }
+
+    int calculateScore(int place) {
+        if (tundra) {
+            return place == 0 ? 1 : 0;
+        } else {
+            var scores = SCORING.get(type);
+            return scores.size() > place ? scores.get(place) : 0;
+        }
     }
 
     void glaciate() {

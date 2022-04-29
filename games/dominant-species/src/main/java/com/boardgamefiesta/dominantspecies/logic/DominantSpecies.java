@@ -59,16 +59,6 @@ public class DominantSpecies implements State {
             .flatMap(Function.identity())
             .collect(Collectors.toSet());
 
-    private static final Map<TileType, List<Integer>> TILE_SCORING = Map.of(
-            TileType.SEA, List.of(9, 5, 3, 2),
-            TileType.WETLAND, List.of(8, 4, 2, 1),
-            TileType.SAVANNAH, List.of(7, 4, 2),
-            TileType.JUNGLE, List.of(6, 3, 2),
-            TileType.FOREST, List.of(5, 3, 2),
-            TileType.DESERT, List.of(4, 2),
-            TileType.MOUNTAIN, List.of(3, 2)
-    );
-
     @Getter
     private int round;
 
@@ -280,11 +270,6 @@ public class DominantSpecies implements State {
             default:
                 return 45;
         }
-    }
-
-    public static int tileScore(@NonNull TileType tileType, int place) {
-        var scores = TILE_SCORING.get(tileType);
-        return scores.size() > place ? scores.get(place) : 0;
     }
 
     public void perform(@NonNull Action action, @NonNull Random random) {
