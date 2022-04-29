@@ -284,11 +284,11 @@ public enum Card {
         ActionResult perform(DominantSpecies game, Random random) {
             var index = AnimalType.FOOD_CHAIN_ORDER.indexOf(game.getCurrentAnimal());
 
-            game.getAnimals().values().stream()
-                    .filter(animal -> AnimalType.FOOD_CHAIN_ORDER.indexOf(animal.getType()) >= index)
+            game.getAnimals().entrySet().stream()
+                    .filter(animal -> AnimalType.FOOD_CHAIN_ORDER.indexOf(animal.getKey()) <= index)
                     .forEach(animal -> {
-                        animal.addActionPawn();
-                        game.fireEvent(animal.getType(), Event.Type.GAIN_ACTION_PAWN);
+                        animal.getValue().addActionPawn();
+                        game.fireEvent(animal.getKey(), Event.Type.GAIN_ACTION_PAWN);
                     });
 
             return ActionResult.undoAllowed();
@@ -384,11 +384,11 @@ public enum Card {
         ActionResult perform(DominantSpecies game, Random random) {
             var index = AnimalType.FOOD_CHAIN_ORDER.indexOf(game.getCurrentAnimal());
 
-            game.getAnimals().values().stream()
-                    .filter(animal -> AnimalType.FOOD_CHAIN_ORDER.indexOf(animal.getType()) <= index)
+            game.getAnimals().entrySet().stream()
+                    .filter(animal -> AnimalType.FOOD_CHAIN_ORDER.indexOf(animal.getKey()) >= index)
                     .forEach(animal -> {
-                        animal.addActionPawn();
-                        game.fireEvent(animal.getType(), Event.Type.GAIN_ACTION_PAWN);
+                        animal.getValue().addActionPawn();
+                        game.fireEvent(animal.getKey(), Event.Type.GAIN_ACTION_PAWN);
                     });
 
             return ActionResult.undoAllowed();
