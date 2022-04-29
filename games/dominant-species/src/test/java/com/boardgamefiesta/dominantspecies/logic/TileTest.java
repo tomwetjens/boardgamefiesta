@@ -31,6 +31,23 @@ class TileTest {
     class ScoreTest {
 
         @Test
+        void sea() {
+            var tile = Tile.initial(TileType.SEA, false);
+            tile.addSpecies(AnimalType.MAMMALS, 4);
+            tile.addSpecies(AnimalType.BIRDS, 5);
+            tile.addSpecies(AnimalType.ARACHNIDS, 6);
+            tile.addSpecies(AnimalType.INSECTS, 7);
+
+            var score = tile.score();
+            assertThat(score).containsExactlyInAnyOrderEntriesOf(Map.of(
+                    AnimalType.MAMMALS, 2,
+                    AnimalType.BIRDS, 3,
+                    AnimalType.ARACHNIDS, 5,
+                    AnimalType.INSECTS, 9
+            ));
+        }
+
+        @Test
         void tieBrokenByDescendingFoodChainOrder() {
             var tile = Tile.initial(TileType.SEA, false);
             tile.addSpecies(AnimalType.ARACHNIDS, 7);

@@ -148,7 +148,7 @@ public class Tile implements Cloneable {
     Map<AnimalType, Integer> score() {
         var ranking = species.keySet().stream()
                 .filter(this::hasSpecies)
-                .sorted(Comparator.<AnimalType>comparingInt(species::get)
+                .sorted(Comparator.<AnimalType>comparingInt(species::get).reversed()
                         .thenComparingInt(AnimalType.FOOD_CHAIN_ORDER::indexOf))
                 .collect(Collectors.toList());
 
