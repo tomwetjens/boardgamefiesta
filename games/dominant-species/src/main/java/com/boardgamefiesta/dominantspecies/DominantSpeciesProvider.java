@@ -29,6 +29,7 @@ import com.boardgamefiesta.api.repository.StateSerializer;
 import com.boardgamefiesta.api.spi.GameProvider;
 import com.boardgamefiesta.dominantspecies.logic.*;
 import com.boardgamefiesta.dominantspecies.view.DominantSpeciesView;
+import lombok.NonNull;
 import org.eclipse.yasson.FieldAccessStrategy;
 import org.eclipse.yasson.JsonBindingProvider;
 import org.eclipse.yasson.YassonConfig;
@@ -82,7 +83,22 @@ public class DominantSpeciesProvider implements GameProvider<DominantSpecies> {
     private static final StateSerializer<DominantSpecies> SERIALIZER = new DominantSpeciesSerializer();
     private static final StateDeserializer<DominantSpecies> DESERIALIZER = jsonObject -> JSONB.fromJsonStructure(jsonObject, DominantSpecies.class);
     private static final ActionMapper<DominantSpecies> ACTION_MAPPER = new DominantSpeciesActionMapper();
-    private static final ViewMapper<DominantSpecies> VIEW_MAPPER = (state, viewer) -> JSONB.toJson(new DominantSpeciesView(state));
+    private static final ViewMapper<DominantSpecies> VIEW_MAPPER = new ViewMapper<>() {
+        @Override
+        public Object toView(@NonNull DominantSpecies state, Player viewer) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isJsonGeneratorSupported() {
+            return true;
+        }
+
+        @Override
+        public void serialize(@NonNull DominantSpecies state, Player viewer, @NonNull JsonGenerator jsonGenerator) {
+            JSONB.toJson(new DominantSpeciesView(state), jsonGenerator);
+        }
+    };
 
     @Override
     public String getId() {

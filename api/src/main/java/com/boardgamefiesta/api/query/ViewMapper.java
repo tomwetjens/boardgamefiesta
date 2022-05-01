@@ -22,6 +22,20 @@ import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.State;
 import lombok.NonNull;
 
+import javax.json.stream.JsonGenerator;
+
 public interface ViewMapper<T extends State> {
+    /**
+     * @deprecated Implement and use {@link #serialize(State, Player, JsonGenerator)} instead.
+     */
+    @Deprecated
     Object toView(@NonNull T state, Player viewer);
+
+    default boolean isJsonGeneratorSupported() {
+        return false;
+    }
+
+    default void serialize(@NonNull T state, Player viewer, @NonNull JsonGenerator jsonGenerator) {
+        throw new UnsupportedOperationException();
+    }
 }

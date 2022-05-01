@@ -79,6 +79,8 @@ public class TableView {
     int maxNumberOfPlayersGame;
     boolean autoStart;
 
+    StateView state;
+
     public TableView(@NonNull Table table,
                      @NonNull Map<User.Id, User> userMap,
                      @NonNull Map<User.Id, Rating> ratingMap,
@@ -151,6 +153,19 @@ public class TableView {
             this.currentPlayer = null;
             this.currentPlayers = null;
             this.canUndo = null;
+        }
+
+        this.state = mapStateToViewIfResolved(table, currentUserId);
+    }
+
+    private static StateView mapStateToViewIfResolved(Table table, User.Id currentUserId) {
+        if (table.getCurrentState().isResolved()) {
+            return table.getCurrentState().get()
+                    .map(Table.CurrentState::getState)
+                    .map(state -> new StateView(table, state, currentUserId))
+                    .orElse(null);
+        } else {
+            return null;
         }
     }
 }

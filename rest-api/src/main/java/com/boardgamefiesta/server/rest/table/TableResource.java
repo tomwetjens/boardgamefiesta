@@ -34,6 +34,7 @@ import com.boardgamefiesta.server.rest.exception.APIError;
 import com.boardgamefiesta.server.rest.exception.APIException;
 import com.boardgamefiesta.server.rest.table.command.*;
 import com.boardgamefiesta.server.rest.table.view.LogEntryView;
+import com.boardgamefiesta.server.rest.table.view.StateView;
 import com.boardgamefiesta.server.rest.table.view.TableView;
 import lombok.extern.slf4j.Slf4j;
 
@@ -376,13 +377,7 @@ public class TableResource {
             throw new NotFoundException();
         }
 
-        var viewingPlayer = determineViewingPlayer(table);
-
-        return table.getGame().getProvider().getViewMapper().toView(state, viewingPlayer
-                .map(Player::getId)
-                .map(Player.Id::getId)
-                .flatMap(state::getPlayerByName)
-                .orElse(null));
+        return new StateView(table, state, currentUser.getId());
     }
 
     @GET
@@ -402,8 +397,8 @@ public class TableResource {
         }
 
         return tables.findLogEntries(tableId,
-                since != null ? Instant.parse(since) : Instant.ofEpochSecond(0),
-                before != null ? Instant.parse(before) : Instant.now(), limit)
+                        since != null ? Instant.parse(since) : Instant.ofEpochSecond(0),
+                        before != null ? Instant.parse(before) : Instant.now(), limit)
                 .map(logEntry -> new LogEntryView(logEntry,
                         userId -> userMap.computeIfAbsent(userId, k -> this.users.findById(userId).orElse(null))))
                 .collect(Collectors.toList());
@@ -440,12 +435,6 @@ public class TableResource {
         var currentUserId = currentUser.getId();
 
         return table.getPlayerByUserId(currentUserId).orElseThrow(() -> APIException.forbidden(APIError.NOT_PLAYER_IN_GAME));
-    }
-
-    private Optional<Player> determineViewingPlayer(Table table) {
-        var currentUserId = currentUser.getId();
-
-        return table.getPlayerByUserId(currentUserId);
     }
 
     private void checkTurn(Table table, Player player) {
