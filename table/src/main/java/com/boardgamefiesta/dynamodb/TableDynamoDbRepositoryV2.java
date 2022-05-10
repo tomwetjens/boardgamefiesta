@@ -891,7 +891,7 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     }
 
     @Override
-    public Stream<LogEntry> findLogEntries(Table.Id tableId, Instant since, Instant before, int limit) {
+    public Stream<LogEntry> findLogEntries(@NonNull Table.Id tableId, @NonNull Instant since, @NonNull Instant before, int limit) {
         log.debug("findLogEntries: {} >={} <{} limit {}", tableId, since, before, limit);
 
         return client.queryPaginator(QueryRequest.builder()
