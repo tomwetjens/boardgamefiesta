@@ -219,7 +219,7 @@ public class DominantSpecies implements State {
             forest.addSpecies(AnimalType.MAMMALS, 1);
         }
 
-        tiles.put(INITIAL_JUNGLE,jungle);
+        tiles.put(INITIAL_JUNGLE, jungle);
         tiles.put(INITIAL_WETLAND, wetland);
         tiles.put(INITIAL_SAVANNAH, savannah);
         tiles.put(INITIAL_SEA, sea);
@@ -811,7 +811,7 @@ public class DominantSpecies implements State {
                 .filter(animal -> animal.getPlayer().equals(player))
                 .mapToInt(Animal::getScore)
                 .min()
-                .orElseThrow();
+                .orElseThrow(() -> new DominantSpeciesException(DominantSpeciesError.INVALID_PLAYER));
     }
 
     @Override

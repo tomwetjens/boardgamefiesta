@@ -33,10 +33,32 @@ public interface State {
 
     void skip(@NonNull Player player, @NonNull Random random);
 
+    /**
+     * Ends turn of a player.
+     * <p>The implementation may skip any remaining actions automatically before ending the turn.</p>
+     *
+     * @param player Player whose turn to end.
+     * @param random Pseudo random number generator.
+     */
     void endTurn(@NonNull Player player, @NonNull Random random);
 
+    /**
+     * Forces an unresponsive player's turn to be ended.
+     * <p>The implementation may choose to perform actions automatically before ending the turn.</p>
+     *
+     * @param player Player whose turn to forcibly end.
+     * @param random Pseudo random number generator.
+     */
     void forceEndTurn(@NonNull Player player, @NonNull Random random);
 
+    /**
+     * Removes a player from the game after it was started.
+     * <p>This happens when a player leaves or is kicked from the game.</p>
+     * <p>It is up to the implementation to decide how to handle this and whether or not the game can continue.</p>
+     *
+     * @param player Player who left the game.
+     * @param random Pseudo random number generator.
+     */
     void leave(@NonNull Player player, @NonNull Random random);
 
     Set<Player> getCurrentPlayers();
@@ -51,12 +73,14 @@ public interface State {
 
     /**
      * Can the action that led to this State be undone?
+     *
      * @return <code>true</code> if the action can be undone to the previous State, <code>false</code> otherwise.
      */
     boolean canUndo();
 
     /**
      * Has the game ended?
+     *
      * @return <code>true</code> if the game has ended, <code>false</code> otherwise.
      */
     boolean isEnded();
