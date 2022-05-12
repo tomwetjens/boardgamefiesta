@@ -28,8 +28,6 @@ import com.boardgamefiesta.domain.table.Log;
 import com.boardgamefiesta.domain.table.Player;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,6 +35,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -113,12 +113,8 @@ class TableTest {
 
             when(currentMinus1.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentMinus1.canUndo()).thenReturn(true);
-            when(currentMinus1.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
-            when(currentMinus1.getPlayerByName("playerB")).thenReturn(Optional.empty());
 
             when(currentMinus2.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
-            when(currentMinus2.getPlayerByName("playerA")).thenReturn(Optional.of(currentPlayer));
-            when(currentMinus2.getPlayerByName("playerB")).thenReturn(Optional.empty());
 
             var currentMinus2HistoricState = Table.HistoricState.builder()
                     .state(currentMinus2)

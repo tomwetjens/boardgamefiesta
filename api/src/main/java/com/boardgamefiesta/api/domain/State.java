@@ -20,7 +20,10 @@ package com.boardgamefiesta.api.domain;
 
 import lombok.NonNull;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 
 public interface State {
     void perform(Player player, Action action, Random random);
@@ -53,10 +56,6 @@ public interface State {
 
     Set<Player> getCurrentPlayers();
 
-    default Optional<Player> getPlayerByName(@NonNull String name) {
-        return getPlayers().stream().filter(player -> name.equals(player.getName())).findAny();
-    }
-
     void leave(Player player, Random random);
 
     Stats stats(Player player);
@@ -65,6 +64,7 @@ public interface State {
 
     /**
      * Estimated progress.
+     *
      * @return 0-100 percent
      */
     int getProgress();

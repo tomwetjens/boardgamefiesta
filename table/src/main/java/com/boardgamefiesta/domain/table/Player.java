@@ -23,10 +23,7 @@ import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.Entity;
 import com.boardgamefiesta.domain.exception.DomainException;
 import com.boardgamefiesta.domain.user.User;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -268,6 +265,10 @@ public class Player implements Entity {
         return Optional.ofNullable(turnLimit);
     }
 
+    public com.boardgamefiesta.api.domain.Player asPlayer() {
+        return new com.boardgamefiesta.api.domain.Player(id.id, color, type.asType());
+    }
+
     public enum Status {
         INVITED,
         ACCEPTED,
@@ -277,9 +278,16 @@ public class Player implements Entity {
         AGREED_TO_LEAVE
     }
 
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Type {
-        USER,
-        COMPUTER
+        USER(com.boardgamefiesta.api.domain.Player.Type.HUMAN),
+        COMPUTER(com.boardgamefiesta.api.domain.Player.Type.COMPUTER);
+
+        private final com.boardgamefiesta.api.domain.Player.Type type;
+
+        public com.boardgamefiesta.api.domain.Player.Type asType() {
+            return type;
+        }
     }
 
     @Value(staticConstructor = "of")

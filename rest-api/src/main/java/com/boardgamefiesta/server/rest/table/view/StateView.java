@@ -29,9 +29,7 @@ public class StateView {
         this.state = state;
         this.viewer = Optional.ofNullable(currentUserId)
                 .flatMap(table::getPlayerByUserId)
-                .map(com.boardgamefiesta.domain.table.Player::getId)
-                .map(com.boardgamefiesta.domain.table.Player.Id::getId)
-                .flatMap(state::getPlayerByName)
+                .map(com.boardgamefiesta.domain.table.Player::asPlayer)
                 .orElse(null);
     }
 

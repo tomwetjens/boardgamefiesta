@@ -227,8 +227,7 @@ public class Table implements AggregateRoot {
 
         currentState.get()
                 .map(CurrentState::getState)
-                .flatMap(state -> state.getPlayerByName(player.getId().getId())
-                        .flatMap(state::getTurn))
+                .flatMap(state -> state.getTurn(player.asPlayer()))
                 .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN_NR, List.of(turns))),
                         () -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN)));
 
@@ -241,8 +240,7 @@ public class Table implements AggregateRoot {
         if (player.getStatus() != Player.Status.LEFT) {
             currentState.get()
                     .map(CurrentState::getState)
-                    .flatMap(state -> state.getPlayerByName(player.getId().getId())
-                            .flatMap(state::getTurn))
+                    .flatMap(state -> state.getTurn(player.asPlayer()))
                     .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.END_TURN_NR, List.of(turns))),
                             () -> log.add(new LogEntry(player, LogEntry.Type.END_TURN)));
 
@@ -270,8 +268,7 @@ public class Table implements AggregateRoot {
 
         checkTurn(player);
 
-        runStateChange(state -> state.perform(state.getPlayerByName(player.getId().getId())
-                .orElseThrow(NotPlayer::new), action, RANDOM));
+        runStateChange(state -> state.perform(player.asPlayer(), action, RANDOM));
     }
 
     public void executeAutoma(Player player) {
@@ -283,7 +280,7 @@ public class Table implements AggregateRoot {
             throw new IllegalStateException("Player is not computer");
         }
 
-        runStateChange(state -> game.executeAutoma(state, getPlayer(player), RANDOM));
+        runStateChange(state -> game.executeAutoma(state, player.asPlayer(), RANDOM));
     }
 
     private void checkTurn(Player player) {
@@ -343,13 +340,13 @@ public class Table implements AggregateRoot {
 
         log.add(new LogEntry(player, LogEntry.Type.SKIP));
 
-        runStateChange(state -> state.skip(getPlayer(player), RANDOM));
+        runStateChange(state -> state.skip(player.asPlayer(), RANDOM));
     }
 
     public void endTurn(Player player) {
         checkStarted();
 
-        runStateChange(state -> state.endTurn(getPlayer(player), RANDOM));
+        runStateChange(state -> state.endTurn(player.asPlayer(), RANDOM));
     }
 
     public void leave(@NonNull User.Id userId) {
@@ -391,7 +388,7 @@ public class Table implements AggregateRoot {
         });
 
         if (status == Status.STARTED) {
-            var player = getState().getPlayerByName(tablePlayer.getId().getId()).orElseThrow();
+            var player = tablePlayer.asPlayer();
 
             runStateChange(state -> state.leave(player, RANDOM));
 
@@ -496,10 +493,8 @@ public class Table implements AggregateRoot {
 
         for (Player player : players) {
             if (player.isPlaying()) {
-                state.getPlayerByName(player.getId().getId())
-                        .map(state::score)
-                        .ifPresent(score ->
-                                player.assignScore(score, winner != null && winner.getName().equals(player.getId().getId())));
+                var score = state.score(player.asPlayer());
+                player.assignScore(score, winner != null && winner.getName().equals(player.getId().getId()));
             } else {
                 // Player has left during the game, always score 0
                 player.assignScore(0, false);
@@ -660,7 +655,7 @@ public class Table implements AggregateRoot {
 
         log.add(new LogEntry(forcingPlayer, LogEntry.Type.FORCE_END_TURN, List.of(userId.getId())));
 
-        runStateChange(state -> state.forceEndTurn(getPlayer(player), RANDOM));
+        runStateChange(state -> state.forceEndTurn(player.asPlayer(), RANDOM));
 
         new ForcedEndTurn(Lazy.of(this), id, userId, Instant.now()).fire();
     }
@@ -790,12 +785,6 @@ public class Table implements AggregateRoot {
         afterStateChange();
     }
 
-    private com.boardgamefiesta.api.domain.Player getPlayer(Player player) {
-        var state = currentState.get().orElseThrow(NotStarted::new).getState();
-        return state.getPlayerByName(player.getId().getId())
-                .orElseThrow(NotPlayer::new);
-    }
-
     public boolean canUndo() {
         return currentState.get().map(CurrentState::getState)
                 .map(state -> state.canUndo() && state.getCurrentPlayers().size() == 1)
@@ -874,8 +863,7 @@ public class Table implements AggregateRoot {
     public Optional<Stats> stats(Player player) {
         var state = getState();
 
-        return state.getPlayerByName(player.getId().getId()) // could be empty when player has left
-                .map(state::stats);
+        return Optional.of(state.stats(player.asPlayer()));
     }
 
     public void changeMode(@NonNull Mode mode) {
