@@ -43,7 +43,8 @@ public interface State {
     Set<Player> getCurrentPlayers();
 
     /**
-     * Estimated progress.
+     * Estimated progress. This is used to determine whether a game has progressed enough to keep when it's abandoned
+     * and to determine whether a game has progressed enough to count as 'played'.
      *
      * @return 0-100 percent
      */
@@ -53,12 +54,12 @@ public interface State {
 
     boolean isEnded();
 
-    int score(@NonNull Player player);
+    int getScore(@NonNull Player player);
 
     /**
      * @return players (that haven't left) ranked by their scores. 0=1st place, 1=2nd place, etc. 1st place == winner
      */
-    List<Player> ranking();
+    List<Player> getRanking();
 
     Stats stats(@NonNull Player player);
 

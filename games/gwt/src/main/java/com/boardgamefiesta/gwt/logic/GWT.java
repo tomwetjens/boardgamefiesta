@@ -642,7 +642,7 @@ public class GWT implements State {
     }
 
     @Override
-    public int score(Player player) {
+    public int getScore(Player player) {
         return scoreDetails(player).getTotal();
     }
 
@@ -838,9 +838,9 @@ public class GWT implements State {
     }
 
     @Override
-    public List<Player> ranking() {
+    public List<Player> getRanking() {
         var scores = players.stream()
-                .collect(Collectors.toMap(Function.identity(), this::score));
+                .collect(Collectors.toMap(Function.identity(), this::getScore));
 
         return scores.entrySet().stream()
                 .sorted(Comparator.<Map.Entry<Player, Integer>>comparingInt(Map.Entry::getValue)

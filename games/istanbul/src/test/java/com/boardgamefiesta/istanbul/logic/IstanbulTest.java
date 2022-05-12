@@ -506,8 +506,8 @@ class IstanbulTest {
         game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
         game.endTurn(new Random(0));
 
-        assertThat(game.score(playerRed)).isEqualTo(6);
-        assertThat(game.score(playerGreen)).isEqualTo(3);
+        assertThat(game.getScore(playerRed)).isEqualTo(6);
+        assertThat(game.getScore(playerGreen)).isEqualTo(3);
     }
 
     @Nested
@@ -525,7 +525,7 @@ class IstanbulTest {
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
 
-            assertThat(game.ranking()).containsExactly(playerRed, playerGreen);
+            assertThat(game.getRanking()).containsExactly(playerRed, playerGreen);
         }
 
         @Test
@@ -542,7 +542,7 @@ class IstanbulTest {
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
 
-            assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
+            assertThat(game.getRanking()).containsExactly(playerGreen, playerRed);
         }
 
         @Test
@@ -564,7 +564,7 @@ class IstanbulTest {
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
 
-            assertThat(game.ranking()).containsExactly(playerRed, playerGreen);
+            assertThat(game.getRanking()).containsExactly(playerRed, playerGreen);
         }
 
         @Test
@@ -583,7 +583,7 @@ class IstanbulTest {
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
 
-            assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
+            assertThat(game.getRanking()).containsExactly(playerGreen, playerRed);
         }
 
         @Test
@@ -601,7 +601,7 @@ class IstanbulTest {
             game.perform(new Action.Move(game.getSpiceWarehouse()), new Random(0));
             game.endTurn(new Random(0));
 
-            assertThat(game.ranking()).containsExactly(playerGreen, playerRed);
+            assertThat(game.getRanking()).containsExactly(playerGreen, playerRed);
         }
     }
 

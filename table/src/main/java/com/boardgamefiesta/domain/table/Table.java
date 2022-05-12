@@ -489,11 +489,11 @@ public class Table implements AggregateRoot {
     private void assignScores() {
         var state = getState();
 
-        var winner = status == Status.ENDED ? state.ranking().get(0) : null;
+        var winner = status == Status.ENDED ? state.getRanking().get(0) : null;
 
         for (Player player : players) {
             if (player.isPlaying()) {
-                var score = state.score(player.asPlayer());
+                var score = state.getScore(player.asPlayer());
                 player.assignScore(score, winner != null && winner.getName().equals(player.getId().getId()));
             } else {
                 // Player has left during the game, always score 0
@@ -837,7 +837,7 @@ public class Table implements AggregateRoot {
     public List<User.Id> getUserRanking() {
         return currentState.get()
                 .map(CurrentState::getState)
-                .map(State::ranking)
+                .map(State::getRanking)
                 .map(ranking -> ranking.stream()
                         .map(com.boardgamefiesta.api.domain.Player::getName)
                         .map(Player.Id::of)

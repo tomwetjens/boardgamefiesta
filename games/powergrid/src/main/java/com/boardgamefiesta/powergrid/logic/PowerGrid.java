@@ -343,13 +343,13 @@ public class PowerGrid implements State {
     }
 
     @Override
-    public int score(Player player) {
+    public int getScore(Player player) {
         // TODO
         return 0;
     }
 
     @Override
-    public List<Player> ranking() {
+    public List<Player> getRanking() {
         return null;
     }
 

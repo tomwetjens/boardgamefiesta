@@ -252,7 +252,7 @@ public class Istanbul implements State {
     }
 
     @Override
-    public int score(Player player) {
+    public int getScore(Player player) {
         return getPlayerState(player).getRubies();
     }
 
@@ -262,7 +262,7 @@ public class Istanbul implements State {
     }
 
     @Override
-    public List<Player> ranking() {
+    public List<Player> getRanking() {
         return playerStates.entrySet().stream()
                 .sorted(Comparator.<Map.Entry<Player, PlayerState>>comparingInt(entry -> entry.getValue().getRubies())
                         .thenComparingInt(entry -> entry.getValue().getLira())

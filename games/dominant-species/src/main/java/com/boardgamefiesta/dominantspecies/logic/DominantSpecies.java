@@ -806,7 +806,7 @@ public class DominantSpecies implements State {
     }
 
     @Override
-    public int score(@NonNull Player player) {
+    public int getScore(@NonNull Player player) {
         return animals.values().stream()
                 .filter(animal -> animal.getPlayer().equals(player))
                 .mapToInt(Animal::getScore)
@@ -815,7 +815,7 @@ public class DominantSpecies implements State {
     }
 
     @Override
-    public List<Player> ranking() {
+    public List<Player> getRanking() {
         return animals.values().stream()
                 .sorted(Comparator.comparingInt(Animal::getScore).reversed()
                         .thenComparingInt(animal -> AnimalType.FOOD_CHAIN_ORDER.indexOf(animal.getType())))
