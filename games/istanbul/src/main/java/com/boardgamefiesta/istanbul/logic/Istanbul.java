@@ -257,7 +257,7 @@ public class Istanbul implements State {
     }
 
     @Override
-    public Stats stats(Player player) {
+    public Stats getStats(Player player) {
         return playerStates.get(player).stats();
     }
 

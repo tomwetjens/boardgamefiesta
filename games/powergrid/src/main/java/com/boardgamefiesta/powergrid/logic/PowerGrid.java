@@ -380,7 +380,7 @@ public class PowerGrid implements State {
     }
 
     @Override
-    public Stats stats(Player player) {
+    public Stats getStats(Player player) {
         return null;
     }
 

@@ -637,7 +637,7 @@ public class GWT implements State {
     }
 
     @Override
-    public Stats stats(Player player) {
+    public Stats getStats(Player player) {
         var playerState = playerState(player);
 
         var stats = Stats.builder()

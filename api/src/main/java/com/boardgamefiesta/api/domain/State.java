@@ -56,10 +56,12 @@ public interface State {
     int getScore(@NonNull Player player);
 
     /**
-     * @return players (that haven't left) ranked by their scores. 0=1st place, 1=2nd place, etc. 1st place == winner
+     * Gets a ranking of the players based on their game result, because games may have different tiebreakers.
+     *
+     * @return players (that haven't left) ranked by their scores. In order 1st place, then 2nd place, then 3rd place, etc.
      */
     List<Player> getRanking();
 
-    Stats stats(@NonNull Player player);
+    Stats getStats(@NonNull Player player);
 
 }

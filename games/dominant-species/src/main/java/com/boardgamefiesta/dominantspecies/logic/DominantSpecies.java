@@ -853,7 +853,7 @@ public class DominantSpecies implements State {
     }
 
     @Override
-    public Stats stats(@NonNull Player player) {
+    public Stats getStats(@NonNull Player player) {
         // TODO
         return Stats.builder().build();
     }

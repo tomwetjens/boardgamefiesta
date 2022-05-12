@@ -854,7 +854,7 @@ public class Table implements AggregateRoot {
     public Optional<Stats> stats(Player player) {
         var state = getState();
 
-        return Optional.of(state.stats(player.asPlayer()));
+        return Optional.of(state.getStats(player.asPlayer()));
     }
 
     public void changeMode(@NonNull Mode mode) {

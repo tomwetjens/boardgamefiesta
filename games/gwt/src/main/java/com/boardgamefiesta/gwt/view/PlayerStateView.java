@@ -164,7 +164,7 @@ public class PlayerStateView {
         automaState = playerState.getAutomaState().map(AutomaStateView::new).orElse(null);
 
         if (state.isEnded()) {
-            stats = state.stats(playerState.getPlayer()).asMap();
+            stats = state.getStats(playerState.getPlayer()).asMap();
         }
     }
 
