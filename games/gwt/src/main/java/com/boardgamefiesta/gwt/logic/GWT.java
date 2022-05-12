@@ -300,7 +300,7 @@ public class GWT implements State {
 
     @Override
     public void perform(Player player, @NonNull com.boardgamefiesta.api.domain.Action action, @NonNull Random random) {
-        if (player != currentPlayer) {
+        if (!currentPlayer.equals(player)) {
             throw new GWTException(GWTError.NOT_CURRENT_PLAYER);
         }
 
@@ -388,7 +388,7 @@ public class GWT implements State {
 
     @Override
     public void skip(@NonNull Player player, @NonNull Random random) {
-        if (currentPlayer != player) {
+        if (!currentPlayer.equals(player)) {
             throw new GWTException(GWTError.NOT_CURRENT_PLAYER);
         }
 
@@ -401,7 +401,7 @@ public class GWT implements State {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
-        if (currentPlayer != player) {
+        if (!currentPlayer.equals(player)) {
             throw new GWTException(GWTError.NOT_CURRENT_PLAYER);
         }
 
@@ -430,7 +430,7 @@ public class GWT implements State {
             throw new GWTException(GWTError.GAME_ENDED);
         }
 
-        if (currentPlayer != player) {
+        if (!currentPlayer.equals(player)) {
             throw new GWTException(GWTError.NOT_CURRENT_PLAYER);
         }
 

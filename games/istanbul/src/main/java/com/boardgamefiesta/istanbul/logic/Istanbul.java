@@ -349,7 +349,7 @@ public class Istanbul implements State {
             throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
         }
 
-        if (currentPlayer != player) {
+        if (!currentPlayer.equals(player)) {
             throw new IstanbulException(IstanbulError.CANNOT_PERFORM_ACTION);
         }
 

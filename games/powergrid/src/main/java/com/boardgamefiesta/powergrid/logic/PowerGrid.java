@@ -315,7 +315,7 @@ public class PowerGrid implements State {
     }
 
     public void perform(@NonNull Player player, @NonNull Action action, @NonNull Random random) {
-        if (currentPlayer != player && !producingPlayers.contains(player)) {
+        if (!currentPlayer.equals(player) && !producingPlayers.contains(player)) {
             throw new PowerGridException(PowerGridError.NOT_PLAYERS_TURN);
         }
 

@@ -76,7 +76,7 @@ public class StateView {
 
         if (viewingPlayer != null) {
             player = state.getPlayers().stream()
-                    .filter(p -> p == viewingPlayer)
+                    .filter(p -> p.equals(viewingPlayer))
                     .map(state::playerState)
                     .map(playerState -> new PlayerStateView(state, playerState, viewingPlayer))
                     .findAny()
