@@ -112,7 +112,7 @@ public class StateView {
 
         ended = state.isEnded();
 
-        if (viewingPlayer == state.getCurrentPlayer()) {
+        if (Objects.equals(viewingPlayer, state.getCurrentPlayer())) {
             actions = state.possibleActions().stream()
                     .map(ActionType::of)
                     .sorted(Comparator.comparing(Enum::name))

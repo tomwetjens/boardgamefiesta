@@ -357,7 +357,7 @@ public class Trail {
                 .flatMap(buildingLocation -> buildingLocation.getBuilding().stream())
                 .filter(building -> building instanceof PlayerBuilding)
                 .map(building -> (PlayerBuilding) building)
-                .filter(playerBuilding -> playerBuilding.getPlayer() == player)
+                .filter(playerBuilding -> player.equals(playerBuilding.getPlayer()))
                 .count();
     }
 
@@ -375,7 +375,7 @@ public class Trail {
                 .flatMap(buildingLocation -> buildingLocation.getBuilding().stream())
                 .filter(building -> building instanceof PlayerBuilding)
                 .map(building -> (PlayerBuilding) building)
-                .filter(playerBuilding -> playerBuilding.getPlayer() == player)
+                .filter(playerBuilding -> player.equals(playerBuilding.getPlayer()))
                 .collect(Collectors.toSet());
     }
 
@@ -428,7 +428,7 @@ public class Trail {
                         possibleMove.getTo() instanceof Location.BuildingLocation
                                 ? ((Location.BuildingLocation) possibleMove.getTo()).getBuilding()
                                 .map(building -> building instanceof PlayerBuilding
-                                        ? ((PlayerBuilding) building).getPlayer() == player ? 0
+                                        ? player.equals(((PlayerBuilding) building).getPlayer()) ? 0
                                         : 2 // Other player's building
                                         : 1) // Neutral building
                                 .orElse(2) // Empty, shouldn't happen

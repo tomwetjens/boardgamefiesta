@@ -382,7 +382,7 @@ public class Istanbul implements State {
         playerStates.get(currentPlayer).beginTurn();
 
         // Status transitions
-        if (this.currentPlayer == playerOrder.get(0)) {
+        if (this.currentPlayer.equals(playerOrder.get(0))) {
             if (status == Status.LAST_ROUND) {
                 // Finished last round
                 status = Status.PLAY_LEFTOVER_BONUS_CARDS;
@@ -424,7 +424,7 @@ public class Istanbul implements State {
     @Override
     public void leave(Player player, Random random) {
         if (playerOrder.contains(player)) {
-            if (currentPlayer == player) {
+            if (currentPlayer.equals(player)) {
                 actionQueue.clear();
                 nextPlayer();
             }

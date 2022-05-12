@@ -389,7 +389,7 @@ public class Garth {
                                 .filter(buildingLocation -> buildingLocation.getBuilding()
                                         .filter(otherBuilding -> otherBuilding instanceof PlayerBuilding)
                                         .map(PlayerBuilding.class::cast)
-                                        .filter(playerBuilding -> playerBuilding.getPlayer() == player)
+                                        .filter(playerBuilding -> player.equals(playerBuilding.getPlayer()))
                                         .map(playerBuilding -> playerBuilding.getCraftsmen() < building.getCraftsmen())
                                         .orElse(false))
                                 .map(buildingLocation -> new BuildOption(building.getCraftsmen() - buildingLocation.getBuilding()

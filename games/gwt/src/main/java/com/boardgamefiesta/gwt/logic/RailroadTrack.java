@@ -1044,7 +1044,7 @@ public class RailroadTrack {
     }
 
     int numberOfDeliveries(Player player, City city) {
-        return (int) deliveries.computeIfAbsent(city, k -> new LinkedList<>()).stream().filter(p -> p == player).count();
+        return (int) deliveries.computeIfAbsent(city, k -> new LinkedList<>()).stream().filter(player::equals).count();
     }
 
     /**

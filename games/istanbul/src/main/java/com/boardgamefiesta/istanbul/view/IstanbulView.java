@@ -59,8 +59,8 @@ public class IstanbulView {
         var startPlayer = state.getPlayerOrder().get(0);
         players = state.getPlayers().stream().collect(Collectors.toMap(Player::getColor, player ->
                 new PlayerStateView(player, state.getPlayerState(player),
-                        player == startPlayer,
-                        player == viewer, state.isEnded())));
+                        player.equals(startPlayer),
+                        player.equals(viewer), state.isEnded())));
 
         if (viewer != null) {
             // Other players in play order

@@ -436,7 +436,7 @@ public class GWT implements State {
 
         var playerState = playerState(player);
 
-        while (currentPlayer == player && !actionStack.isEmpty() && !actionStack.canSkip()) {
+        while (currentPlayer.equals(player) && !actionStack.isEmpty() && !actionStack.canSkip()) {
             var possibleActions = actionStack.getPossibleActions();
 
             if (possibleActions.contains(Action.PlaceBid.class)) {
@@ -489,7 +489,7 @@ public class GWT implements State {
             }
         }
 
-        if (currentPlayer == player) {
+        if (currentPlayer.equals(player)) {
             endTurn(player, random);
         }
     }
@@ -672,7 +672,7 @@ public class GWT implements State {
             var players = railroadTrack.getDeliveries().get(city);
             stats.value("deliveries." + city.name(), players != null ?
                     players.stream()
-                            .filter(delivery -> delivery == player)
+                            .filter(player::equals)
                             .count() : 0);
         }
 
@@ -698,7 +698,7 @@ public class GWT implements State {
                         .filter(l -> l.getBuilding()
                                 .filter(building -> building.getName().equals(name))
                                 .filter(building -> building instanceof PlayerBuilding)
-                                .filter(building -> ((PlayerBuilding) building).getPlayer() == player)
+                                .filter(building -> player.equals(((PlayerBuilding) building).getPlayer()))
                                 .isPresent())
                         .findAny();
 
@@ -852,15 +852,15 @@ public class GWT implements State {
     }
 
     @Override
-    public void leave(Player player, Random random) {
+    public void leave(@NonNull Player player, @NonNull Random random) {
         if (status == Status.BIDDING) {
             playerOrder.remove(player);
 
-            if (currentPlayer == player && status != Status.STARTED) {
+            if (currentPlayer.equals(player) && status != Status.STARTED) {
                 afterEndTurn(random);
             }
         } else if (status == Status.STARTED) {
-            if (currentPlayer == player) {
+            if (currentPlayer.equals(player)) {
                 actionStack.clear();
 
                 afterEndTurn(random);

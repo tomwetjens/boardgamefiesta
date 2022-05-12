@@ -441,7 +441,7 @@ public class PowerGrid implements State {
     public Set<Class<? extends Action>> getActions(Player player) {
         switch (phase) {
             case AUCTION:
-                if (currentPlayer == player) {
+                if (currentPlayer.equals(player)) {
                     if (!isAuctionInProgress()) {
                         if (auctioningPlayers.contains(currentPlayer)) {
                             return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.StartAuction.class);
@@ -453,11 +453,11 @@ public class PowerGrid implements State {
                     }
                 }
             case RESOURCES:
-                if (currentPlayer == player) {
+                if (currentPlayer.equals(player)) {
                     return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.BuyResource.class);
                 }
             case BUILD:
-                if (currentPlayer == player) {
+                if (currentPlayer.equals(player)) {
                     return Collections.singleton(com.boardgamefiesta.powergrid.logic.Action.ConnectCity.class);
                 }
             case BUREAUCRACY:

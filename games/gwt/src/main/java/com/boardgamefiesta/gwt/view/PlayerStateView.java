@@ -85,7 +85,7 @@ public class PlayerStateView {
                 ? CardView.of(playerState.getDiscardPile().get(playerState.getDiscardPile().size() - 1))
                 : null;
 
-        if (viewingPlayer == playerState.getPlayer() || state.isEnded()) {
+        if (Objects.equals(viewingPlayer, playerState.getPlayer()) || state.isEnded()) {
             hand = playerState.getHand().stream()
                     .map(CardView::of)
                     .sorted()
@@ -96,7 +96,7 @@ public class PlayerStateView {
             handValue = null;
         }
 
-        if (state.isEnded() || viewingPlayer == playerState.getPlayer()
+        if (state.isEnded() || Objects.equals(viewingPlayer,playerState.getPlayer())
                 || state.getMode() == GWT.Options.Mode.STRATEGIC) {
             // Player is allowed to go through discard pile
             discardPile = playerState.getDiscardPile().stream()
@@ -107,7 +107,7 @@ public class PlayerStateView {
 
         drawStackSize = playerState.getDrawStack().size();
         if (state.isEnded() || state.getMode() == GWT.Options.Mode.STRATEGIC) {
-            if (viewingPlayer == playerState.getPlayer()) {
+            if (Objects.equals(viewingPlayer, playerState.getPlayer())) {
                 // Hand already visible to player, show only cards in actual draw stack
                 drawStack = playerState.getDrawStack().stream()
                         .map(CardView::of)

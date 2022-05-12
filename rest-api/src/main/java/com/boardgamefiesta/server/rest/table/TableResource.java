@@ -438,9 +438,9 @@ public class TableResource {
     }
 
     private void checkTurn(Table table, Player player) {
-        var currentPlayer = table.getCurrentPlayers();
+        var currentPlayers = table.getCurrentPlayers();
 
-        if (currentPlayer == null || !currentPlayer.contains(player)) {
+        if (currentPlayers == null || !currentPlayers.contains(player)) {
             throw APIException.forbidden(APIError.NOT_YOUR_TURN);
         }
     }
