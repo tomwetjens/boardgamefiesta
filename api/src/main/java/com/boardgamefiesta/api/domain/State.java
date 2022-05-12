@@ -26,36 +26,21 @@ import java.util.Random;
 import java.util.Set;
 
 public interface State {
-    void perform(Player player, Action action, Random random);
+    void perform(@NonNull Player player, @NonNull Action action, @NonNull Random random);
 
-    void addEventListener(EventListener eventListener);
+    void addEventListener(@NonNull EventListener eventListener);
 
-    void removeEventListener(EventListener eventListener);
+    void removeEventListener(@NonNull EventListener eventListener);
 
-    void skip(Player player, Random random);
+    void skip(@NonNull Player player, @NonNull Random random);
 
-    void endTurn(Player player, Random random);
+    void endTurn(@NonNull Player player, @NonNull Random random);
 
-    void forceEndTurn(Player player, @NonNull Random random);
+    void forceEndTurn(@NonNull Player player, @NonNull Random random);
 
-    int score(Player player);
-
-    /**
-     * @return players (that haven't left) ranked by their scores. 0=1st place, 1=2nd place, etc. 1st place == winner
-     */
-    List<Player> ranking();
-
-    boolean isEnded();
-
-    boolean canUndo();
+    void leave(@NonNull Player player, @NonNull Random random);
 
     Set<Player> getCurrentPlayers();
-
-    void leave(Player player, Random random);
-
-    Stats stats(Player player);
-
-    Optional<Integer> getTurn(Player player);
 
     /**
      * Estimated progress.
@@ -63,4 +48,20 @@ public interface State {
      * @return 0-100 percent
      */
     int getProgress();
+
+    boolean canUndo();
+
+    boolean isEnded();
+
+    int score(@NonNull Player player);
+
+    /**
+     * @return players (that haven't left) ranked by their scores. 0=1st place, 1=2nd place, etc. 1st place == winner
+     */
+    List<Player> ranking();
+
+    Stats stats(@NonNull Player player);
+
+    Optional<Integer> getTurn(@NonNull Player player);
+
 }
