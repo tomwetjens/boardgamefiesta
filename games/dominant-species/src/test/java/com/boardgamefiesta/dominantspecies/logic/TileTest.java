@@ -18,14 +18,43 @@
 
 package com.boardgamefiesta.dominantspecies.logic;
 
+import com.boardgamefiesta.api.domain.Player;
+import com.boardgamefiesta.api.domain.PlayerColor;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TileTest {
+
+    Player playerGreen = new Player("Player Green", PlayerColor.GREEN, Player.Type.HUMAN);
+    Player playerBlue = new Player("Player Blue", PlayerColor.BLUE, Player.Type.HUMAN);
+
+    @Nested
+    class DominanceTest {
+
+        @Test
+        void recalculateDominance() {
+            var mammals = Animal.initial(playerGreen, AnimalType.MAMMALS, 2);
+            mammals.addElement(ElementType.GRASS);
+            mammals.addElement(ElementType.SUN);
+
+            var amphibians = Animal.initial(playerBlue, AnimalType.AMPHIBIANS, 2);
+            amphibians.addElement(ElementType.GRUB);
+
+            var tile = Tile.initial(TileType.SAVANNAH, false);
+            tile.addSpecies(AnimalType.AMPHIBIANS, 1);
+            tile.addSpecies(AnimalType.MAMMALS, 3);
+
+            tile.recalculateDominance(Set.of(mammals, amphibians), List.of(ElementType.WATER, ElementType.SUN, ElementType.SUN));
+
+            assertThat(tile.getDominant()).contains(AnimalType.AMPHIBIANS);
+        }
+    }
 
     @Nested
     class ScoreTest {

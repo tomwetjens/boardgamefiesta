@@ -407,6 +407,8 @@ public class DominantSpecies implements State {
                         .ifPresent(ap -> nextActionPawn(random));
             }
         }
+
+        recalculateDominance();
     }
 
     private void skipAll(Random random) {
