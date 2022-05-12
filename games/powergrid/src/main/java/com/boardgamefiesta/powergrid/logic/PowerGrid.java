@@ -369,12 +369,6 @@ public class PowerGrid implements State {
     }
 
     @Override
-    public Optional<Integer> getTurn(Player player) {
-        // TODO
-        return Optional.empty();
-    }
-
-    @Override
     public int getProgress() {
         // TODO
         return 0;

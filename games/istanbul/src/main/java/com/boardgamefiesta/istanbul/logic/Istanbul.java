@@ -651,13 +651,6 @@ public class Istanbul implements State {
     }
 
     @Override
-    public Optional<Integer> getTurn(Player player) {
-        return Optional.ofNullable(playerStates.get(player))
-                .map(PlayerState::getStats)
-                .map(PlayerState.PlayerStats::getTurns);
-    }
-
-    @Override
     public int getProgress() {
         return Math.min(100, Math.round((float)playerStates.values().stream()
                 .mapToInt(PlayerState::getRubies)

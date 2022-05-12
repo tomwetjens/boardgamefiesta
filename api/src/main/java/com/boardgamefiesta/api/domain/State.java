@@ -21,7 +21,6 @@ package com.boardgamefiesta.api.domain;
 import lombok.NonNull;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
@@ -62,7 +61,5 @@ public interface State {
     List<Player> getRanking();
 
     Stats stats(@NonNull Player player);
-
-    Optional<Integer> getTurn(@NonNull Player player);
 
 }

@@ -859,11 +859,6 @@ public class DominantSpecies implements State {
     }
 
     @Override
-    public Optional<Integer> getTurn(@NonNull Player player) {
-        return Optional.empty();
-    }
-
-    @Override
     public int getProgress() {
         return Math.round((float) (deck.size() + availableCards.size()) / (float) Card.INITIAL_DECK_SIZE);
     }

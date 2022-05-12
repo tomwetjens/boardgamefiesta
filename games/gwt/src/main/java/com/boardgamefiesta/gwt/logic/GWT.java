@@ -284,16 +284,6 @@ public class GWT implements State {
     }
 
     @Override
-    public Optional<Integer> getTurn(Player player) {
-        if (status == Status.BIDDING) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(playerStates.get(player))
-                .map(PlayerState::getTurns)
-                .filter(turn -> turn > 0);
-    }
-
-    @Override
     public int getProgress() {
         return isEnded() ? 100 : jobMarket.isClosed() ? 99 : jobMarket.getProgress();
     }

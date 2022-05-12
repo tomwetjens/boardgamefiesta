@@ -48,7 +48,7 @@ public class Table implements AggregateRoot {
     private static final Duration REALTIME_TURN_LIMIT = Duration.of(10, ChronoUnit.MINUTES);
     private static final Duration TURN_BASED_TURN_LIMIT = Duration.of(12, ChronoUnit.HOURS);
 
-    private static final int MAX_TURNS_TO_ABANDON = 2;
+    private static final int MAX_PROGRESS_TO_ABANDON = 10;
     private static final int MIN_PROGRESS_TO_KEEP_WHEN_ABANDONED = 25;
 
     private static final SecureRandom RANDOM;
@@ -225,11 +225,7 @@ public class Table implements AggregateRoot {
     private void beginTurn(Player player) {
         player.beginTurn(type == Type.TURN_BASED ? TURN_BASED_TURN_LIMIT : REALTIME_TURN_LIMIT);
 
-        currentState.get()
-                .map(CurrentState::getState)
-                .flatMap(state -> state.getTurn(player.asPlayer()))
-                .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN_NR, List.of(turns))),
-                        () -> log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN)));
+        log.add(new LogEntry(player, LogEntry.Type.BEGIN_TURN));
 
         new BeginTurn(Lazy.of(this), game.getId(), id, type, player.getUserId(), player.getTurnLimit().get(), started).fire();
     }
@@ -238,11 +234,7 @@ public class Table implements AggregateRoot {
         player.endTurn();
 
         if (player.getStatus() != Player.Status.LEFT) {
-            currentState.get()
-                    .map(CurrentState::getState)
-                    .flatMap(state -> state.getTurn(player.asPlayer()))
-                    .ifPresentOrElse(turns -> log.add(new LogEntry(player, LogEntry.Type.END_TURN_NR, List.of(turns))),
-                            () -> log.add(new LogEntry(player, LogEntry.Type.END_TURN)));
+            log.add(new LogEntry(player, LogEntry.Type.END_TURN));
 
             new EndTurn(Lazy.of(this), id, player.getUserId(), Instant.now()).fire();
         }
@@ -255,9 +247,9 @@ public class Table implements AggregateRoot {
             case ENDED:
                 return Optional.of(ended.plus(RETENTION_AFTER_ENDED));
             case ABANDONED:
-                return getProgress() >= MIN_PROGRESS_TO_KEEP_WHEN_ABANDONED
-                        ? Optional.of(updated.plus(RETENTION_AFTER_ENDED))
-                        : Optional.of(updated.plus(RETENTION_AFTER_ABANDONED));
+                return Optional.of(progress >= MIN_PROGRESS_TO_KEEP_WHEN_ABANDONED
+                        ? updated.plus(RETENTION_AFTER_ENDED)
+                        : updated.plus(RETENTION_AFTER_ABANDONED));
             default:
                 return Optional.empty();
         }
@@ -396,12 +388,11 @@ public class Table implements AggregateRoot {
                     && players.stream().filter(Player::isPlaying).count() < game.getMinNumberOfPlayers()) {
                 // Game cannot continue with one less player
 
-                // If the game is only against computer players, then just abandon
-                // If the player has not played X number of turns yet, then just abandon
-                if (hasMoreThanOneHumanPlayer() && getState().getTurn(player).orElse(0) > MAX_TURNS_TO_ABANDON) {
-                    end();
-                } else {
+                // If the game is only against computer players, or if the game has not progressed enough yet, then just abandon
+                if (!hasMoreThanOneHumanPlayer() || progress > MAX_PROGRESS_TO_ABANDON) {
                     abandon();
+                } else {
+                    end();
                 }
             }
         }
