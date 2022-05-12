@@ -798,7 +798,6 @@ public class DominantSpecies implements State {
         endTurn(player, random);
     }
 
-    @Override
     public List<Player> getPlayers() {
         return initiativeTrack.stream()
                 .map(animals::get)
