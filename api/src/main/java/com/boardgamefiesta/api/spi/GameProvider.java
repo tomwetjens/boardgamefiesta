@@ -24,7 +24,6 @@ import com.boardgamefiesta.api.query.ViewMapper;
 import com.boardgamefiesta.api.repository.StateDeserializer;
 import com.boardgamefiesta.api.repository.StateSerializer;
 
-import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
 
@@ -38,7 +37,7 @@ public interface GameProvider<T extends State> {
 
     Set<PlayerColor> getSupportedColors();
 
-    T start(Set<Player> players, Options options, EventListener eventListener, Random random);
+    T start(Set<Player> players, Options options, InGameEventListener eventListener, Random random);
 
     StateSerializer<T> getStateSerializer();
 

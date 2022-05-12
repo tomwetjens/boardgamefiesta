@@ -24,7 +24,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
 
-import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
 
@@ -49,7 +48,7 @@ public class Game {
         return provider.getSupportedColors();
     }
 
-    public State start(Set<Player> players, Options options, EventListener eventListener, Random random) {
+    public State start(Set<Player> players, Options options, InGameEventListener eventListener, Random random) {
         return provider.start(players, options, eventListener, random);
     }
 

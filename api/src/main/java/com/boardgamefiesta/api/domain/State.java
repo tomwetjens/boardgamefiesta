@@ -28,13 +28,22 @@ import java.util.Set;
  * Represents the actual game implementation.
  */
 public interface State {
-    void perform(@NonNull Player player, @NonNull Action action, @NonNull Random random);
 
-    void addEventListener(@NonNull EventListener eventListener);
+    /**
+     * Performs an action from the player.
+     *
+     * @param player The player who is performing the action.
+     * @param action The action to perform.
+     * @param random Pseudo random number generator.
+     * @throws InGameException if the action cannot be performed
+     */
+    void perform(@NonNull Player player, @NonNull Action action, @NonNull Random random) throws InGameException;
 
-    void removeEventListener(@NonNull EventListener eventListener);
+    void addEventListener(@NonNull InGameEventListener eventListener);
 
-    void skip(@NonNull Player player, @NonNull Random random);
+    void removeEventListener(@NonNull InGameEventListener eventListener);
+
+    void skip(@NonNull Player player, @NonNull Random random) throws InGameException;
 
     /**
      * Ends turn of a player.
@@ -43,7 +52,7 @@ public interface State {
      * @param player Player whose turn to end.
      * @param random Pseudo random number generator.
      */
-    void endTurn(@NonNull Player player, @NonNull Random random);
+    void endTurn(@NonNull Player player, @NonNull Random random) throws InGameException;
 
     /**
      * Forces an unresponsive player's turn to be ended.
@@ -52,7 +61,7 @@ public interface State {
      * @param player Player whose turn to forcibly end.
      * @param random Pseudo random number generator.
      */
-    void forceEndTurn(@NonNull Player player, @NonNull Random random);
+    void forceEndTurn(@NonNull Player player, @NonNull Random random) throws InGameException;
 
     /**
      * Removes a player from the game after it was started.
@@ -62,7 +71,7 @@ public interface State {
      * @param player Player who left the game.
      * @param random Pseudo random number generator.
      */
-    void leave(@NonNull Player player, @NonNull Random random);
+    void leave(@NonNull Player player, @NonNull Random random) throws InGameException;
 
     Set<Player> getCurrentPlayers();
 

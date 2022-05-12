@@ -18,7 +18,7 @@
 
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.api.domain.Stats;
@@ -83,7 +83,7 @@ public class GWT implements State {
     @Getter(value = AccessLevel.PACKAGE)
     private final ActionStack actionStack;
 
-    private transient Set<EventListener> eventListeners;
+    private transient Set<InGameEventListener> eventListeners;
 
     @Getter
     private Player currentPlayer;
@@ -101,11 +101,11 @@ public class GWT implements State {
     /**
      * For backwards compatbility, starts 1nd edition.
      */
-    public static GWT start(@NonNull Set<Player> players, @NonNull Options options, EventListener eventListener, @NonNull Random random) {
+    public static GWT start(@NonNull Set<Player> players, @NonNull Options options, InGameEventListener eventListener, @NonNull Random random) {
         return start(Edition.FIRST, players, options, eventListener, random);
     }
 
-    public static GWT start(@NonNull Edition edition, @NonNull Set<Player> players, @NonNull Options options, EventListener eventListener, @NonNull Random random) {
+    public static GWT start(@NonNull Edition edition, @NonNull Set<Player> players, @NonNull Options options, InGameEventListener eventListener, @NonNull Random random) {
         if (players.size() < 2) {
             throw new GWTException(GWTError.AT_LEAST_2_PLAYERS_REQUIRED);
         }
@@ -333,7 +333,7 @@ public class GWT implements State {
     }
 
     @Override
-    public void addEventListener(EventListener eventListener) {
+    public void addEventListener(InGameEventListener eventListener) {
         if (eventListeners == null) {
             // Could be null after deserialization
             eventListeners = new HashSet<>();
@@ -342,7 +342,7 @@ public class GWT implements State {
     }
 
     @Override
-    public void removeEventListener(EventListener eventListener) {
+    public void removeEventListener(InGameEventListener eventListener) {
         eventListeners.remove(eventListener);
     }
 

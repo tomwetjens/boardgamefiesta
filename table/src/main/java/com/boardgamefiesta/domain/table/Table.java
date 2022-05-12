@@ -18,7 +18,7 @@
 
 package com.boardgamefiesta.domain.table;
 
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.DomainEvent;
@@ -196,7 +196,7 @@ public class Table implements AggregateRoot {
         try {
             log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.START));
 
-            EventListener eventListener = event -> log.add(new LogEntry(this, event));
+            InGameEventListener eventListener = event -> log.add(new LogEntry(this, event));
 
             var state = game.start(players.stream()
                     .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor().orElseThrow(),
@@ -292,7 +292,7 @@ public class Table implements AggregateRoot {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
-        EventListener eventListener = event -> log.add(new LogEntry(this, event));
+        InGameEventListener eventListener = event -> log.add(new LogEntry(this, event));
         state.addEventListener(eventListener);
         try {
             change.accept(state);

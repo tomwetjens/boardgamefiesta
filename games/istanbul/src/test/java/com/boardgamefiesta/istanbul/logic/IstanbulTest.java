@@ -18,7 +18,7 @@
 
 package com.boardgamefiesta.istanbul.logic;
 
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
 import org.junit.jupiter.api.Nested;
@@ -41,7 +41,7 @@ class IstanbulTest {
     private Player playerBlue = new Player("Blue", PlayerColor.BLUE, Player.Type.HUMAN);
 
     @Mock
-    EventListener eventListener;
+    InGameEventListener eventListener;
 
     @Nested
     class BonusCards {

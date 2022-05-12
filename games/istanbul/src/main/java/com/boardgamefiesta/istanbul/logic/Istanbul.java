@@ -19,7 +19,7 @@
 
 package com.boardgamefiesta.istanbul.logic;
 
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.repository.JsonDeserializer;
 import com.boardgamefiesta.api.repository.JsonSerializer;
@@ -77,9 +77,9 @@ public class Istanbul implements State {
 
     private boolean canUndo;
 
-    private List<EventListener> eventListeners;
+    private List<InGameEventListener> eventListeners;
 
-    public static Istanbul start(@NonNull Set<Player> players, @NonNull LayoutType layoutType, EventListener eventListener, @NonNull Random random) {
+    public static Istanbul start(@NonNull Set<Player> players, @NonNull LayoutType layoutType, InGameEventListener eventListener, @NonNull Random random) {
         var playerOrder = new ArrayList<>(players);
         Collections.shuffle(playerOrder, random);
 
@@ -235,7 +235,7 @@ public class Istanbul implements State {
     }
 
     @Override
-    public void addEventListener(EventListener eventListener) {
+    public void addEventListener(InGameEventListener eventListener) {
         if (eventListeners == null) {
             // Could be null after deserialization
             eventListeners = new LinkedList<>();
@@ -244,7 +244,7 @@ public class Istanbul implements State {
     }
 
     @Override
-    public void removeEventListener(EventListener eventListener) {
+    public void removeEventListener(InGameEventListener eventListener) {
         if (eventListeners != null) {
             // Could be null after deserialization
             eventListeners.remove(eventListener);

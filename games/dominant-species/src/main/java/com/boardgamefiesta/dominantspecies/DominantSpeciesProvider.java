@@ -19,7 +19,7 @@
 package com.boardgamefiesta.dominantspecies;
 
 import com.boardgamefiesta.api.command.ActionMapper;
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
@@ -121,7 +121,7 @@ public class DominantSpeciesProvider implements GameProvider<DominantSpecies> {
     }
 
     @Override
-    public DominantSpecies start(Set<Player> players, Options options, EventListener eventListener, Random random) {
+    public DominantSpecies start(Set<Player> players, Options options, InGameEventListener eventListener, Random random) {
         return DominantSpecies.start(players, random);
     }
 

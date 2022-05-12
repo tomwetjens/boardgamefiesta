@@ -18,7 +18,7 @@
 
 package com.boardgamefiesta.dominantspecies.logic;
 
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.api.domain.Stats;
@@ -107,7 +107,7 @@ public class DominantSpecies implements State {
 
     private boolean canUndo;
 
-    private final transient List<EventListener> eventListeners = new LinkedList<>();
+    private final transient List<InGameEventListener> eventListeners = new LinkedList<>();
 
     public static DominantSpecies start(@NonNull Set<Player> players, @NonNull Random random) {
         return start(randomAnimalPerPlayer(players, random), random);
@@ -759,12 +759,12 @@ public class DominantSpecies implements State {
     }
 
     @Override
-    public void addEventListener(@NonNull EventListener eventListener) {
+    public void addEventListener(@NonNull InGameEventListener eventListener) {
         eventListeners.add(eventListener);
     }
 
     @Override
-    public void removeEventListener(@NonNull EventListener eventListener) {
+    public void removeEventListener(@NonNull InGameEventListener eventListener) {
         eventListeners.remove(eventListener);
     }
 

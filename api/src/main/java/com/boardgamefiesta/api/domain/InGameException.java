@@ -19,13 +19,14 @@
 package com.boardgamefiesta.api.domain;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 public class InGameException extends RuntimeException {
 
     @Getter
     private final String errorCode;
 
-    protected InGameException(String errorCode) {
+    protected InGameException(@NonNull String errorCode) {
         super(errorCode);
         this.errorCode = errorCode;
     }

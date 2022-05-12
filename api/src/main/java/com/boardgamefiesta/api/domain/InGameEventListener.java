@@ -18,6 +18,8 @@
 
 package com.boardgamefiesta.api.domain;
 
-public interface EventListener {
-    void event(InGameEvent event);
+import lombok.NonNull;
+
+public interface InGameEventListener {
+    void event(@NonNull InGameEvent event);
 }

@@ -18,7 +18,7 @@
 
 package com.boardgamefiesta.powergrid.logic;
 
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.State;
 import com.boardgamefiesta.api.domain.Stats;
@@ -76,7 +76,7 @@ public class PowerGrid implements State {
 
     private Auction auction;
 
-    public static PowerGrid start(@NonNull Set<Player> players, @NonNull NetworkMap map, @NonNull Set<Area> areas, EventListener eventListener, @NonNull Random random) {
+    public static PowerGrid start(@NonNull Set<Player> players, @NonNull NetworkMap map, @NonNull Set<Area> areas, InGameEventListener eventListener, @NonNull Random random) {
         if (players.size() < 2) {
             throw new PowerGridException(PowerGridError.NOT_ENOUGH_PLAYERS);
         }
@@ -323,12 +323,12 @@ public class PowerGrid implements State {
     }
 
     @Override
-    public void addEventListener(EventListener eventListener) {
+    public void addEventListener(InGameEventListener eventListener) {
 
     }
 
     @Override
-    public void removeEventListener(EventListener eventListener) {
+    public void removeEventListener(InGameEventListener eventListener) {
 
     }
 

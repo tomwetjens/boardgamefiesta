@@ -18,7 +18,7 @@
 
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +64,7 @@ class GWTTest {
     private Player playerD = new Player("Player D", PlayerColor.RED, Player.Type.HUMAN);
 
     @Mock
-    EventListener eventListener;
+    InGameEventListener eventListener;
 
     @Nested
     class Create {

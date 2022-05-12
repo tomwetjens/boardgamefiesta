@@ -19,7 +19,7 @@
 package com.boardgamefiesta.powergrid;
 
 import com.boardgamefiesta.api.command.ActionMapper;
-import com.boardgamefiesta.api.domain.EventListener;
+import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.Options;
 import com.boardgamefiesta.api.domain.Player;
 import com.boardgamefiesta.api.domain.PlayerColor;
@@ -66,7 +66,7 @@ public class PowerGridProvider implements GameProvider<PowerGrid> {
     }
 
     @Override
-    public PowerGrid start(Set<Player> players, Options options, EventListener eventListener, Random random) {
+    public PowerGrid start(Set<Player> players, Options options, InGameEventListener eventListener, Random random) {
         return PowerGrid.start(players, NetworkMap.GERMANY, NetworkMap.GERMANY.randomAreas(players.size(), random), eventListener, random);
     }
 
