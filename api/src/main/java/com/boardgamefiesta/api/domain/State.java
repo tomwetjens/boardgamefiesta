@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+/**
+ * Represents the actual game implementation.
+ */
 public interface State {
     void perform(@NonNull Player player, @NonNull Action action, @NonNull Random random);
 

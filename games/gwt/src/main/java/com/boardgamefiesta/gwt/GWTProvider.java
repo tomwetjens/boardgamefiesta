@@ -27,7 +27,6 @@ import com.boardgamefiesta.api.query.ViewMapper;
 import com.boardgamefiesta.api.repository.StateDeserializer;
 import com.boardgamefiesta.api.repository.StateSerializer;
 import com.boardgamefiesta.api.spi.GameProvider;
-import com.boardgamefiesta.gwt.logic.Automa;
 import com.boardgamefiesta.gwt.logic.GWT;
 import com.boardgamefiesta.gwt.logic.Garth;
 import com.boardgamefiesta.gwt.view.ActionType;
@@ -82,13 +81,7 @@ public class GWTProvider implements GameProvider<GWT> {
 
     @Override
     public void executeAutoma(GWT state, Player player, Random random) {
-        var automaState = state.playerState(player).getAutomaState().orElseThrow();
-        if (automaState != null) {
-            automaState.execute(state, random);
-        } else {
-            // For backwards compatibility
-            new Automa().execute(state, player, random);
-        }
+        state.executeAutoma(player, random);
     }
 
     @Override

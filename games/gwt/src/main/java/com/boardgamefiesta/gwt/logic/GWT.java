@@ -959,6 +959,13 @@ public class GWT implements State {
         return player;
     }
 
+    public void executeAutoma(Player player, Random random) {
+        playerStates.get(player)
+                .getAutomaState()
+                .orElseThrow(() -> new GWTException(GWTError.NO_AUTOMA_STATE))
+                .execute(this, random);
+    }
+
     public enum Status {
         BIDDING,
         STARTED,
