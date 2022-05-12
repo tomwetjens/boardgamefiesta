@@ -799,11 +799,6 @@ public class DominantSpecies implements State {
     }
 
     @Override
-    public List<Player> getPlayerOrder() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public List<Player> getPlayers() {
         return initiativeTrack.stream()
                 .map(animals::get)

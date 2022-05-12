@@ -590,8 +590,9 @@ public class GWT implements State {
     public PlayerState playerState(Player player) {
         return playerStates.get(player);
     }
-
-    @Override
+    /**
+     * @return players in order (that are still playing, not including players that left)
+     */
     public List<Player> getPlayerOrder() {
         return Collections.unmodifiableList(playerOrder);
     }
@@ -993,27 +994,21 @@ public class GWT implements State {
         @Builder.Default
         Variant variant = Variant.ORIGINAL;
 
-        @NonNull
         @Builder.Default
         boolean simmental = false;
 
-        @NonNull
         @Builder.Default
         boolean stationMasterPromos = false;
 
-        @NonNull
         @Builder.Default
         boolean building11 = false;
 
-        @NonNull
         @Builder.Default
         boolean building13 = false;
 
-        @NonNull
         @Builder.Default
         boolean railsToTheNorth = false;
 
-        @NonNull
         @Builder.Default
         Garth.Difficulty difficulty = Garth.Difficulty.EASY;
 

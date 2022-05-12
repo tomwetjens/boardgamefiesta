@@ -609,7 +609,9 @@ public class Istanbul implements State {
         return layout.getPoliceStation();
     }
 
-    @Override
+    /**
+     * @return players in order (that are still playing, not including players that left)
+     */
     public List<Player> getPlayerOrder() {
         return Collections.unmodifiableList(playerOrder);
     }

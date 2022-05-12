@@ -36,11 +36,6 @@ public interface State {
     void forceEndTurn(Player player, @NonNull Random random);
 
     /**
-     * @return players in order (that are still playing, not including players that left)
-     */
-    List<Player> getPlayerOrder();
-
-    /**
      * @return all original players (at start of the game, including that left during the game), in original order
      */
     List<Player> getPlayers();
