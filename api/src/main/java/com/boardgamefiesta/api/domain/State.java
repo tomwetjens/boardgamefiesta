@@ -49,8 +49,16 @@ public interface State {
      */
     int getProgress();
 
+    /**
+     * Can the action that led to this State be undone?
+     * @return <code>true</code> if the action can be undone to the previous State, <code>false</code> otherwise.
+     */
     boolean canUndo();
 
+    /**
+     * Has the game ended?
+     * @return <code>true</code> if the game has ended, <code>false</code> otherwise.
+     */
     boolean isEnded();
 
     int getScore(@NonNull Player player);
