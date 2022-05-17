@@ -29,14 +29,18 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class JobMarket {
+
+    private static final List<Integer> COST = List.of(6, 6, 7, 5, 7, 9, 6, 8, 10, 6, 5, 4);
+    private static final Set<Integer> CATTLE_MARKET = Set.of(6, 9);
 
     @Getter
     private final List<Row> rows;
@@ -50,20 +54,9 @@ public class JobMarket {
     JobMarket(int playerCount) {
         adjustRowLimit(playerCount);
 
-        this.rows = Arrays.asList(
-                new Row(6),
-                new Row(6),
-                new Row(7),
-                new Row(5),
-                new Row(7),
-                new Row(9),
-                new Row(6, true),
-                new Row(8),
-                new Row(10),
-                new Row(6, true),
-                new Row(5),
-                new Row(4));
-
+        this.rows = IntStream.range(0, COST.size())
+                .mapToObj(i -> new Row())
+                .collect(Collectors.toList());
         this.currentRowIndex = 0;
     }
 
@@ -111,7 +104,7 @@ public class JobMarket {
         if (row.workers.size() == rowLimit) {
             currentRowIndex++;
 
-            return currentRowIndex < rows.size() && rows.get(currentRowIndex).cattleMarket;
+            return currentRowIndex < rows.size() && CATTLE_MARKET.contains(currentRowIndex);
         }
 
         return false;
@@ -146,7 +139,7 @@ public class JobMarket {
             throw new GWTException(GWTError.WORKER_NOT_AVAILABLE);
         }
 
-        return row.getCost();
+        return COST.get(rowIndex);
     }
 
     public int getProgress() {
@@ -160,21 +153,9 @@ public class JobMarket {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class Row {
 
-        @Getter
-        private final int cost;
-
-        @Getter
-        private final boolean cattleMarket;
-
         private final List<Worker> workers;
 
-        private Row(int cost) {
-            this(cost, false);
-        }
-
-        private Row(int cost, boolean cattleMarket) {
-            this.cost = cost;
-            this.cattleMarket = cattleMarket;
+        private Row() {
             this.workers = new ArrayList<>(4);
         }
 
@@ -184,16 +165,12 @@ public class JobMarket {
 
         JsonObject serialize(JsonBuilderFactory factory) {
             return factory.createObjectBuilder()
-                    .add("cost", cost)
-                    .add("cattleMarket", cattleMarket)
                     .add("workers", JsonSerializer.forFactory(factory).fromStrings(workers.stream().map(Worker::name)))
                     .build();
         }
 
         static Row deserialize(JsonObject jsonObject) {
-            return new Row(jsonObject.getInt("cost"),
-                    jsonObject.getBoolean("cattleMarket"),
-                    jsonObject.getJsonArray("workers").getValuesAs(jsonValue -> Worker.valueOf(((JsonString) jsonValue).getString())));
+            return new Row(jsonObject.getJsonArray("workers").getValuesAs(jsonValue -> Worker.valueOf(((JsonString) jsonValue).getString())));
         }
     }
 }
