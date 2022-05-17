@@ -777,7 +777,7 @@ public class DominantSpecies implements State {
 
     @Override
     public void endTurn(@NonNull Player player, @NonNull Random random) {
-        if (getAnimal(currentAnimal).getPlayer() != player) {
+        if (!getAnimal(currentAnimal).getPlayer().equals(player)) {
             throw new DominantSpeciesException(DominantSpeciesError.NOT_CURRENT_PLAYER);
         }
         endTurn(random);
@@ -785,7 +785,7 @@ public class DominantSpecies implements State {
 
     @Override
     public void forceEndTurn(@NonNull Player player, @NonNull Random random) {
-        if (getAnimal(currentAnimal).getPlayer() != player) {
+        if (!getAnimal(currentAnimal).getPlayer().equals(player)) {
             throw new DominantSpeciesException(DominantSpeciesError.NOT_CURRENT_PLAYER);
         }
 

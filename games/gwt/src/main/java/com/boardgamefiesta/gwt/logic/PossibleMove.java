@@ -56,7 +56,7 @@ public class PossibleMove {
                 .filter(location -> !(location instanceof Location.BuildingLocation) || ((Location.BuildingLocation) location).getBuilding()
                         .filter(building -> building instanceof PlayerBuilding)
                         .map(building -> (PlayerBuilding) building)
-                        .map(playerBuilding -> playerBuilding.getPlayer() != player)
+                        .map(playerBuilding -> !playerBuilding.getPlayer().equals(player))
                         .orElse(false))
                 .mapToInt(location -> location.getHand().getFee(playerCount))
                 .sum());
@@ -73,7 +73,7 @@ public class PossibleMove {
                         var otherPlayerFee = ((Location.BuildingLocation) location).getBuilding()
                                 .filter(building -> building instanceof PlayerBuilding)
                                 .map(building -> (PlayerBuilding) building)
-                                .filter(playerBuilding -> playerBuilding.getPlayer() != player)
+                                .filter(playerBuilding -> !playerBuilding.getPlayer().equals(player))
                                 .filter(playerBuilding -> playerBuilding.getHand() != Hand.NONE)
                                 .map(playerBuilding -> new PlayerFee(playerBuilding.getPlayer(), fee));
 

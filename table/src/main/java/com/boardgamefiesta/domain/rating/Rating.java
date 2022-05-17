@@ -77,13 +77,13 @@ public class Rating {
         // Assume 1v1 sub matches for now, no teams
         // So each player's score is considered against each other player's score individually
         var deltas = table.getPlayers().stream()
-                .filter(p -> p != player)
+                .filter(p -> !p.equals(player))
                 .filter(Player::isUser)
                 .collect(Collectors.toMap(opponentPlayer -> opponentPlayer.getUserId().get(), opponentPlayer -> {
                     var opponentUserId = opponentPlayer.getUserId().get();
                     var actualScore = player.isPlaying() && !opponentPlayer.isPlaying() ? WIN
-                                    : !player.isPlaying() && opponentPlayer.isPlaying() ? LOSS
-                                    : actualScore(ranking.indexOf(userId), ranking.indexOf(opponentUserId));
+                            : !player.isPlaying() && opponentPlayer.isPlaying() ? LOSS
+                            : actualScore(ranking.indexOf(userId), ranking.indexOf(opponentUserId));
                     return RATING_SYSTEM.calculateNewRating(actualScore, this, currentRatings.get(opponentUserId), numberOfPlayers) - rating;
                 }));
 
