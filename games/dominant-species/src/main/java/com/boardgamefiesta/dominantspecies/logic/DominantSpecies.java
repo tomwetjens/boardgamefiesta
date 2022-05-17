@@ -146,6 +146,8 @@ public class DominantSpecies implements State {
 
         game.drawCards();
 
+        game.recalculateDominance();
+
         return game;
     }
 

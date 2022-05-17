@@ -63,6 +63,20 @@ class DominantSpeciesTest {
 
             assertThat(ds.getCurrentPlayers()).containsExactly(playerA);
             assertThat(ds.possibleActions()).containsExactly(Action.PlaceActionPawn.class);
+
+            assertThat(ds.getTile(DominantSpecies.INITIAL_JUNGLE).get().getSpecies()).containsEntry(AnimalType.ARACHNIDS, 2);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_JUNGLE).get().getDominant()).contains(AnimalType.ARACHNIDS);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_FOREST).get().getSpecies()).containsEntry(AnimalType.ARACHNIDS, 1);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_FOREST).get().getDominant()).contains(AnimalType.ARACHNIDS);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_WETLAND).get().getSpecies()).containsEntry(AnimalType.ARACHNIDS, 1);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_WETLAND).get().getDominant()).contains(AnimalType.ARACHNIDS);
+
+            assertThat(ds.getTile(DominantSpecies.INITIAL_DESERT).get().getSpecies()).containsEntry(AnimalType.REPTILES, 2);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_DESERT).get().getDominant()).contains(AnimalType.REPTILES);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_SAVANNAH).get().getSpecies()).containsEntry(AnimalType.REPTILES, 1);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_SAVANNAH).get().getDominant()).contains(AnimalType.REPTILES);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().getSpecies()).containsEntry(AnimalType.REPTILES, 1);
+            assertThat(ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().getDominant()).contains(AnimalType.REPTILES);
         }
     }
 
