@@ -138,7 +138,7 @@ public class GWT implements State {
                 .kansasCitySupply(kansasCitySupply)
                 .trail(new Trail(edition, options.getBuildings() == Options.Buildings.BEGINNER, random))
                 .jobMarket(new JobMarket())
-                .foresights(new Foresights(kansasCitySupply))
+                .foresights(Foresights.initial(kansasCitySupply))
                 .cattleMarket(options.getVariant() == Options.Variant.BALANCED
                         ? CattleMarket.balanced(players.size(), edition == Edition.SECOND && options.isSimmental(), random)
                         : CattleMarket.original(players.size(), edition == Edition.SECOND && options.isSimmental(), random))
@@ -510,7 +510,7 @@ public class GWT implements State {
             }
         }
 
-        foresights.fillUp(!jobMarket.isClosed());
+        foresights.fillUp(kansasCitySupply, !jobMarket.isClosed());
 
         if (currentPlayerState().hasJobMarketToken()) {
             // current player is ending the game, every other player can have one more turn
@@ -807,7 +807,7 @@ public class GWT implements State {
                 .kansasCitySupply(kansasCitySupply)
                 .trail(trail)
                 .jobMarket(JobMarket.deserialize(jsonObject.getJsonObject("jobMarket")))
-                .foresights(Foresights.deserialize(kansasCitySupply, jsonObject.getJsonObject("foresights")))
+                .foresights(Foresights.deserialize(jsonObject.getJsonObject("foresights")))
                 .cattleMarket(CattleMarket.deserialize(jsonObject.getJsonObject("cattleMarket")))
                 .objectiveCards(ObjectiveCards.deserialize(jsonObject.getJsonObject("objectiveCards")))
                 .actionStack(ActionStack.deserialize(jsonObject.getJsonObject("actionStack")))

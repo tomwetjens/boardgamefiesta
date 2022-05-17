@@ -39,7 +39,7 @@ class ForesightsTest {
 
         @Test
         void emptyColumn() {
-            var foresights = Foresights.deserialize(kansasCitySupply, Json.createObjectBuilder()
+            var foresights = Foresights.deserialize(Json.createObjectBuilder()
                     .add("spaces", Json.createArrayBuilder()
                             .add(Json.createArrayBuilder())
                             .add(Json.createArrayBuilder())
@@ -53,7 +53,7 @@ class ForesightsTest {
 
         @Test
         void nullInColumn() {
-            var foresights = Foresights.deserialize(kansasCitySupply, Json.createObjectBuilder()
+            var foresights = Foresights.deserialize(Json.createObjectBuilder()
                     .add("spaces", Json.createArrayBuilder()
                             .add(Json.createArrayBuilder()
                                     .addNull()
@@ -84,7 +84,7 @@ class ForesightsTest {
 
         @Test
         void oneInColumn() {
-            var foresights = Foresights.deserialize(kansasCitySupply, Json.createObjectBuilder()
+            var foresights = Foresights.deserialize(Json.createObjectBuilder()
                     .add("spaces", Json.createArrayBuilder()
                             .add(Json.createArrayBuilder()
                                     .add(Json.createObjectBuilder()
@@ -118,9 +118,9 @@ class ForesightsTest {
 
     @Test
     void fillUpWhenSupplyIsEmpty() {
-        var foresights = new Foresights(kansasCitySupply);
+        var foresights = Foresights.empty();
 
-        foresights.fillUp(false);
+        foresights.fillUp(kansasCitySupply, false);
 
         assertThat(foresights.isEmpty()).isTrue();
     }

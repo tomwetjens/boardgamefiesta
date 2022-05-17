@@ -37,30 +37,28 @@ public class Foresights {
     private static final int NUM_COLUMNS = 3;
     private static final int NUM_ROWS = 2;
 
-    private final KansasCitySupply kansasCitySupply;
     private final KansasCitySupply.Tile[][] spaces;
 
-    Foresights(KansasCitySupply kansasCitySupply) {
-        this(kansasCitySupply, new KansasCitySupply.Tile[NUM_COLUMNS][NUM_ROWS]);
-        fillUp(true);
+    static Foresights initial(KansasCitySupply kansasCitySupply) {
+        var foresights = empty();
+        foresights.fillUp(kansasCitySupply, true);
+        return foresights;
     }
 
-    void fillUp(boolean workers) {
+    static Foresights empty() {
+        return new Foresights(new KansasCitySupply.Tile[NUM_COLUMNS][NUM_ROWS]);
+    }
+
+    void fillUp(KansasCitySupply kansasCitySupply, boolean workers) {
         for (int columnIndex = 0; columnIndex < NUM_COLUMNS; columnIndex++) {
             for (int rowIndex = 0; rowIndex < NUM_ROWS; rowIndex++) {
                 if (spaces[columnIndex][rowIndex] == null) {
-                    draw(workers, columnIndex, rowIndex);
+                    spaces[columnIndex][rowIndex] = kansasCitySupply.draw(columnIndex)
+                            .filter(tile -> tile.getWorker() == null || workers)
+                            .orElse(null);
                 }
             }
         }
-    }
-
-    private void draw(boolean workers, int columnIndex, int rowIndex) {
-        kansasCitySupply.draw(columnIndex).ifPresent(tile -> {
-            if (tile.getWorker() == null || workers) {
-                spaces[columnIndex][rowIndex] = tile;
-            }
-        });
     }
 
     JsonObject serialize(JsonBuilderFactory factory) {
@@ -71,8 +69,8 @@ public class Foresights {
                 .build();
     }
 
-    static Foresights deserialize(KansasCitySupply kansasCitySupply, JsonObject jsonObject) {
-        return new Foresights(kansasCitySupply, Arrays.copyOf(
+    static Foresights deserialize(JsonObject jsonObject) {
+        return new Foresights(Arrays.copyOf(
                 jsonObject.getJsonArray("spaces").stream()
                         .map(JsonValue::asJsonArray)
                         .map(JsonArray::stream)
