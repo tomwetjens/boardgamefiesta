@@ -683,7 +683,7 @@ class GWTTest {
 
             // Simulate that job market is closed and player has taken job market token
             while (!game.getJobMarket().isClosed()) {
-                game.getJobMarket().addWorker(Worker.COWBOY);
+                game.getJobMarket().addWorker(Worker.COWBOY, 3);
             }
             currentPlayerState.gainJobMarketToken();
         }

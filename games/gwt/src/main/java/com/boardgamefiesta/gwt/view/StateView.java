@@ -102,7 +102,7 @@ public class StateView {
 
         trail = new TrailView(state.getTrail());
 
-        jobMarket = new JobMarketView(state.getJobMarket());
+        jobMarket = new JobMarketView(state.getJobMarket(), state.getPlayerOrder().size());
 
         cattleMarket = new CattleMarketView(state.getMode(), state.getCattleMarket());
 

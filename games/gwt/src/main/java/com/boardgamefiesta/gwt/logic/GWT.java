@@ -137,7 +137,7 @@ public class GWT implements State {
                 .railroadTrack(RailroadTrack.initial(edition, players, options, random))
                 .kansasCitySupply(kansasCitySupply)
                 .trail(new Trail(edition, options.getBuildings() == Options.Buildings.BEGINNER, random))
-                .jobMarket(new JobMarket(players.size()))
+                .jobMarket(new JobMarket())
                 .foresights(new Foresights(kansasCitySupply))
                 .cattleMarket(options.getVariant() == Options.Variant.BALANCED
                         ? CattleMarket.balanced(players.size(), edition == Edition.SECOND && options.isSimmental(), random)
@@ -267,7 +267,7 @@ public class GWT implements State {
                 .mapToObj(i -> kansasCitySupply.draw(1))
                 .flatMap(Optional::stream)
                 .map(KansasCitySupply.Tile::getWorker)
-                .forEach(this.jobMarket::addWorker);
+                .forEach(worker -> jobMarket.addWorker(worker, playerOrder.size()));
     }
 
     private boolean placeInitialTile(KansasCitySupply.Tile tile) {
@@ -285,7 +285,7 @@ public class GWT implements State {
 
     @Override
     public int getProgress() {
-        return isEnded() ? 100 : jobMarket.isClosed() ? 99 : jobMarket.getProgress();
+        return isEnded() ? 100 : jobMarket.isClosed() ? 99 : jobMarket.getProgress(playerOrder.size());
     }
 
     @Override
@@ -580,6 +580,7 @@ public class GWT implements State {
     public PlayerState playerState(Player player) {
         return playerStates.get(player);
     }
+
     /**
      * @return players in order (that are still playing, not including players that left)
      */
@@ -738,6 +739,28 @@ public class GWT implements State {
                 .build();
     }
 
+    private static class Data {
+        Edition edition; // Default FIRST
+        Set<Player> players;
+        List<String> playerOrder;
+        List<String> originalPlayerOrder; // added later, if absent then tryToReconstructOriginalOrder
+        KansasCitySupply kansasCitySupply;
+        boolean railsToTheNorth;
+        RailroadTrack railroadTrack;
+        Trail trail;
+        Options.Mode mode; // default STRATEGIC
+        String currentPlayer;
+        JobMarket jobMarket;
+        Foresights foresights;
+        CattleMarket cattleMarket;
+        ObjectiveCards objectiveCards;
+        ActionStack actionStack;
+        boolean ended; // removed later in favor of "status"
+        Status status; // added later, if absent then derive from "ended"
+        ObjectiveCard startingObjectiveCards;
+        boolean canUndo;
+    }
+
     public static GWT deserialize(JsonObject jsonObject) {
         var edition = Edition.valueOf(jsonObject.getString("edition", Edition.FIRST.name()));
 
@@ -783,7 +806,7 @@ public class GWT implements State {
                 .railroadTrack(railroadTrack)
                 .kansasCitySupply(kansasCitySupply)
                 .trail(trail)
-                .jobMarket(JobMarket.deserialize(players.size(), jsonObject.getJsonObject("jobMarket")))
+                .jobMarket(JobMarket.deserialize(jsonObject.getJsonObject("jobMarket")))
                 .foresights(Foresights.deserialize(kansasCitySupply, jsonObject.getJsonObject("foresights")))
                 .cattleMarket(CattleMarket.deserialize(jsonObject.getJsonObject("cattleMarket")))
                 .objectiveCards(ObjectiveCards.deserialize(jsonObject.getJsonObject("objectiveCards")))
@@ -864,8 +887,6 @@ public class GWT implements State {
         } else {
             throw new GWTException(GWTError.GAME_ENDED);
         }
-
-        jobMarket.adjustRowLimit(playerOrder.size());
     }
 
     ImmediateActions deliverToCity(City city) {

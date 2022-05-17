@@ -28,10 +28,8 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -42,18 +40,12 @@ public class JobMarket {
     private static final List<Integer> COST = List.of(6, 6, 7, 5, 7, 9, 6, 8, 10, 6, 5, 4);
     private static final Set<Integer> CATTLE_MARKET = Set.of(6, 9);
 
-    @Getter
     private final List<Row> rows;
-
-    @Getter
-    private int rowLimit;
 
     @Getter
     private int currentRowIndex;
 
-    JobMarket(int playerCount) {
-        adjustRowLimit(playerCount);
-
+    JobMarket() {
         this.rows = IntStream.range(0, COST.size())
                 .mapToObj(i -> new Row())
                 .collect(Collectors.toList());
@@ -71,7 +63,7 @@ public class JobMarket {
                 .build();
     }
 
-    static JobMarket deserialize(int playerCount, JsonObject jsonObject) {
+    static JobMarket deserialize(JsonObject jsonObject) {
         var jobMarket = builder()
                 .currentRowIndex(jsonObject.getInt("currentRowIndex"))
                 .rows(jsonObject.getJsonArray("rows").stream()
@@ -80,19 +72,13 @@ public class JobMarket {
                         .collect(Collectors.toList()))
                 .build();
 
-        jobMarket.adjustRowLimit(playerCount);
-
         return jobMarket;
-    }
-
-    void adjustRowLimit(int playerCount) {
-        this.rowLimit = playerCount;
     }
 
     /**
      * @return <code>true</code> if the cattle market should be filled because of this action.
      */
-    boolean addWorker(Worker worker) {
+    boolean addWorker(Worker worker, int playerCount) {
         if (isClosed()) {
             throw new GWTException(GWTError.JOB_MARKET_CLOSED);
         }
@@ -101,13 +87,17 @@ public class JobMarket {
 
         row.workers.add(worker);
 
-        if (row.workers.size() == rowLimit) {
+        if (row.workers.size() == playerCount) {
             currentRowIndex++;
 
-            return currentRowIndex < rows.size() && CATTLE_MARKET.contains(currentRowIndex);
+            return currentRowIndex < rows.size() && isCattleMarket(currentRowIndex);
         }
 
         return false;
+    }
+
+    public static boolean isCattleMarket(int rowIndex) {
+        return CATTLE_MARKET.contains(rowIndex);
     }
 
     public boolean isClosed() {
@@ -128,6 +118,10 @@ public class JobMarket {
         rows.get(rowIndex).workers.remove(worker);
     }
 
+    public List<Worker> getRow(int rowIndex) {
+        return rows.get(rowIndex).getWorkers();
+    }
+
     public int cost(int rowIndex, Worker worker) {
         if (rowIndex >= currentRowIndex) {
             throw new GWTException(GWTError.WORKER_NOT_AVAILABLE);
@@ -139,14 +133,37 @@ public class JobMarket {
             throw new GWTException(GWTError.WORKER_NOT_AVAILABLE);
         }
 
+        return getCost(rowIndex);
+    }
+
+    public int getProgress(int playerCount) {
+        var initial = getInitialWorkerCount(playerCount);
+        var placed = (currentRowIndex * playerCount + (currentRowIndex < rows.size() ? rows.get(currentRowIndex).getWorkers().size() : 0)) - initial;
+        var total = rows.size() * playerCount - initial;
+        return Math.min(100, Math.round(((float) placed / (float) total) * 100));
+    }
+
+    public static int getCost(int rowIndex) {
         return COST.get(rowIndex);
     }
 
-    public int getProgress() {
-        var initial = getInitialWorkerCount(rowLimit);
-        var placed = (currentRowIndex * rowLimit + (currentRowIndex < rows.size() ? rows.get(currentRowIndex).getWorkers().size() : 0)) - initial;
-        var total = rows.size() * rowLimit - initial;
-        return Math.min(100, Math.round(((float) placed / (float) total) * 100));
+    public Optional<Integer> getCheapestRow(Collection<Worker> workers) {
+        return IntStream.rangeClosed(0, currentRowIndex)
+                .filter(rowIndex -> !Collections.disjoint(rows.get(rowIndex).getWorkers(), workers))
+                .boxed()
+                .min(Comparator.comparingInt(JobMarket::getCost));
+    }
+
+    public Optional<Worker> getMostNumerous() {
+        var workerCounts = rows.stream()
+                .limit(currentRowIndex)
+                .map(JobMarket.Row::getWorkers)
+                .flatMap(Collection::stream)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        return workerCounts.entrySet().stream()
+                .max(Comparator.comparingLong(Map.Entry::getValue))
+                .map(Map.Entry::getKey);
     }
 
     @Builder(access = AccessLevel.PRIVATE)

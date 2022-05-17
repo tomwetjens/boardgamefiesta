@@ -24,6 +24,7 @@ import lombok.Value;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Value
 public class JobMarketView {
@@ -32,12 +33,11 @@ public class JobMarketView {
     int rowLimit;
     int currentRowIndex;
 
-    JobMarketView(JobMarket jobMarket) {
-        rowLimit = jobMarket.getRowLimit();
+    JobMarketView(JobMarket jobMarket, int playerCount) {
+        rowLimit = playerCount;
         currentRowIndex = jobMarket.getCurrentRowIndex();
-        rows = jobMarket.getRows().stream()
-                .limit(jobMarket.getCurrentRowIndex() + 1)
-                .map(RowView::new)
+        rows = IntStream.rangeClosed(0, jobMarket.getCurrentRowIndex())
+                .mapToObj(rowIndex -> new RowView(jobMarket.getRow(rowIndex), rowIndex))
                 .collect(Collectors.toList());
     }
 
@@ -48,10 +48,10 @@ public class JobMarketView {
         List<Worker> workers;
         boolean cattleMarket;
 
-        RowView(JobMarket.Row row) {
-            cost = row.getCost();
-            workers = row.getWorkers();
-            cattleMarket = row.isCattleMarket();
+        RowView(List<Worker> row, int rowIndex) {
+            cost = JobMarket.getCost(rowIndex);
+            workers = row;
+            cattleMarket = JobMarket.isCattleMarket(rowIndex);
         }
     }
 }

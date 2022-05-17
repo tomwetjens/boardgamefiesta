@@ -850,7 +850,7 @@ public abstract class Action implements com.boardgamefiesta.api.domain.Action {
                 JobMarket jobMarket = game.getJobMarket();
 
                 if (!jobMarket.isClosed()) {
-                    boolean fillUpCattleMarket = jobMarket.addWorker(tile.getWorker());
+                    var fillUpCattleMarket = jobMarket.addWorker(tile.getWorker(), game.getPlayerOrder().size());
 
                     if (fillUpCattleMarket) {
                         game.fireEvent(game.getCurrentPlayer(), GWTEvent.Type.FILL_UP_CATTLE_MARKET, Collections.emptyList());

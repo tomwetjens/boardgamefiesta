@@ -841,7 +841,7 @@ public class PlayerState {
 
     public Stream<ObjectiveCard> getOptionalObjectives() {
         return Stream.concat(Stream.concat(hand.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card),
-                discardPile.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card)),
+                        discardPile.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card)),
                 drawStack.stream().filter(card -> card instanceof ObjectiveCard).map(card -> (ObjectiveCard) card));
     }
 
@@ -904,6 +904,19 @@ public class PlayerState {
 
     boolean hasMaxWorkers(Worker worker) {
         return getNumberOfWorkers(worker) >= 6;
+    }
+    Set<Worker> getWorkersThatCanBeHired() {
+        var result = new HashSet<Worker>();
+        if (!hasMaxWorkers(Worker.COWBOY)) {
+            result.add(Worker.COWBOY);
+        }
+        if (!hasMaxWorkers(Worker.CRAFTSMAN)) {
+            result.add(Worker.CRAFTSMAN);
+        }
+        if (!hasMaxWorkers(Worker.ENGINEER)) {
+            result.add(Worker.ENGINEER);
+        }
+        return result;
     }
 
     public Optional<Garth> getAutomaState() {

@@ -51,8 +51,8 @@ public class Garth {
                 .set(ScoreCategory.EXTRA_STEP_POINTS, 0)
                 .set(ScoreCategory.STATION_MASTERS, 0)
                 .set(ScoreCategory.OBJECTIVE_CARDS, Stream.concat(
-                        playerState.getCommittedObjectives().stream(),
-                        playerState.getOptionalObjectives())
+                                playerState.getCommittedObjectives().stream(),
+                                playerState.getOptionalObjectives())
                         .mapToInt(ObjectiveCard::getPoints)
                         .sum())
                 .set(ScoreCategory.CITIES, score.getCategories().getOrDefault(ScoreCategory.CITIES, 0) - game.getRailroadTrack().scoreSanFrancisco(player, playerState)
@@ -343,15 +343,15 @@ public class Garth {
             return;
         }
 
-        game.getJobMarket().getRows().stream()
-                .limit(game.getJobMarket().getCurrentRowIndex())
-                .filter(row -> row.getWorkers().contains(Worker.ENGINEER))
-                .min(Comparator.comparingInt(JobMarket.Row::getCost))
-                .ifPresent(row -> {
-                    game.getJobMarket().takeWorker(game.getJobMarket().getRows().indexOf(row), Worker.ENGINEER);
+        var jobMarket = game.getJobMarket();
+
+        jobMarket.getCheapestRow(EnumSet.of(Worker.ENGINEER))
+                .ifPresent(rowIndex -> {
+                    jobMarket.takeWorker(rowIndex, Worker.ENGINEER);
                     playerState.addWorker(Worker.ENGINEER);
 
-                    game.fireActionEvent(Action.HireWorker.class, List.of(Worker.ENGINEER.name(), Integer.toString(row.getCost())));
+                    var cost = JobMarket.getCost(rowIndex);
+                    game.fireActionEvent(Action.HireWorker.class, List.of(Worker.ENGINEER.name(), Integer.toString(cost)));
 
                     redetermineSpecialization(playerState);
                 });
@@ -581,7 +581,7 @@ public class Garth {
                 .stream()
                 // Prefer stations for upgrading, go as far as possible
                 .max(Comparator.<RailroadTrack.Space, Integer>comparing(space -> space.isTurnout()
-                        && !railroadTrack.hasUpgraded(((RailroadTrack.Space.Turnout) space).getStation(), player) ? 1 : 0)
+                                && !railroadTrack.hasUpgraded(((RailroadTrack.Space.Turnout) space).getStation(), player) ? 1 : 0)
                         .thenComparing(RailroadTrack.Space::getName))
                 .ifPresent(to -> {
                     railroadTrack.moveEngineForward(player, to, 1, atMost);
@@ -604,7 +604,7 @@ public class Garth {
         railroadTrack.reachableSpacesBackwards(railroadTrack.currentSpace(player), 1, Integer.MAX_VALUE)
                 .stream()
                 .min(Comparator.<RailroadTrack.Space, Integer>comparing(space -> space.isTurnout()
-                        && !railroadTrack.hasUpgraded(((RailroadTrack.Space.Turnout) space).getStation(), player) ? 0 : 1)
+                                && !railroadTrack.hasUpgraded(((RailroadTrack.Space.Turnout) space).getStation(), player) ? 0 : 1)
                         .thenComparing(RailroadTrack.Space::getName))
                 .ifPresent(to -> {
                     railroadTrack.moveEngineBackwards(player, to, 1, Integer.MAX_VALUE);
@@ -736,27 +736,29 @@ public class Garth {
     private void hireCheapestWorkerOfAnyType(GWT game, Player player, Random random) {
         var playerState = game.playerState(player);
 
-        game.getJobMarket().getRows().stream()
-                .limit(game.getJobMarket().getCurrentRowIndex())
-                .filter(row -> !row.getWorkers().isEmpty())
-                .filter(row -> row.getWorkers().stream().anyMatch(worker -> !playerState.hasMaxWorkers(worker)))
-                .min(Comparator.comparingInt(JobMarket.Row::getCost))
-                .ifPresent(cheapestRowWithWorkers -> {
+        var jobMarket = game.getJobMarket();
+        var workersThatCanBeHired = playerState.getWorkersThatCanBeHired();
+
+        jobMarket.getCheapestRow(workersThatCanBeHired)
+                .ifPresent(rowIndex -> {
+                    var row = jobMarket.getRow(rowIndex);
+
                     Worker worker;
-                    if (cheapestRowWithWorkers.getWorkers().contains(specialization)
+                    if (row.contains(specialization)
                             && !playerState.hasMaxWorkers(specialization)) {
                         worker = specialization;
                     } else {
-                        worker = cheapestRowWithWorkers.getWorkers().stream()
+                        worker = row.stream()
                                 .filter(w -> !playerState.hasMaxWorkers(w))
                                 .findFirst()
                                 .orElseThrow();
                     }
 
-                    game.getJobMarket().takeWorker(game.getJobMarket().getRows().indexOf(cheapestRowWithWorkers), worker);
+                    jobMarket.takeWorker(rowIndex, worker);
                     playerState.addWorker(worker);
 
-                    game.fireActionEvent(Action.HireWorker.class, List.of(worker.name(), Integer.toString(cheapestRowWithWorkers.getCost())));
+                    var cost = JobMarket.getCost(rowIndex);
+                    game.fireActionEvent(Action.HireWorker.class, List.of(worker.name(), Integer.toString(cost)));
 
                     redetermineSpecialization(playerState);
                 });
@@ -773,39 +775,29 @@ public class Garth {
     private void hireSpecializedOrMostNumerous(GWT game, Player player, Random random) {
         var playerState = game.playerState(player);
 
-        game.getJobMarket().getRows().stream()
-                .limit(game.getJobMarket().getCurrentRowIndex())
-                .filter(row -> row.getWorkers().contains(specialization) && !playerState.hasMaxWorkers(specialization))
-                .min(Comparator.comparingInt(JobMarket.Row::getCost))
-                .ifPresentOrElse(cheapestRowWithSpecialization -> {
-                    game.getJobMarket().takeWorker(game.getJobMarket().getRows().indexOf(cheapestRowWithSpecialization), specialization);
+        var jobMarket = game.getJobMarket();
+
+        jobMarket.getCheapestRow(EnumSet.of(specialization))
+                .filter(rowIndex -> !playerState.hasMaxWorkers(specialization))
+                .ifPresentOrElse(rowIndex -> {
+                    jobMarket.takeWorker(rowIndex, specialization);
                     playerState.gainWorker(specialization, game);
 
-                    game.fireActionEvent(Action.HireWorker.class, List.of(specialization.name(), Integer.toString(cheapestRowWithSpecialization.getCost())));
+                    var cost = JobMarket.getCost(rowIndex);
+                    game.fireActionEvent(Action.HireWorker.class, List.of(specialization.name(), Integer.toString(cost)));
 
                     redetermineSpecialization(playerState);
                 }, () -> {
-                    var workerCounts = game.getJobMarket().getRows().stream()
-                            .limit(game.getJobMarket().getCurrentRowIndex())
-                            .map(JobMarket.Row::getWorkers)
-                            .flatMap(Collection::stream)
-                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+                    jobMarket.getMostNumerous()
+                            .ifPresent(worker -> {
+                                if (!playerState.hasMaxWorkers(worker)) {
+                                    var rowIndex = jobMarket.getCheapestRow(EnumSet.of(worker)).orElseThrow();
 
-                    workerCounts.entrySet().stream()
-                            .max(Comparator.comparingLong(Map.Entry::getValue))
-                            .map(Map.Entry::getKey)
-                            .ifPresent(mostNumerousWorker -> {
-                                if (!playerState.hasMaxWorkers(mostNumerousWorker)) {
-                                    var cheapestRow = game.getJobMarket().getRows().stream()
-                                            .limit(game.getJobMarket().getCurrentRowIndex())
-                                            .filter(row -> row.getWorkers().contains(mostNumerousWorker))
-                                            .min(Comparator.comparingInt(JobMarket.Row::getCost))
-                                            .orElseThrow();
+                                    jobMarket.takeWorker(rowIndex, worker);
+                                    playerState.gainWorker(worker, game);
 
-                                    game.getJobMarket().takeWorker(game.getJobMarket().getRows().indexOf(cheapestRow), mostNumerousWorker);
-                                    playerState.gainWorker(mostNumerousWorker, game);
-
-                                    game.fireActionEvent(Action.HireWorker.class, List.of(mostNumerousWorker.name(), Integer.toString(cheapestRow.getCost())));
+                                    var cost = JobMarket.getCost(rowIndex);
+                                    game.fireActionEvent(Action.HireWorker.class, List.of(worker.name(), Integer.toString(cost)));
 
                                     redetermineSpecialization(playerState);
                                 }

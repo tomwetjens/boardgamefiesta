@@ -18,8 +18,6 @@
 
 package com.boardgamefiesta.gwt.logic;
 
-import com.boardgamefiesta.gwt.logic.JobMarket;
-import com.boardgamefiesta.gwt.logic.Worker;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -32,10 +30,10 @@ class JobMarketTest {
 
         @Test
         void fill2Players() {
-            JobMarket jobMarket = new JobMarket(2);
+            JobMarket jobMarket = new JobMarket();
 
             for (int n = 0; n < 24; n++) {
-                jobMarket.addWorker(Worker.COWBOY);
+                jobMarket.addWorker(Worker.COWBOY, 2);
             }
 
             assertThat(jobMarket.getCurrentRowIndex()).isEqualTo(12);
@@ -44,10 +42,10 @@ class JobMarketTest {
 
         @Test
         void fill3Players() {
-            JobMarket jobMarket = new JobMarket(3);
+            JobMarket jobMarket = new JobMarket();
 
             for (int n = 0; n < 36; n++) {
-                jobMarket.addWorker(Worker.COWBOY);
+                jobMarket.addWorker(Worker.COWBOY, 3);
             }
 
             assertThat(jobMarket.getCurrentRowIndex()).isEqualTo(12);
@@ -56,10 +54,10 @@ class JobMarketTest {
 
         @Test
         void fill4Players() {
-            JobMarket jobMarket = new JobMarket(4);
+            JobMarket jobMarket = new JobMarket();
 
             for (int n = 0; n < 48; n++) {
-                jobMarket.addWorker(Worker.COWBOY);
+                jobMarket.addWorker(Worker.COWBOY, 4);
             }
 
             assertThat(jobMarket.getCurrentRowIndex()).isEqualTo(12);
