@@ -80,7 +80,7 @@ class DominantSpeciesProviderTest {
                     "wanderlustTiles");
 
             // Must fit into a DynamoDB item with extra room for PK, indexed attributes
-            assertThat(jsonString.getBytes(StandardCharsets.UTF_8).length).isLessThanOrEqualTo(3000);
+            assertThat(jsonString.getBytes(StandardCharsets.UTF_8).length).isLessThanOrEqualTo(3200);
         }
     }
 
