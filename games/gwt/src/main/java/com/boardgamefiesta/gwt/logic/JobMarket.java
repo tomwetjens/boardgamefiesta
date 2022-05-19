@@ -164,6 +164,10 @@ public class JobMarket {
                 .map(Map.Entry::getKey);
     }
 
+    public int getRowCount() {
+        return rows.size();
+    }
+
     @Builder(access = AccessLevel.PRIVATE)
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static final class Row {

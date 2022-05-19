@@ -36,7 +36,7 @@ public class JobMarketView {
     JobMarketView(JobMarket jobMarket, int playerCount) {
         rowLimit = playerCount;
         currentRowIndex = jobMarket.getCurrentRowIndex();
-        rows = IntStream.rangeClosed(0, jobMarket.getCurrentRowIndex())
+        rows = IntStream.rangeClosed(0, Math.min(jobMarket.getRowCount() - 1, jobMarket.getCurrentRowIndex()))
                 .mapToObj(rowIndex -> new RowView(jobMarket.getRow(rowIndex), rowIndex))
                 .collect(Collectors.toList());
     }
