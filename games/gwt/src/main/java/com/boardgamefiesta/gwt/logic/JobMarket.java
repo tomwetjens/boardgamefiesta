@@ -19,10 +19,7 @@
 package com.boardgamefiesta.gwt.logic;
 
 import com.boardgamefiesta.api.repository.JsonSerializer;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -33,13 +30,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@Builder(access = AccessLevel.PRIVATE)
+@Builder(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class JobMarket {
 
     private static final List<Integer> COST = List.of(6, 6, 7, 5, 7, 9, 6, 8, 10, 6, 5, 4);
     private static final Set<Integer> CATTLE_MARKET = Set.of(6, 9);
 
+    @Singular
     private final List<Row> rows;
 
     @Getter
@@ -148,7 +146,7 @@ public class JobMarket {
     }
 
     public Optional<Integer> getCheapestRow(Collection<Worker> workers) {
-        return IntStream.rangeClosed(0, currentRowIndex)
+        return IntStream.range(0, currentRowIndex)
                 .filter(rowIndex -> !Collections.disjoint(rows.get(rowIndex).getWorkers(), workers))
                 .boxed()
                 .min(Comparator.comparingInt(JobMarket::getCost));
@@ -167,7 +165,7 @@ public class JobMarket {
     }
 
     @Builder(access = AccessLevel.PRIVATE)
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public static final class Row {
 
         private final List<Worker> workers;

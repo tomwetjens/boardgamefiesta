@@ -21,6 +21,8 @@ package com.boardgamefiesta.gwt.logic;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.*;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class JobMarketTest {
@@ -65,4 +67,18 @@ class JobMarketTest {
         }
     }
 
+    @Test
+    void getCheapestRow() {
+        var jobMarket = JobMarket.builder()
+                .currentRowIndex(3)
+                .row(new JobMarket.Row(new ArrayList<>()))
+                .row(new JobMarket.Row(new ArrayList<>(List.of(Worker.COWBOY))))
+                .row(new JobMarket.Row(new ArrayList<>(List.of(Worker.COWBOY, Worker.ENGINEER, Worker.CRAFTSMAN))))
+                .row(new JobMarket.Row(new ArrayList<>(List.of(Worker.ENGINEER, Worker.CRAFTSMAN))))
+                .build();
+
+        var rowIndex = jobMarket.getCheapestRow(Set.of(Worker.ENGINEER)).get();
+        assertThat(rowIndex).isEqualTo(2);
+        jobMarket.takeWorker(rowIndex, Worker.ENGINEER);
+    }
 }
