@@ -213,6 +213,13 @@ public class CattleMarket {
         // 2/3p variant to approximate ratios of 4P game, courtesy of Fernando Moritz
         // Alternative: https://boardgamegeek.com/image/3336021/proezas
 
+        //           | HOLSTEIN | BROWN_SWISS | AYRSHIRE |  WEST_HIGHLAND  |  TEXAS_LONGHORN | SIMMENTAL | Total
+        // Points    |     1    |      2      |    3     |  3  |  4  |  5  |  5  |  6  |  7  |     3     |
+        // ----------|----------|-------------|----------|-----|-----|-----|-----|-----|-----|-----------|-------
+        // 2 players |     4    |      4      |    4     |  1  |  3  |  1  |  1  |  2  |  1  |     5     |  26
+        // 3 players |     5    |      5      |    5     |  2  |  3  |  2  |  2  |  1  |  2  |     6     |  33
+        // 4 players |     7    |      7      |    7     |  3  |  3  |  3  |  2  |  2  |  2  |     8     |  44
+
         // 2P: remove 3 of each
         // 3P: remove 2 of each
         var a = playerCount == 4 ? 7 : playerCount == 3 ? 5 : 4;
