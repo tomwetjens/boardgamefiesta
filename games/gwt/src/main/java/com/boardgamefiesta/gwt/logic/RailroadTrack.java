@@ -875,7 +875,7 @@ public class RailroadTrack {
                 immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 break;
             case MILWAUKEE:
-                game.currentPlayerState().gainDollars(2);
+                game.currentPlayerState().gainDollars(3);
                 game.fireActionEvent(Action.Gain3Dollars.class, Collections.emptyList());
                 immediateActions = immediateActions.andThen(PossibleAction.mandatory(Action.TakeObjectiveCard.class));
                 break;
