@@ -542,7 +542,7 @@ public class DominantSpecies implements State {
         scoredTiles.clear();
         lastPlacedTile = null;
 
-        if (!isEndgame()) {
+        if (!isEnded()) {
             reseed(random);
 
             round++;
@@ -744,11 +744,10 @@ public class DominantSpecies implements State {
 
     @Override
     public boolean isEnded() {
-        return isEndgame() && !actionDisplay.hasActionPawn(ActionType.DOMINATION) && actionQueue.isEmpty();
-    }
-
-    private boolean isEndgame() {
-        return actionQueue.isEmpty() && !deck.contains(Card.ICE_AGE) && !availableCards.contains(Card.ICE_AGE);
+        return !deck.contains(Card.ICE_AGE) && !availableCards.contains(Card.ICE_AGE)
+                && !actionDisplay.hasActionPawn(ActionType.DOMINATION)
+                && actionQueue.isEmpty()
+                && phase == Phase.RESET;
     }
 
     @Override

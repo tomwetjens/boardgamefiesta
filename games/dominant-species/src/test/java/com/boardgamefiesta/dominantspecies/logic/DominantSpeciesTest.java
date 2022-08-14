@@ -23,7 +23,15 @@ import com.boardgamefiesta.api.domain.PlayerColor;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -154,6 +162,8 @@ class DominantSpeciesTest {
                     .drawBag(drawBag)
                     .actionDisplay(ActionDisplay.initial(Set.of(AnimalType.ARACHNIDS, AnimalType.REPTILES, AnimalType.MAMMALS), drawBag, new Random(0)))
                     .actionQueue(ActionQueue.initial(PossibleAction.mandatory(AnimalType.ARACHNIDS, Action.PlaceActionPawn.class)))
+                    .deck(new LinkedList<>(List.of(Card.CATASTROPHE, Card.DISEASE, Card.FERTILE, Card.AQUATIC, Card.ICE_AGE)))
+                    .availableCards(new HashSet<>(Set.of(Card.BIODIVERSITY, Card.BIOMASS, Card.EVOLUTION, Card.HIBERNATION)))
                     .build();
 
             while (ds.getAnimals().get(ds.getCurrentAnimal()).getActionPawns() > 0
@@ -791,6 +801,9 @@ class DominantSpeciesTest {
             assertThat(ds.isEnded()).isTrue();
             assertThat(ds.getCurrentPlayers()).isEmpty();
         }
+
+        // TODO Add test case: endgame triggered, but extinction offers MAMMALS a SaveFromExtiction action,
+        //  then isEnded should return false and the game should actually end after the final scoring
 
         void playTurnsUntilDominanceCardActionAndCardAvailable(DominantSpecies ds, Card card) {
             while (!ds.getAvailableCards().contains(card) || !ds.possibleActions().contains(Action.DominanceCard.class)) {
