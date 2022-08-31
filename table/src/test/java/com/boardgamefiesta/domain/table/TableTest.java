@@ -98,11 +98,9 @@ class TableTest {
                 .color(PlayerColor.BLUE)
                 .build();
 
-        @Mock
-        com.boardgamefiesta.api.domain.Player currentPlayer = new com.boardgamefiesta.api.domain.Player("playerA", PlayerColor.RED, com.boardgamefiesta.api.domain.Player.Type.HUMAN);
-
         @Test
         void undo() {
+            var currentPlayer = playerA.asPlayer();
             when(currentState.getCurrentPlayers()).thenReturn(Collections.singleton(currentPlayer));
             when(currentState.canUndo()).thenReturn(true);
 
@@ -131,6 +129,7 @@ class TableTest {
                     .options(new Options(Collections.emptyMap()))
                     .created(Instant.now())
                     .updated(Instant.now())
+                    .seats(new ArrayList<>(List.of(Seat.fromPlayer(playerA), Seat.fromPlayer(playerB))))
                     .players(new HashSet<>(Set.of(playerA, playerB)))
                     .ownerId(userId1)
                     .status(Table.Status.STARTED)
@@ -141,6 +140,7 @@ class TableTest {
                             .previous(Lazy.of(Optional.of(currentMinus1HistoricState)))
                             .changed(false)
                             .build())))
+                    .historicStates(new Table.HistoricStates())
                     .build();
 
             var beforeUndo = Instant.now();
