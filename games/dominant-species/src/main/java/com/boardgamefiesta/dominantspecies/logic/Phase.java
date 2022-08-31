@@ -21,5 +21,6 @@ package com.boardgamefiesta.dominantspecies.logic;
 public enum Phase {
     PLANNING,
     EXECUTION,
-    RESET
+    RESET,
+    ENDED
 }
