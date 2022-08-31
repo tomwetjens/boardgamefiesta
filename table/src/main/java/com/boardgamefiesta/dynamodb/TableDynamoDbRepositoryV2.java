@@ -222,6 +222,11 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                         .map(this::mapFromPlayer)
                         .collect(Collectors.toList()))
                         .build())
+                .set("Seats", AttributeValue.builder()
+                        .l(table.getSeats().stream()
+                                .map(this::mapFromSeat)
+                                .collect(Collectors.toList()))
+                        .build())
                 .set("Options", mapFromOptions(table.getOptions()))
                 .setInt("MinNumberOfPlayers", table.getMinNumberOfPlayers())
                 .setInt("MaxNumberOfPlayers", table.getMaxNumberOfPlayers())
@@ -695,6 +700,11 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                         .l(table.getPlayers().stream()
                                 .map(this::mapFromPlayer)
                                 .collect(Collectors.toList()))
+                        .build())
+                .set("Seats", AttributeValue.builder()
+                        .l(table.getSeats().stream()
+                                .map(this::mapFromSeat)
+                                .collect(Collectors.toList()))
                         .build());
 
         return item;
@@ -770,6 +780,13 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         return AttributeValue.builder().m(map).build();
     }
 
+    private AttributeValue mapFromSeat(Seat seat) {
+        var map = new HashMap<String, AttributeValue>();
+        map.put("PlayerId", Item.s(seat.getPlayerId().getId()));
+        seat.getPlayerColor().ifPresent(playerColor -> map.put("PlayerColor", Item.s(playerColor)));
+        return AttributeValue.builder().m(map).build();
+    }
+
     private AttributeValue mapFromOptions(Options options) {
         return AttributeValue.builder().m(options.asMap().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
@@ -797,6 +814,9 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .collect(Collectors.toCollection(TrackingSet::new));
         players.flush(); // Consider everything added up until now to be unchanged
 
+        var playerMap = players.stream()
+                .collect(Collectors.toMap(Player::getId, Function.identity()));
+
         var game = games.get(Game.Id.fromString(item.getString("GameId")));
 
         return Table.builder()
@@ -814,6 +834,10 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .started(item.getOptionalInstant("Started").orElse(null))
                 .ended(item.getOptionalInstant("Ended").orElse(null))
                 .ownerId(User.Id.of(item.getString("OwnerId")))
+                .seats(item.getOptionalNotNull("Seats")
+                        .map(seats -> seats.l().stream().map(seat -> mapToSeat(seat, playerMap)))
+                        .orElseGet(() -> players.stream().map(Seat::fromPlayer))
+                        .collect(Collectors.toCollection(ArrayList::new)))
                 .players(players)
                 .currentState(items.size() > 1
                         ? Lazy.of(Optional.of(mapToCurrentState(id, items.get(1), game)))
@@ -930,6 +954,18 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         }
 
         return Optional.empty();
+    }
+
+    private Seat mapToSeat(AttributeValue attributeValue, Map<Player.Id, Player> playerMap) {
+        var item = Item.of(attributeValue.m());
+
+        var playerId = Player.Id.of(item.getString("PlayerId"));
+
+        return Seat.builder()
+                .playerId(playerId)
+                .playerColor(item.getOptionalEnum("PlayerColor", PlayerColor.class).orElse(null))
+                .player(playerMap.get(playerId))
+                .build();
     }
 
     @Override

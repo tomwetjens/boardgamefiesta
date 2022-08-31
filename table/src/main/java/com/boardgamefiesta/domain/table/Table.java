@@ -99,6 +99,10 @@ public class Table implements AggregateRoot {
 
     @Getter
     @NonNull
+    private final List<Seat> seats;
+
+    @Getter
+    @NonNull
     private final Set<Player> players;
 
     @Getter
@@ -145,10 +149,11 @@ public class Table implements AggregateRoot {
                                @NonNull Mode mode,
                                @NonNull User owner,
                                @NonNull Options options) {
-        var player = Player.accepted(owner.getId());
+        var seats = IntStream.range(0, game.getMaxNumberOfPlayers())
+                .mapToObj(index -> Seat.empty())
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        owner.getColorPreferences().pickPreferredColor(game.getSupportedColors())
-                .ifPresent(player::assignColor);
+        var player = seats.get(0).assign(owner, game.getSupportedColors());
 
         var created = Instant.now();
         Table table = Table.builder()
@@ -163,6 +168,7 @@ public class Table implements AggregateRoot {
                 .created(created)
                 .updated(created)
                 .ownerId(owner.getId())
+                .seats(seats)
                 .players(new HashSet<>(Collections.singleton(player)))
                 .log(new Log())
                 .currentState(Lazy.of(Optional.empty()))
@@ -182,7 +188,10 @@ public class Table implements AggregateRoot {
     public void start() {
         checkNew();
 
-        players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
+        if (!hasCurrentState()) {
+            players.removeIf(player -> player.getStatus() != Player.Status.ACCEPTED);
+            seats.removeIf(seat -> seat.getPlayer().isEmpty() || seat.getPlayer().get().getStatus() != Player.Status.ACCEPTED);
+        }
 
         if (players.size() < game.getMinNumberOfPlayers()) {
             throw new NotEnoughPlayers();
@@ -222,6 +231,10 @@ public class Table implements AggregateRoot {
         } catch (InGameException e) {
             throw new InGameError(game.getId(), e);
         }
+    }
+
+    private boolean hasCurrentState() {
+        return currentState.get().isPresent();
     }
 
     private void beginTurn(Player player) {
@@ -333,12 +346,17 @@ public class Table implements AggregateRoot {
         var player = getPlayerByUserId(userId)
                 .orElseThrow(NotPlayer::new);
 
+        var seat = getSeatByPlayer(player)
+                .orElseThrow(NotPlayer::new);
+
         log.add(new LogEntry(player, LogEntry.Type.LEFT));
 
         player.leave();
 
         if (status == Status.NEW) {
             players.remove(player);
+            seat.unassign();
+            shrinkSeatsIfNeeded();
         }
 
         new Left(Lazy.of(this), id, userId, Instant.now()).fire();
@@ -390,38 +408,6 @@ public class Table implements AggregateRoot {
         updated = Instant.now();
 
         new ChangedOwner(Lazy.of(this), id, userId).fire();
-    }
-
-    public void proposeToLeave(@NonNull User.Id userId) {
-        checkStarted();
-
-        var player = getPlayerByUserId(userId)
-                .orElseThrow(NotPlayer::new);
-
-        player.proposeToLeave();
-
-        log.add(new LogEntry(player, LogEntry.Type.PROPOSED_TO_LEAVE));
-
-        new ProposedToLeave(Lazy.of(this), id, userId).fire();
-    }
-
-    public void agreeToLeave(@NonNull User.Id userId) {
-        checkStarted();
-
-        var player = getPlayerByUserId(userId)
-                .orElseThrow(NotPlayer::new);
-
-        player.agreeToLeave();
-
-        new AgreedToLeave(Lazy.of(this), id, userId).fire();
-
-        log.add(new LogEntry(player, LogEntry.Type.AGREED_TO_LEAVE));
-
-        updated = Instant.now();
-
-        if (otherUsersPlaying(userId).allMatch(Player::hasAgreedToLeave)) {
-            abandon();
-        }
     }
 
     private void checkStarted() {
@@ -502,13 +488,10 @@ public class Table implements AggregateRoot {
                 .findAny()
                 .orElseThrow(NotPlayer::new);
 
-        player.accept();
+        player.accept(user, getAvailableColors());
         new Accepted(Lazy.of(this), id, user.getId()).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.ACCEPT));
-
-        user.getColorPreferences().pickPreferredColor(this.getAvailableColors())
-                .ifPresent(player::assignColor);
 
         updated = Instant.now();
 
@@ -541,13 +524,14 @@ public class Table implements AggregateRoot {
     public void rejectInvite(@NonNull User.Id userId) {
         checkNew();
 
-        var player = players.stream()
-                .filter(p -> userId.equals(p.getUserId().orElse(null)))
-                .findAny()
+        var player = getPlayerByUserId(userId)
                 .orElseThrow(NotPlayer::new);
 
-        player.reject();
+        var seat = getSeatByPlayer(player)
+                .orElseThrow(NotPlayer::new);
 
+        seat.unassign();
+        shrinkSeatsIfNeeded();
         players.remove(player);
         new Rejected(Lazy.of(this), id, userId).fire();
 
@@ -588,7 +572,7 @@ public class Table implements AggregateRoot {
         return Collections.unmodifiableSet(colors);
     }
 
-    public void invite(User user) {
+    public Player invite(User user) {
         checkNew();
 
         if (players.size() == maxNumberOfPlayers) {
@@ -599,12 +583,20 @@ public class Table implements AggregateRoot {
             throw new AlreadyInvited();
         }
 
-        var player = Player.invite(user.getId());
+        var seat = seats.stream()
+                .filter(Seat::isAvailable)
+                .findAny()
+                .orElseThrow(SeatNotAvailable::new);
+
+        var player = seat.invite(user);
         players.add(player);
 
-        log.add(new LogEntry(getPlayerByUserId(ownerId).orElseThrow(), LogEntry.Type.INVITE, List.of(user.getId().getId())));
+        var owner = getPlayerByUserId(ownerId).orElseThrow();
+        log.add(new LogEntry(owner, LogEntry.Type.INVITE, List.of(user.getId().getId())));
 
         new Invited(Lazy.of(this), id, type, user.getId(), game.getId(), ownerId).fire();
+
+        return player;
     }
 
     public void kick(@NonNull User.Id currentUserId, @NonNull Player player) {
@@ -612,6 +604,9 @@ public class Table implements AggregateRoot {
 
         var kickingPlayer = getPlayerByUserId(currentUserId)
                 .filter(Player::isActive)
+                .orElseThrow(NotPlayer::new);
+
+        var seat = getSeatByPlayer(player)
                 .orElseThrow(NotPlayer::new);
 
         if (status == Status.NEW) {
@@ -624,6 +619,9 @@ public class Table implements AggregateRoot {
             player.kick();
         }
 
+        seat.unassign();
+        shrinkSeatsIfNeeded();
+
         player.getUserId().ifPresent(userId -> {
             log.add(new LogEntry(kickingPlayer, LogEntry.Type.KICK, List.of(userId.getId())));
 
@@ -631,6 +629,12 @@ public class Table implements AggregateRoot {
         });
 
         afterPlayerLeft(player);
+    }
+
+    private Optional<Seat> getSeatByPlayer(Player player) {
+        return seats.stream()
+                .filter(s -> s.getPlayer().orElse(null) == player)
+                .findAny();
     }
 
     public void forceEndTurn(@NonNull User.Id currentUserId, @NonNull Player player) {
@@ -664,7 +668,7 @@ public class Table implements AggregateRoot {
         }
     }
 
-    public void join(@NonNull User user) {
+    public Player join(@NonNull User user) {
         checkNew();
 
         if (visibility != Visibility.PUBLIC) {
@@ -679,7 +683,12 @@ public class Table implements AggregateRoot {
             throw new AlreadyInvited();
         }
 
-        var player = Player.accepted(user.getId());
+        var seat = seats.stream()
+                .filter(Seat::isAvailable)
+                .findAny()
+                .orElseThrow(SeatNotAvailable::new);
+
+        var player = seat.assign(user, getAvailableColors());
         players.add(player);
 
         user.getColorPreferences().pickPreferredColor(this.getAvailableColors())
@@ -690,6 +699,8 @@ public class Table implements AggregateRoot {
         new Joined(Lazy.of(this), id, user.getId()).fire();
 
         autoStartIfPossible();
+
+        return player;
     }
 
     private void autoStartIfPossible() {
@@ -718,7 +729,7 @@ public class Table implements AggregateRoot {
         new VisibilityChanged(Lazy.of(this), id).fire();
     }
 
-    public void addComputer() {
+    public Player addComputer() {
         checkNew();
 
         if (players.size() == maxNumberOfPlayers) {
@@ -729,9 +740,17 @@ public class Table implements AggregateRoot {
             throw new ComputerNotSupported();
         }
 
-        players.add(Player.computer());
+        var seat = seats.stream()
+                .filter(Seat::isAvailable)
+                .findAny()
+                .orElseThrow(SeatNotAvailable::new);
+
+        var player = seat.computer();
+        players.add(player);
 
         new ComputerAdded(Lazy.of(this), id);
+
+        return player;
     }
 
     public void changeOptions(@NonNull Options options) {
@@ -826,6 +845,28 @@ public class Table implements AggregateRoot {
                 });
     }
 
+    public void changeSeat(@NonNull Player player, int seat) {
+        var currentSeat = getSeatByPlayer(player)
+                .orElseThrow(NotPlayer::new);
+
+        if (seat < 0 || seat >= seats.size()) {
+            throw new SeatNotAvailable();
+        }
+
+        var targetSeat = seats.get(seat);
+
+        if (targetSeat != currentSeat) {
+            players.remove(currentSeat.unassign().get());
+
+            targetSeat.unassign().ifPresent(otherPlayer -> {
+                players.remove(otherPlayer);
+                players.add(currentSeat.assign(otherPlayer));
+            });
+
+            players.add(targetSeat.assign(player));
+        }
+    }
+
     public List<User.Id> getUserRanking() {
         return currentState.get()
                 .map(CurrentState::getState)
@@ -882,7 +923,24 @@ public class Table implements AggregateRoot {
         this.minNumberOfPlayers = minNumberOfPlayers;
         this.maxNumberOfPlayers = maxNumberOfPlayers;
 
+        shrinkSeatsIfNeeded();
+        while (seats.size() < maxNumberOfPlayers) {
+            seats.add(Seat.empty());
+        }
+
         new OptionsChanged(Lazy.of(this), id).fire();
+    }
+
+    private void shrinkSeatsIfNeeded() {
+        for (int n = seats.size() - maxNumberOfPlayers; n > 0; n--) {
+            seats.removeIf(Seat::isAvailable);
+        }
+    }
+
+    private void checkNoState() {
+        if (hasCurrentState()) {
+            throw new StateNotCompatible();
+        }
     }
 
     public void changeAutoStart(boolean autoStart) {
@@ -1146,6 +1204,12 @@ public class Table implements AggregateRoot {
     public static final class ExceedsMaxPlayers extends InvalidCommandException {
         private ExceedsMaxPlayers() {
             super("EXCEEDS_MAX_PLAYERS");
+        }
+    }
+
+    private class SeatNotAvailable extends InvalidCommandException {
+        private SeatNotAvailable() {
+            super("SEAT_NOT_AVAILABLE");
         }
     }
 

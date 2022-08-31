@@ -230,22 +230,6 @@ public class TableResource {
     }
 
     @POST
-    @Path("/{id}/propose-to-leave")
-    @Transactional
-    public void proposeToLeave(@PathParam("id") String id) {
-        handleConcurrentModification(Table.Id.of(id), table ->
-                table.proposeToLeave(currentUser.getId()));
-    }
-
-    @POST
-    @Path("/{id}/agree-to-leave")
-    @Transactional
-    public void agreeToLeave(@PathParam("id") String id) {
-        handleConcurrentModification(Table.Id.of(id), table ->
-                table.agreeToLeave(currentUser.getId()));
-    }
-
-    @POST
     @Path("/{id}/leave")
     @Transactional
     public void leave(@PathParam("id") String id) {

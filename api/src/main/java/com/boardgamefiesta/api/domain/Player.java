@@ -29,7 +29,7 @@ import javax.json.JsonValue;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // For deserialization frameworks
 @Setter // For deserialization frameworks
-@EqualsAndHashCode
+@EqualsAndHashCode(of = "name")
 public class Player {
 
     String name;

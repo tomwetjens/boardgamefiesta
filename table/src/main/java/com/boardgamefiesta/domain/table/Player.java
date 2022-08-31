@@ -28,6 +28,7 @@ import lombok.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Builder(toBuilder = true)
@@ -71,24 +72,29 @@ public class Player implements Entity {
 
     private Boolean winner;
 
-    static Player accepted(User.Id userId) {
-        Instant created = Instant.now();
+    static Player accepted(Player.Id id, User user, Set<PlayerColor> availableColors) {
+        var created = Instant.now();
 
-        return Player.builder()
-                .id(Id.generate())
+        var player = Player.builder()
+                .id(id)
                 .type(Type.USER)
-                .userId(userId)
+                .userId(user.getId())
                 .status(Status.ACCEPTED)
                 .created(created)
                 .updated(created)
                 .build();
+
+        user.getColorPreferences().pickPreferredColor(availableColors)
+                .ifPresent(player::assignColor);
+
+        return player;
     }
 
-    static Player invite(User.Id userId) {
-        Instant invited = Instant.now();
+    static Player invite(Player.Id id, User.Id userId) {
+        var invited = Instant.now();
 
         return Player.builder()
-                .id(Id.generate())
+                .id(id)
                 .type(Type.USER)
                 .userId(userId)
                 .status(Status.INVITED)
@@ -97,11 +103,11 @@ public class Player implements Entity {
                 .build();
     }
 
-    static Player computer() {
-        Instant created = Instant.now();
+    static Player computer(Player.Id id) {
+        var created = Instant.now();
 
         return Player.builder()
-                .id(Id.generate())
+                .id(id)
                 .type(Type.COMPUTER)
                 .status(Status.ACCEPTED)
                 .created(created)
@@ -109,29 +115,33 @@ public class Player implements Entity {
                 .build();
     }
 
-    void accept() {
+    static Player copy(Id id, Player player) {
+        var created = Instant.now();
+
+        return Player.builder()
+                .id(id)
+                .type(player.type)
+                .status(player.status)
+                .userId(player.userId)
+                .color(player.color)
+                .created(created)
+                .updated(created)
+                .build();
+    }
+
+    void accept(User user, Set<PlayerColor> availableColors) {
         if (status != Status.INVITED) {
             throw new AlreadyRespondedException();
         }
+
+        user.getColorPreferences().pickPreferredColor(availableColors)
+                .ifPresent(this::assignColor);
 
         status = Status.ACCEPTED;
         updated = Instant.now();
     }
 
-    void reject() {
-        if (status != Status.INVITED) {
-            throw new AlreadyRespondedException();
-        }
-
-        status = Status.REJECTED;
-        updated = Instant.now();
-    }
-
     void assignColor(PlayerColor color) {
-        if (this.color != null) {
-            throw new AlreadyAssignedColor();
-        }
-
         this.color = color;
 
         updated = Instant.now();
@@ -161,24 +171,6 @@ public class Player implements Entity {
         updated = Instant.now();
     }
 
-    void proposeToLeave() {
-        if (status != Status.ACCEPTED) {
-            throw new NotAcceptedException();
-        }
-
-        status = Status.PROPOSED_TO_LEAVE;
-        updated = Instant.now();
-    }
-
-    public void agreeToLeave() {
-        if (status != Status.ACCEPTED) {
-            throw new NotAcceptedException();
-        }
-
-        status = Status.AGREED_TO_LEAVE;
-        updated = Instant.now();
-    }
-
     public boolean isPlaying() {
         return status == Status.ACCEPTED || status == Status.PROPOSED_TO_LEAVE || status == Status.AGREED_TO_LEAVE;
     }
@@ -195,13 +187,6 @@ public class Player implements Entity {
         return status != Status.LEFT && status != Status.REJECTED;
     }
 
-    public boolean hasResponded() {
-        return status != Status.INVITED;
-    }
-
-    public boolean hasAgreedToLeave() {
-        return status == Status.PROPOSED_TO_LEAVE || status == Status.AGREED_TO_LEAVE;
-    }
 
     public void beginTurn(Duration timeLimit) {
         this.turn = true;
@@ -290,12 +275,20 @@ public class Player implements Entity {
         }
     }
 
-    @Value(staticConstructor = "of")
+    @Value(staticConstructor = "valueOf")
     public static class Id {
         String id;
 
-        private static Player.Id generate() {
+        static Player.Id generate() {
             return of(UUID.randomUUID().toString());
+        }
+
+        /**
+         * @deprecated For backwards compatibility. Use {@link #valueOf(String)} instead.
+         */
+        @Deprecated
+        public static Player.Id of(String str) {
+            return valueOf(str);
         }
     }
 

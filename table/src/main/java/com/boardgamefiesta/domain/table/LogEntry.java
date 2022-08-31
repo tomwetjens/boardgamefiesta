@@ -104,8 +104,6 @@ public class LogEntry {
         REJECT,
         START,
         INVITE,
-        PROPOSED_TO_LEAVE,
-        AGREED_TO_LEAVE,
         CREATE,
         KICK,
         LEFT,
