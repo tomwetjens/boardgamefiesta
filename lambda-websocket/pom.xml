@@ -39,14 +39,6 @@
             <groupId>com.boardgamefiesta</groupId>
             <artifactId>websocket</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>user</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.boardgamefiesta</groupId>
-            <artifactId>table</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>io.quarkus</groupId>
