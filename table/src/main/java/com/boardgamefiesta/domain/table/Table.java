@@ -51,13 +51,17 @@ public class Table implements AggregateRoot {
     private static final int MAX_PROGRESS_TO_ABANDON = 10;
     private static final int MIN_PROGRESS_TO_KEEP_WHEN_ABANDONED = 25;
 
-    private static final SecureRandom RANDOM;
+    static Random RANDOM;
 
     static {
         try {
             RANDOM = SecureRandom.getInstance("NativePRNGNonBlocking");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Could not initialize PRNG", e);
+        } catch (NoSuchAlgorithmException e1) {
+            try {
+                RANDOM = SecureRandom.getInstance("Windows-PRNG");
+            } catch (NoSuchAlgorithmException e2) {
+                throw new IllegalStateException("Could not initialize PRNG", e2);
+            }
         }
     }
 
