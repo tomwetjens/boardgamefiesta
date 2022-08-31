@@ -23,15 +23,7 @@ import com.boardgamefiesta.api.domain.PlayerColor;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -606,11 +598,13 @@ class DominantSpeciesTest {
             placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
+            // When
             skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
+
+            // Then
             assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.INSECTS);
             assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.PlaceActionPawn.class);
-
             assertThat(ds.getTile(DominantSpecies.INITIAL_MOUNTAIN).get().getSpecies(AnimalType.MAMMALS)).isEqualTo(1);
         }
 
@@ -658,7 +652,10 @@ class DominantSpeciesTest {
             placeAllRemainingActionPawnsAnywhereExcept(ds, ActionType.INITIATIVE);
             assertThat(ds.getPhase()).isEqualTo(Phase.EXECUTION);
 
+            // When
             skipAllExecutionUntilNoActionPawnLeft(ds, new Random(0));
+
+            // Then
             assertThat(ds.getPhase()).isEqualTo(Phase.PLANNING);
             assertThat(ds.getCurrentAnimal()).isEqualTo(AnimalType.INSECTS);
             assertThat(ds.possibleActions()).containsExactlyInAnyOrder(Action.PlaceActionPawn.class);

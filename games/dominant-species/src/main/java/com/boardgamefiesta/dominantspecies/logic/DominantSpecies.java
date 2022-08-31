@@ -497,6 +497,8 @@ public class DominantSpecies implements State {
 
         fireEvent(Event.Type.FINAL_SCORING, List.of(round));
         tiles.keySet().forEach(this::scoreTile);
+
+        phase = Phase.ENDED;
     }
 
     private void reseed(@NonNull Random random) {
@@ -542,7 +544,7 @@ public class DominantSpecies implements State {
         scoredTiles.clear();
         lastPlacedTile = null;
 
-        if (!isEnded()) {
+        if (!isEndgame()) {
             reseed(random);
 
             round++;
@@ -744,10 +746,11 @@ public class DominantSpecies implements State {
 
     @Override
     public boolean isEnded() {
-        return !deck.contains(Card.ICE_AGE) && !availableCards.contains(Card.ICE_AGE)
-                && !actionDisplay.hasActionPawn(ActionType.DOMINATION)
-                && actionQueue.isEmpty()
-                && phase == Phase.RESET;
+        return phase == Phase.ENDED;
+    }
+
+    private boolean isEndgame() {
+        return !deck.contains(Card.ICE_AGE) && !availableCards.contains(Card.ICE_AGE);
     }
 
     @Override
