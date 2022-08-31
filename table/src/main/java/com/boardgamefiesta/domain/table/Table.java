@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(toBuilder = true)
 @ToString(doNotUseGetters = true)
-public final class Table implements AggregateRoot {
+public class Table implements AggregateRoot {
 
     private static final Duration RETENTION_NEW = Duration.of(2, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(365 * 5, ChronoUnit.DAYS);
