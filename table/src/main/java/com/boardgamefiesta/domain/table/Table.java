@@ -18,7 +18,6 @@
 
 package com.boardgamefiesta.domain.table;
 
-import com.boardgamefiesta.api.domain.InGameEventListener;
 import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.domain.AggregateRoot;
 import com.boardgamefiesta.domain.DomainEvent;
@@ -34,12 +33,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(toBuilder = true)
 @ToString(doNotUseGetters = true)
-public class Table implements AggregateRoot {
+public final class Table implements AggregateRoot {
 
     private static final Duration RETENTION_NEW = Duration.of(2, ChronoUnit.DAYS);
     private static final Duration RETENTION_AFTER_ENDED = Duration.of(365 * 5, ChronoUnit.DAYS);
@@ -156,6 +156,7 @@ public class Table implements AggregateRoot {
         var player = seats.get(0).assign(owner, game.getSupportedColors());
 
         var created = Instant.now();
+
         Table table = Table.builder()
                 .id(Id.generate())
                 .version(1)
@@ -215,12 +216,13 @@ public class Table implements AggregateRoot {
 
             InGameEventListener eventListener = event -> log.add(new LogEntry(this, event));
 
-            var state = game.start(players.stream()
-                    .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor().orElseThrow(),
-                            player.getType() == Player.Type.COMPUTER
-                                    ? com.boardgamefiesta.api.domain.Player.Type.COMPUTER
-                                    : com.boardgamefiesta.api.domain.Player.Type.HUMAN))
-                    .collect(Collectors.toSet()), options, eventListener, RANDOM);
+            if (!hasCurrentState()) {
+                var state = game.start(players.stream()
+                        .map(player -> new com.boardgamefiesta.api.domain.Player(player.getId().getId(), player.getColor().orElseThrow(),
+                                player.getType() == Player.Type.COMPUTER
+                                        ? com.boardgamefiesta.api.domain.Player.Type.COMPUTER
+                                        : com.boardgamefiesta.api.domain.Player.Type.HUMAN))
+                        .collect(Collectors.toSet()), options, eventListener, RANDOM);
 
                 currentState = Lazy.of(Optional.of(CurrentState.initial(state)));
             }
@@ -533,6 +535,7 @@ public class Table implements AggregateRoot {
         seat.unassign();
         shrinkSeatsIfNeeded();
         players.remove(player);
+
         new Rejected(Lazy.of(this), id, userId).fire();
 
         log.add(new LogEntry(player, LogEntry.Type.REJECT));
@@ -691,9 +694,6 @@ public class Table implements AggregateRoot {
         var player = seat.assign(user, getAvailableColors());
         players.add(player);
 
-        user.getColorPreferences().pickPreferredColor(this.getAvailableColors())
-                .ifPresent(player::assignColor);
-
         log.add(new LogEntry(player, LogEntry.Type.JOIN, List.of(user.getId())));
 
         new Joined(Lazy.of(this), id, user.getId()).fire();
@@ -755,6 +755,7 @@ public class Table implements AggregateRoot {
 
     public void changeOptions(@NonNull Options options) {
         checkNew();
+        checkNoState();
 
         this.options = options;
 
@@ -909,6 +910,7 @@ public class Table implements AggregateRoot {
 
     public void changeMinMaxNumberOfPlayers(int minNumberOfPlayers, int maxNumberOfPlayers) {
         checkNew();
+        checkNoState();
 
         if (minNumberOfPlayers < game.getMinNumberOfPlayers() || minNumberOfPlayers > game.getMaxNumberOfPlayers()) {
             throw new MinNumberOfPlayers();
@@ -951,6 +953,20 @@ public class Table implements AggregateRoot {
         new OptionsChanged(Lazy.of(this), id).fire();
     }
 
+    public void revertTo(@NonNull final HistoricState historicState) {
+        checkStarted();
+
+        if (mode != Mode.PRACTICE) {
+            throw new NotPracticeMode();
+        }
+
+        var currentState = this.currentState.get().orElseThrow(NotStarted::new);
+
+        currentState.revertTo(historicState);
+
+        afterStateChange();
+    }
+
     public enum Status {
         NEW,
         STARTED,
@@ -973,12 +989,20 @@ public class Table implements AggregateRoot {
         PRIVATE
     }
 
-    @Value(staticConstructor = "of")
+    @Value(staticConstructor = "fromString")
     public static class Id {
         String id;
 
         private static Id generate() {
             return of(UUID.randomUUID().toString());
+        }
+
+        /**
+         * @deprecated For backwards compatibility. Use {@link #fromString(String)} instead.
+         */
+        @Deprecated
+        public static Table.Id of(String str) {
+            return fromString(str);
         }
     }
 
@@ -1177,6 +1201,69 @@ public class Table implements AggregateRoot {
         }
     }
 
+    /**
+     * Forks (creates) a new table from a historic state of this table.
+     *
+     * <p>The number of players MUST be the same as this table and cannot be changed.</p>
+     * <p>The options MUST be the same as this table and cannot be changed.</p>
+     */
+    public Table fork(final Instant timestamp, final Type type, final Mode mode, final User owner) {
+        var historicState = historicStates.at(timestamp)
+                .orElseThrow(HistoryNotAvailable::new);
+
+        var state = historicState.getState();
+        if (state.isEnded()) {
+            throw new AlreadyEnded();
+        }
+
+        var numberOfPlayers = players.size();
+
+        // All players must somehow be mapped, so create them all as seats
+        var seats = players.stream()
+                .map(Seat::fork)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        var ownerPlayer = getPlayerByUserId(owner.getId())
+                .map(Player::getId)
+                .flatMap(playerId -> seats.stream()
+                        .filter(seat -> seat.getPlayerId().equals(playerId)) // Assign owner same seat as in original table
+                        .findAny())
+                .orElseGet(() -> seats.get(0)) // Assign any seat to owner
+                .assign(owner, game.getSupportedColors());
+
+        var created = Instant.now();
+
+        var newTable = Table.builder()
+                .id(Id.generate())
+                .version(1)
+                .game(game)
+                .type(type)
+                .mode(mode)
+                .visibility(Visibility.PRIVATE)
+                .status(Status.NEW)
+                .options(options)
+                .created(created)
+                .updated(created)
+                .ownerId(owner.getId())
+                .seats(seats)
+                .players(new HashSet<>(Collections.singleton(ownerPlayer)))
+                .log(new Log()) // TODO Add in game events of historic state to log?
+                .currentState(Lazy.of(Optional.of(CurrentState.initial(state))))
+                .historicStates(new HistoricStates())
+                .minNumberOfPlayers(numberOfPlayers)
+                .maxNumberOfPlayers(numberOfPlayers)
+                .autoStart(false)
+                .build();
+
+        newTable.log.add(new LogEntry(ownerPlayer, LogEntry.Type.CREATE));
+
+        new Created(Lazy.of(newTable), newTable.getId()).fire();
+
+        newTable.afterStateChange();
+
+        return newTable;
+    }
+
     public static final class InGameError extends InvalidCommandException {
 
         @Getter
@@ -1225,6 +1312,12 @@ public class Table implements AggregateRoot {
         }
     }
 
+    public static final class StateNotCompatible extends NotAllowedException {
+        private StateNotCompatible() {
+            super("STATE_NOT_COMPATIBLE");
+        }
+    }
+
     public static final class NotPlayer extends NotAllowedException {
         private NotPlayer() {
             super("NOT_PLAYER_IN_GAME");
@@ -1264,6 +1357,12 @@ public class Table implements AggregateRoot {
     public static final class NotStarted extends NotAllowedException {
         private NotStarted() {
             super("GAME_NOT_STARTED");
+        }
+    }
+
+    public static final class NotPracticeMode extends NotAllowedException {
+        private NotPracticeMode() {
+            super("NOT_PRACTICE_MODE");
         }
     }
 

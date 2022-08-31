@@ -382,6 +382,19 @@ public class TableResource {
         return new StateView(table, state, currentUser.getId());
     }
 
+    @POST
+    @Path("/{tableId}/state/{timestamp}/fork")
+    public TableView fork(@PathParam("tableId") Table.Id tableId, @PathParam("timestamp") Instant timestamp) {
+        var table = tables.findById(tableId)
+                .orElseThrow(NotFoundException::new);
+
+        var newTable = table.fork(timestamp, table.getType(), table.getMode(), currentUser.get());
+
+        tables.add(newTable);
+
+        return new TableView(newTable, getUserMap(newTable), getRatingMap(newTable), currentUser.getId());
+    }
+
     @GET
     @Path("/{id}/log")
     public List<LogEntryView> getLog(@PathParam("id") String id,

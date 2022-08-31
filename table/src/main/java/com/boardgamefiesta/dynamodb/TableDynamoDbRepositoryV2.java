@@ -144,38 +144,38 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     public void put(Table table) {
         Stream.of(
-                Stream.of(WriteRequest.builder()
-                        .putRequest(PutRequest.builder()
-                                .item(mapItemFromTable(table).asMap())
-                                .build())
-                        .build()),
-
-                table.getPlayers().stream()
-                        // Adjacency items only needed for human players,
-                        // since computers will never query the index
-                        .filter(Player::isUser)
-                        .map(player -> WriteRequest.builder()
+                        Stream.of(WriteRequest.builder()
                                 .putRequest(PutRequest.builder()
-                                        .item(mapItemFromPlayer(player, table))
+                                        .item(mapItemFromTable(table).asMap())
                                         .build())
                                 .build()),
 
-                table.getCurrentState().get().stream()
-                        .map(currentState -> WriteRequest.builder()
-                                .putRequest(PutRequest.builder()
-                                        .item(mapItemFromState(table.getId(),
-                                                table.getGame(), currentState.getState(), currentState.getTimestamp(),
-                                                currentState.getPrevious().get().map(Table.HistoricState::getTimestamp)))
-                                        .build())
-                                .build()),
+                        table.getPlayers().stream()
+                                // Adjacency items only needed for human players,
+                                // since computers will never query the index
+                                .filter(Player::isUser)
+                                .map(player -> WriteRequest.builder()
+                                        .putRequest(PutRequest.builder()
+                                                .item(mapItemFromPlayer(player, table))
+                                                .build())
+                                        .build()),
 
-                table.getLog().stream()
-                        .map(logEntry -> WriteRequest.builder()
-                                .putRequest(PutRequest.builder()
-                                        .item(mapItemFromLogEntry(logEntry, table.getId()).asMap())
+                        table.getCurrentState().get().stream()
+                                .map(currentState -> WriteRequest.builder()
+                                        .putRequest(PutRequest.builder()
+                                                .item(mapItemFromState(table.getId(),
+                                                        table.getGame(), currentState.getState(), currentState.getTimestamp(),
+                                                        currentState.getPrevious().get().map(Table.HistoricState::getTimestamp)))
+                                                .build())
+                                        .build()),
+
+                        table.getLog().stream()
+                                .map(logEntry -> WriteRequest.builder()
+                                        .putRequest(PutRequest.builder()
+                                                .item(mapItemFromLogEntry(logEntry, table.getId()).asMap())
+                                                .build())
                                         .build())
-                                .build())
-        )
+                )
                 .flatMap(Function.identity())
                 .collect(Chunked.chunked(MAX_BATCH_WRITE_SIZE))
                 .forEach(chunk ->
@@ -219,8 +219,8 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .setTTL(TTL, table.getExpires().orElse(null))
                 .setString("OwnerId", table.getOwnerId().getId())
                 .set("Players", AttributeValue.builder().l(table.getPlayers().stream()
-                        .map(this::mapFromPlayer)
-                        .collect(Collectors.toList()))
+                                .map(this::mapFromPlayer)
+                                .collect(Collectors.toList()))
                         .build())
                 .set("Seats", AttributeValue.builder()
                         .l(table.getSeats().stream()
@@ -324,30 +324,30 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     private int countActive(User.Id userId) {
         return client.query(QueryRequest.builder()
-                .tableName(config.tableName())
-                .indexName(GSI2)
-                .keyConditionExpression("GSI2PK=:GSI2PK AND begins_with(GSI2SK, :GSI2SK)")
-                .expressionAttributeValues(Map.of(
-                        ":GSI2PK", Item.s(USER_PREFIX + userId.getId()),
-                        ":GSI2SK", Item.s(TABLE_PREFIX)
-                ))
-                .select(Select.COUNT)
-                .build())
+                        .tableName(config.tableName())
+                        .indexName(GSI2)
+                        .keyConditionExpression("GSI2PK=:GSI2PK AND begins_with(GSI2SK, :GSI2SK)")
+                        .expressionAttributeValues(Map.of(
+                                ":GSI2PK", Item.s(USER_PREFIX + userId.getId()),
+                                ":GSI2SK", Item.s(TABLE_PREFIX)
+                        ))
+                        .select(Select.COUNT)
+                        .build())
                 .count();
     }
 
     @Override
     public Stream<Table> findActive(User.Id userId) {
         return findByIds(client.queryPaginator(QueryRequest.builder()
-                .tableName(config.tableName())
-                .indexName(GSI2)
-                .scanIndexForward(false)
-                .keyConditionExpression(GSI2PK + "=:GSI2PK AND begins_with(" + GSI2SK + ",:GSI2SK)")
-                .expressionAttributeValues(Map.of(
-                        ":GSI2PK", Item.s(USER_PREFIX + userId.getId()),
-                        ":GSI2SK", Item.s(TABLE_PREFIX)
-                ))
-                .build())
+                        .tableName(config.tableName())
+                        .indexName(GSI2)
+                        .scanIndexForward(false)
+                        .keyConditionExpression(GSI2PK + "=:GSI2PK AND begins_with(" + GSI2SK + ",:GSI2SK)")
+                        .expressionAttributeValues(Map.of(
+                                ":GSI2PK", Item.s(USER_PREFIX + userId.getId()),
+                                ":GSI2SK", Item.s(TABLE_PREFIX)
+                        ))
+                        .build())
                 .items().stream()
                 .map(item -> GSISK.parse(item.get(GSI2SK).s()))
                 .map(GSISK::getTableId));
@@ -356,15 +356,15 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     @Override
     public Stream<Table> findAll(User.@NonNull Id userId, int maxResults) {
         return findByIds(client.queryPaginator(QueryRequest.builder()
-                .tableName(config.tableName())
-                .indexName(GSI1)
-                .scanIndexForward(false)
-                .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
-                .expressionAttributeValues(Map.of(
-                        ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
-                        ":GSI1SK", Item.s(TABLE_PREFIX)
-                ))
-                .build())
+                        .tableName(config.tableName())
+                        .indexName(GSI1)
+                        .scanIndexForward(false)
+                        .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
+                        .expressionAttributeValues(Map.of(
+                                ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
+                                ":GSI1SK", Item.s(TABLE_PREFIX)
+                        ))
+                        .build())
                 .items().stream()
                 .map(item -> GSISK.parse(item.get(GSI1SK).s()))
                 .map(GSISK::getTableId)
@@ -374,15 +374,15 @@ public class TableDynamoDbRepositoryV2 implements Tables {
     @Override
     public Stream<Table> findAll(@NonNull User.Id userId, Game.Id gameId, int maxResults) {
         return findByIds(client.queryPaginator(QueryRequest.builder()
-                .tableName(config.tableName())
-                .indexName(GSI1)
-                .scanIndexForward(false)
-                .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
-                .expressionAttributeValues(Map.of(
-                        ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
-                        ":GSI1SK", Item.s(TABLE_PREFIX)
-                ))
-                .build())
+                        .tableName(config.tableName())
+                        .indexName(GSI1)
+                        .scanIndexForward(false)
+                        .keyConditionExpression(GSI1PK + "=:GSI1PK AND begins_with(" + GSI1SK + ",:GSI1SK)")
+                        .expressionAttributeValues(Map.of(
+                                ":GSI1PK", Item.s(USER_PREFIX + userId.getId()),
+                                ":GSI1SK", Item.s(TABLE_PREFIX)
+                        ))
+                        .build())
                 .items().stream()
                 .map(item -> GSISK.parse(item.get(GSI1SK).s()))
                 .filter(sk -> gameId.equals(sk.getGameId()))
@@ -420,17 +420,17 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .mapToObj(shard -> {
                     var gsi2skTo = GSISK.from(lastEvaluatedId, Table.Status.STARTED, to, gameId);
                     return client.queryPaginator(QueryRequest.builder()
-                            .tableName(config.tableName())
-                            .indexName(GSI2)
-                            .scanIndexForward(false)
-                            .keyConditionExpression(GSI2PK + "=:GSI2PK AND " + GSI2SK + " BETWEEN :GSI2SKFrom AND :GSI2SKTo")
-                            .expressionAttributeValues(Map.of(
-                                    ":GSI2PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
-                                    ":GSI2SKFrom", Item.s(GSISK.partial(Table.Status.STARTED, from)),
-                                    ":GSI2SKTo", Item.s(gsi2skTo)
-                            ))
-                            .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
-                            .build())
+                                    .tableName(config.tableName())
+                                    .indexName(GSI2)
+                                    .scanIndexForward(false)
+                                    .keyConditionExpression(GSI2PK + "=:GSI2PK AND " + GSI2SK + " BETWEEN :GSI2SKFrom AND :GSI2SKTo")
+                                    .expressionAttributeValues(Map.of(
+                                            ":GSI2PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                            ":GSI2SKFrom", Item.s(GSISK.partial(Table.Status.STARTED, from)),
+                                            ":GSI2SKTo", Item.s(gsi2skTo)
+                                    ))
+                                    .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
+                                    .build())
                             .stream()
                             .filter(QueryResponse::hasItems)
                             .flatMap(response -> response.items().stream())
@@ -474,17 +474,17 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .mapToObj(shard -> {
                     var gsi3skTo = GSISK.from(lastEvaluatedId, Table.Status.NEW, to, gameId);
                     return client.queryPaginator(QueryRequest.builder()
-                            .tableName(config.tableName())
-                            .indexName(GSI3)
-                            .scanIndexForward(false)
-                            .keyConditionExpression(GSI3PK + "=:GSI3PK AND " + GSI3SK + " BETWEEN :GSI3SKFrom AND :GSI3SKTo")
-                            .expressionAttributeValues(Map.of(
-                                    ":GSI3PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
-                                    ":GSI3SKFrom", Item.s(GSISK.partial(Table.Status.NEW, from)),
-                                    ":GSI3SKTo", Item.s(gsi3skTo)
-                            ))
-                            .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
-                            .build())
+                                    .tableName(config.tableName())
+                                    .indexName(GSI3)
+                                    .scanIndexForward(false)
+                                    .keyConditionExpression(GSI3PK + "=:GSI3PK AND " + GSI3SK + " BETWEEN :GSI3SKFrom AND :GSI3SKTo")
+                                    .expressionAttributeValues(Map.of(
+                                            ":GSI3PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                            ":GSI3SKFrom", Item.s(GSISK.partial(Table.Status.NEW, from)),
+                                            ":GSI3SKTo", Item.s(gsi3skTo)
+                                    ))
+                                    .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
+                                    .build())
                             .stream()
                             .filter(QueryResponse::hasItems)
                             .flatMap(response -> response.items().stream())
@@ -528,17 +528,17 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .mapToObj(shard -> {
                     var gsi1skTo = GSISK.from(lastEvaluatedId, Table.Status.ENDED, to, gameId);
                     return client.queryPaginator(QueryRequest.builder()
-                            .tableName(config.tableName())
-                            .indexName(GSI1)
-                            .scanIndexForward(ascending)
-                            .keyConditionExpression(GSI1PK + "=:GSI1PK AND " + GSI1SK + " BETWEEN :GSI1SKFrom AND :GSI1SKTo")
-                            .expressionAttributeValues(Map.of(
-                                    ":GSI1PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
-                                    ":GSI1SKFrom", Item.s(GSISK.partial(Table.Status.ENDED, from)),
-                                    ":GSI1SKTo", Item.s(gsi1skTo)
-                            ))
-                            .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
-                            .build())
+                                    .tableName(config.tableName())
+                                    .indexName(GSI1)
+                                    .scanIndexForward(ascending)
+                                    .keyConditionExpression(GSI1PK + "=:GSI1PK AND " + GSI1SK + " BETWEEN :GSI1SKFrom AND :GSI1SKTo")
+                                    .expressionAttributeValues(Map.of(
+                                            ":GSI1PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                            ":GSI1SKFrom", Item.s(GSISK.partial(Table.Status.ENDED, from)),
+                                            ":GSI1SKTo", Item.s(gsi1skTo)
+                                    ))
+                                    .limit(maxResults + 1) // + 1 because BETWEEN is inclusive, filter out later
+                                    .build())
                             .stream()
                             .filter(QueryResponse::hasItems)
                             .flatMap(response -> response.items().stream())
@@ -591,23 +591,23 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
         if (!trackingSet.getAdded().isEmpty() || !trackingSet.getRemoved().isEmpty()) {
             var writeRequests = Stream.concat(
-                    trackingSet.getRemoved().stream()
-                            .filter(Player::isUser)
-                            .map(player -> WriteRequest.builder()
-                                    .deleteRequest(DeleteRequest.builder()
-                                            .key(Map.of(
-                                                    PK, Item.s(TABLE_PREFIX + table.getId().getId()),
-                                                    SK, Item.s(PLAYER_PREFIX + player.getId().getId())
-                                            ))
-                                            .build())
-                                    .build()),
-                    trackingSet.getAdded().stream()
-                            .filter(Player::isUser)
-                            .map(player -> WriteRequest.builder()
-                                    .putRequest(PutRequest.builder()
-                                            .item(mapItemFromPlayer(player, table))
-                                            .build())
-                                    .build()))
+                            trackingSet.getRemoved().stream()
+                                    .filter(Player::isUser)
+                                    .map(player -> WriteRequest.builder()
+                                            .deleteRequest(DeleteRequest.builder()
+                                                    .key(Map.of(
+                                                            PK, Item.s(TABLE_PREFIX + table.getId().getId()),
+                                                            SK, Item.s(PLAYER_PREFIX + player.getId().getId())
+                                                    ))
+                                                    .build())
+                                            .build()),
+                            trackingSet.getAdded().stream()
+                                    .filter(Player::isUser)
+                                    .map(player -> WriteRequest.builder()
+                                            .putRequest(PutRequest.builder()
+                                                    .item(mapItemFromPlayer(player, table))
+                                                    .build())
+                                            .build()))
                     .collect(Collectors.toList());
 
             if (!writeRequests.isEmpty()) {
@@ -789,15 +789,15 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     private AttributeValue mapFromOptions(Options options) {
         return AttributeValue.builder().m(options.asMap().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
-                    if (entry.getValue() instanceof Boolean) {
-                        return AttributeValue.builder().bool((Boolean) entry.getValue()).build();
-                    } else if (entry.getValue() instanceof Number) {
-                        return AttributeValue.builder().n(entry.getValue().toString()).build();
-                    } else {
-                        return Item.s(entry.getValue().toString());
-                    }
-                })))
+                        .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+                            if (entry.getValue() instanceof Boolean) {
+                                return AttributeValue.builder().bool((Boolean) entry.getValue()).build();
+                            } else if (entry.getValue() instanceof Number) {
+                                return AttributeValue.builder().n(entry.getValue().toString()).build();
+                            } else {
+                                return Item.s(entry.getValue().toString());
+                            }
+                        })))
                 .build();
     }
 
@@ -973,17 +973,17 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         log.debug("findLogEntries: {} >={} <{} limit {}", tableId, since, before, limit);
 
         return client.queryPaginator(QueryRequest.builder()
-                .tableName(config.tableName())
-                // Needs to put an upper limit on SK because else it will also return other items like "Player#..." and "State#..."
-                .keyConditionExpression("PK=:PK AND SK BETWEEN :SKFrom AND :SKTo")
-                .expressionAttributeValues(Map.of(
-                        ":PK", Item.s(TABLE_PREFIX + tableId.getId()),
-                        ":SKFrom", Item.s(LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(since)),
-                        ":SKTo", Item.s(LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(before))
-                ))
-                .scanIndexForward(false)
-                .limit(Math.min(9999, limit) + 2) // Retrieve 2 more because BETWEEN is inclusive on both ends
-                .build())
+                        .tableName(config.tableName())
+                        // Needs to put an upper limit on SK because else it will also return other items like "Player#..." and "State#..."
+                        .keyConditionExpression("PK=:PK AND SK BETWEEN :SKFrom AND :SKTo")
+                        .expressionAttributeValues(Map.of(
+                                ":PK", Item.s(TABLE_PREFIX + tableId.getId()),
+                                ":SKFrom", Item.s(LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(since)),
+                                ":SKTo", Item.s(LOG_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(before))
+                        ))
+                        .scanIndexForward(false)
+                        .limit(Math.min(9999, limit) + 2) // Retrieve 2 more because BETWEEN is inclusive on both ends
+                        .build())
                 .items().stream()
                 .map(Item::of)
                 .map(this::mapToLogEntry)
@@ -1043,11 +1043,11 @@ public class TableDynamoDbRepositoryV2 implements Tables {
 
     public void delete(Table.Id id) {
         client.queryPaginator(QueryRequest.builder()
-                .tableName(config.tableName())
-                .keyConditionExpression(PK + "=:PK")
-                .expressionAttributeValues(Map.of(":PK", Item.s(TABLE_PREFIX + id.getId())))
-                .projectionExpression(PK + "," + SK)
-                .build())
+                        .tableName(config.tableName())
+                        .keyConditionExpression(PK + "=:PK")
+                        .expressionAttributeValues(Map.of(":PK", Item.s(TABLE_PREFIX + id.getId())))
+                        .projectionExpression(PK + "," + SK)
+                        .build())
                 .items()
                 .stream()
                 .peek(key -> System.out.println("Delete Request: " + key))
@@ -1071,15 +1071,15 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 // Scatter
                 .parallel()
                 .mapToObj(shard -> client.queryPaginator(QueryRequest.builder()
-                        .tableName(config.tableName())
-                        .indexName(GSI4)
-                        .scanIndexForward(false)
-                        .keyConditionExpression(GSI4PK + "=:GSI4PK AND begins_with(" + GSI4SK + ",:GSI4SK)")
-                        .expressionAttributeValues(Map.of(
-                                ":GSI4PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
-                                ":GSI4SK", Item.s(TABLE_PREFIX)
-                        ))
-                        .build())
+                                .tableName(config.tableName())
+                                .indexName(GSI4)
+                                .scanIndexForward(false)
+                                .keyConditionExpression(GSI4PK + "=:GSI4PK AND begins_with(" + GSI4SK + ",:GSI4SK)")
+                                .expressionAttributeValues(Map.of(
+                                        ":GSI4PK", Item.s(GAME_PREFIX + gameId.getId() + "#" + shard),
+                                        ":GSI4SK", Item.s(TABLE_PREFIX)
+                                ))
+                                .build())
                         .items()
                         .stream())
                 // Gather

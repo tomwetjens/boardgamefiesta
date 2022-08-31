@@ -20,13 +20,12 @@ package com.boardgamefiesta.domain.game;
 
 import com.boardgamefiesta.api.domain.*;
 import com.boardgamefiesta.api.spi.GameProvider;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Value;
+import lombok.*;
 
 import java.util.Random;
 import java.util.Set;
 
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Game {
 
@@ -35,6 +34,10 @@ public class Game {
 
     @Getter
     private final GameProvider<State> provider;
+
+    public static Game create(Id id, GameProvider<State> provider) {
+        return new Game(id, provider);
+    }
 
     public int getMinNumberOfPlayers() {
         return provider.getMinNumberOfPlayers();
