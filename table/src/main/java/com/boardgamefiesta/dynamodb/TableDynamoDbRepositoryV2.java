@@ -818,10 +818,32 @@ public class TableDynamoDbRepositoryV2 implements Tables {
                 .currentState(items.size() > 1
                         ? Lazy.of(Optional.of(mapToCurrentState(id, items.get(1), game)))
                         : Lazy.defer(() -> getCurrentState(id, game)))
+                .historicStates(new Table.HistoricStates() {
+                    @Override
+                    public Optional<Table.HistoricState> at(Instant timestamp) {
+                        var historicState = super.at(timestamp);
+                        if (historicState.isEmpty()) {
+                            return findHistoricStateAt(id, timestamp, game);
+                        }
+                        return historicState;
+                    }
+                })
                 .log(new LazyLog((since, before, limit) -> findLogEntries(id, since, before, limit)))
                 .minNumberOfPlayers(item.getOptionalInt("MinNumberOfPlayers").orElse(game.getMinNumberOfPlayers()))
                 .maxNumberOfPlayers(item.getOptionalInt("MaxNumberOfPlayers").orElse(game.getMaxNumberOfPlayers()))
                 .autoStart(item.getOptionalBoolean("AutoStart").orElse(false))
+                .build();
+    }
+
+    private Table.HistoricState mapToHistoricState(Table.Id tableId, Item item, Game game) {
+        return Table.HistoricState.builder()
+                .state(mapToState(game, item.get("State")))
+                .timestamp(Instant.parse(item.get("Timestamp").s()))
+                .previous(Optional.ofNullable(item.get("Previous"))
+                        .map(AttributeValue::s)
+                        .map(Instant::parse)
+                        .map(previous -> Lazy.defer(() -> getHistoricState(tableId, previous, game)))
+                        .orElse(Lazy.of(Optional.empty())))
                 .build();
     }
 
@@ -876,15 +898,35 @@ public class TableDynamoDbRepositoryV2 implements Tables {
         if (response.hasItem()) {
             var item = response.item();
 
-            return Optional.of(Table.HistoricState.builder()
-                    .state(mapToState(game, item.get("State")))
-                    .timestamp(Instant.parse(item.get("Timestamp").s()))
-                    .previous(Optional.ofNullable(item.get("Previous"))
-                            .map(AttributeValue::s)
-                            .map(Instant::parse)
-                            .map(previous -> Lazy.defer(() -> getHistoricState(tableId, previous, game)))
-                            .orElse(Lazy.of(Optional.empty())))
-                    .build());
+            return Optional.of(mapToHistoricState(tableId, Item.of(item), game));
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<Table.HistoricState> findHistoricStateAt(Table.Id tableId, Instant timestamp, Game game) {
+        log.debug("findHistoricStateAt: {} {}", tableId, timestamp);
+
+        var response = client.query(QueryRequest.builder()
+                .tableName(config.tableName())
+                .keyConditionExpression(PK + "=:PK AND " + SK + " BETWEEN :SKFrom AND :SKTo")
+                .expressionAttributeValues(Map.of(
+                        ":PK", Item.s(TABLE_PREFIX + tableId.getId()),
+                        ":SKFrom", Item.s(STATE_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(MIN_TIMESTAMP)),
+                        ":SKTo", Item.s(STATE_PREFIX + TIMESTAMP_MILLIS_FORMATTER.format(timestamp))
+                ))
+                .scanIndexForward(false)
+                .limit(1)
+                .build());
+
+        if (response.hasItems()) {
+            var items = response.items();
+
+            if (items.size() == 1) {
+                var item = items.get(0);
+
+                return Optional.of(mapToHistoricState(tableId, Item.of(item), game));
+            }
         }
 
         return Optional.empty();

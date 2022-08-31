@@ -122,7 +122,7 @@ public class Item {
                 .map(str -> Enum.valueOf(enumClass, str));
     }
 
-    private Optional<AttributeValue> getOptionalNotNull(String attributeName) {
+    public Optional<AttributeValue> getOptionalNotNull(String attributeName) {
         return Optional.ofNullable(map.get(attributeName))
                 .filter(attributeValue -> !Boolean.TRUE.equals(attributeValue.nul()));
     }

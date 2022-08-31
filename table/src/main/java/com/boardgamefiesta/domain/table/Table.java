@@ -120,6 +120,9 @@ public class Table implements AggregateRoot {
     private Lazy<Optional<CurrentState>> currentState;
 
     @Getter
+    private HistoricStates historicStates;
+
+    @Getter
     private Instant updated;
 
     @Getter
@@ -163,6 +166,7 @@ public class Table implements AggregateRoot {
                 .players(new HashSet<>(Collections.singleton(player)))
                 .log(new Log())
                 .currentState(Lazy.of(Optional.empty()))
+                .historicStates(new HistoricStates())
                 .minNumberOfPlayers(game.getMinNumberOfPlayers())
                 .maxNumberOfPlayers(game.getMaxNumberOfPlayers())
                 .autoStart(false)
@@ -209,18 +213,12 @@ public class Table implements AggregateRoot {
                                     : com.boardgamefiesta.api.domain.Player.Type.HUMAN))
                     .collect(Collectors.toSet()), options, eventListener, RANDOM);
 
-            currentState = Lazy.of(Optional.of(CurrentState.initial(state)));
-
-            afterStateChange();
+                currentState = Lazy.of(Optional.of(CurrentState.initial(state)));
+            }
 
             new Started(Lazy.of(this), id).fire();
 
-            state.getCurrentPlayers().stream()
-                    .map(com.boardgamefiesta.api.domain.Player::getName)
-                    .map(Player.Id::of)
-                    .map(this::getPlayerById)
-                    .flatMap(Optional::stream)
-                    .forEach(this::beginTurn);
+            afterStateChange();
         } catch (InGameException e) {
             throw new InGameError(game.getId(), e);
         }
@@ -289,12 +287,7 @@ public class Table implements AggregateRoot {
         var currentState = this.currentState.get().orElseThrow(NotStarted::new);
         var state = currentState.getState();
 
-        var currentPlayers = state.getCurrentPlayers().stream()
-                .map(com.boardgamefiesta.api.domain.Player::getName)
-                .map(Player.Id::of)
-                .map(this::getPlayerById)
-                .flatMap(Optional::stream)
-                .collect(Collectors.toSet());
+        var historicState = HistoricState.from(currentState);
 
         InGameEventListener eventListener = event -> log.add(new LogEntry(this, event));
         state.addEventListener(eventListener);
@@ -306,25 +299,8 @@ public class Table implements AggregateRoot {
             state.removeEventListener(eventListener);
         }
 
-        currentState.next(state);
-
-        // TODO Move this into afterStateChange to also support undoing after turn ends
-        var newCurrentPlayers = state.getCurrentPlayers().stream()
-                .map(com.boardgamefiesta.api.domain.Player::getName)
-                .map(Player.Id::of)
-                .map(this::getPlayerById)
-                .flatMap(Optional::stream)
-                .collect(Collectors.toSet());
-
-        currentPlayers.stream()
-                .filter(player -> state.isEnded() || !newCurrentPlayers.contains(player))
-                .forEach(this::endTurnInternal);
-
-        if (!state.isEnded()) {
-            newCurrentPlayers.stream()
-                    .filter(newCurrentPlayer -> !currentPlayers.contains(newCurrentPlayer))
-                    .forEach(this::beginTurn);
-        }
+        currentState.next(state, historicState);
+        historicStates.add(historicState);
 
         afterStateChange();
     }
@@ -455,11 +431,32 @@ public class Table implements AggregateRoot {
     }
 
     private void afterStateChange() {
+        final State state = getState();
+
+        if (status == Status.STARTED) {
+            var newCurrentPlayers = state.getCurrentPlayers().stream()
+                    .map(com.boardgamefiesta.api.domain.Player::getName)
+                    .map(Player.Id::of)
+                    .map(this::getPlayerById)
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toSet());
+
+            players.forEach(player -> {
+                if (state.isEnded() || !newCurrentPlayers.contains(player)) {
+                    if (player.isTurn()) {
+                        endTurnInternal(player);
+                    }
+                } else {
+                    if (!player.isTurn()) {
+                        beginTurn(player);
+                    }
+                }
+            });
+        }
+
         updated = Instant.now();
 
         new StateChanged(id, Lazy.of(this)).fire();
-
-        var state = getState();
 
         if (state.isEnded()) {
             progress = 100;
@@ -1078,21 +1075,17 @@ public class Table implements AggregateRoot {
         private State state;
         private Instant timestamp;
         private Lazy<Optional<HistoricState>> previous;
-        private boolean changed;
+        private boolean changed; // TODO Better name
 
         public static CurrentState initial(State state) {
             return new CurrentState(state, Instant.now(), Lazy.of(Optional.empty()), true);
         }
 
-        public HistoricState next(State state) {
-            var previous = HistoricState.from(this);
-
+        public void next(State state, HistoricState previous) {
             this.state = state;
             this.timestamp = Instant.now();
             this.previous = Lazy.of(Optional.of(previous));
             this.changed = true;
-
-            return previous;
         }
 
         public void revertTo(HistoricState historicState) {
@@ -1121,6 +1114,7 @@ public class Table implements AggregateRoot {
         protected Lazy<Optional<HistoricState>> previous;
 
         public static HistoricState from(CurrentState currentState) {
+            // TODO Clone state to prevent it from being modified after this (and wrap in immutable?)
             return new HistoricState(currentState.state, currentState.timestamp, currentState.previous);
         }
     }
@@ -1242,6 +1236,40 @@ public class Table implements AggregateRoot {
     public static final class ColorNotAvailable extends InvalidCommandException {
         private ColorNotAvailable() {
             super("COLOR_NOT_AVAILABLE");
+        }
+    }
+
+    public static class HistoricStates {
+
+        private final SortedMap<Instant, HistoricState> historicStates = new TreeMap<>();
+
+        protected final void add(HistoricState historicState) {
+            if (historicStates.containsKey(historicState.timestamp)) {
+                throw new IllegalStateException("timestamp already exists: " + historicState.timestamp);
+            }
+            historicStates.put(historicState.timestamp, historicState);
+        }
+
+        public Optional<HistoricState> at(Instant timestamp) {
+            var head = historicStates.headMap(timestamp.plusNanos(1));
+
+            if (head.isEmpty()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(head.get(head.lastKey()));
+        }
+
+        public Set<Instant> getTimestamps() {
+            return historicStates.keySet();
+        }
+
+        public int count() {
+            return historicStates.size();
+        }
+
+        public Optional<HistoricState> getLast() {
+            return historicStates.isEmpty() ? Optional.empty() : Optional.of(historicStates.get(historicStates.lastKey()));
         }
     }
 
