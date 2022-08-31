@@ -18,15 +18,19 @@
 
 package com.boardgamefiesta.server.rest.table.view;
 
+import com.boardgamefiesta.api.domain.PlayerColor;
 import com.boardgamefiesta.domain.rating.Rating;
 import com.boardgamefiesta.domain.table.Player;
+import com.boardgamefiesta.domain.table.Seat;
 import com.boardgamefiesta.domain.table.Table;
 import com.boardgamefiesta.domain.user.User;
 import com.boardgamefiesta.server.rest.user.view.UserView;
+import lombok.Data;
 import lombok.NonNull;
 import lombok.Value;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -46,6 +50,9 @@ public class TableView {
     Instant started;
     Instant ended;
     UserView owner;
+
+    List<SeatView> seats;
+
     String player;
     Set<String> otherPlayers;
     Map<String, PlayerView> players;
@@ -93,6 +100,9 @@ public class TableView {
         status = table.getStatus();
         progress = table.getProgress();
         owner = new UserView(table.getOwnerId(), userMap.get(table.getOwnerId()), currentUserId);
+        seats = table.getSeats().stream()
+                .map(SeatView::new)
+                .collect(Collectors.toList());
         options = table.getOptions().asMap();
 
         player = table.getPlayerByUserId(currentUserId)
@@ -167,5 +177,21 @@ public class TableView {
         } else {
             return null;
         }
+    }
+
+    @Data
+    public static class SeatView {
+
+        PlayerColor color;
+        String player;
+
+        private SeatView(Seat seat) {
+            this.color = seat.getPlayerColor().orElse(null);
+            this.player = seat.getPlayer()
+                    .map(Player::getId)
+                    .map(Player.Id::getId)
+                    .orElse(null);
+        }
+
     }
 }

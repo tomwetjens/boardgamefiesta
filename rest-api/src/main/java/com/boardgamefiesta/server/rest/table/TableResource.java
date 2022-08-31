@@ -284,6 +284,24 @@ public class TableResource {
         });
     }
 
+    @PUT
+    @Path("/{id}/seats/{seat}/player")
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Transactional
+    public void changeSeat(@PathParam("id") Table.Id id, @PathParam("seat") int seat, Player.Id playerId) {
+        handleConcurrentModification(id, table -> {
+            var targetSeat = table.getSeats().get(seat);
+            if (!targetSeat.isAvailable()) {
+                checkOwner(table);
+            }
+
+            var player = table.getPlayerById(playerId)
+                    .orElseThrow(() -> APIException.badRequest(APIError.NOT_PLAYER_IN_GAME));
+
+            table.changeSeat(player, seat);
+        });
+    }
+
     @POST
     @Path("/{id}/players/{playerId}/force-end-turn")
     @Transactional
